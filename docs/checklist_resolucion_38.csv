@@ -1,0 +1,72 @@
+ID,Categoria,Articulo,Requisito,Tipo,Status,Observaciones
+F01,Componentes,Art 6a,Hardware de enrolamiento/captura (lector/celular),Mandatorio,Pendiente,
+F02,Componentes,Art 6c,Portal de fiscalización web (HTTPS),Mandatorio,Pendiente,Ubicado en app/Filament/Dt
+F03,Componentes,Art 6d,Base de Datos con almacenamiento y respaldo,Mandatorio,Pendiente,
+F04,Idiomas,Art 5,Plataforma y manuales en Castellano (técnico Chile),Mandatorio,Pendiente,
+F05,Enrolamiento,Art 7f,Modificación de clave por el trabajador + Correo Auto,Mandatorio,Pendiente,
+F06,Enrolamiento,Art 7g,Al menos dos alternativas de identificación (ej: Biometría y Clave),Mandatorio,Pendiente,Una debe ser NO biométrica
+F07,Seguridad,Art 8,Generación automática de Hash/Checksum (SHA-2 sugerido),Mandatorio,En Progreso,Implementado sha256 en MarkObserver
+F08,Seguridad,Art 8,Funcionalidad web para validar Hash del comprobante,Mandatorio,Pendiente,Debe permitir consulta en línea
+F09,Transmisión,Art 9,Transmisión automática en línea a base de datos,Mandatorio,Pendiente,
+F10,Sello de Tiempo,Art 11,Asignación electrónica de fecha y hora (Sello de tiempo),Mandatorio,Pendiente,
+F11,Comprobantes,Art 12,Envío automático de comprobante al correo del trabajador,Mandatorio,Pendiente,
+F12,Comprobantes,Art 13,Contenido mínimo: Fecha (dd/mm/aa) Hora (hh:mm:ss) Nombre RUT Hash,Mandatorio,Pendiente,
+F13,Comprobantes,Art 13,Ubicación geográfica en el comprobante (si aplica),Opcional,Pendiente,
+F14,Seguridad DB,Art 14a,Seguridad para impedir acceso no autorizado y adulteración,Mandatorio,Pendiente,
+F15,Confidencialidad,Art 15,Perfiles de seguridad (Empleador Trabajador Fiscalizador),Mandatorio,Pendiente,
+F16,Auditoría,Art 15,Registro automático de asignación de perfiles (Solo Admin),Mandatorio,Pendiente,
+F17,Disponibilidad,Art 16,Disponibilidad 7x24 y monitoreo de componentes,Mandatorio,Pendiente,
+F18,Fiscalización,Art 17b,Acceso portal fiscalización vía HTTPS (TLS 1.2+) SSL Válido,Mandatorio,Pendiente,
+F19,Base de Datos,Art 20a,Consistencia: Comprobante vs Base de Datos,Mandatorio,Pendiente,
+F20,Base de Datos,Art 20c,Software/Hardware con antigüedad < 3 años y vigencia > 5 años,Mandatorio,Pendiente,
+F21,Base de Datos,Art 20d,Arquitectura distribuida (Múltiples servidores/Datacenters),Mandatorio,Pendiente,
+F22,Base de Datos,Art 20e,Replicación y respaldo en dispositivos externos,Mandatorio,Pendiente,
+F23,Acceso,Art 22.1,Acceso trabajador: Permanente irrestricto histórico 5 años,Mandatorio,Pendiente,Interfaz simplificada de búsqueda
+F24,Acceso,Art 22.2,Acceso empleador: Perfil administrador total y herramientas de mod,Mandatorio,Pendiente,
+F25,Acceso,Art 22.3,Acceso terceros (Subcontratación/EST): Solo visualización/reportes,Mandatorio,Pendiente,Requiere autorización del empleador
+F26,Fiscalización,Art 22.4,Acceso remoto irrestricto para funcionarios DT,Mandatorio,Pendiente,
+F27,Auditoría DT,Art 22.5,Listado de conexiones DT (Fecha Hora Correo RUT Empresa IP),Mandatorio,Pendiente,
+F28,Fiscalización,Art 23,Proceso de login DT (@dt.gob.cl + clave temporal 5 días),Mandatorio,Pendiente,
+F29,Fiscalización,Art 24a,Pantalla Inicio DT: Ventana búsqueda RUT/Nombre + Lista Alfabética,Mandatorio,Pendiente,Solo estas dos ventanas al inicio
+F30,Fiscalización,Art 24b,Envío de correo auto al empleador al iniciar fiscalización,Mandatorio,Pendiente,Texto legal específico según Art 24b
+F31,Fiscalización,Art 24c,Menú de reportes con orden y nomenclatura de la Resolución,Mandatorio,Pendiente,
+F32,Fiscalización,Art 24d,Pantalla de filtros al seleccionar reporte (Art 27 a b c d),Mandatorio,Pendiente,
+F33,Reportes,Art 25.1,Filtros: Individual Grupal Fechas Jornada Turnos Local Cargo EST,Mandatorio,Pendiente,
+F34,Reportes,Art 25.2a,Filtros: Todas las ventanas de opciones visibles al mismo tiempo,Mandatorio,Pendiente,
+F35,Reportes,Art 25.2b,Filtros: Sin orden predeterminado de uso (Combinables),Mandatorio,Pendiente,
+F36,Reportes,Art 25.2c,Filtros: Listados se expanden en cascada hacia abajo,Mandatorio,Pendiente,
+F37,Información DT,Art 26,Carga mensual a plataforma DT (primeros 5 días corridos),Mandatorio,Pendiente,Lista de clientes RUT Web Fiscalización etc
+F38,Reportes,Art 27a,Reporte de Asistencia (Fecha Asistencia Ausencia Observaciones),Mandatorio,En Progreso,
+F39,Reportes,Art 27b,Reporte de Jornada Diaria (Detalle marcas colación atrasos extra),Mandatorio,En Progreso,
+F40,Reportes,Art 27c,Reporte de Domingos y Festivos (hasta 24 meses),Mandatorio,En Progreso,
+F41,Reportes,Art 27d,Reporte de Modificaciones de Turnos,Mandatorio,Pendiente,
+F42,Reportes,Art 27e,Reporte Diario Automático enviado al empleador (PDF/Excel),Mandatorio,Pendiente,
+F43,Reportes,Art 27f,Registro electrónico de incidentes técnicos (Trazabilidad),Mandatorio,Pendiente,
+F44,Visualización,Art 28a,Previsualización en pantalla + descarga idéntica (Excel/PDF/Word),Mandatorio,Pendiente,
+F45,Visualización,Art 28c,Visualización en una sola pantalla (Sin scroll horizontal),Mandatorio,Pendiente,
+F46,Visualización,Art 28d,Reportes imprimibles: Adaptables a una sola hoja (ancho),Mandatorio,Pendiente,
+F47,Visualización,Art 28e,Fuente: Arial Nº 8 máximo para pantalla e impresión,Mandatorio,Pendiente,
+F48,Visualización,Art 28f,Mensaje: "No hay trabajadores que coincidan con la selección",Mandatorio,Pendiente,
+F49,Visualización,Art 28g,Uso de siglas estándar (A.I. A.J. AT. H.E. VAC. etc),Mandatorio,Pendiente,
+F50,Visualización,Art 28h,Agrupación: Reporte ordenado por cada dependiente,Mandatorio,Pendiente,
+F51,Correos,Art 34.2b,Derecho a modificar correo personal (Procedimiento en Reglamento),Mandatorio,Pendiente,
+F52,Marcaciones,Art 36c,Marcas repetidas: Mantener la PRIMERA y eliminar las siguientes,Mandatorio,Pendiente,Acción automática
+F53,Marcaciones,Art 37,Marcas automáticas: Lógica término/inicio inmediato (ej: Colación),Mandatorio,Pendiente,
+F54,Alteración,Art 41a,Intervención visible en pantalla (Signo Símbolo o Color),Mandatorio,Pendiente,Debe permitir ver qué ocurrió
+F55,Alteración,Art 41b,Alteraciones solo si no causan perjuicio al trabajador,Mandatorio,Pendiente,
+F56,Alteración,Art 41c,Alteraciones solo a partir del día hábil siguiente,Mandatorio,Pendiente,
+F57,Alteración,Art 41d,Prohibición de automatizar inicio y fin de jornada,Mandatorio,Pendiente,
+F58,Compensación,Art 43,Opciones: Pago (Recargo 50%+) o Días de descanso adicional,Mandatorio,Pendiente,
+F59,Cálculo,Art 44,Cálculo con precisión hh:mm:ss sin aproximaciones,Mandatorio,Pendiente,Exactitud total
+F60,Alertas,Art 45.1,Alertas falta de marca (30 min después de hora pactada),Mandatorio,Pendiente,Correo a trabajador y empleador
+F61,Alertas,Art 45.3,Alerta cada 30 días de horas compensables acumuladas,Mandatorio,Pendiente,Solo si aplica compensación por descanso
+F62,Alertas,Art 45.4,Alerta desconexión teletrabajo (30 min antes del inicio),Mandatorio,Pendiente,
+F63,Flexibilidad,Art 46,Banda horaria: Elección inicio jornada (Padres/Cuidadores),Mandatorio,Pendiente,Ajuste automático de salida
+F64,Documentos,Art 47.1,Tipos: Anexos Pactos Notificaciones y Solicitudes,Mandatorio,Pendiente,
+F65,Documentos,Art 47.2a,Flujo Anexos/Pactos: Envío correo + Aceptación/Rechazo + Copia Firmada Auto,Mandatorio,Pendiente,Copia firmada a ambas partes
+F66,Documentos,Art 47.2b,Flujo Solicitudes: Menú opciones + Copia auto + Respuesta con opción de apelación,Mandatorio,Pendiente,
+F67,Firmas,Art 47.3,Firma electrónica simple (Claves/Biometría) para documentos bilaterales,Mandatorio,Pendiente,
+F68,Firmas,Art 47.3,Login/Identificación cuenta como firma para docs unilaterales (Notif/Solicitud),Mandatorio,Pendiente,
+F69,Firmas,Art 47.3,Admin de firmas por tercero independiente (Si es autodesarrollo),Mandatorio,Pendiente,
+F70,Privacidad,Art 57.4,Destrucción de datos personales post-relación (90-120 días),Mandatorio,Pendiente,
+F71,Responsabilidad,Art 62,Informar a clientes sobre autorización de entrega total de info a la DT,Mandatorio,Pendiente,
