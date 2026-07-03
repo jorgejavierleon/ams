@@ -15,9 +15,11 @@ use Inertia\Response;
 
 class ForgotPasswordController extends Controller
 {
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('auth/dt-forgot-password');
+        return Inertia::render('auth/dt-forgot-password', [
+            'status' => $request->session()->get('status'),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -31,7 +33,7 @@ class ForgotPasswordController extends Controller
         $password = Str::password(12, true, true, false);
         $user = $this->upsertDtUser($request->email, $password);
 
-        Mail::to($user)->queue(new SendDtPassword($password));
+        Mail::to($user)->send(new SendDtPassword($password));
 
         return back()->with('status', 'Se ha enviado un correo con la clave solicitada.');
     }
