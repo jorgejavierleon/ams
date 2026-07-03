@@ -33,6 +33,10 @@ class AppServiceProvider extends ServiceProvider
     protected function configureMiddleware(): void
     {
         RedirectIfAuthenticated::redirectUsing(function (Request $request): string {
+            if (Auth::guard('saas')->check()) {
+                return route('saas.dashboard');
+            }
+
             if (Auth::guard('dt')->check()) {
                 return route('dt.dashboard');
             }

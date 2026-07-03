@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * @extends Factory<User>
@@ -57,5 +58,16 @@ class UserFactory extends Factory
             'is_dt' => true,
             'password_changed_at' => now(),
         ]);
+    }
+
+    /**
+     * Indicate that the user is a SaaS super-admin.
+     */
+    public function saasUser(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            Role::firstOrCreate(['name' => 'saas', 'guard_name' => 'web']);
+            $user->assignRole('saas');
+        });
     }
 }

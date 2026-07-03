@@ -3,6 +3,7 @@
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\PasswordChangeController;
+use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -34,6 +35,22 @@ Route::prefix('dt')->name('dt.')->group(function () {
         Route::middleware('password_expires')->group(function () {
             Route::inertia('dashboard', 'dt/dashboard')->name('dashboard');
         });
+    });
+});
+
+// SaaS panel routes
+Route::prefix('saas')->name('saas.')->group(function () {
+    // Guest routes (unauthenticated SaaS users)
+    Route::middleware('guest:saas')->group(function () {
+        Route::get('login', [SaasLoginController::class, 'create'])->name('login');
+        Route::post('login', [SaasLoginController::class, 'store']);
+    });
+
+    // Authenticated SaaS routes
+    Route::middleware(['auth:saas'])->group(function () {
+        Route::post('logout', [SaasLoginController::class, 'destroy'])->name('logout');
+
+        Route::inertia('dashboard', 'saas/dashboard')->name('dashboard');
     });
 });
 
