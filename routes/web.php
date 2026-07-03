@@ -3,13 +3,25 @@
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\PasswordChangeController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
+use App\Http\Controllers\UserRoleController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
+});
+
+// Admin panel routes (role:admin required)
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::get('roles/{role}', [RoleController::class, 'show'])->name('roles.show');
+    Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+
+    Route::get('users/{user}/roles', [UserRoleController::class, 'show'])->name('users.roles');
+    Route::put('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');
 });
 
 // DT panel routes

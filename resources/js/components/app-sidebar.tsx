@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, ShieldCheck } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,6 +13,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as rolesIndex } from '@/routes/roles';
 import type { NavItem } from '@/types';
 
 const navGroups: Array<{ label: string; items: NavItem[] }> = [
@@ -22,7 +23,10 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
     },
     { label: 'Jornadas', items: [] },
     { label: 'Documentos', items: [] },
-    { label: 'Configuración', items: [] },
+    {
+        label: 'Configuración',
+        items: [{ title: 'Roles', href: rolesIndex(), icon: ShieldCheck }],
+    },
 ];
 
 export function AppSidebar() {
