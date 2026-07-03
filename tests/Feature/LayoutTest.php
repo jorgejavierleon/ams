@@ -21,5 +21,15 @@ test('shared Inertia props include auth user, flash data, and permissions', func
             ->has('auth.permissions')
             ->has('flash.success')
             ->has('flash.error')
+            ->has('flash.warning')
+        );
+});
+
+test('flash success message is present in Inertia shared data after redirect', function () {
+    $this->actingAs(User::factory()->create())
+        ->withSession(['success' => 'Record saved.'])
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->where('flash.success', 'Record saved.')
         );
 });
