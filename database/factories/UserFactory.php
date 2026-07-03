@@ -47,4 +47,15 @@ class UserFactory extends Factory
      * Indicate that the model has two-factor authentication configured.
      */
     public function withTwoFactor(): static {}
+
+    /**
+     * Indicate that the user is a DT inspector.
+     */
+    public function dtUser(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_dt' => true,
+            'password_changed_at' => now(),
+        ]);
+    }
 }

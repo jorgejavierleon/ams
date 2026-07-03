@@ -1,4 +1,5 @@
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import { LogOut } from 'lucide-react';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,10 +7,14 @@ import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserMenuContent } from '@/components/user-menu-content';
+import { UserInfo } from '@/components/user-info';
 import { useInitials } from '@/hooks/use-initials';
+import { logout } from '@/routes/dt';
 import type { AppLayoutProps } from '@/types';
 
 export default function DtLayout({ children }: AppLayoutProps) {
@@ -40,7 +45,23 @@ export default function DtLayout({ children }: AppLayoutProps) {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end">
-                                <UserMenuContent user={auth.user} />
+                                <DropdownMenuLabel className="p-0 font-normal">
+                                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                                        <UserInfo user={auth.user} showEmail={true} />
+                                    </div>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        className="block w-full cursor-pointer"
+                                        href={logout()}
+                                        as="button"
+                                        data-test="logout-button"
+                                    >
+                                        <LogOut className="mr-2" />
+                                        Cerrar sesión
+                                    </Link>
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}

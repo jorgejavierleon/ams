@@ -42,7 +42,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'dt' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
+
+    'passwords_expires_days' => env('AUTH_PASSWORD_EXPIRES_DAYS', 5),
 
     /*
     |--------------------------------------------------------------------------
