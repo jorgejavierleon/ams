@@ -41,8 +41,16 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $exceptions->renderable(function (AuthenticationException $exception, Request $request) {
-            if (! $request->expectsJson() && in_array('dt', $exception->guards())) {
+            if ($request->expectsJson()) {
+                return null;
+            }
+
+            if (in_array('dt', $exception->guards())) {
                 return redirect()->guest(route('dt.login'));
+            }
+
+            if (in_array('saas', $exception->guards())) {
+                return redirect()->guest(route('saas.login'));
             }
         });
     })->create();
