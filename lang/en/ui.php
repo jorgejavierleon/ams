@@ -32,6 +32,18 @@ return [
     'common' => [
         'save' => 'Save',
         'cancel' => 'Cancel',
+
+        'data_table' => [
+            'empty' => 'No results.',
+            'toggle_columns' => 'Columns',
+            'selected' => ':count of :total selected',
+            'pagination' => [
+                'showing' => 'Showing :from–:to of :total',
+                'none' => 'No results',
+                'previous' => 'Previous',
+                'next' => 'Next',
+            ],
+        ],
     ],
 
     'dashboard' => [

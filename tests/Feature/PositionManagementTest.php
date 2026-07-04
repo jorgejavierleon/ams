@@ -93,6 +93,72 @@ test('positions index can be searched by name', function () {
         );
 });
 
+test('positions index is sorted by name ascending by default', function () {
+    $admin = admin();
+    Position::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Zapatero']);
+    Position::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Albañil']);
+
+    $this->actingAs($admin)
+        ->get(route('positions.index'))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('positions.data.0.name', 'Albañil')
+                ->where('positions.data.1.name', 'Zapatero')
+                ->where('filters.sort', 'name')
+                ->where('filters.direction', 'asc'),
+        );
+});
+
+test('positions index can be sorted by name descending', function () {
+    $admin = admin();
+    Position::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Albañil']);
+    Position::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Zapatero']);
+
+    $this->actingAs($admin)
+        ->get(route('positions.index', ['sort' => 'name', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('positions.data.0.name', 'Zapatero')
+                ->where('positions.data.1.name', 'Albañil')
+                ->where('filters.direction', 'desc'),
+        );
+});
+
+test('positions index can be sorted by active employee count', function () {
+    $admin = admin();
+    $few = Position::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Few']);
+    $many = Position::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Many']);
+    User::factory()->create(['organization_id' => $admin->organization_id, 'position_id' => $few->id, 'is_active' => true]);
+    User::factory()->count(3)->create(['organization_id' => $admin->organization_id, 'position_id' => $many->id, 'is_active' => true]);
+
+    $this->actingAs($admin)
+        ->get(route('positions.index', ['sort' => 'active_users_count', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('positions.data.0.name', 'Many')
+                ->where('positions.data.1.name', 'Few'),
+        );
+});
+
+test('positions index ignores a disallowed sort column and falls back to the default', function () {
+    $admin = admin();
+    Position::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Beta']);
+    Position::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Alfa']);
+
+    $this->actingAs($admin)
+        ->get(route('positions.index', ['sort' => 'id', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('filters.sort', 'name')
+                ->where('filters.direction', 'asc')
+                ->where('positions.data.0.name', 'Alfa'),
+        );
+});
+
 // --- Create ---
 
 test('admin can create a position scoped to their organization', function () {
