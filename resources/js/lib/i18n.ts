@@ -26,11 +26,15 @@ export function translate(
         return key;
     }
 
-    return Object.entries(replacements).reduce(
-        (message, [token, replacement]) =>
-            message.replaceAll(`:${token}`, String(replacement)),
-        value,
-    );
+    // Replace longer tokens first so a token that is a prefix of another
+    // (e.g. `:to` within `:total`) does not corrupt the longer placeholder.
+    return Object.entries(replacements)
+        .sort(([a], [b]) => b.length - a.length)
+        .reduce(
+            (message, [token, replacement]) =>
+                message.replaceAll(`:${token}`, String(replacement)),
+            value,
+        );
 }
 
 /**

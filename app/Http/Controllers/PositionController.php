@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTableSort;
 use App\Models\Position;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -11,14 +12,21 @@ use Inertia\Response;
 
 class PositionController extends Controller
 {
+    use ResolvesTableSort;
+
     public function index(Request $request): Response
     {
         $search = $request->string('search')->trim()->value() ?: null;
+        ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
+            $request,
+            ['name', 'active_users_count'],
+            'name',
+        );
 
         $positions = Position::query()
             ->withCount('activeUsers')
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
-            ->orderBy('name')
+            ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
 
@@ -28,7 +36,7 @@ class PositionController extends Controller
                 'name' => $position->name,
                 'active_users_count' => $position->active_users_count,
             ]),
-            'filters' => ['search' => $search],
+            'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],
         ]);
     }
 
