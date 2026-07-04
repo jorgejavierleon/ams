@@ -53,6 +53,66 @@ test('organizations index can be searched by name', function () {
         );
 });
 
+test('organizations index defaults to sorting by name ascending and echoes filters', function () {
+    Organization::factory()->create(['name' => 'Zeta']);
+    Organization::factory()->create(['name' => 'Alpha']);
+
+    $this->actingAs(saasAdmin(), 'saas')
+        ->get(route('saas.organizations.index'))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('organizations.data.0.name', 'Alpha')
+                ->where('filters.sort', 'name')
+                ->where('filters.direction', 'asc')
+        );
+});
+
+test('organizations index can be sorted by name descending', function () {
+    Organization::factory()->create(['name' => 'Alpha']);
+    Organization::factory()->create(['name' => 'Zeta']);
+
+    $this->actingAs(saasAdmin(), 'saas')
+        ->get(route('saas.organizations.index', ['sort' => 'name', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('organizations.data.0.name', 'Zeta')
+                ->where('filters.direction', 'desc')
+        );
+});
+
+test('organizations index can be sorted by user count', function () {
+    $few = Organization::factory()->create(['name' => 'Few']);
+    $many = Organization::factory()->create(['name' => 'Many']);
+    User::factory()->create(['organization_id' => $few->id]);
+    User::factory()->count(3)->create(['organization_id' => $many->id]);
+
+    $this->actingAs(saasAdmin(), 'saas')
+        ->get(route('saas.organizations.index', ['sort' => 'users_count', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('organizations.data.0.name', 'Many')
+                ->where('organizations.data.1.name', 'Few')
+        );
+});
+
+test('organizations index ignores a disallowed sort column', function () {
+    Organization::factory()->create(['name' => 'Beta']);
+    Organization::factory()->create(['name' => 'Alpha']);
+
+    $this->actingAs(saasAdmin(), 'saas')
+        ->get(route('saas.organizations.index', ['sort' => 'password', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('filters.sort', 'name')
+                ->where('filters.direction', 'asc')
+                ->where('organizations.data.0.name', 'Alpha')
+        );
+});
+
 // --- Create ---
 
 test('saas admin can view the create page', function () {
