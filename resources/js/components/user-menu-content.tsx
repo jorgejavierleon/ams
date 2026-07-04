@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -8,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
+import { useTranslations } from '@/hooks/use-translations';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
@@ -18,6 +20,7 @@ type Props = {
 
 export function UserMenuContent({ user }: Props) {
     const cleanup = useMobileNavigation();
+    const { t } = useTranslations();
 
     const handleLogout = () => {
         cleanup();
@@ -41,10 +44,12 @@ export function UserMenuContent({ user }: Props) {
                         onClick={cleanup}
                     >
                         <Settings className="mr-2" />
-                        Settings
+                        {t('ui.user_menu.settings')}
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <LanguageSwitcher onNavigate={cleanup} />
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
                 <Link
@@ -55,7 +60,7 @@ export function UserMenuContent({ user }: Props) {
                     data-test="logout-button"
                 >
                     <LogOut className="mr-2" />
-                    Log out
+                    {t('ui.user_menu.logout')}
                 </Link>
             </DropdownMenuItem>
         </>

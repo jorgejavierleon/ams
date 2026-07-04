@@ -1,0 +1,101 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Líneas de idioma de la interfaz (UI)
+    |--------------------------------------------------------------------------
+    |
+    | Cadenas visibles para el usuario en el frontend de React. Este archivo es
+    | la única fuente de verdad: se expone al frontend mediante las props
+    | compartidas de Inertia (ver HandleInertiaRequests) y se consume con el
+    | helper t(). Agregue aquí toda cadena nueva y su equivalente en lang/en/ui.php.
+    |
+    */
+
+    'nav' => [
+        'organization' => 'Organización',
+        'workdays' => 'Jornadas',
+        'documents' => 'Documentos',
+        'settings' => 'Configuración',
+        'dashboard' => 'Panel',
+        'roles' => 'Roles',
+    ],
+
+    'user_menu' => [
+        'settings' => 'Configuración',
+        'logout' => 'Cerrar sesión',
+    ],
+
+    'common' => [
+        'save' => 'Guardar',
+        'cancel' => 'Cancelar',
+    ],
+
+    'dashboard' => [
+        'title' => 'Panel',
+    ],
+
+    'settings' => [
+        'title' => 'Configuración',
+        'description' => 'Administre su perfil y la configuración de su cuenta',
+
+        'nav' => [
+            'profile' => 'Perfil',
+            'security' => 'Seguridad',
+            'appearance' => 'Apariencia',
+        ],
+
+        'profile' => [
+            'head' => 'Configuración de perfil',
+            'title' => 'Perfil',
+            'description' => 'Actualice su nombre, correo electrónico y avatar',
+            'change_avatar' => 'Cambiar avatar',
+            'avatar_hint' => 'JPG, PNG o GIF. Máximo 2 MB.',
+            'name' => 'Nombre',
+            'name_placeholder' => 'Nombre completo',
+            'email' => 'Correo electrónico',
+            'email_placeholder' => 'Correo electrónico',
+            'unverified' => 'Su correo electrónico no está verificado.',
+            'resend' => 'Haga clic aquí para reenviar el correo de verificación.',
+            'verification_sent' => 'Se ha enviado un nuevo enlace de verificación a su correo electrónico.',
+        ],
+
+        'security' => [
+            'head' => 'Configuración de seguridad',
+            'title' => 'Actualizar contraseña',
+            'description' => 'Asegúrese de que su cuenta use una contraseña larga y aleatoria para mantenerse segura',
+            'current_password' => 'Contraseña actual',
+            'new_password' => 'Nueva contraseña',
+            'confirm_password' => 'Confirmar contraseña',
+        ],
+
+        'appearance' => [
+            'head' => 'Configuración de apariencia',
+            'title' => 'Configuración de apariencia',
+            'description' => 'Actualice la configuración de apariencia de su cuenta',
+            'light' => 'Claro',
+            'dark' => 'Oscuro',
+            'system' => 'Sistema',
+        ],
+
+        'delete' => [
+            'title' => 'Eliminar cuenta',
+            'description' => 'Elimine su cuenta y todos sus recursos',
+            'warning' => 'Advertencia',
+            'warning_body' => 'Proceda con precaución, esto no se puede deshacer.',
+            'button' => 'Eliminar cuenta',
+            'confirm_title' => '¿Está seguro de que desea eliminar su cuenta?',
+            'confirm_description' => 'Una vez eliminada su cuenta, todos sus recursos y datos se eliminarán de forma permanente. Ingrese su contraseña para confirmar que desea eliminar su cuenta de forma permanente.',
+            'password' => 'Contraseña',
+        ],
+    ],
+
+    'language' => [
+        'label' => 'Idioma',
+        'es' => 'Español',
+        'en' => 'Inglés',
+    ],
+
+];
