@@ -4,6 +4,7 @@ use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\PasswordChangeController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\PositionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use App\Http\Controllers\Saas\OrganizationController;
@@ -27,6 +28,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('users/{user}/roles', [UserRoleController::class, 'show'])->name('users.roles');
     Route::put('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');
+
+    Route::resource('positions', PositionController::class)
+        ->only(['index', 'store', 'show', 'update', 'destroy']);
 });
 
 // DT panel routes

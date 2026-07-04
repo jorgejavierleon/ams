@@ -21,6 +21,7 @@ return [
         'settings' => 'Settings',
         'dashboard' => 'Dashboard',
         'roles' => 'Roles',
+        'positions' => 'Positions',
     ],
 
     'user_menu' => [
@@ -155,6 +156,74 @@ return [
             'updated' => 'Organization updated.',
             'archived' => 'Organization archived.',
             'deleted' => 'Organization deleted.',
+        ],
+    ],
+
+    'positions' => [
+        'title' => 'Positions',
+        'description' => 'Job titles used to group employees',
+        'new' => 'New position',
+        'search_placeholder' => 'Search by name...',
+        'empty' => 'No positions found.',
+        'back' => 'Back to positions',
+
+        'columns' => [
+            'name' => 'Name',
+            'employees' => 'Employees',
+        ],
+
+        'actions' => [
+            'edit' => 'Rename',
+            'delete' => 'Delete',
+        ],
+
+        'pagination' => [
+            'showing' => 'Showing :from–:to of :total',
+            'none' => 'No results',
+            'previous' => 'Previous',
+            'next' => 'Next',
+        ],
+
+        'form' => [
+            'name' => 'Name',
+            'name_placeholder' => 'e.g. Supervisor',
+        ],
+
+        'create_dialog' => [
+            'title' => 'New position',
+            'submit' => 'Create position',
+        ],
+
+        'edit_dialog' => [
+            'title' => 'Rename position',
+            'submit' => 'Save changes',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete position',
+            'description' => 'Are you sure you want to delete :name? This action cannot be undone.',
+            'confirm' => 'Delete',
+        ],
+
+        'employees' => [
+            'title' => 'Employees',
+            'empty' => 'No employees assigned to this position.',
+            'columns' => [
+                'name' => 'Name',
+                'email' => 'Email',
+                'status' => 'Status',
+            ],
+            'status' => [
+                'active' => 'Active',
+                'inactive' => 'Inactive',
+            ],
+        ],
+
+        'flash' => [
+            'created' => 'Position created.',
+            'updated' => 'Position updated.',
+            'deleted' => 'Position deleted.',
+            'has_employees' => 'This position cannot be deleted while employees are assigned to it.',
         ],
     ],
 
