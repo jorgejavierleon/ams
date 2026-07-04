@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Saas;
 
+use App\Concerns\ResolvesTableSort;
 use App\Enums\Plan;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
@@ -13,14 +14,21 @@ use Inertia\Response;
 
 class OrganizationController extends Controller
 {
+    use ResolvesTableSort;
+
     public function index(Request $request): Response
     {
         $search = $request->string('search')->trim()->value() ?: null;
+        ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
+            $request,
+            ['name', 'slug', 'plan', 'users_count', 'created_at'],
+            'name',
+        );
 
         $organizations = Organization::query()
             ->withCount('users')
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
-            ->orderBy('name')
+            ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
 
@@ -33,7 +41,7 @@ class OrganizationController extends Controller
                 'users_count' => $organization->users_count,
                 'created_at' => $organization->created_at?->toDateString(),
             ]),
-            'filters' => ['search' => $search],
+            'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],
         ]);
     }
 
