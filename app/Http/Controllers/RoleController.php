@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTableSort;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -11,22 +12,34 @@ use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
+    use ResolvesTableSort;
+
     /** Roles reserved for system use — admins cannot manage these. */
     private const PROTECTED_ROLES = ['admin', 'dt', 'saas'];
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $search = $request->string('search')->trim()->value() ?: null;
+        ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
+            $request,
+            ['name', 'permissions_count'],
+            'name',
+        );
+
         $roles = Role::withCount('permissions')
             ->whereNotIn('name', self::PROTECTED_ROLES)
-            ->orderBy('name')
-            ->get();
+            ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
+            ->orderBy($sort, $direction)
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('roles/index', [
-            'roles' => $roles->map(fn (Role $role) => [
+            'roles' => $roles->through(fn (Role $role) => [
                 'id' => $role->id,
                 'name' => $role->name,
                 'permissions_count' => $role->permissions_count,
             ]),
+            'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],
         ]);
     }
 

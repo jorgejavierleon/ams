@@ -171,6 +171,22 @@ return [
         ],
     ],
 
+    'roles' => [
+        'title' => 'Roles',
+        'description' => 'Manage roles and their permissions',
+        'search_placeholder' => 'Search by name...',
+        'empty' => 'No roles found.',
+
+        'columns' => [
+            'role' => 'Role',
+            'permissions' => 'Permissions',
+        ],
+
+        'actions' => [
+            'manage' => 'Manage permissions',
+        ],
+    ],
+
     'positions' => [
         'title' => 'Positions',
         'description' => 'Job titles used to group employees',

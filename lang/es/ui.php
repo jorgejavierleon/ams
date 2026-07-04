@@ -171,6 +171,22 @@ return [
         ],
     ],
 
+    'roles' => [
+        'title' => 'Roles',
+        'description' => 'Gestione los roles y sus permisos',
+        'search_placeholder' => 'Buscar por nombre...',
+        'empty' => 'No se encontraron roles.',
+
+        'columns' => [
+            'role' => 'Rol',
+            'permissions' => 'Permisos',
+        ],
+
+        'actions' => [
+            'manage' => 'Gestionar permisos',
+        ],
+    ],
+
     'positions' => [
         'title' => 'Cargos',
         'description' => 'Cargos utilizados para agrupar a los empleados',
