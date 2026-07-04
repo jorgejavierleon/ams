@@ -56,7 +56,9 @@ $user->can('create_mark')       // MarkPolicy::create
 
 ## Multi-tenancy
 
-Organization-scoped via the `BelongsToOrganization` trait. All models belonging to an org must use this trait — it scopes queries to the current org in session. Never bypass this scope on org-owned models.
+Organization-scoped via the `App\Models\Concerns\BelongsToOrganization` trait. All models belonging to an org must use this trait. It applies `App\Models\Scopes\OrganizationScope` (constrains every read to the current org) and stamps `organization_id` on creation. Never bypass this scope on org-owned models.
+
+The "current organization" is resolved by `BelongsToOrganization::currentOrganizationId()`: it prefers an explicit `session('organization_id')` (set by the future tenant switcher, #48) and otherwise falls back to the authenticated user's `organization_id`. When neither resolves (unauthenticated requests, console commands, seeders) the scope is a **no-op**, leaving queries unscoped — so factories/seeders must set `organization_id` explicitly.
 
 ---
 

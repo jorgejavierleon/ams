@@ -21,6 +21,7 @@ return [
         'settings' => 'Configuración',
         'dashboard' => 'Panel',
         'roles' => 'Roles',
+        'positions' => 'Cargos',
     ],
 
     'user_menu' => [
@@ -155,6 +156,74 @@ return [
             'updated' => 'Organización actualizada.',
             'archived' => 'Organización archivada.',
             'deleted' => 'Organización eliminada.',
+        ],
+    ],
+
+    'positions' => [
+        'title' => 'Cargos',
+        'description' => 'Cargos utilizados para agrupar a los empleados',
+        'new' => 'Nuevo cargo',
+        'search_placeholder' => 'Buscar por nombre...',
+        'empty' => 'No se encontraron cargos.',
+        'back' => 'Volver a cargos',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'employees' => 'Empleados',
+        ],
+
+        'actions' => [
+            'edit' => 'Renombrar',
+            'delete' => 'Eliminar',
+        ],
+
+        'pagination' => [
+            'showing' => 'Mostrando :from–:to de :total',
+            'none' => 'Sin resultados',
+            'previous' => 'Anterior',
+            'next' => 'Siguiente',
+        ],
+
+        'form' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'ej. Supervisor',
+        ],
+
+        'create_dialog' => [
+            'title' => 'Nuevo cargo',
+            'submit' => 'Crear cargo',
+        ],
+
+        'edit_dialog' => [
+            'title' => 'Renombrar cargo',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar cargo',
+            'description' => '¿Está seguro de que desea eliminar :name? Esta acción no se puede deshacer.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'employees' => [
+            'title' => 'Empleados',
+            'empty' => 'No hay empleados asignados a este cargo.',
+            'columns' => [
+                'name' => 'Nombre',
+                'email' => 'Correo',
+                'status' => 'Estado',
+            ],
+            'status' => [
+                'active' => 'Activo',
+                'inactive' => 'Inactivo',
+            ],
+        ],
+
+        'flash' => [
+            'created' => 'Cargo creado.',
+            'updated' => 'Cargo actualizado.',
+            'deleted' => 'Cargo eliminado.',
+            'has_employees' => 'Este cargo no se puede eliminar mientras tenga empleados asignados.',
         ],
     ],
 

@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { LayoutGrid, ShieldCheck } from 'lucide-react';
+import { IdCard, LayoutGrid, ShieldCheck } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
+import { index as positionsIndex } from '@/routes/positions';
 import { index as rolesIndex } from '@/routes/roles';
 import type { NavItem } from '@/types';
 
@@ -28,6 +29,11 @@ export function AppSidebar() {
                     title: t('ui.nav.dashboard'),
                     href: dashboard(),
                     icon: LayoutGrid,
+                },
+                {
+                    title: t('ui.nav.positions'),
+                    href: positionsIndex(),
+                    icon: IdCard,
                 },
             ],
         },

@@ -19,9 +19,11 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property int $id
  * @property int|null $organization_id
+ * @property int|null $position_id
  * @property string $name
  * @property string $email
  * @property bool $is_dt
+ * @property bool $is_active
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property Carbon|null $password_changed_at
@@ -32,7 +34,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'is_dt', 'password_changed_at', 'organization_id'])]
+#[Fillable(['name', 'email', 'password', 'is_dt', 'is_active', 'password_changed_at', 'organization_id', 'position_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements HasMedia
 {
@@ -54,6 +56,14 @@ class User extends Authenticatable implements HasMedia
         return $this->belongsTo(Organization::class);
     }
 
+    /**
+     * @return BelongsTo<Position, $this>
+     */
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class);
+    }
+
     protected function avatar(): Attribute
     {
         return Attribute::get(fn () => $this->getFirstMediaUrl('avatar') ?: null);
@@ -71,6 +81,7 @@ class User extends Authenticatable implements HasMedia
             'password_changed_at' => 'datetime',
             'password' => 'hashed',
             'is_dt' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
