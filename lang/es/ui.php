@@ -98,4 +98,64 @@ return [
         'en' => 'Inglés',
     ],
 
+    'organizations' => [
+        'nav' => 'Organizaciones',
+        'title' => 'Organizaciones',
+        'description' => 'Administre las organizaciones inquilinas',
+        'new' => 'Nueva organización',
+        'search_placeholder' => 'Buscar por nombre...',
+        'empty' => 'No se encontraron organizaciones.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'slug' => 'Slug',
+            'plan' => 'Plan',
+            'users' => 'Usuarios',
+            'created' => 'Creada',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+        ],
+
+        'pagination' => [
+            'showing' => 'Mostrando :from–:to de :total',
+            'none' => 'Sin resultados',
+            'previous' => 'Anterior',
+            'next' => 'Siguiente',
+        ],
+
+        'form' => [
+            'name' => 'Nombre',
+            'slug' => 'Slug',
+            'plan' => 'Plan',
+            'plan_placeholder' => 'Seleccione un plan',
+        ],
+
+        'create' => [
+            'title' => 'Nueva organización',
+            'description' => 'Incorpore una nueva organización inquilina',
+            'submit' => 'Crear organización',
+        ],
+
+        'edit' => [
+            'title' => 'Editar organización',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar organización',
+            'description' => '¿Está seguro de que desea eliminar :name? Esta acción no se puede deshacer.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'flash' => [
+            'created' => 'Organización creada.',
+            'updated' => 'Organización actualizada.',
+            'archived' => 'Organización archivada.',
+            'deleted' => 'Organización eliminada.',
+        ],
+    ],
+
 ];

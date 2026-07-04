@@ -98,4 +98,64 @@ return [
         'en' => 'English',
     ],
 
+    'organizations' => [
+        'nav' => 'Organizations',
+        'title' => 'Organizations',
+        'description' => 'Manage tenant organizations',
+        'new' => 'New organization',
+        'search_placeholder' => 'Search by name...',
+        'empty' => 'No organizations found.',
+
+        'columns' => [
+            'name' => 'Name',
+            'slug' => 'Slug',
+            'plan' => 'Plan',
+            'users' => 'Users',
+            'created' => 'Created',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+        ],
+
+        'pagination' => [
+            'showing' => 'Showing :from–:to of :total',
+            'none' => 'No results',
+            'previous' => 'Previous',
+            'next' => 'Next',
+        ],
+
+        'form' => [
+            'name' => 'Name',
+            'slug' => 'Slug',
+            'plan' => 'Plan',
+            'plan_placeholder' => 'Select a plan',
+        ],
+
+        'create' => [
+            'title' => 'New organization',
+            'description' => 'Onboard a new tenant organization',
+            'submit' => 'Create organization',
+        ],
+
+        'edit' => [
+            'title' => 'Edit organization',
+            'submit' => 'Save changes',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete organization',
+            'description' => 'Are you sure you want to delete :name? This action cannot be undone.',
+            'confirm' => 'Delete',
+        ],
+
+        'flash' => [
+            'created' => 'Organization created.',
+            'updated' => 'Organization updated.',
+            'archived' => 'Organization archived.',
+            'deleted' => 'Organization deleted.',
+        ],
+    ],
+
 ];

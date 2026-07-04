@@ -6,6 +6,7 @@ use App\Http\Controllers\Dt\PasswordChangeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
+use App\Http\Controllers\Saas\OrganizationController;
 use App\Http\Controllers\UserRoleController;
 use Illuminate\Support\Facades\Route;
 
@@ -67,6 +68,11 @@ Route::prefix('saas')->name('saas.')->group(function () {
         Route::post('logout', [SaasLoginController::class, 'destroy'])->name('logout');
 
         Route::inertia('dashboard', 'saas/dashboard')->name('dashboard');
+
+        // Super-admin management (saas role required)
+        Route::middleware('role:saas,saas')->group(function () {
+            Route::resource('organizations', OrganizationController::class)->except('show');
+        });
     });
 });
 
