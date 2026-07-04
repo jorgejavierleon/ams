@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react';
+
 export default function Heading({
     title,
     description,
     variant = 'default',
 }: {
-    title: string;
+    title: ReactNode;
     description?: string;
     variant?: 'default' | 'small';
 }) {
