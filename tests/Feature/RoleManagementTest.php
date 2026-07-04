@@ -101,7 +101,7 @@ it('roles index does not include protected roles', function () {
         ->get(route('roles.index'))
         ->assertOk()
         ->assertInertia(function ($page) {
-            $names = collect($page->toArray()['props']['roles'])->pluck('name')->all();
+            $names = collect($page->toArray()['props']['roles']['data'])->pluck('name')->all();
             expect($names)->toContain('editor')
                 ->and($names)->not->toContain('admin')
                 ->and($names)->not->toContain('dt')
@@ -121,7 +121,55 @@ it('admin can view roles list', function () {
         ->assertInertia(
             fn ($page) => $page
                 ->component('roles/index')
-                ->has('roles')
+                ->has('roles.data')
+                ->where('filters.sort', 'name')
+                ->where('filters.direction', 'asc')
+        );
+});
+
+it('roles index can be searched by name', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'viewer', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->get(route('roles.index', ['search' => 'edit']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('roles.data', 1)
+                ->where('roles.data.0.name', 'editor')
+        );
+});
+
+it('roles index can be sorted by name descending', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    Role::firstOrCreate(['name' => 'alpha', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'omega', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->get(route('roles.index', ['sort' => 'name', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $names = collect($page->toArray()['props']['roles']['data'])->pluck('name')->all();
+            expect(array_search('omega', $names))->toBeLessThan(array_search('alpha', $names));
+        });
+});
+
+it('roles index ignores a disallowed sort column', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->get(route('roles.index', ['sort' => 'id', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('filters.sort', 'name')
+                ->where('filters.direction', 'asc')
         );
 });
 

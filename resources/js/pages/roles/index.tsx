@@ -1,8 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
+import { useMemo } from 'react';
+import { DataTable } from '@/components/data-table';
+import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useTranslations } from '@/hooks/use-translations';
 import { index, show } from '@/routes/roles';
+import type { Paginated } from '@/types/ui';
 
 type Role = {
     id: number;
@@ -11,53 +16,86 @@ type Role = {
 };
 
 type Props = {
-    roles: Role[];
+    roles: Paginated<Role>;
+    filters: {
+        search: string | null;
+        sort: string | null;
+        direction: 'asc' | 'desc' | null;
+    };
 };
 
-export default function RolesIndex({ roles }: Props) {
+export default function RolesIndex({ roles, filters }: Props) {
+    const { t } = useTranslations();
+
+    const columns = useMemo<ColumnDef<Role>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                meta: { title: t('ui.roles.columns.role') },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.roles.columns.role')}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <span className="font-medium capitalize">
+                        {row.original.name}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'permissions_count',
+                meta: { title: t('ui.roles.columns.permissions') },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.roles.columns.permissions')}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Badge variant="secondary">
+                        {row.original.permissions_count}
+                    </Badge>
+                ),
+            },
+            {
+                id: 'actions',
+                enableHiding: false,
+                meta: { headClassName: 'text-right', cellClassName: 'text-right' },
+                header: () => null,
+                cell: ({ row }) => (
+                    <Link
+                        href={show(row.original.id)}
+                        className="text-sm text-primary underline-offset-4 hover:underline"
+                    >
+                        {t('ui.roles.actions.manage')}
+                    </Link>
+                ),
+            },
+        ],
+        [t],
+    );
+
     return (
         <>
-            <Head title="Roles" />
+            <Head title={t('ui.roles.title')} />
 
             <div className="space-y-6 p-6">
-                <Heading title="Roles" description="Manage roles and their permissions" />
+                <Heading
+                    title={t('ui.roles.title')}
+                    description={t('ui.roles.description')}
+                />
 
-                <div className="rounded-lg border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Role</TableHead>
-                                <TableHead>Permissions</TableHead>
-                                <TableHead />
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {roles.map((role) => (
-                                <TableRow key={role.id}>
-                                    <TableCell className="font-medium capitalize">{role.name}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary">{role.permissions_count}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Link
-                                            href={show(role)}
-                                            className="text-sm text-primary underline-offset-4 hover:underline"
-                                        >
-                                            Manage permissions
-                                        </Link>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {roles.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                                        No roles found.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
+                <DataTable
+                    data={roles}
+                    columns={columns}
+                    routeUrl={index().url}
+                    filters={filters}
+                    only={['roles', 'filters']}
+                    searchPlaceholder={t('ui.roles.search_placeholder')}
+                    emptyLabel={t('ui.roles.empty')}
+                />
             </div>
         </>
     );
