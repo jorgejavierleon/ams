@@ -38,6 +38,10 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'locale' => app()->getLocale(),
+            'localeTag' => config('localization.supported.'.app()->getLocale(), app()->getLocale()),
+            'supportedLocales' => array_keys(config('localization.supported')),
+            'translations' => $this->translations(),
             'auth' => [
                 'user' => $request->user(),
                 'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? collect(),
@@ -49,5 +53,21 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * The UI translation catalogs for the active locale, keyed by namespace.
+     *
+     * Laravel's lang files are the single source of truth; the frontend t()
+     * helper reads this payload. Missing keys fall back to the app's
+     * fallback_locale automatically via the translator.
+     *
+     * @return array<string, mixed>
+     */
+    private function translations(): array
+    {
+        return collect(config('localization.shared_namespaces'))
+            ->mapWithKeys(fn (string $namespace) => [$namespace => trans($namespace)])
+            ->all();
     }
 }

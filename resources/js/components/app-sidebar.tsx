@@ -12,24 +12,39 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
 import { index as rolesIndex } from '@/routes/roles';
 import type { NavItem } from '@/types';
 
-const navGroups: Array<{ label: string; items: NavItem[] }> = [
-    {
-        label: 'Organización',
-        items: [{ title: 'Dashboard', href: dashboard(), icon: LayoutGrid }],
-    },
-    { label: 'Jornadas', items: [] },
-    { label: 'Documentos', items: [] },
-    {
-        label: 'Configuración',
-        items: [{ title: 'Roles', href: rolesIndex(), icon: ShieldCheck }],
-    },
-];
-
 export function AppSidebar() {
+    const { t } = useTranslations();
+
+    const navGroups: Array<{ label: string; items: NavItem[] }> = [
+        {
+            label: t('ui.nav.organization'),
+            items: [
+                {
+                    title: t('ui.nav.dashboard'),
+                    href: dashboard(),
+                    icon: LayoutGrid,
+                },
+            ],
+        },
+        { label: t('ui.nav.workdays'), items: [] },
+        { label: t('ui.nav.documents'), items: [] },
+        {
+            label: t('ui.nav.settings'),
+            items: [
+                {
+                    title: t('ui.nav.roles'),
+                    href: rolesIndex(),
+                    icon: ShieldCheck,
+                },
+            ],
+        },
+    ];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
