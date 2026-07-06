@@ -22,6 +22,7 @@ return [
         'dashboard' => 'Panel',
         'roles' => 'Roles',
         'positions' => 'Cargos',
+        'companies' => 'Empresas',
     ],
 
     'user_menu' => [
@@ -252,6 +253,93 @@ return [
             'updated' => 'Cargo actualizado.',
             'deleted' => 'Cargo eliminado.',
             'has_employees' => 'Este cargo no se puede eliminar mientras tenga empleados asignados.',
+        ],
+    ],
+
+    'companies' => [
+        'title' => 'Empresas',
+        'description' => 'Entidades legales dentro de tu organización',
+        'new' => 'Nueva empresa',
+        'search_placeholder' => 'Buscar por nombre o RUT...',
+        'empty' => 'No se encontraron empresas.',
+
+        'columns' => [
+            'name' => 'Empresa',
+            'rut' => 'RUT',
+            'region' => 'Región',
+            'commune' => 'Comuna',
+            'employees' => 'Empleados',
+            'status' => 'Estado',
+        ],
+
+        'status' => [
+            'active' => 'Activa',
+            'inactive' => 'Inactiva',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+        ],
+
+        'form' => [
+            'details' => 'Datos de la empresa',
+            'social_reason' => 'Razón social',
+            'rut' => 'RUT',
+            'rut_placeholder' => '12.345.678-9',
+            'business_line' => 'Giro',
+            'email' => 'Correo electrónico',
+            'region' => 'Región',
+            'region_placeholder' => 'Selecciona una región',
+            'region_search' => 'Buscar región...',
+            'region_empty' => 'No se encontraron regiones.',
+            'commune' => 'Comuna',
+            'commune_placeholder' => 'Selecciona una comuna',
+            'commune_search' => 'Buscar comuna...',
+            'commune_empty' => 'No se encontraron comunas.',
+            'commune_loading' => 'Cargando comunas...',
+            'commune_region_first' => 'Selecciona primero una región',
+            'address' => 'Dirección',
+            'address_hint' => 'Nombre de la calle y número',
+            'phone' => 'Teléfono',
+            'company_type' => 'Tipo de empresa',
+            'is_est' => 'Empresa de servicios transitorios (EST)',
+            'is_active' => 'Activa',
+
+            'representatives' => 'Representantes legales',
+            'representatives_hint' => 'Cada representante se crea como usuario de la empresa.',
+            'add_representative' => 'Agregar representante',
+            'no_representatives' => 'Aún no se han agregado representantes.',
+            'rep_rut' => 'RUT',
+            'rep_first_name' => 'Nombre',
+            'rep_last_name' => 'Apellido paterno',
+            'rep_second_last_name' => 'Apellido materno',
+            'rep_email' => 'Correo electrónico',
+            'remove' => 'Eliminar',
+        ],
+
+        'create' => [
+            'title' => 'Nueva empresa',
+            'description' => 'Registra una nueva empresa',
+            'submit' => 'Crear empresa',
+        ],
+
+        'edit' => [
+            'title' => 'Editar empresa',
+            'description' => 'Actualiza los datos y representantes de la empresa',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar empresa',
+            'description' => '¿Seguro que quieres eliminar :name? Podrá restaurarse más adelante.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'flash' => [
+            'created' => 'Empresa creada.',
+            'updated' => 'Empresa actualizada.',
+            'deleted' => 'Empresa eliminada.',
         ],
     ],
 

@@ -88,6 +88,18 @@ Chile ships first, so `es` (formatted as `es-CL`) is the default locale; the app
 
 ---
 
+## Chilean RUT handling
+
+RUTs are validated and formatted by the self-contained `App\Support\Rut` helper — we deliberately did **not** port the old app's `freshwork/chilean-bundle` dependency. Use it everywhere a RUT is touched:
+
+- `App\Rules\ValidRut` — the validation rule (modulo-11 verifier check); message key `validation.rut`.
+- `App\Models\Concerns\FormatedRut` — model trait that normalises the `rut` attribute to canonical `body-dv` form (e.g. `12345678-5`) on write and exposes a `formatted_rut` accessor (`12.345.678-5`) for display. Applied to `Company` and `User`.
+- Normalise incoming RUTs (via `Rut::normalize`) **before** validating, so `unique` checks and stored values share the same canonical form.
+
+Legal representatives are not a separate model: they are `User` rows with `is_legal_rep = true` and a `company_id`, exposed via `Company::representatives()`.
+
+---
+
 ## Old App Reference
 
 When implementing a feature, always check `../ams-filament` first:
