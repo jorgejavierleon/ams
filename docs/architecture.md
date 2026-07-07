@@ -77,6 +77,14 @@ Use Wayfinder for all TypeScript route references. Import from `@/actions/` (con
 
 ---
 
+## Client-only libraries under SSR
+
+Inertia SSR (`config/inertia.php` → `ssr.enabled`) evaluates page modules in Node, where `window`/`document` are absent. A library that touches the DOM at **import time** (e.g. Leaflet) will crash the server render of any page that imports it — a `mounted` state guard is not enough, because the import runs before render.
+
+Pattern (see `MapPicker`/`MapCanvas`): put the browser-only library and its React bindings in a **separate module**, load it with `React.lazy(() => import(...))`, and gate rendering on a client check via `useSyncExternalStore(subscribe, () => true, () => false)` (returns `false` on the server, so the `import()` never runs there). Avoid `useEffect(() => setState(true))` for this — the `react-hooks/set-state-in-effect` lint rule rejects it. Wrap the map in an error boundary so its fallback (here, manual lat/lng inputs) stays usable if the library or a remote tile/geocoding service fails.
+
+---
+
 ## Localization (i18n)
 
 Chile ships first, so `es` (formatted as `es-CL`) is the default locale; the app is built to be translatable, with English wired end-to-end but its catalogs kept partial until an English rollout is planned. Supported locales live in `config/localization.php`.

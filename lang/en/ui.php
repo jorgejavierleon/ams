@@ -23,6 +23,7 @@ return [
         'roles' => 'Roles',
         'positions' => 'Positions',
         'companies' => 'Companies',
+        'premises' => 'Premises',
     ],
 
     'user_menu' => [
@@ -340,6 +341,87 @@ return [
             'created' => 'Company created.',
             'updated' => 'Company updated.',
             'deleted' => 'Company deleted.',
+        ],
+    ],
+
+    'premises' => [
+        'title' => 'Premises',
+        'description' => 'Physical work locations belonging to your companies',
+        'new' => 'New premise',
+        'search_placeholder' => 'Search by name, code or address...',
+        'empty' => 'No premises found.',
+
+        'columns' => [
+            'name' => 'Name',
+            'company' => 'Company',
+            'address' => 'Address',
+            'coordinates' => 'Location',
+        ],
+
+        'coordinates' => [
+            'set' => 'Geolocated',
+            'unset' => 'No coordinates',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+        ],
+
+        'form' => [
+            'details' => 'Premise details',
+            'company' => 'Company',
+            'company_placeholder' => 'Select a company',
+            'company_search' => 'Search company...',
+            'company_empty' => 'No companies found.',
+            'name' => 'Name',
+            'code' => 'Code',
+            'address' => 'Address',
+            'country' => 'Country',
+            'region' => 'Region',
+            'commune' => 'Commune',
+            'location' => 'Location',
+            'location_hint' => 'Click the map or drag the marker to set the coordinates.',
+            'lat' => 'Latitude',
+            'lng' => 'Longitude',
+            'responsable' => 'Person in charge',
+            'responsable_name' => 'Name',
+            'responsable_email' => 'Email',
+            'responsable_phone' => 'Phone',
+        ],
+
+        'map' => [
+            'search' => 'Search',
+            'search_placeholder' => 'Search an address...',
+            'loading' => 'Loading map...',
+            'not_found' => 'No results for that address.',
+            'hint' => 'Click the map or drag the marker to place this premise.',
+            'unavailable' => 'The map could not be loaded. Enter the coordinates manually below.',
+        ],
+
+        'create' => [
+            'title' => 'New premise',
+            'description' => 'Register a new work location',
+            'submit' => 'Create premise',
+        ],
+
+        'edit' => [
+            'title' => 'Edit premise',
+            'description' => 'Update premise details and location',
+            'submit' => 'Save changes',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete premise',
+            'description' => 'Are you sure you want to delete :name? It can be restored later.',
+            'confirm' => 'Delete',
+        ],
+
+        'flash' => [
+            'created' => 'Premise created.',
+            'updated' => 'Premise updated.',
+            'deleted' => 'Premise deleted.',
+            'has_employees' => 'This premise has active employees assigned and cannot be deleted.',
         ],
     ],
 
