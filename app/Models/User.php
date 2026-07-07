@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\FormatedRut;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -19,11 +20,18 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property int $id
  * @property int|null $organization_id
+ * @property int|null $company_id
  * @property int|null $position_id
  * @property string $name
+ * @property string|null $first_name
+ * @property string|null $last_name
+ * @property string|null $second_last_name
+ * @property string|null $rut
  * @property string $email
+ * @property string|null $personal_email
  * @property bool $is_dt
  * @property bool $is_active
+ * @property bool $is_legal_rep
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property Carbon|null $password_changed_at
@@ -34,12 +42,12 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'is_dt', 'is_active', 'password_changed_at', 'organization_id', 'position_id'])]
+#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'password_changed_at', 'organization_id', 'company_id', 'position_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements HasMedia
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, InteractsWithMedia, Notifiable;
+    use FormatedRut, HasFactory, HasRoles, InteractsWithMedia, Notifiable;
 
     protected $appends = ['avatar'];
 
@@ -54,6 +62,14 @@ class User extends Authenticatable implements HasMedia
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * @return BelongsTo<Company, $this>
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     /**
@@ -82,6 +98,7 @@ class User extends Authenticatable implements HasMedia
             'password' => 'hashed',
             'is_dt' => 'boolean',
             'is_active' => 'boolean',
+            'is_legal_rep' => 'boolean',
         ];
     }
 

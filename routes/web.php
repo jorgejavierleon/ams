@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\CommuneController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\PasswordChangeController;
@@ -31,6 +33,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::resource('positions', PositionController::class)
         ->only(['index', 'store', 'show', 'update', 'destroy']);
+
+    Route::resource('companies', CompanyController::class)
+        ->except(['show']);
+
+    Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
+        ->name('regions.communes');
 });
 
 // DT panel routes

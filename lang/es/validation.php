@@ -161,6 +161,7 @@ return [
     'url' => 'El campo :attribute debe ser una URL válida.',
     'ulid' => 'El campo :attribute debe ser un ULID válido.',
     'uuid' => 'El campo :attribute debe ser un UUID válido.',
+    'rut' => 'El :attribute ingresado no es válido.',
 
     /*
     |--------------------------------------------------------------------------
@@ -180,6 +181,21 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'social_reason' => 'razón social',
+        'rut' => 'RUT',
+        'business_line' => 'giro',
+        'email' => 'correo electrónico',
+        'region_id' => 'región',
+        'commune_id' => 'comuna',
+        'address' => 'dirección',
+        'phone' => 'teléfono',
+        'company_type' => 'tipo de empresa',
+        'representatives.*.rut' => 'RUT del representante',
+        'representatives.*.first_name' => 'nombre del representante',
+        'representatives.*.last_name' => 'apellido paterno del representante',
+        'representatives.*.second_last_name' => 'apellido materno del representante',
+        'representatives.*.email' => 'correo del representante',
+    ],
 
 ];

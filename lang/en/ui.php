@@ -22,6 +22,7 @@ return [
         'dashboard' => 'Dashboard',
         'roles' => 'Roles',
         'positions' => 'Positions',
+        'companies' => 'Companies',
     ],
 
     'user_menu' => [
@@ -252,6 +253,93 @@ return [
             'updated' => 'Position updated.',
             'deleted' => 'Position deleted.',
             'has_employees' => 'This position cannot be deleted while employees are assigned to it.',
+        ],
+    ],
+
+    'companies' => [
+        'title' => 'Companies',
+        'description' => 'Legal entities within your organization',
+        'new' => 'New company',
+        'search_placeholder' => 'Search by name or RUT...',
+        'empty' => 'No companies found.',
+
+        'columns' => [
+            'name' => 'Company',
+            'rut' => 'RUT',
+            'region' => 'Region',
+            'commune' => 'Commune',
+            'employees' => 'Employees',
+            'status' => 'Status',
+        ],
+
+        'status' => [
+            'active' => 'Active',
+            'inactive' => 'Inactive',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+        ],
+
+        'form' => [
+            'details' => 'Company details',
+            'social_reason' => 'Company name',
+            'rut' => 'RUT',
+            'rut_placeholder' => '12.345.678-9',
+            'business_line' => 'Business line',
+            'email' => 'Email',
+            'region' => 'Region',
+            'region_placeholder' => 'Select a region',
+            'region_search' => 'Search region...',
+            'region_empty' => 'No regions found.',
+            'commune' => 'Commune',
+            'commune_placeholder' => 'Select a commune',
+            'commune_search' => 'Search commune...',
+            'commune_empty' => 'No communes found.',
+            'commune_loading' => 'Loading communes...',
+            'commune_region_first' => 'Select a region first',
+            'address' => 'Address',
+            'address_hint' => 'Street name and number',
+            'phone' => 'Phone',
+            'company_type' => 'Company type',
+            'is_est' => 'Temporary services company (EST)',
+            'is_active' => 'Active',
+
+            'representatives' => 'Legal representatives',
+            'representatives_hint' => 'Each representative is created as a company user.',
+            'add_representative' => 'Add representative',
+            'no_representatives' => 'No representatives added yet.',
+            'rep_rut' => 'RUT',
+            'rep_first_name' => 'First name',
+            'rep_last_name' => 'Last name',
+            'rep_second_last_name' => 'Second last name',
+            'rep_email' => 'Email',
+            'remove' => 'Remove',
+        ],
+
+        'create' => [
+            'title' => 'New company',
+            'description' => 'Register a new company',
+            'submit' => 'Create company',
+        ],
+
+        'edit' => [
+            'title' => 'Edit company',
+            'description' => 'Update company details and representatives',
+            'submit' => 'Save changes',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete company',
+            'description' => 'Are you sure you want to delete :name? It can be restored later.',
+            'confirm' => 'Delete',
+        ],
+
+        'flash' => [
+            'created' => 'Company created.',
+            'updated' => 'Company updated.',
+            'deleted' => 'Company deleted.',
         ],
     ],
 
