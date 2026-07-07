@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Building2, IdCard, LayoutGrid, ShieldCheck } from 'lucide-react';
+import { Building2, IdCard, LayoutGrid, MapPin, ShieldCheck } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -16,6 +16,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
 import { index as companiesIndex } from '@/routes/companies';
 import { index as positionsIndex } from '@/routes/positions';
+import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
 import type { NavItem } from '@/types';
 
@@ -35,6 +36,11 @@ export function AppSidebar() {
                     title: t('ui.nav.companies'),
                     href: companiesIndex(),
                     icon: Building2,
+                },
+                {
+                    title: t('ui.nav.premises'),
+                    href: premisesIndex(),
+                    icon: MapPin,
                 },
                 {
                     title: t('ui.nav.positions'),

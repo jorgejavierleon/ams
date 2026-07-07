@@ -23,6 +23,7 @@ return [
         'roles' => 'Roles',
         'positions' => 'Cargos',
         'companies' => 'Empresas',
+        'premises' => 'Sucursales',
     ],
 
     'user_menu' => [
@@ -340,6 +341,87 @@ return [
             'created' => 'Empresa creada.',
             'updated' => 'Empresa actualizada.',
             'deleted' => 'Empresa eliminada.',
+        ],
+    ],
+
+    'premises' => [
+        'title' => 'Sucursales',
+        'description' => 'Ubicaciones físicas de trabajo de tus empresas',
+        'new' => 'Nueva sucursal',
+        'search_placeholder' => 'Buscar por nombre, código o dirección...',
+        'empty' => 'No se encontraron sucursales.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'company' => 'Empresa',
+            'address' => 'Dirección',
+            'coordinates' => 'Ubicación',
+        ],
+
+        'coordinates' => [
+            'set' => 'Geolocalizada',
+            'unset' => 'Sin coordenadas',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+        ],
+
+        'form' => [
+            'details' => 'Datos de la sucursal',
+            'company' => 'Empresa',
+            'company_placeholder' => 'Selecciona una empresa',
+            'company_search' => 'Buscar empresa...',
+            'company_empty' => 'No se encontraron empresas.',
+            'name' => 'Nombre',
+            'code' => 'Código',
+            'address' => 'Dirección',
+            'country' => 'País',
+            'region' => 'Región',
+            'commune' => 'Comuna',
+            'location' => 'Ubicación',
+            'location_hint' => 'Haz clic en el mapa o arrastra el marcador para fijar las coordenadas.',
+            'lat' => 'Latitud',
+            'lng' => 'Longitud',
+            'responsable' => 'Responsable',
+            'responsable_name' => 'Nombre',
+            'responsable_email' => 'Email',
+            'responsable_phone' => 'Teléfono',
+        ],
+
+        'map' => [
+            'search' => 'Buscar',
+            'search_placeholder' => 'Buscar una dirección...',
+            'loading' => 'Cargando mapa...',
+            'not_found' => 'Sin resultados para esa dirección.',
+            'hint' => 'Haz clic en el mapa o arrastra el marcador para ubicar esta sucursal.',
+            'unavailable' => 'No se pudo cargar el mapa. Ingresa las coordenadas manualmente abajo.',
+        ],
+
+        'create' => [
+            'title' => 'Nueva sucursal',
+            'description' => 'Registra una nueva ubicación de trabajo',
+            'submit' => 'Crear sucursal',
+        ],
+
+        'edit' => [
+            'title' => 'Editar sucursal',
+            'description' => 'Actualiza los datos y la ubicación de la sucursal',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar sucursal',
+            'description' => '¿Seguro que quieres eliminar :name? Podrá restaurarse más adelante.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'flash' => [
+            'created' => 'Sucursal creada.',
+            'updated' => 'Sucursal actualizada.',
+            'deleted' => 'Sucursal eliminada.',
+            'has_employees' => 'Esta sucursal tiene empleados activos asignados y no se puede eliminar.',
         ],
     ],
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\PasswordChangeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PositionController;
+use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use App\Http\Controllers\Saas\OrganizationController;
@@ -35,6 +36,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->only(['index', 'store', 'show', 'update', 'destroy']);
 
     Route::resource('companies', CompanyController::class)
+        ->except(['show']);
+
+    Route::resource('premises', PremiseController::class)
         ->except(['show']);
 
     Route::get('regions/{region}/communes', [CommuneController::class, 'index'])

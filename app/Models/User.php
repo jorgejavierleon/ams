@@ -22,6 +22,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int|null $organization_id
  * @property int|null $company_id
  * @property int|null $position_id
+ * @property int|null $premise_id
  * @property string $name
  * @property string|null $first_name
  * @property string|null $last_name
@@ -42,7 +43,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'password_changed_at', 'organization_id', 'company_id', 'position_id'])]
+#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'password_changed_at', 'organization_id', 'company_id', 'position_id', 'premise_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements HasMedia
 {
@@ -78,6 +79,14 @@ class User extends Authenticatable implements HasMedia
     public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class);
+    }
+
+    /**
+     * @return BelongsTo<Premise, $this>
+     */
+    public function premise(): BelongsTo
+    {
+        return $this->belongsTo(Premise::class);
     }
 
     protected function avatar(): Attribute
