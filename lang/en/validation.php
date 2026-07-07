@@ -196,6 +196,21 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'social_reason' => 'company name',
+        'rut' => 'RUT',
+        'business_line' => 'business line',
+        'email' => 'email',
+        'region_id' => 'region',
+        'commune_id' => 'commune',
+        'address' => 'address',
+        'phone' => 'phone',
+        'company_type' => 'company type',
+        'representatives.*.rut' => 'representative RUT',
+        'representatives.*.first_name' => 'representative first name',
+        'representatives.*.last_name' => 'representative last name',
+        'representatives.*.second_last_name' => 'representative second last name',
+        'representatives.*.email' => 'representative email',
+    ],
 
 ];

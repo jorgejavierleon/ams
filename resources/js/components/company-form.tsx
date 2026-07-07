@@ -3,11 +3,10 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Combobox } from '@/components/combobox';
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslations } from '@/hooks/use-translations';
 import { index } from '@/routes/companies';
@@ -171,104 +170,108 @@ export default function CompanyForm({
     }));
 
     return (
-        <form onSubmit={submit} className="grid max-w-3xl gap-8">
+        // Validation is server-driven; `noValidate` disables native browser
+        // validation so Inertia surfaces all errors at once, translated.
+        <form onSubmit={submit} noValidate className="grid max-w-3xl gap-8">
             <section className="grid gap-6">
                 <h2 className="text-sm font-medium text-muted-foreground">
                     {t('ui.companies.form.details')}
                 </h2>
 
                 <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                        <Label htmlFor="social_reason">
-                            {t('ui.companies.form.social_reason')}
-                        </Label>
+                    <FormField
+                        label={t('ui.companies.form.social_reason')}
+                        htmlFor="social_reason"
+                        required
+                        error={errors.social_reason}
+                    >
                         <Input
                             id="social_reason"
                             value={data.social_reason}
                             onChange={(e) =>
                                 setData('social_reason', e.target.value)
                             }
-                            required
                             autoFocus
                         />
-                        <InputError message={errors.social_reason} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="rut">
-                            {t('ui.companies.form.rut')}
-                        </Label>
+                    <FormField
+                        label={t('ui.companies.form.rut')}
+                        htmlFor="rut"
+                        required
+                        error={errors.rut}
+                    >
                         <Input
                             id="rut"
                             value={data.rut}
                             onChange={(e) => setData('rut', e.target.value)}
                             placeholder={t('ui.companies.form.rut_placeholder')}
-                            required
                         />
-                        <InputError message={errors.rut} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="business_line">
-                            {t('ui.companies.form.business_line')}
-                        </Label>
+                    <FormField
+                        label={t('ui.companies.form.business_line')}
+                        htmlFor="business_line"
+                        required
+                        error={errors.business_line}
+                    >
                         <Input
                             id="business_line"
                             value={data.business_line}
                             onChange={(e) =>
                                 setData('business_line', e.target.value)
                             }
-                            required
                         />
-                        <InputError message={errors.business_line} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="company_type">
-                            {t('ui.companies.form.company_type')}
-                        </Label>
+                    <FormField
+                        label={t('ui.companies.form.company_type')}
+                        htmlFor="company_type"
+                        required
+                        error={errors.company_type}
+                    >
                         <Input
                             id="company_type"
                             value={data.company_type}
                             onChange={(e) =>
                                 setData('company_type', e.target.value)
                             }
-                            required
                         />
-                        <InputError message={errors.company_type} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">
-                            {t('ui.companies.form.email')}
-                        </Label>
+                    <FormField
+                        label={t('ui.companies.form.email')}
+                        htmlFor="email"
+                        required
+                        error={errors.email}
+                    >
                         <Input
                             id="email"
                             type="email"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
-                            required
                         />
-                        <InputError message={errors.email} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="phone">
-                            {t('ui.companies.form.phone')}
-                        </Label>
+                    <FormField
+                        label={t('ui.companies.form.phone')}
+                        htmlFor="phone"
+                        required
+                        error={errors.phone}
+                    >
                         <Input
                             id="phone"
                             value={data.phone}
                             onChange={(e) => setData('phone', e.target.value)}
-                            required
                         />
-                        <InputError message={errors.phone} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="region_id">
-                            {t('ui.companies.form.region')}
-                        </Label>
+                    <FormField
+                        label={t('ui.companies.form.region')}
+                        htmlFor="region_id"
+                        required
+                        error={errors.region_id}
+                    >
                         <Combobox
                             id="region_id"
                             options={regionOptions}
@@ -282,13 +285,14 @@ export default function CompanyForm({
                             )}
                             emptyLabel={t('ui.companies.form.region_empty')}
                         />
-                        <InputError message={errors.region_id} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="commune_id">
-                            {t('ui.companies.form.commune')}
-                        </Label>
+                    <FormField
+                        label={t('ui.companies.form.commune')}
+                        htmlFor="commune_id"
+                        required
+                        error={errors.commune_id}
+                    >
                         <Combobox
                             id="commune_id"
                             options={communeOptions}
@@ -307,22 +311,22 @@ export default function CompanyForm({
                             )}
                             emptyLabel={t('ui.companies.form.commune_empty')}
                         />
-                        <InputError message={errors.commune_id} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2 sm:col-span-2">
-                        <Label htmlFor="address">
-                            {t('ui.companies.form.address')}
-                        </Label>
+                    <FormField
+                        label={t('ui.companies.form.address')}
+                        htmlFor="address"
+                        required
+                        error={errors.address}
+                        hint={t('ui.companies.form.address_hint')}
+                        className="sm:col-span-2"
+                    >
                         <Input
                             id="address"
                             value={data.address}
                             onChange={(e) => setData('address', e.target.value)}
-                            placeholder={t('ui.companies.form.address_hint')}
-                            required
                         />
-                        <InputError message={errors.address} />
-                    </div>
+                    </FormField>
                 </div>
 
                 <div className="flex flex-wrap gap-6">
@@ -378,10 +382,14 @@ export default function CompanyForm({
                             key={index}
                             className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2"
                         >
-                            <div className="grid gap-2">
-                                <Label htmlFor={`rep-${index}-rut`}>
-                                    {t('ui.companies.form.rep_rut')}
-                                </Label>
+                            <FormField
+                                label={t('ui.companies.form.rep_rut')}
+                                htmlFor={`rep-${index}-rut`}
+                                required
+                                error={
+                                    fieldErrors[`representatives.${index}.rut`]
+                                }
+                            >
                                 <Input
                                     id={`rep-${index}-rut`}
                                     value={representative.rut}
@@ -392,21 +400,19 @@ export default function CompanyForm({
                                             e.target.value,
                                         )
                                     }
-                                    required
                                 />
-                                <InputError
-                                    message={
-                                        fieldErrors[
-                                            `representatives.${index}.rut`
-                                        ]
-                                    }
-                                />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor={`rep-${index}-email`}>
-                                    {t('ui.companies.form.rep_email')}
-                                </Label>
+                            <FormField
+                                label={t('ui.companies.form.rep_email')}
+                                htmlFor={`rep-${index}-email`}
+                                required
+                                error={
+                                    fieldErrors[
+                                        `representatives.${index}.email`
+                                    ]
+                                }
+                            >
                                 <Input
                                     id={`rep-${index}-email`}
                                     type="email"
@@ -418,21 +424,19 @@ export default function CompanyForm({
                                             e.target.value,
                                         )
                                     }
-                                    required
                                 />
-                                <InputError
-                                    message={
-                                        fieldErrors[
-                                            `representatives.${index}.email`
-                                        ]
-                                    }
-                                />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor={`rep-${index}-first_name`}>
-                                    {t('ui.companies.form.rep_first_name')}
-                                </Label>
+                            <FormField
+                                label={t('ui.companies.form.rep_first_name')}
+                                htmlFor={`rep-${index}-first_name`}
+                                required
+                                error={
+                                    fieldErrors[
+                                        `representatives.${index}.first_name`
+                                    ]
+                                }
+                            >
                                 <Input
                                     id={`rep-${index}-first_name`}
                                     value={representative.first_name}
@@ -443,21 +447,19 @@ export default function CompanyForm({
                                             e.target.value,
                                         )
                                     }
-                                    required
                                 />
-                                <InputError
-                                    message={
-                                        fieldErrors[
-                                            `representatives.${index}.first_name`
-                                        ]
-                                    }
-                                />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor={`rep-${index}-last_name`}>
-                                    {t('ui.companies.form.rep_last_name')}
-                                </Label>
+                            <FormField
+                                label={t('ui.companies.form.rep_last_name')}
+                                htmlFor={`rep-${index}-last_name`}
+                                required
+                                error={
+                                    fieldErrors[
+                                        `representatives.${index}.last_name`
+                                    ]
+                                }
+                            >
                                 <Input
                                     id={`rep-${index}-last_name`}
                                     value={representative.last_name}
@@ -468,25 +470,20 @@ export default function CompanyForm({
                                             e.target.value,
                                         )
                                     }
-                                    required
                                 />
-                                <InputError
-                                    message={
-                                        fieldErrors[
-                                            `representatives.${index}.last_name`
-                                        ]
-                                    }
-                                />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <Label
-                                    htmlFor={`rep-${index}-second_last_name`}
-                                >
-                                    {t(
-                                        'ui.companies.form.rep_second_last_name',
-                                    )}
-                                </Label>
+                            <FormField
+                                label={t(
+                                    'ui.companies.form.rep_second_last_name',
+                                )}
+                                htmlFor={`rep-${index}-second_last_name`}
+                                error={
+                                    fieldErrors[
+                                        `representatives.${index}.second_last_name`
+                                    ]
+                                }
+                            >
                                 <Input
                                     id={`rep-${index}-second_last_name`}
                                     value={representative.second_last_name}
@@ -498,14 +495,7 @@ export default function CompanyForm({
                                         )
                                     }
                                 />
-                                <InputError
-                                    message={
-                                        fieldErrors[
-                                            `representatives.${index}.second_last_name`
-                                        ]
-                                    }
-                                />
-                            </div>
+                            </FormField>
 
                             <div className="flex items-end justify-end">
                                 <Button

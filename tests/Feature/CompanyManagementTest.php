@@ -225,6 +225,61 @@ test('creating a company rejects a commune outside the selected region', functio
         ->assertSessionHasErrors('commune_id');
 });
 
+test('creating a company validates all required fields server-side', function () {
+    $admin = companyAdmin();
+
+    $this->actingAs($admin)
+        ->post(route('companies.store'), [])
+        ->assertSessionHasErrors([
+            'social_reason',
+            'rut',
+            'business_line',
+            'email',
+            'region_id',
+            'commune_id',
+            'address',
+            'phone',
+            'company_type',
+        ]);
+});
+
+test('creating a company rejects an invalid email', function () {
+    $admin = companyAdmin();
+    $region = Region::factory()->create();
+    $commune = Commune::factory()->create(['region_id' => $region->id]);
+
+    $this->actingAs($admin)
+        ->post(route('companies.store'), companyPayload($region, $commune, [
+            'email' => 'not-an-email',
+        ]))
+        ->assertSessionHasErrors('email');
+});
+
+test('creating a company validates representative fields server-side', function () {
+    $admin = companyAdmin();
+    $region = Region::factory()->create();
+    $commune = Commune::factory()->create(['region_id' => $region->id]);
+
+    $this->actingAs($admin)
+        ->post(route('companies.store'), companyPayload($region, $commune, [
+            'representatives' => [
+                [
+                    'rut' => 'invalid',
+                    'first_name' => '',
+                    'last_name' => '',
+                    'second_last_name' => '',
+                    'email' => 'nope',
+                ],
+            ],
+        ]))
+        ->assertSessionHasErrors([
+            'representatives.0.rut',
+            'representatives.0.first_name',
+            'representatives.0.last_name',
+            'representatives.0.email',
+        ]);
+});
+
 // --- Update ---
 
 test('updating a company reconciles its representatives', function () {

@@ -181,6 +181,21 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'social_reason' => 'razón social',
+        'rut' => 'RUT',
+        'business_line' => 'giro',
+        'email' => 'correo electrónico',
+        'region_id' => 'región',
+        'commune_id' => 'comuna',
+        'address' => 'dirección',
+        'phone' => 'teléfono',
+        'company_type' => 'tipo de empresa',
+        'representatives.*.rut' => 'RUT del representante',
+        'representatives.*.first_name' => 'nombre del representante',
+        'representatives.*.last_name' => 'apellido paterno del representante',
+        'representatives.*.second_last_name' => 'apellido materno del representante',
+        'representatives.*.email' => 'correo del representante',
+    ],
 
 ];
