@@ -25,6 +25,7 @@ return [
         'companies' => 'Empresas',
         'premises' => 'Sucursales',
         'shifts' => 'Turnos',
+        'employees' => 'Empleados',
     ],
 
     'user_menu' => [
@@ -527,6 +528,118 @@ return [
             'updated' => 'Turno actualizado.',
             'deleted' => 'Turno eliminado.',
             'has_assignments' => 'Este turno tiene asignaciones activas y no se puede eliminar.',
+        ],
+    ],
+
+    'employees' => [
+        'title' => 'Empleados',
+        'description' => 'Gestiona las personas de tu organización',
+        'new' => 'Nuevo empleado',
+        'search_placeholder' => 'Buscar por email o RUT...',
+        'empty' => 'No se encontraron empleados.',
+
+        'columns' => [
+            'employee' => 'Empleado',
+            'email' => 'Email',
+            'rut' => 'RUT',
+            'position' => 'Cargo',
+            'premise' => 'Sucursal',
+            'is_admin' => 'Admin',
+            'is_active' => 'Activo',
+            'admin_badge' => 'Admin',
+        ],
+
+        'filters' => [
+            'active_all' => 'Activo: todos',
+            'active_yes' => 'Activos',
+            'active_no' => 'Inactivos',
+            'admin_all' => 'Admin: todos',
+            'admin_yes' => 'Administradores',
+            'admin_no' => 'No administradores',
+            'premise' => 'Sucursal',
+            'position' => 'Cargo',
+            'clear' => 'Limpiar filtros',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+        ],
+
+        'tabs' => [
+            'personal' => 'Personal',
+            'labor' => 'Laboral',
+            'admin' => 'Admin',
+            'contact' => 'Contacto',
+            'system' => 'Sistema',
+        ],
+
+        'form' => [
+            'none' => 'Ninguno',
+            'select' => 'Selecciona una opción',
+            'search' => 'Buscar...',
+            'no_results' => 'No se encontraron resultados.',
+            'has_errors' => 'Por favor corrige los errores a continuación.',
+            'avatar' => 'Avatar',
+            'is_active' => 'Activo',
+            'first_name' => 'Nombre',
+            'last_name' => 'Apellido',
+            'second_last_name' => 'Segundo apellido',
+            'rut' => 'RUT',
+            'email' => 'Email',
+            'password' => 'Contraseña',
+            'password_hint' => 'Déjalo en blanco para mantener la contraseña actual.',
+            'nationality' => 'Nacionalidad',
+            'gender' => 'Género',
+            'company' => 'Empresa',
+            'premise' => 'Sucursal',
+            'position' => 'Cargo',
+            'supervisor' => 'Supervisor',
+            'contract_start_date' => 'Inicio de contrato',
+            'contract_end_date' => 'Término de contrato',
+            'is_admin' => 'Administrador',
+            'vacation_days' => 'Días de vacaciones',
+            'additional_vacation_days' => 'Días de vacaciones adicionales',
+            'administrative_days' => 'Días administrativos',
+            'has_additional_sundays' => 'Tiene domingos adicionales',
+            'personal_email' => 'Email personal',
+            'phone' => 'Teléfono',
+            'emergency_contact_name' => 'Nombre de contacto de emergencia',
+            'emergency_contact_phone' => 'Teléfono de contacto de emergencia',
+            'timezone' => 'Zona horaria',
+            'cancel' => 'Cancelar',
+        ],
+
+        'create' => [
+            'title' => 'Nuevo empleado',
+            'description' => 'Agrega una nueva persona a tu organización',
+            'submit' => 'Crear empleado',
+        ],
+
+        'edit' => [
+            'title' => 'Editar empleado',
+            'description' => 'Actualiza los datos del empleado',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'show' => [
+            'tab_info' => 'Info',
+            'tab_shifts' => 'Turnos',
+            'tab_documents' => 'Documentos',
+            'shifts_pending' => 'Las asignaciones de turno estarán disponibles pronto.',
+            'documents_pending' => 'Los documentos estarán disponibles pronto.',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar empleado',
+            'description' => '¿Seguro que deseas eliminar a :name? Esta acción no se puede deshacer.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'flash' => [
+            'created' => 'Empleado creado.',
+            'updated' => 'Empleado actualizado.',
+            'deleted' => 'Empleado eliminado.',
         ],
     ],
 

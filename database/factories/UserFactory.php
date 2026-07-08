@@ -50,6 +50,35 @@ class UserFactory extends Factory
     public function withTwoFactor(): static {}
 
     /**
+     * Indicate that the user is an organization employee.
+     *
+     * Requires an `organization_id` to be provided (employees are tenant
+     * scoped); assigns the `employee` role after creation.
+     */
+    public function employee(): static
+    {
+        return $this
+            ->state(function (array $attributes): array {
+                $firstName = fake()->firstName();
+                $lastName = fake()->lastName();
+
+                return [
+                    'name' => "{$firstName} {$lastName}",
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'rut' => fake()->numerify('########').'-'.fake()->randomElement(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'K']),
+                    'personal_email' => fake()->unique()->safeEmail(),
+                    'timezone' => 'America/Santiago',
+                    'is_active' => true,
+                ];
+            })
+            ->afterCreating(function (User $user): void {
+                Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+                $user->assignRole('employee');
+            });
+    }
+
+    /**
      * Indicate that the user is a DT inspector.
      */
     public function dtUser(): static
