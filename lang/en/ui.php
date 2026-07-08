@@ -24,6 +24,7 @@ return [
         'positions' => 'Positions',
         'companies' => 'Companies',
         'premises' => 'Premises',
+        'shifts' => 'Shifts',
     ],
 
     'user_menu' => [
@@ -422,6 +423,110 @@ return [
             'updated' => 'Premise updated.',
             'deleted' => 'Premise deleted.',
             'has_employees' => 'This premise has active employees assigned and cannot be deleted.',
+        ],
+    ],
+
+    'shifts' => [
+        'title' => 'Shifts',
+        'description' => 'Work schedule templates for your organization',
+        'new' => 'New shift',
+        'default' => 'Default',
+        'search_placeholder' => 'Search by name...',
+        'empty' => 'No shifts found.',
+
+        'columns' => [
+            'name' => 'Name',
+            'type' => 'Type',
+            'weekly_hours' => 'Weekly hours',
+            'assignments' => 'Assignments',
+        ],
+
+        'types' => [
+            'fixed' => 'Fixed',
+            'rotational' => 'Rotational',
+            'cyclic' => 'Cyclic',
+            'biweekly' => 'Biweekly',
+            'exceptional' => 'Exceptional',
+            'partial' => 'Partial',
+        ],
+
+        'weekdays' => [
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday',
+            'Saturday',
+            'Sunday',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+        ],
+
+        'form' => [
+            'details' => 'Shift details',
+            'name' => 'Name',
+            'type' => 'Type',
+            'type_placeholder' => 'Select a type',
+            'type_search' => 'Search type...',
+            'type_empty' => 'No types found.',
+            'description' => 'Description',
+            'tolerance_in' => 'Entry tolerance (minutes)',
+            'tolerance_out' => 'Exit tolerance (minutes)',
+            'tolerance_placeholder' => 'e.g. 30',
+            'tolerance_hint' => 'Grace period in minutes before a mark counts as late/early.',
+            'is_default' => 'Default shift',
+            'work_on_holidays' => 'Works on holidays',
+            'is_archive' => 'Archived',
+            'schedule' => 'Weekly schedule',
+            'schedule_hint' => 'Set the working hours for each day. Uncheck a day to mark it non-working.',
+        ],
+
+        'schedule' => [
+            'day' => 'Day',
+            'working' => 'Working',
+            'start' => 'Start',
+            'end' => 'End',
+            'lunch_start' => 'Lunch start',
+            'lunch_end' => 'Lunch end',
+            'hours' => 'Hours',
+            'weekly_total' => 'Weekly total',
+            'legal_max' => 'Legal maximum: :max hours per week.',
+            'exceeds_weekly' => 'Exceeds the legal maximum of :max hours per week.',
+            'exceeds_daily' => 'Exceeds the legal maximum of :max hours per day.',
+        ],
+
+        'validation' => [
+            'exceeds_weekly' => 'The weekly total (:total h) exceeds the legal maximum of :max hours.',
+            'negative_hours' => 'End time must be after start time (and lunch must fit within the day).',
+            'incomplete_days' => 'Every working day needs a start, end and lunch time.',
+        ],
+
+        'create' => [
+            'title' => 'New shift',
+            'description' => 'Create a work schedule template',
+            'submit' => 'Create shift',
+        ],
+
+        'edit' => [
+            'title' => 'Edit shift',
+            'description' => 'Update the shift and its weekly schedule',
+            'submit' => 'Save changes',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete shift',
+            'description' => 'Are you sure you want to delete :name? It can be restored later.',
+            'confirm' => 'Delete',
+        ],
+
+        'flash' => [
+            'created' => 'Shift created.',
+            'updated' => 'Shift updated.',
+            'deleted' => 'Shift deleted.',
+            'has_assignments' => 'This shift has active assignments and cannot be deleted.',
         ],
     ],
 

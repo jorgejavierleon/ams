@@ -1,5 +1,12 @@
 import { Link } from '@inertiajs/react';
-import { Building2, IdCard, LayoutGrid, MapPin, ShieldCheck } from 'lucide-react';
+import {
+    Building2,
+    CalendarClock,
+    IdCard,
+    LayoutGrid,
+    MapPin,
+    ShieldCheck,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -18,6 +25,7 @@ import { index as companiesIndex } from '@/routes/companies';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
+import { index as shiftsIndex } from '@/routes/shifts';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -49,7 +57,16 @@ export function AppSidebar() {
                 },
             ],
         },
-        { label: t('ui.nav.workdays'), items: [] },
+        {
+            label: t('ui.nav.workdays'),
+            items: [
+                {
+                    title: t('ui.nav.shifts'),
+                    href: shiftsIndex(),
+                    icon: CalendarClock,
+                },
+            ],
+        },
         { label: t('ui.nav.documents'), items: [] },
         {
             label: t('ui.nav.settings'),

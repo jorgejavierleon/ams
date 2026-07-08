@@ -11,6 +11,7 @@ use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use App\Http\Controllers\Saas\OrganizationController;
+use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\UserRoleController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->except(['show']);
 
     Route::resource('premises', PremiseController::class)
+        ->except(['show']);
+
+    Route::resource('shifts', ShiftController::class)
         ->except(['show']);
 
     Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
