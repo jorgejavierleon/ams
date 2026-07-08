@@ -108,6 +108,19 @@ Legal representatives are not a separate model: they are `User` rows with `is_le
 
 ---
 
+## Shifts & schedules
+
+A `Shift` owns exactly seven `ShiftDay` rows (SQL weekday `0` = Monday … `6` = Sunday). Constraints future work must respect:
+
+- **Lunch is stored as `lunch_start_time` + `lunch_end_time`, never as a duration.** The `WorkdayCalculator` (old app, not yet migrated) joins on those exact columns via raw SQL to compute attendance, so the schema must keep them.
+- **`ShiftDay` derives its own `total_work_hours`** in a `saving` hook: `(end − start) − lunch`, or `0` when `is_free`. `Shift.total_week_hours` is rolled up from the days by `ShiftDayObserver` and is **not fillable** — set it directly, never mass-assign.
+- **`ShiftObserver::created` seeds the 7 default days.** Controllers must create the shift first (letting the observer fire), then *update* those rows by weekday — do not bypass the observers or insert days manually. `ShiftController::store/update` do exactly this inside one transaction.
+- **Entry/exit tolerance is a grace period, edited in minutes but stored as a `TIME`.** The UI and API use whole minutes (`30`, `120`); `ShiftController` converts them to/from `HH:MM:SS` because the `WorkdayCalculator` compares tolerance as a TIME against a mark's lateness (`ABS(TIMEDIFF(...)) BETWEEN '00:00:01' AND shifts.tolerance_in`). Keep the column a `TIME`.
+- Legal ceilings live in `config/ams.php` (`max_weekly_hours`, `max_daily_hours`); the weekly cap is validated server-side on save.
+- `shift_assignments` (employee → shift) has a minimal model here for the delete guard only; its full management and `ShiftAssignmentObserver` (which fires `WorkdaysRecalculationNeeded`) belong to ticket #20.
+
+---
+
 ## Old App Reference
 
 When implementing a feature, always check `../ams-filament` first:

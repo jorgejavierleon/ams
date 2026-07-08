@@ -24,6 +24,7 @@ return [
         'positions' => 'Cargos',
         'companies' => 'Empresas',
         'premises' => 'Sucursales',
+        'shifts' => 'Turnos',
     ],
 
     'user_menu' => [
@@ -422,6 +423,110 @@ return [
             'updated' => 'Sucursal actualizada.',
             'deleted' => 'Sucursal eliminada.',
             'has_employees' => 'Esta sucursal tiene empleados activos asignados y no se puede eliminar.',
+        ],
+    ],
+
+    'shifts' => [
+        'title' => 'Turnos',
+        'description' => 'Plantillas de horario de trabajo de tu organización',
+        'new' => 'Nuevo turno',
+        'default' => 'Predeterminado',
+        'search_placeholder' => 'Buscar por nombre...',
+        'empty' => 'No se encontraron turnos.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'type' => 'Tipo',
+            'weekly_hours' => 'Horas semanales',
+            'assignments' => 'Asignaciones',
+        ],
+
+        'types' => [
+            'fixed' => 'Fijo',
+            'rotational' => 'Rotativo',
+            'cyclic' => 'Cíclico',
+            'biweekly' => 'Quincenal',
+            'exceptional' => 'Excepcional',
+            'partial' => 'Parcial',
+        ],
+
+        'weekdays' => [
+            'Lunes',
+            'Martes',
+            'Miércoles',
+            'Jueves',
+            'Viernes',
+            'Sábado',
+            'Domingo',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+        ],
+
+        'form' => [
+            'details' => 'Datos del turno',
+            'name' => 'Nombre',
+            'type' => 'Tipo',
+            'type_placeholder' => 'Selecciona un tipo',
+            'type_search' => 'Buscar tipo...',
+            'type_empty' => 'No se encontraron tipos.',
+            'description' => 'Descripción',
+            'tolerance_in' => 'Tolerancia de entrada (minutos)',
+            'tolerance_out' => 'Tolerancia de salida (minutos)',
+            'tolerance_placeholder' => 'ej. 30',
+            'tolerance_hint' => 'Minutos de gracia antes de marcar atraso/adelanto.',
+            'is_default' => 'Turno predeterminado',
+            'work_on_holidays' => 'Trabaja en feriados',
+            'is_archive' => 'Archivado',
+            'schedule' => 'Horario semanal',
+            'schedule_hint' => 'Define las horas de trabajo de cada día. Desmarca un día para dejarlo no laborable.',
+        ],
+
+        'schedule' => [
+            'day' => 'Día',
+            'working' => 'Laborable',
+            'start' => 'Inicio',
+            'end' => 'Término',
+            'lunch_start' => 'Inicio colación',
+            'lunch_end' => 'Fin colación',
+            'hours' => 'Horas',
+            'weekly_total' => 'Total semanal',
+            'legal_max' => 'Máximo legal: :max horas por semana.',
+            'exceeds_weekly' => 'Supera el máximo legal de :max horas por semana.',
+            'exceeds_daily' => 'Supera el máximo legal de :max horas por día.',
+        ],
+
+        'validation' => [
+            'exceeds_weekly' => 'El total semanal (:total h) supera el máximo legal de :max horas.',
+            'negative_hours' => 'La hora de término debe ser posterior a la de inicio (y la colación debe caber en la jornada).',
+            'incomplete_days' => 'Cada día laborable necesita hora de inicio, término y colación.',
+        ],
+
+        'create' => [
+            'title' => 'Nuevo turno',
+            'description' => 'Crea una plantilla de horario de trabajo',
+            'submit' => 'Crear turno',
+        ],
+
+        'edit' => [
+            'title' => 'Editar turno',
+            'description' => 'Actualiza el turno y su horario semanal',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar turno',
+            'description' => '¿Seguro que quieres eliminar :name? Podrá restaurarse más adelante.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'flash' => [
+            'created' => 'Turno creado.',
+            'updated' => 'Turno actualizado.',
+            'deleted' => 'Turno eliminado.',
+            'has_assignments' => 'Este turno tiene asignaciones activas y no se puede eliminar.',
         ],
     ],
 
