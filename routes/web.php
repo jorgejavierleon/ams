@@ -5,6 +5,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\PasswordChangeController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
@@ -44,6 +45,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::resource('shifts', ShiftController::class)
         ->except(['show']);
+
+    Route::patch('employees/{employee}/active', [EmployeeController::class, 'toggleActive'])
+        ->name('employees.toggle-active');
+    Route::resource('employees', EmployeeController::class);
 
     Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
         ->name('regions.communes');

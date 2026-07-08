@@ -25,6 +25,7 @@ return [
         'companies' => 'Companies',
         'premises' => 'Premises',
         'shifts' => 'Shifts',
+        'employees' => 'Employees',
     ],
 
     'user_menu' => [
@@ -527,6 +528,118 @@ return [
             'updated' => 'Shift updated.',
             'deleted' => 'Shift deleted.',
             'has_assignments' => 'This shift has active assignments and cannot be deleted.',
+        ],
+    ],
+
+    'employees' => [
+        'title' => 'Employees',
+        'description' => 'Manage the people in your organization',
+        'new' => 'New employee',
+        'search_placeholder' => 'Search by email or RUT...',
+        'empty' => 'No employees found.',
+
+        'columns' => [
+            'employee' => 'Employee',
+            'email' => 'Email',
+            'rut' => 'RUT',
+            'position' => 'Position',
+            'premise' => 'Premise',
+            'is_admin' => 'Admin',
+            'is_active' => 'Active',
+            'admin_badge' => 'Admin',
+        ],
+
+        'filters' => [
+            'active_all' => 'Active: all',
+            'active_yes' => 'Active',
+            'active_no' => 'Inactive',
+            'admin_all' => 'Admin: all',
+            'admin_yes' => 'Admins',
+            'admin_no' => 'Non-admins',
+            'premise' => 'Premise',
+            'position' => 'Position',
+            'clear' => 'Clear filters',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+        ],
+
+        'tabs' => [
+            'personal' => 'Personal',
+            'labor' => 'Labor',
+            'admin' => 'Admin',
+            'contact' => 'Contact',
+            'system' => 'System',
+        ],
+
+        'form' => [
+            'none' => 'None',
+            'select' => 'Select an option',
+            'search' => 'Search...',
+            'no_results' => 'No results found.',
+            'has_errors' => 'Please correct the errors below.',
+            'avatar' => 'Avatar',
+            'is_active' => 'Active',
+            'first_name' => 'First name',
+            'last_name' => 'Last name',
+            'second_last_name' => 'Second last name',
+            'rut' => 'RUT',
+            'email' => 'Email',
+            'password' => 'Password',
+            'password_hint' => 'Leave blank to keep the current password.',
+            'nationality' => 'Nationality',
+            'gender' => 'Gender',
+            'company' => 'Company',
+            'premise' => 'Premise',
+            'position' => 'Position',
+            'supervisor' => 'Supervisor',
+            'contract_start_date' => 'Contract start date',
+            'contract_end_date' => 'Contract end date',
+            'is_admin' => 'Administrator',
+            'vacation_days' => 'Vacation days',
+            'additional_vacation_days' => 'Additional vacation days',
+            'administrative_days' => 'Administrative days',
+            'has_additional_sundays' => 'Has additional Sundays',
+            'personal_email' => 'Personal email',
+            'phone' => 'Phone',
+            'emergency_contact_name' => 'Emergency contact name',
+            'emergency_contact_phone' => 'Emergency contact phone',
+            'timezone' => 'Timezone',
+            'cancel' => 'Cancel',
+        ],
+
+        'create' => [
+            'title' => 'New employee',
+            'description' => 'Add a new person to your organization',
+            'submit' => 'Create employee',
+        ],
+
+        'edit' => [
+            'title' => 'Edit employee',
+            'description' => 'Update the employee details',
+            'submit' => 'Save changes',
+        ],
+
+        'show' => [
+            'tab_info' => 'Info',
+            'tab_shifts' => 'Shifts',
+            'tab_documents' => 'Documents',
+            'shifts_pending' => 'Shift assignments will be available soon.',
+            'documents_pending' => 'Documents will be available soon.',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete employee',
+            'description' => 'Are you sure you want to delete :name? This action cannot be undone.',
+            'confirm' => 'Delete',
+        ],
+
+        'flash' => [
+            'created' => 'Employee created.',
+            'updated' => 'Employee updated.',
+            'deleted' => 'Employee deleted.',
         ],
     ],
 

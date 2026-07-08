@@ -28,6 +28,8 @@ type DataTableProps<TData> = {
     routeUrl: string;
     /** Server-side filters echoed back from the controller. */
     filters?: ServerTableFilters;
+    /** Extra filter params merged into every reload (e.g. faceted filters). */
+    extraParams?: Record<string, string | string[] | undefined>;
     /** Inertia partial-reload keys, e.g. `['positions', 'filters']`. */
     only?: string[];
     /** When set, renders a debounced search box with this placeholder. */
@@ -53,6 +55,7 @@ export function DataTable<TData>({
     columns,
     routeUrl,
     filters,
+    extraParams,
     only,
     searchPlaceholder,
     emptyLabel,
@@ -70,6 +73,7 @@ export function DataTable<TData>({
         columns,
         routeUrl,
         filters,
+        extraParams,
         only,
         enableRowSelection,
         getRowId,

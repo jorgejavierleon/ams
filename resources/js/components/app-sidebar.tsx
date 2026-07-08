@@ -6,6 +6,7 @@ import {
     LayoutGrid,
     MapPin,
     ShieldCheck,
+    Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -22,6 +23,7 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
 import { index as companiesIndex } from '@/routes/companies';
+import { index as employeesIndex } from '@/routes/employees';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
@@ -54,6 +56,11 @@ export function AppSidebar() {
                     title: t('ui.nav.positions'),
                     href: positionsIndex(),
                     icon: IdCard,
+                },
+                {
+                    title: t('ui.nav.employees'),
+                    href: employeesIndex(),
+                    icon: Users,
                 },
             ],
         },

@@ -27,6 +27,12 @@ type UseServerTableOptions<T> = {
     routeUrl: string;
     /** Current server-side filters, echoed back from the controller. */
     filters?: ServerTableFilters;
+    /**
+     * Additional filter params (e.g. faceted filters) merged into every
+     * reload alongside search and sort. Changing their identity triggers a
+     * reload, so pass a stable value (memoized or derived from props).
+     */
+    extraParams?: Record<string, string | string[] | undefined>;
     /** Inertia partial-reload keys, e.g. `['positions', 'filters']`. */
     only?: string[];
     /** Enable the row-selection checkbox column behaviour. */
@@ -53,6 +59,7 @@ export function useServerTable<T>({
     columns,
     routeUrl,
     filters,
+    extraParams,
     only,
     enableRowSelection = false,
     searchDebounce = 300,
@@ -76,6 +83,10 @@ export function useServerTable<T>({
 
     const isFirstRender = useRef(true);
 
+    // Serialize the extra filter params so the reload effect only fires when
+    // their values actually change, not on every render's fresh object.
+    const extraParamsKey = JSON.stringify(extraParams ?? {});
+
     useEffect(() => {
         const timeout = setTimeout(
             () => setDebouncedSearch(search),
@@ -97,6 +108,7 @@ export function useServerTable<T>({
         router.get(
             routeUrl,
             {
+                ...extraParams,
                 search: debouncedSearch || undefined,
                 sort: sort?.id,
                 direction: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
@@ -108,9 +120,10 @@ export function useServerTable<T>({
                 only,
             },
         );
-        // `only` is a fresh array each render; exclude it to avoid loops.
+        // `only` and `extraParams` are fresh each render; key off the
+        // serialized params instead to avoid render loops.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedSearch, sorting, routeUrl]);
+    }, [debouncedSearch, sorting, routeUrl, extraParamsKey]);
 
     const table = useReactTable<T>({
         data: data.data,
