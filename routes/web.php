@@ -6,10 +6,12 @@ use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\PasswordChangeController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\Saas\HolidayController as SaasHolidayController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use App\Http\Controllers\Saas\OrganizationController;
 use App\Http\Controllers\ShiftAssignmentController;
@@ -46,6 +48,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::resource('shifts', ShiftController::class)
         ->except(['show']);
+
+    Route::resource('holidays', HolidayController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
 
     Route::patch('employees/{employee}/active', [EmployeeController::class, 'toggleActive'])
         ->name('employees.toggle-active');
@@ -105,6 +110,9 @@ Route::prefix('saas')->name('saas.')->group(function () {
         // Super-admin management (saas role required)
         Route::middleware('role:saas,saas')->group(function () {
             Route::resource('organizations', OrganizationController::class)->except('show');
+
+            Route::get('holidays', [SaasHolidayController::class, 'index'])->name('holidays.index');
+            Route::post('holidays/sync', [SaasHolidayController::class, 'sync'])->name('holidays.sync');
         });
     });
 });

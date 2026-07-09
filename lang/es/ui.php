@@ -26,6 +26,7 @@ return [
         'premises' => 'Sucursales',
         'shifts' => 'Turnos',
         'employees' => 'Empleados',
+        'holidays' => 'Feriados',
     ],
 
     'user_menu' => [
@@ -188,6 +189,87 @@ return [
 
         'actions' => [
             'manage' => 'Gestionar permisos',
+        ],
+    ],
+
+    'holidays' => [
+        'title' => 'Feriados',
+        'description' => 'Feriados oficiales más los que agregue tu organización',
+        'new' => 'Nuevo feriado',
+        'search_placeholder' => 'Buscar por nombre...',
+        'empty' => 'No se encontraron feriados.',
+        'official' => 'Oficial',
+        'custom' => 'Propio',
+
+        'columns' => [
+            'date' => 'Fecha',
+            'name' => 'Nombre',
+            'type' => 'Tipo',
+            'mandatory' => 'Obligatorio',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+        ],
+
+        'yes' => 'Sí',
+        'no' => 'No',
+
+        'form' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'ej. Fiestas Patrias',
+            'date' => 'Fecha',
+            'mandatory' => 'Obligatorio',
+            'mandatory_hint' => 'Los feriados obligatorios siempre son días no laborables.',
+        ],
+
+        'create_dialog' => [
+            'title' => 'Nuevo feriado',
+            'submit' => 'Crear feriado',
+        ],
+
+        'edit_dialog' => [
+            'title' => 'Editar feriado',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar feriado',
+            'description' => '¿Estás seguro de que deseas eliminar :name? Esta acción no se puede deshacer.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'flash' => [
+            'created' => 'Feriado creado.',
+            'updated' => 'Feriado actualizado.',
+            'deleted' => 'Feriado eliminado.',
+        ],
+    ],
+
+    'saas_holidays' => [
+        'nav' => 'Feriados',
+        'title' => 'Feriados oficiales',
+        'description' => 'La lista nacional de feriados compartida con todas las organizaciones',
+        'empty' => 'Aún no hay feriados oficiales. Importa un año para comenzar.',
+
+        'columns' => [
+            'date' => 'Fecha',
+            'name' => 'Nombre',
+            'mandatory' => 'Obligatorio',
+        ],
+
+        'yes' => 'Sí',
+        'no' => 'No',
+
+        'import' => [
+            'year' => 'Año',
+            'submit' => 'Importar desde Boostr',
+        ],
+
+        'flash' => [
+            'imported' => 'Se importaron :count feriados para :year.',
+            'failed' => 'No se pudieron obtener los feriados desde Boostr. Inténtalo de nuevo.',
         ],
     ],
 

@@ -12,6 +12,7 @@ import {
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
 import { useTranslations } from '@/hooks/use-translations';
+import * as holidays from '@/routes/saas/holidays';
 import * as organizations from '@/routes/saas/organizations';
 import type { AppLayoutProps } from '@/types';
 
@@ -39,6 +40,12 @@ export default function SaasLayout({ children }: AppLayoutProps) {
                             className="text-sm font-medium text-muted-foreground hover:text-foreground"
                         >
                             {t('ui.organizations.nav')}
+                        </Link>
+                        <Link
+                            href={holidays.index()}
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                        >
+                            {t('ui.saas_holidays.nav')}
                         </Link>
                     </div>
                     {auth.user && (

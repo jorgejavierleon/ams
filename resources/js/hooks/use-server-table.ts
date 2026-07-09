@@ -10,7 +10,6 @@ import {
 } from '@tanstack/react-table';
 import type {ColumnDef, RowSelectionState, SortingState, Table, VisibilityState} from '@tanstack/react-table';
 import { useEffect, useRef, useState } from 'react';
-import type { Paginated } from '@/types/ui';
 
 export type ServerTableFilters = {
     search?: string | null;
@@ -19,8 +18,11 @@ export type ServerTableFilters = {
 };
 
 type UseServerTableOptions<T> = {
-    /** The Laravel paginated payload for the current page. */
-    data: Paginated<T>;
+    /**
+     * The table rows. Either a Laravel paginated payload or a plain
+     * `{ data: [...] }` list when the page shows every row without pagination.
+     */
+    data: { data: T[] };
     /** TanStack column definitions. */
     columns: ColumnDef<T, unknown>[];
     /** Base URL to reload (typically `route().url`). */

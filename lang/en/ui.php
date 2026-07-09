@@ -26,6 +26,7 @@ return [
         'premises' => 'Premises',
         'shifts' => 'Shifts',
         'employees' => 'Employees',
+        'holidays' => 'Holidays',
     ],
 
     'user_menu' => [
@@ -188,6 +189,87 @@ return [
 
         'actions' => [
             'manage' => 'Manage permissions',
+        ],
+    ],
+
+    'holidays' => [
+        'title' => 'Holidays',
+        'description' => 'Official public holidays plus any your organization adds',
+        'new' => 'New holiday',
+        'search_placeholder' => 'Search by name...',
+        'empty' => 'No holidays found.',
+        'official' => 'Official',
+        'custom' => 'Custom',
+
+        'columns' => [
+            'date' => 'Date',
+            'name' => 'Name',
+            'type' => 'Type',
+            'mandatory' => 'Mandatory',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+        ],
+
+        'yes' => 'Yes',
+        'no' => 'No',
+
+        'form' => [
+            'name' => 'Name',
+            'name_placeholder' => 'e.g. Independence Day',
+            'date' => 'Date',
+            'mandatory' => 'Mandatory',
+            'mandatory_hint' => 'Mandatory holidays are always non-working days.',
+        ],
+
+        'create_dialog' => [
+            'title' => 'New holiday',
+            'submit' => 'Create holiday',
+        ],
+
+        'edit_dialog' => [
+            'title' => 'Edit holiday',
+            'submit' => 'Save changes',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete holiday',
+            'description' => 'Are you sure you want to delete :name? This action cannot be undone.',
+            'confirm' => 'Delete',
+        ],
+
+        'flash' => [
+            'created' => 'Holiday created.',
+            'updated' => 'Holiday updated.',
+            'deleted' => 'Holiday deleted.',
+        ],
+    ],
+
+    'saas_holidays' => [
+        'nav' => 'Holidays',
+        'title' => 'Official holidays',
+        'description' => 'The national holiday list shared with every organization',
+        'empty' => 'No official holidays yet. Import a year to get started.',
+
+        'columns' => [
+            'date' => 'Date',
+            'name' => 'Name',
+            'mandatory' => 'Mandatory',
+        ],
+
+        'yes' => 'Yes',
+        'no' => 'No',
+
+        'import' => [
+            'year' => 'Year',
+            'submit' => 'Import from Boostr',
+        ],
+
+        'flash' => [
+            'imported' => 'Imported :count holidays for :year.',
+            'failed' => 'Could not fetch holidays from Boostr. Please try again.',
         ],
     ],
 

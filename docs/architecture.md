@@ -60,6 +60,10 @@ Organization-scoped via the `App\Models\Concerns\BelongsToOrganization` trait. A
 
 The "current organization" is resolved by `BelongsToOrganization::currentOrganizationId()`: it prefers an explicit `session('organization_id')` (set by the future tenant switcher, #48) and otherwise falls back to the authenticated user's `organization_id`. When neither resolves (unauthenticated requests, console commands, seeders) the scope is a **no-op**, leaving queries unscoped — so factories/seeders must set `organization_id` explicitly.
 
+### Shared/hybrid ownership (holidays)
+
+`Holiday` is the exception to the "always org-scoped" rule. A holiday is either **official** (`organization_id = null`) — the national list synced from the Boostr API (`holidays:sync` / `App\Actions\SyncOfficialHolidays`) and managed only in the SaaS panel — or **organization-owned**. It therefore uses a dedicated `App\Models\Scopes\HolidayScope` (not `BelongsToOrganization`) that exposes *official ∪ current org* to each tenant. Tenants may CRUD their own holidays but official rows are read-only to them (enforced in `HolidayController` via `Holiday::isOfficial()`). The unique key is `(organization_id, country, date)`, so an org may add a same-date holiday alongside an official one.
+
 ---
 
 ## Artisan / Sail
