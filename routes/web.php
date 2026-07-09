@@ -12,6 +12,7 @@ use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use App\Http\Controllers\Saas\OrganizationController;
+use App\Http\Controllers\ShiftAssignmentController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\UserRoleController;
 use Illuminate\Support\Facades\Route;
@@ -49,6 +50,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::patch('employees/{employee}/active', [EmployeeController::class, 'toggleActive'])
         ->name('employees.toggle-active');
     Route::resource('employees', EmployeeController::class);
+
+    Route::post('employees/{employee}/shift-assignments', [ShiftAssignmentController::class, 'store'])
+        ->name('employees.shift-assignments.store');
+    Route::patch('shift-assignments/{shiftAssignment}/end', [ShiftAssignmentController::class, 'end'])
+        ->name('shift-assignments.end');
+    Route::delete('shift-assignments/{shiftAssignment}', [ShiftAssignmentController::class, 'destroy'])
+        ->name('shift-assignments.destroy');
 
     Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
         ->name('regions.communes');

@@ -27,6 +27,12 @@ type Props = {
     searchPlaceholder: string;
     emptyLabel: string;
     disabled?: boolean;
+    /**
+     * Render the popover in modal mode. Required when the combobox lives inside
+     * a Radix Dialog: a non-modal popover nested in a modal dialog loses
+     * pointer handling, so clicking an option closes the list without selecting.
+     */
+    modal?: boolean;
 };
 
 /**
@@ -42,12 +48,13 @@ export function Combobox({
     searchPlaceholder,
     emptyLabel,
     disabled,
+    modal,
 }: Props) {
     const [open, setOpen] = useState(false);
     const selected = options.find((option) => option.value === value);
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={setOpen} modal={modal}>
             <PopoverTrigger asChild>
                 <Button
                     id={id}

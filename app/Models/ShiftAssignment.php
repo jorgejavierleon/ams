@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
+use App\Observers\ShiftAssignmentObserver;
 use Database\Factories\ShiftAssignmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +14,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
- * Links an employee to a shift for a date range. Full management lives in a
- * later ticket (#20); this minimal model exists so shifts can guard deletion
- * against active assignments.
+ * Links an employee to a shift for a date range. An employee can hold several
+ * assignments over time; an assignment with a null `end_date` is permanent.
+ * The observer fires workday recalculation whenever the range changes.
  *
  * @property int $id
  * @property int|null $organization_id
@@ -26,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_permanent
  * @property bool $requested_by_employee
  */
+#[ObservedBy(ShiftAssignmentObserver::class)]
 #[Fillable([
     'shift_id',
     'user_id',
