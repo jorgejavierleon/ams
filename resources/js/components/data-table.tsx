@@ -21,8 +21,11 @@ import { useTranslations } from '@/hooks/use-translations';
 import type { Paginated } from '@/types/ui';
 
 type DataTableProps<TData> = {
-    /** The Laravel paginated payload. A new identity each Inertia visit. */
-    data: Paginated<TData>;
+    /**
+     * The table rows. A Laravel paginated payload, or a plain `{ data: [...] }`
+     * list when the page renders every row. A new identity each Inertia visit.
+     */
+    data: Paginated<TData> | { data: TData[] };
     columns: ColumnDef<TData, unknown>[];
     /** Base URL to reload (typically `route().url`). */
     routeUrl: string;
@@ -36,6 +39,8 @@ type DataTableProps<TData> = {
     searchPlaceholder?: string;
     /** Message shown when there are no rows. Defaults to a shared string. */
     emptyLabel?: string;
+    /** Render the pagination footer. Defaults to `true`. */
+    showPagination?: boolean;
     enableRowSelection?: boolean;
     getRowId?: (row: TData, index: number) => string;
     /** Extra controls rendered on the left of the toolbar row. */
@@ -59,6 +64,7 @@ export function DataTable<TData>({
     only,
     searchPlaceholder,
     emptyLabel,
+    showPagination = true,
     enableRowSelection,
     getRowId,
     toolbar,
@@ -176,7 +182,9 @@ export function DataTable<TData>({
                 </Table>
             </div>
 
-            <DataTablePagination meta={data} />
+            {showPagination && 'total' in data && (
+                <DataTablePagination meta={data} />
+            )}
         </div>
     );
 }

@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import {
     Building2,
     CalendarClock,
+    CalendarDays,
     IdCard,
     LayoutGrid,
     MapPin,
@@ -27,6 +28,7 @@ import { index as employeesIndex } from '@/routes/employees';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
+import { index as holidaysIndex } from '@/routes/holidays';
 import { index as shiftsIndex } from '@/routes/shifts';
 import type { NavItem } from '@/types';
 
@@ -71,6 +73,11 @@ export function AppSidebar() {
                     title: t('ui.nav.shifts'),
                     href: shiftsIndex(),
                     icon: CalendarClock,
+                },
+                {
+                    title: t('ui.nav.holidays'),
+                    href: holidaysIndex(),
+                    icon: CalendarDays,
                 },
             ],
         },
