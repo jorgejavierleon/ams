@@ -529,6 +529,63 @@ return [
             'deleted' => 'Turno eliminado.',
             'has_assignments' => 'Este turno tiene asignaciones activas y no se puede eliminar.',
         ],
+
+        'shift_assignments' => [
+            'title' => 'Asignaciones de turno',
+            'add' => 'Agregar asignación',
+            'empty' => 'Aún no hay asignaciones de turno.',
+            'status_current' => 'Vigente',
+            'status_ended' => 'Terminada',
+            'status_upcoming' => 'Próxima',
+            'permanent' => 'Permanente',
+
+            'columns' => [
+                'shift' => 'Turno',
+                'start_date' => 'Fecha de inicio',
+                'end_date' => 'Fecha de término',
+                'status' => 'Estado',
+            ],
+
+            'actions' => [
+                'end' => 'Terminar',
+                'delete' => 'Eliminar',
+            ],
+
+            'dialog' => [
+                'title' => 'Agregar asignación de turno',
+                'description' => 'Asigna un turno a este empleado por un rango de fechas. Deja la fecha de término vacía para una asignación permanente.',
+                'shift' => 'Turno',
+                'shift_placeholder' => 'Selecciona un turno',
+                'shift_search' => 'Buscar turno...',
+                'shift_empty' => 'No se encontraron turnos.',
+                'start_date' => 'Fecha de inicio',
+                'end_date' => 'Fecha de término (opcional)',
+                'cancel' => 'Cancelar',
+                'submit' => 'Agregar asignación',
+            ],
+
+            'end_dialog' => [
+                'title' => 'Terminar asignación',
+                'description' => 'Esto establece la fecha de término en hoy. ¿Continuar?',
+                'confirm' => 'Terminar asignación',
+            ],
+
+            'delete_dialog' => [
+                'title' => 'Eliminar asignación',
+                'description' => '¿Seguro que deseas eliminar esta asignación? Esta acción no se puede deshacer.',
+                'confirm' => 'Eliminar',
+            ],
+
+            'validation' => [
+                'overlap' => 'Este rango de fechas se superpone con una asignación existente de este empleado.',
+            ],
+
+            'flash' => [
+                'created' => 'Asignación de turno creada.',
+                'ended' => 'Asignación de turno terminada.',
+                'deleted' => 'Asignación de turno eliminada.',
+            ],
+        ],
     ],
 
     'employees' => [

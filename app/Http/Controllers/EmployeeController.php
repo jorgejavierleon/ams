@@ -6,6 +6,8 @@ use App\Concerns\ResolvesTableSort;
 use App\Models\Company;
 use App\Models\Position;
 use App\Models\Premise;
+use App\Models\Shift;
+use App\Models\ShiftAssignment;
 use App\Models\User;
 use App\Rules\ValidRut;
 use App\Support\Rut;
@@ -133,10 +135,11 @@ class EmployeeController extends Controller
                 'emergency_contact_name' => $employee->emergency_contact_name,
                 'emergency_contact_phone' => $employee->emergency_contact_phone,
             ],
-            // Deferred sub-tabs — wired up by #20 (shift assignments) and #35
-            // (documents). They load after the initial render so the Info tab
-            // is interactive immediately.
-            'shifts' => Inertia::defer(fn () => []),
+            // Shift assignments load with the page: the Shifts tab hosts a
+            // stateful add/edit form, so it must not sit behind a deferred prop
+            // that resets (and unmounts the form) on every redirect-back.
+            'shifts' => $this->shiftAssignments($employee),
+            // Documents are still deferred — wired up by #35.
             'documents' => Inertia::defer(fn () => []),
         ]);
     }
@@ -341,6 +344,43 @@ class EmployeeController extends Controller
             'timezone' => ['required', 'timezone'],
             'avatar' => ['nullable', 'image', 'max:2048'],
         ]);
+    }
+
+    /**
+     * The employee's shift assignments (newest first) plus the shift options
+     * for the "add assignment" combobox, feeding the Shifts tab.
+     *
+     * @return array{assignments: array<int, array<string, mixed>>, shiftOptions: array<int, array{value: string, label: string}>}
+     */
+    private function shiftAssignments(User $employee): array
+    {
+        $assignments = $employee->shiftAssignments()
+            ->with('shift:id,name')
+            ->orderByDesc('start_date')
+            ->get()
+            ->map(fn (ShiftAssignment $assignment) => [
+                'id' => $assignment->id,
+                'shift' => $assignment->shift?->name,
+                'start_date' => $assignment->start_date->format('Y-m-d'),
+                'end_date' => $assignment->end_date?->format('Y-m-d'),
+                // Status derived from the range relative to today: not yet
+                // started (upcoming), already finished (ended), or in effect now.
+                'status' => match (true) {
+                    $assignment->start_date->gt(today()) => 'upcoming',
+                    $assignment->end_date !== null && $assignment->end_date->lt(today()) => 'ended',
+                    default => 'current',
+                },
+            ])
+            ->all();
+
+        return [
+            'assignments' => $assignments,
+            'shiftOptions' => Shift::query()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (Shift $shift) => ['value' => (string) $shift->id, 'label' => $shift->name])
+                ->all(),
+        ];
     }
 
     /**

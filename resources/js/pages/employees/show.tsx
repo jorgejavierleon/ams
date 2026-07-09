@@ -1,12 +1,14 @@
 import { Deferred, Head, Link } from '@inertiajs/react';
 import { Pencil } from 'lucide-react';
 import type { ReactNode } from 'react';
+import type { ComboboxOption } from '@/components/combobox';
 import Heading from '@/components/heading';
 import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-} from '@/components/ui/avatar';
+    ShiftAssignments
+    
+} from '@/components/shift-assignments';
+import type {ShiftAssignment} from '@/components/shift-assignments';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,8 +43,14 @@ type Employee = {
     emergency_contact_phone: string | null;
 };
 
+type Shifts = {
+    assignments: ShiftAssignment[];
+    shiftOptions: ComboboxOption[];
+};
+
 type Props = {
     employee: Employee;
+    shifts?: Shifts;
 };
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
@@ -56,7 +64,7 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
     );
 }
 
-export default function ShowEmployee({ employee }: Props) {
+export default function ShowEmployee({ employee, shifts }: Props) {
     const { t } = useTranslations();
 
     return (
@@ -136,7 +144,9 @@ export default function ShowEmployee({ employee }: Props) {
                                     value={employee.rut}
                                 />
                                 <Field
-                                    label={t('ui.employees.form.personal_email')}
+                                    label={t(
+                                        'ui.employees.form.personal_email',
+                                    )}
                                     value={employee.personal_email}
                                 />
                                 <Field
@@ -200,21 +210,11 @@ export default function ShowEmployee({ employee }: Props) {
                     </TabsContent>
 
                     <TabsContent value="shifts">
-                        <Deferred
-                            data="shifts"
-                            fallback={
-                                <div className="space-y-2">
-                                    <Skeleton className="h-10 w-full" />
-                                    <Skeleton className="h-10 w-full" />
-                                </div>
-                            }
-                        >
-                            <Card>
-                                <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                                    {t('ui.employees.show.shifts_pending')}
-                                </CardContent>
-                            </Card>
-                        </Deferred>
+                        <ShiftAssignments
+                            employeeId={employee.id}
+                            assignments={shifts?.assignments ?? []}
+                            shiftOptions={shifts?.shiftOptions ?? []}
+                        />
                     </TabsContent>
 
                     <TabsContent value="documents">

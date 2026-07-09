@@ -529,6 +529,63 @@ return [
             'deleted' => 'Shift deleted.',
             'has_assignments' => 'This shift has active assignments and cannot be deleted.',
         ],
+
+        'shift_assignments' => [
+            'title' => 'Shift assignments',
+            'add' => 'Add assignment',
+            'empty' => 'No shift assignments yet.',
+            'status_current' => 'Current',
+            'status_ended' => 'Ended',
+            'status_upcoming' => 'Upcoming',
+            'permanent' => 'Permanent',
+
+            'columns' => [
+                'shift' => 'Shift',
+                'start_date' => 'Start date',
+                'end_date' => 'End date',
+                'status' => 'Status',
+            ],
+
+            'actions' => [
+                'end' => 'End',
+                'delete' => 'Delete',
+            ],
+
+            'dialog' => [
+                'title' => 'Add shift assignment',
+                'description' => 'Assign a shift to this employee for a date range. Leave the end date empty for a permanent assignment.',
+                'shift' => 'Shift',
+                'shift_placeholder' => 'Select a shift',
+                'shift_search' => 'Search shift...',
+                'shift_empty' => 'No shifts found.',
+                'start_date' => 'Start date',
+                'end_date' => 'End date (optional)',
+                'cancel' => 'Cancel',
+                'submit' => 'Add assignment',
+            ],
+
+            'end_dialog' => [
+                'title' => 'End assignment',
+                'description' => 'This sets the end date to today. Continue?',
+                'confirm' => 'End assignment',
+            ],
+
+            'delete_dialog' => [
+                'title' => 'Delete assignment',
+                'description' => 'Are you sure you want to delete this assignment? This action cannot be undone.',
+                'confirm' => 'Delete',
+            ],
+
+            'validation' => [
+                'overlap' => 'This date range overlaps an existing assignment for this employee.',
+            ],
+
+            'flash' => [
+                'created' => 'Shift assignment created.',
+                'ended' => 'Shift assignment ended.',
+                'deleted' => 'Shift assignment deleted.',
+            ],
+        ],
     ],
 
     'employees' => [
