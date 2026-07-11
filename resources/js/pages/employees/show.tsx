@@ -36,6 +36,10 @@ type Employee = {
     supervisor: string | null;
     contract_start_date: string | null;
     contract_end_date: string | null;
+    vacation_days: number;
+    additional_vacation_days: number;
+    administrative_days: number;
+    has_additional_sundays: boolean;
     is_active: boolean;
     is_admin: boolean;
     timezone: string;
@@ -59,49 +63,6 @@ type Props = {
     shifts?: Shifts;
     vacationBalance: VacationBalance;
 };
-
-function VacationBalanceCard({ balance }: { balance: VacationBalance }) {
-    const { t } = useTranslations();
-    const percentUsed =
-        balance.total > 0
-            ? Math.min(100, Math.round((balance.used / balance.total) * 100))
-            : 0;
-
-    return (
-        <Card>
-            <CardContent className="space-y-3 pt-6">
-                <div className="flex items-baseline justify-between">
-                    <span className="text-sm font-medium">
-                        {t('ui.employees.vacation_balance.title')}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                        {t('ui.employees.vacation_balance.summary', {
-                            used: String(balance.used),
-                            total: String(balance.total),
-                        })}
-                    </span>
-                </div>
-                <div
-                    className="h-2 w-full overflow-hidden rounded-full bg-muted"
-                    role="progressbar"
-                    aria-valuenow={percentUsed}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                >
-                    <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${percentUsed}%` }}
-                    />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                    {t('ui.employees.vacation_balance.available', {
-                        available: String(balance.available),
-                    })}
-                </p>
-            </CardContent>
-        </Card>
-    );
-}
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
     return (
@@ -177,12 +138,13 @@ export default function ShowEmployee({
                     </Button>
                 </div>
 
-                <VacationBalanceCard balance={vacationBalance} />
-
                 <Tabs defaultValue="info">
                     <TabsList>
                         <TabsTrigger value="info">
                             {t('ui.employees.show.tab_info')}
+                        </TabsTrigger>
+                        <TabsTrigger value="labor">
+                            {t('ui.employees.show.tab_labor')}
                         </TabsTrigger>
                         <TabsTrigger value="shifts">
                             {t('ui.employees.show.tab_shifts')}
@@ -209,6 +171,37 @@ export default function ShowEmployee({
                                     label={t('ui.employees.form.phone')}
                                     value={employee.phone}
                                 />
+                                <Field
+                                    label={t('ui.employees.form.nationality')}
+                                    value={employee.nationality}
+                                />
+                                <Field
+                                    label={t('ui.employees.form.gender')}
+                                    value={employee.gender}
+                                />
+                                <Field
+                                    label={t('ui.employees.form.timezone')}
+                                    value={employee.timezone}
+                                />
+                                <Field
+                                    label={t(
+                                        'ui.employees.form.emergency_contact_name',
+                                    )}
+                                    value={employee.emergency_contact_name}
+                                />
+                                <Field
+                                    label={t(
+                                        'ui.employees.form.emergency_contact_phone',
+                                    )}
+                                    value={employee.emergency_contact_phone}
+                                />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="labor">
+                        <Card>
+                            <CardContent className="grid gap-6 pt-6 sm:grid-cols-2 lg:grid-cols-3">
                                 <Field
                                     label={t('ui.employees.form.company')}
                                     value={employee.company}
@@ -238,28 +231,64 @@ export default function ShowEmployee({
                                     value={employee.contract_end_date}
                                 />
                                 <Field
-                                    label={t('ui.employees.form.nationality')}
-                                    value={employee.nationality}
-                                />
-                                <Field
-                                    label={t('ui.employees.form.gender')}
-                                    value={employee.gender}
-                                />
-                                <Field
-                                    label={t('ui.employees.form.timezone')}
-                                    value={employee.timezone}
+                                    label={t('ui.employees.form.vacation_days')}
+                                    value={String(employee.vacation_days)}
                                 />
                                 <Field
                                     label={t(
-                                        'ui.employees.form.emergency_contact_name',
+                                        'ui.employees.form.additional_vacation_days',
                                     )}
-                                    value={employee.emergency_contact_name}
+                                    value={String(
+                                        employee.additional_vacation_days,
+                                    )}
                                 />
                                 <Field
                                     label={t(
-                                        'ui.employees.form.emergency_contact_phone',
+                                        'ui.employees.form.administrative_days',
                                     )}
-                                    value={employee.emergency_contact_phone}
+                                    value={String(employee.administrative_days)}
+                                />
+                                <Field
+                                    label={t(
+                                        'ui.employees.form.has_additional_sundays',
+                                    )}
+                                    value={
+                                        employee.has_additional_sundays
+                                            ? t('ui.employees.show.yes')
+                                            : t('ui.employees.show.no')
+                                    }
+                                />
+                                <Field
+                                    label={t(
+                                        'ui.employees.vacation_balance.title',
+                                    )}
+                                    value={
+                                        <span className="grid gap-0.5">
+                                            <span className="font-medium">
+                                                {t(
+                                                    'ui.employees.vacation_balance.available',
+                                                    {
+                                                        available: String(
+                                                            vacationBalance.available,
+                                                        ),
+                                                    },
+                                                )}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground tabular-nums">
+                                                {t(
+                                                    'ui.employees.vacation_balance.summary',
+                                                    {
+                                                        used: String(
+                                                            vacationBalance.used,
+                                                        ),
+                                                        total: String(
+                                                            vacationBalance.total,
+                                                        ),
+                                                    },
+                                                )}
+                                            </span>
+                                        </span>
+                                    }
                                 />
                             </CardContent>
                         </Card>

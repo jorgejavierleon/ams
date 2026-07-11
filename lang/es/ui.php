@@ -716,7 +716,6 @@ return [
         'tabs' => [
             'personal' => 'Personal',
             'labor' => 'Laboral',
-            'admin' => 'Admin',
             'contact' => 'Contacto',
             'system' => 'Sistema',
         ],
@@ -771,8 +770,11 @@ return [
 
         'show' => [
             'tab_info' => 'Info',
+            'tab_labor' => 'Laboral',
             'tab_shifts' => 'Turnos',
             'tab_documents' => 'Documentos',
+            'yes' => 'Sí',
+            'no' => 'No',
             'shifts_pending' => 'Las asignaciones de turno estarán disponibles pronto.',
             'documents_pending' => 'Los documentos estarán disponibles pronto.',
         ],

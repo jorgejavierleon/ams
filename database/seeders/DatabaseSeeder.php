@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UserSeeder::class,
             ShiftSeeder::class,
+            HolidaySeeder::class,
+            LeaveSeeder::class,
             OrganizationSeeder::class,
             RegionSeeder::class,
         ]);
