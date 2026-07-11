@@ -7,6 +7,7 @@ import {
     LayoutGrid,
     MapPin,
     ShieldCheck,
+    Sun,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -25,10 +26,11 @@ import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
 import { index as companiesIndex } from '@/routes/companies';
 import { index as employeesIndex } from '@/routes/employees';
+import { index as holidaysIndex } from '@/routes/holidays';
+import { index as leavesIndex } from '@/routes/leaves';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
-import { index as holidaysIndex } from '@/routes/holidays';
 import { index as shiftsIndex } from '@/routes/shifts';
 import type { NavItem } from '@/types';
 
@@ -78,6 +80,16 @@ export function AppSidebar() {
                     title: t('ui.nav.holidays'),
                     href: holidaysIndex(),
                     icon: CalendarDays,
+                },
+            ],
+        },
+        {
+            label: t('ui.nav.approvals'),
+            items: [
+                {
+                    title: t('ui.nav.leaves'),
+                    href: leavesIndex(),
+                    icon: Sun,
                 },
             ],
         },

@@ -48,10 +48,60 @@ type Shifts = {
     shiftOptions: ComboboxOption[];
 };
 
+type VacationBalance = {
+    used: number;
+    available: number;
+    total: number;
+};
+
 type Props = {
     employee: Employee;
     shifts?: Shifts;
+    vacationBalance: VacationBalance;
 };
+
+function VacationBalanceCard({ balance }: { balance: VacationBalance }) {
+    const { t } = useTranslations();
+    const percentUsed =
+        balance.total > 0
+            ? Math.min(100, Math.round((balance.used / balance.total) * 100))
+            : 0;
+
+    return (
+        <Card>
+            <CardContent className="space-y-3 pt-6">
+                <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-medium">
+                        {t('ui.employees.vacation_balance.title')}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                        {t('ui.employees.vacation_balance.summary', {
+                            used: String(balance.used),
+                            total: String(balance.total),
+                        })}
+                    </span>
+                </div>
+                <div
+                    className="h-2 w-full overflow-hidden rounded-full bg-muted"
+                    role="progressbar"
+                    aria-valuenow={percentUsed}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                >
+                    <div
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${percentUsed}%` }}
+                    />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    {t('ui.employees.vacation_balance.available', {
+                        available: String(balance.available),
+                    })}
+                </p>
+            </CardContent>
+        </Card>
+    );
+}
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
     return (
@@ -64,7 +114,11 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
     );
 }
 
-export default function ShowEmployee({ employee, shifts }: Props) {
+export default function ShowEmployee({
+    employee,
+    shifts,
+    vacationBalance,
+}: Props) {
     const { t } = useTranslations();
 
     return (
@@ -122,6 +176,8 @@ export default function ShowEmployee({ employee, shifts }: Props) {
                         </Link>
                     </Button>
                 </div>
+
+                <VacationBalanceCard balance={vacationBalance} />
 
                 <Tabs defaultValue="info">
                     <TabsList>
