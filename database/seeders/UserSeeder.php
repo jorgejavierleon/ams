@@ -39,6 +39,22 @@ class UserSeeder extends Seeder
                 ->forCompany($company)
                 ->create(['name' => $name]));
 
+        // A stable demo employee for logging in and exercising the employee
+        // self-service flow (shares the single demo password).
+        User::factory()->employee()->create([
+            'name' => 'Empleado Demo',
+            'first_name' => 'Empleado',
+            'last_name' => 'Demo',
+            'email' => 'employee@example.com',
+            'password' => 'admin',
+            'organization_id' => $organization->id,
+            'company_id' => $company->id,
+            'premise_id' => $premises->first()->id,
+            'rut' => '21437581-8',
+            'vacation_days' => 15,
+            'additional_vacation_days' => 2,
+        ]);
+
         // Real, verifier-valid Chilean RUTs for the demo employees.
         $ruts = [
             '23415645-4', '22922483-2', '22901821-3', '22200751-8', '5564530-2',
