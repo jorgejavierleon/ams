@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     Building2,
     CalendarClock,
@@ -28,6 +28,7 @@ import { index as companiesIndex } from '@/routes/companies';
 import { index as employeesIndex } from '@/routes/employees';
 import { index as holidaysIndex } from '@/routes/holidays';
 import { index as leavesIndex } from '@/routes/leaves';
+import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
@@ -36,8 +37,31 @@ import type { NavItem } from '@/types';
 
 export function AppSidebar() {
     const { t } = useTranslations();
+    const { auth } = usePage().props;
 
-    const navGroups: Array<{ label: string; items: NavItem[] }> = [
+    // Feature access is gated by permissions, not roles. Employees see a
+    // minimal self-service nav; everyone else keeps the admin navigation.
+    const isEmployee = auth.permissions.includes('ViewOwn:Leave');
+
+    const employeeNavGroups: Array<{ label: string; items: NavItem[] }> = [
+        {
+            label: t('ui.nav.organization'),
+            items: [
+                {
+                    title: t('ui.nav.dashboard'),
+                    href: dashboard(),
+                    icon: LayoutGrid,
+                },
+                {
+                    title: t('ui.nav.my_leaves'),
+                    href: myLeavesIndex(),
+                    icon: Sun,
+                },
+            ],
+        },
+    ];
+
+    const adminNavGroups: Array<{ label: string; items: NavItem[] }> = [
         {
             label: t('ui.nav.organization'),
             items: [
@@ -105,6 +129,8 @@ export function AppSidebar() {
             ],
         },
     ];
+
+    const navGroups = isEmployee ? employeeNavGroups : adminNavGroups;
 
     return (
         <Sidebar collapsible="icon" variant="inset">

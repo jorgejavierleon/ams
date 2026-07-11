@@ -30,4 +30,31 @@ enum LeaveType: string
             self::cases(),
         );
     }
+
+    /**
+     * Types an employee may request for themselves. Medical leaves are excluded
+     * because the LeaveObserver auto-approves them, which would bypass approval.
+     *
+     * @return array<int, self>
+     */
+    public static function selfServiceCases(): array
+    {
+        return array_values(array_filter(
+            self::cases(),
+            fn (self $type): bool => $type !== self::Medical,
+        ));
+    }
+
+    /**
+     * Self-requestable types as value/label pairs for select inputs.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    public static function selfServiceOptions(): array
+    {
+        return array_map(
+            fn (self $type): array => ['value' => $type->value, 'label' => $type->label()],
+            self::selfServiceCases(),
+        );
+    }
 }

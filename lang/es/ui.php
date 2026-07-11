@@ -29,6 +29,7 @@ return [
         'employees' => 'Empleados',
         'holidays' => 'Feriados',
         'leaves' => 'Permisos',
+        'my_leaves' => 'Mis permisos',
     ],
 
     'user_menu' => [
@@ -824,6 +825,7 @@ return [
             'approve' => 'Aprobar',
             'reject' => 'Rechazar',
             'delete' => 'Eliminar',
+            'cancel' => 'Cancelar solicitud',
             'more' => 'Más acciones',
         ],
 
@@ -910,6 +912,24 @@ return [
         'delete_dialog' => [
             'title' => 'Eliminar permiso',
             'description' => '¿Eliminar la solicitud de :name? Esta acción no se puede deshacer. En vacaciones aprobadas, los días se devolverán a su saldo.',
+        ],
+
+        'my' => [
+            'title' => 'Mis permisos',
+            'description' => 'Solicita ausencias y revisa el estado de tus solicitudes',
+            'new' => 'Solicitar permiso',
+            'empty' => 'Aún no tienes solicitudes de permiso.',
+
+            'create' => [
+                'title' => 'Solicitar permiso',
+                'description' => 'Envía una solicitud de ausencia para su aprobación',
+                'submit' => 'Enviar solicitud',
+            ],
+
+            'cancel_dialog' => [
+                'title' => 'Cancelar solicitud',
+                'description' => '¿Cancelar esta solicitud pendiente? Esta acción no se puede deshacer.',
+            ],
         ],
 
         'flash' => [

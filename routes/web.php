@@ -9,6 +9,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\My\LeaveController as MyLeaveController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -76,6 +77,25 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
         ->name('regions.communes');
+});
+
+// Employee self-service routes (gated by Spatie permissions, not roles)
+Route::middleware(['auth', 'verified'])->prefix('my')->name('my.')->group(function () {
+    Route::get('leaves', [MyLeaveController::class, 'index'])
+        ->middleware('permission:ViewOwn:Leave')
+        ->name('leaves.index');
+    Route::get('leaves/create', [MyLeaveController::class, 'create'])
+        ->middleware('permission:RequestOwn:Leave')
+        ->name('leaves.create');
+    Route::post('leaves', [MyLeaveController::class, 'store'])
+        ->middleware('permission:RequestOwn:Leave')
+        ->name('leaves.store');
+    Route::get('leaves/business-days', [MyLeaveController::class, 'businessDays'])
+        ->middleware('permission:RequestOwn:Leave')
+        ->name('leaves.business-days');
+    Route::delete('leaves/{leave}', [MyLeaveController::class, 'destroy'])
+        ->middleware('permission:CancelOwn:Leave')
+        ->name('leaves.destroy');
 });
 
 // DT panel routes
