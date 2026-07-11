@@ -823,6 +823,8 @@ return [
             'view' => 'Ver detalles',
             'approve' => 'Aprobar',
             'reject' => 'Rechazar',
+            'delete' => 'Eliminar',
+            'more' => 'Más acciones',
         ],
 
         'statuses' => [
@@ -905,10 +907,16 @@ return [
             'description' => '¿Rechazar la solicitud de :name?',
         ],
 
+        'delete_dialog' => [
+            'title' => 'Eliminar permiso',
+            'description' => '¿Eliminar la solicitud de :name? Esta acción no se puede deshacer. En vacaciones aprobadas, los días se devolverán a su saldo.',
+        ],
+
         'flash' => [
             'created' => 'Solicitud de permiso creada.',
             'approved' => 'Permiso aprobado.',
             'rejected' => 'Permiso rechazado.',
+            'deleted' => 'Permiso eliminado.',
         ],
     ],
 

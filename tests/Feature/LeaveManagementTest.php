@@ -314,6 +314,90 @@ test('medical leaves cannot be rejected', function () {
     expect($leave->refresh()->status)->toBe(LeaveStatus::Approved);
 });
 
+// --- Delete ---
+
+test('deleting a leave removes it and dispatches recalculation for approved leaves', function () {
+    Event::fake([WorkdaysRecalculationNeeded::class]);
+
+    $admin = leaveAdmin();
+    $organization = $admin->organization;
+    $employee = leaveEmployee($organization);
+
+    $leave = Leave::factory()->approved()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'type' => LeaveType::Paid,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('leaves.destroy', $leave))
+        ->assertRedirect();
+
+    expect(Leave::find($leave->id))->toBeNull();
+
+    Event::assertDispatched(WorkdaysRecalculationNeeded::class);
+});
+
+test('deleting an approved vacation refunds the balance', function () {
+    $admin = leaveAdmin();
+    $organization = $admin->organization;
+    $employee = leaveEmployee($organization, ['vacation_days' => 10]);
+
+    $leave = Leave::factory()->approved()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'type' => LeaveType::Vacation,
+        'business_days_requested' => 5,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('leaves.destroy', $leave))
+        ->assertRedirect();
+
+    expect(Leave::find($leave->id))->toBeNull()
+        ->and($employee->refresh()->vacation_days)->toEqual(15.0);
+});
+
+test('deleting a pending vacation does not touch the balance', function () {
+    $admin = leaveAdmin();
+    $organization = $admin->organization;
+    $employee = leaveEmployee($organization, ['vacation_days' => 10]);
+
+    $leave = Leave::factory()->pending()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'type' => LeaveType::Vacation,
+        'business_days_requested' => 5,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('leaves.destroy', $leave))
+        ->assertRedirect();
+
+    expect($employee->refresh()->vacation_days)->toEqual(10.0);
+});
+
+test('a medical leave can be deleted', function () {
+    $admin = leaveAdmin();
+    $organization = $admin->organization;
+    $employee = leaveEmployee($organization);
+
+    $leave = Leave::factory()->medical()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('leaves.destroy', $leave))
+        ->assertRedirect();
+
+    expect(Leave::find($leave->id))->toBeNull();
+});
+
 // --- Vacation balance on the employee page ---
 
 test('the employee show page exposes the vacation balance', function () {

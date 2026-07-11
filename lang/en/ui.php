@@ -823,6 +823,8 @@ return [
             'view' => 'View details',
             'approve' => 'Approve',
             'reject' => 'Reject',
+            'delete' => 'Delete',
+            'more' => 'More actions',
         ],
 
         'statuses' => [
@@ -905,10 +907,16 @@ return [
             'description' => "Reject :name's leave request?",
         ],
 
+        'delete_dialog' => [
+            'title' => 'Delete leave',
+            'description' => "Delete :name's leave request? This cannot be undone. For an approved vacation, the days will be returned to their balance.",
+        ],
+
         'flash' => [
             'created' => 'Leave request created.',
             'approved' => 'Leave approved.',
             'rejected' => 'Leave rejected.',
+            'deleted' => 'Leave deleted.',
         ],
     ],
 

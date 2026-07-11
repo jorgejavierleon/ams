@@ -202,6 +202,18 @@ class LeaveController extends Controller
     }
 
     /**
+     * @throws Throwable
+     */
+    public function destroy(Leave $leave, LeaveManager $manager): RedirectResponse
+    {
+        $manager->delete($leave);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.leaves.flash.deleted')]);
+
+        return back();
+    }
+
+    /**
      * Resolve the status tab into a LeaveStatus, treating "all" as no filter.
      */
     private function statusFilter(Request $request): ?LeaveStatus
