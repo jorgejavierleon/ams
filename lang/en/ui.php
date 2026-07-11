@@ -17,6 +17,7 @@ return [
     'nav' => [
         'organization' => 'Organization',
         'workdays' => 'Workdays',
+        'approvals' => 'Approvals',
         'documents' => 'Documents',
         'settings' => 'Settings',
         'dashboard' => 'Dashboard',
@@ -27,6 +28,7 @@ return [
         'shifts' => 'Shifts',
         'employees' => 'Employees',
         'holidays' => 'Holidays',
+        'leaves' => 'Leaves',
     ],
 
     'user_menu' => [
@@ -677,6 +679,12 @@ return [
         'search_placeholder' => 'Search by email or RUT...',
         'empty' => 'No employees found.',
 
+        'vacation_balance' => [
+            'title' => 'Vacation balance',
+            'summary' => ':used / :total days used',
+            'available' => ':available days available',
+        ],
+
         'columns' => [
             'employee' => 'Employee',
             'email' => 'Email',
@@ -708,7 +716,6 @@ return [
         'tabs' => [
             'personal' => 'Personal',
             'labor' => 'Labor',
-            'admin' => 'Admin',
             'contact' => 'Contact',
             'system' => 'System',
         ],
@@ -763,8 +770,11 @@ return [
 
         'show' => [
             'tab_info' => 'Info',
+            'tab_labor' => 'Labor',
             'tab_shifts' => 'Shifts',
             'tab_documents' => 'Documents',
+            'yes' => 'Yes',
+            'no' => 'No',
             'shifts_pending' => 'Shift assignments will be available soon.',
             'documents_pending' => 'Documents will be available soon.',
         ],
@@ -779,6 +789,106 @@ return [
             'created' => 'Employee created.',
             'updated' => 'Employee updated.',
             'deleted' => 'Employee deleted.',
+        ],
+    ],
+
+    'leaves' => [
+        'title' => 'Leaves',
+        'description' => 'Manage employee time-off requests',
+        'new' => 'New leave',
+        'empty' => 'No leave requests found.',
+
+        'tabs' => [
+            'all' => 'All',
+        ],
+
+        'columns' => [
+            'employee' => 'Employee',
+            'type' => 'Type',
+            'start_date' => 'Start',
+            'end_date' => 'End',
+            'half_day' => 'Half day',
+            'days' => 'Days',
+            'status' => 'Status',
+            'approved_by' => 'Approved by',
+        ],
+
+        'filters' => [
+            'employee' => 'Employee',
+            'from' => 'From',
+            'to' => 'To',
+        ],
+
+        'actions' => [
+            'approve' => 'Approve',
+            'reject' => 'Reject',
+        ],
+
+        'statuses' => [
+            'pending' => 'Pending',
+            'approved' => 'Approved',
+            'rejected' => 'Rejected',
+        ],
+
+        'types' => [
+            'vacation_lead' => 'Vacation',
+            'medical_lead' => 'Medical',
+            'unpaid_lead' => 'Unpaid',
+            'paid_lead' => 'Paid',
+            'other_lead' => 'Other',
+        ],
+
+        'half_day_types' => [
+            'morning' => 'Morning',
+            'afternoon' => 'Afternoon',
+        ],
+
+        'create' => [
+            'title' => 'New leave',
+            'description' => 'Register a time-off request for an employee',
+            'submit' => 'Create leave',
+        ],
+
+        'form' => [
+            'employee' => 'Employee',
+            'employee_placeholder' => 'Select an employee',
+            'employee_search' => 'Search employees...',
+            'employee_empty' => 'No employees found.',
+            'type' => 'Leave type',
+            'type_placeholder' => 'Select a type',
+            'type_search' => 'Search types...',
+            'type_empty' => 'No types found.',
+            'start_date' => 'Start date',
+            'end_date' => 'End date',
+            'half_day' => 'Half day',
+            'half_day_type' => 'Half-day period',
+            'half_day_type_placeholder' => 'Select a period',
+            'business_days' => 'Business days requested',
+            'business_days_hint' => 'Estimated from the shift and holidays — adjust if needed.',
+            'business_days_half_hint' => 'Half-day leaves always count as 0.5 days.',
+            'medical_leave_number' => 'Medical leave number',
+            'medical_leave_doctor' => 'Doctor',
+            'notes' => 'Notes',
+        ],
+
+        'validation' => [
+            'half_day_single_day' => 'A half-day leave must start and end on the same day.',
+        ],
+
+        'approve_dialog' => [
+            'title' => 'Approve leave',
+            'description' => "Approve :name's leave request? For vacation, the days will be deducted from their balance.",
+        ],
+
+        'reject_dialog' => [
+            'title' => 'Reject leave',
+            'description' => "Reject :name's leave request?",
+        ],
+
+        'flash' => [
+            'created' => 'Leave request created.',
+            'approved' => 'Leave approved.',
+            'rejected' => 'Leave rejected.',
         ],
     ],
 

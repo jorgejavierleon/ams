@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesTableSort;
+use App\Enums\LeaveStatus;
+use App\Enums\LeaveType;
 use App\Models\Company;
+use App\Models\Leave;
 use App\Models\Position;
 use App\Models\Premise;
 use App\Models\Shift;
@@ -129,6 +132,10 @@ class EmployeeController extends Controller
                 'supervisor' => $employee->supervisor?->name,
                 'contract_start_date' => $employee->contract_start_date?->format('Y-m-d'),
                 'contract_end_date' => $employee->contract_end_date?->format('Y-m-d'),
+                'vacation_days' => $employee->vacation_days,
+                'additional_vacation_days' => $employee->additional_vacation_days,
+                'administrative_days' => $employee->administrative_days,
+                'has_additional_sundays' => $employee->has_additional_sundays,
                 'is_active' => $employee->is_active,
                 'is_admin' => $employee->is_admin,
                 'timezone' => $employee->timezone,
@@ -139,6 +146,7 @@ class EmployeeController extends Controller
             // stateful add/edit form, so it must not sit behind a deferred prop
             // that resets (and unmounts the form) on every redirect-back.
             'shifts' => $this->shiftAssignments($employee),
+            'vacationBalance' => $this->vacationBalance($employee),
             // Documents are still deferred — wired up by #35.
             'documents' => Inertia::defer(fn () => []),
         ]);
@@ -380,6 +388,31 @@ class EmployeeController extends Controller
                 ->get(['id', 'name'])
                 ->map(fn (Shift $shift) => ['value' => (string) $shift->id, 'label' => $shift->name])
                 ->all(),
+        ];
+    }
+
+    /**
+     * The employee's vacation balance: days already spent on approved vacation
+     * leaves versus the balance still available. `vacation_days` is the running
+     * remaining balance (approvals decrement it), so the original allotment is
+     * the sum of what's used and what's left.
+     *
+     * @return array{used: float, available: float, total: float}
+     */
+    private function vacationBalance(User $employee): array
+    {
+        $used = (float) Leave::query()
+            ->where('user_id', $employee->id)
+            ->where('type', LeaveType::Vacation)
+            ->where('status', LeaveStatus::Approved)
+            ->sum('business_days_requested');
+
+        $available = (float) $employee->vacation_days + (float) $employee->additional_vacation_days;
+
+        return [
+            'used' => $used,
+            'available' => $available,
+            'total' => $used + $available,
         ];
     }
 

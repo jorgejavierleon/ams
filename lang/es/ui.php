@@ -17,6 +17,7 @@ return [
     'nav' => [
         'organization' => 'Organización',
         'workdays' => 'Jornadas',
+        'approvals' => 'Aprobaciones',
         'documents' => 'Documentos',
         'settings' => 'Configuración',
         'dashboard' => 'Panel',
@@ -27,6 +28,7 @@ return [
         'shifts' => 'Turnos',
         'employees' => 'Empleados',
         'holidays' => 'Feriados',
+        'leaves' => 'Permisos',
     ],
 
     'user_menu' => [
@@ -677,6 +679,12 @@ return [
         'search_placeholder' => 'Buscar por email o RUT...',
         'empty' => 'No se encontraron empleados.',
 
+        'vacation_balance' => [
+            'title' => 'Saldo de vacaciones',
+            'summary' => ':used / :total días usados',
+            'available' => ':available días disponibles',
+        ],
+
         'columns' => [
             'employee' => 'Empleado',
             'email' => 'Email',
@@ -708,7 +716,6 @@ return [
         'tabs' => [
             'personal' => 'Personal',
             'labor' => 'Laboral',
-            'admin' => 'Admin',
             'contact' => 'Contacto',
             'system' => 'Sistema',
         ],
@@ -763,8 +770,11 @@ return [
 
         'show' => [
             'tab_info' => 'Info',
+            'tab_labor' => 'Laboral',
             'tab_shifts' => 'Turnos',
             'tab_documents' => 'Documentos',
+            'yes' => 'Sí',
+            'no' => 'No',
             'shifts_pending' => 'Las asignaciones de turno estarán disponibles pronto.',
             'documents_pending' => 'Los documentos estarán disponibles pronto.',
         ],
@@ -779,6 +789,106 @@ return [
             'created' => 'Empleado creado.',
             'updated' => 'Empleado actualizado.',
             'deleted' => 'Empleado eliminado.',
+        ],
+    ],
+
+    'leaves' => [
+        'title' => 'Permisos',
+        'description' => 'Gestiona las solicitudes de ausencia de los empleados',
+        'new' => 'Nuevo permiso',
+        'empty' => 'No se encontraron solicitudes de permiso.',
+
+        'tabs' => [
+            'all' => 'Todos',
+        ],
+
+        'columns' => [
+            'employee' => 'Empleado',
+            'type' => 'Tipo',
+            'start_date' => 'Inicio',
+            'end_date' => 'Fin',
+            'half_day' => 'Medio día',
+            'days' => 'Días',
+            'status' => 'Estado',
+            'approved_by' => 'Aprobado por',
+        ],
+
+        'filters' => [
+            'employee' => 'Empleado',
+            'from' => 'Desde',
+            'to' => 'Hasta',
+        ],
+
+        'actions' => [
+            'approve' => 'Aprobar',
+            'reject' => 'Rechazar',
+        ],
+
+        'statuses' => [
+            'pending' => 'Pendiente',
+            'approved' => 'Aprobado',
+            'rejected' => 'Rechazado',
+        ],
+
+        'types' => [
+            'vacation_lead' => 'Vacaciones',
+            'medical_lead' => 'Licencia médica',
+            'unpaid_lead' => 'Sin goce de sueldo',
+            'paid_lead' => 'Con goce de sueldo',
+            'other_lead' => 'Otro',
+        ],
+
+        'half_day_types' => [
+            'morning' => 'Mañana',
+            'afternoon' => 'Tarde',
+        ],
+
+        'create' => [
+            'title' => 'Nuevo permiso',
+            'description' => 'Registra una solicitud de ausencia para un empleado',
+            'submit' => 'Crear permiso',
+        ],
+
+        'form' => [
+            'employee' => 'Empleado',
+            'employee_placeholder' => 'Selecciona un empleado',
+            'employee_search' => 'Buscar empleados...',
+            'employee_empty' => 'No se encontraron empleados.',
+            'type' => 'Tipo de permiso',
+            'type_placeholder' => 'Selecciona un tipo',
+            'type_search' => 'Buscar tipos...',
+            'type_empty' => 'No se encontraron tipos.',
+            'start_date' => 'Fecha de inicio',
+            'end_date' => 'Fecha de fin',
+            'half_day' => 'Medio día',
+            'half_day_type' => 'Período del medio día',
+            'half_day_type_placeholder' => 'Selecciona un período',
+            'business_days' => 'Días hábiles solicitados',
+            'business_days_hint' => 'Estimado según el turno y los feriados — ajústalo si es necesario.',
+            'business_days_half_hint' => 'Los permisos de medio día siempre cuentan como 0,5 días.',
+            'medical_leave_number' => 'Número de licencia médica',
+            'medical_leave_doctor' => 'Médico',
+            'notes' => 'Notas',
+        ],
+
+        'validation' => [
+            'half_day_single_day' => 'Un permiso de medio día debe empezar y terminar el mismo día.',
+        ],
+
+        'approve_dialog' => [
+            'title' => 'Aprobar permiso',
+            'description' => '¿Aprobar la solicitud de :name? En vacaciones, los días se descontarán de su saldo.',
+        ],
+
+        'reject_dialog' => [
+            'title' => 'Rechazar permiso',
+            'description' => '¿Rechazar la solicitud de :name?',
+        ],
+
+        'flash' => [
+            'created' => 'Solicitud de permiso creada.',
+            'approved' => 'Permiso aprobado.',
+            'rejected' => 'Permiso rechazado.',
         ],
     ],
 

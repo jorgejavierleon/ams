@@ -3,7 +3,6 @@ import {
     Briefcase,
     Phone,
     Settings as SettingsIcon,
-    ShieldCheck,
     User as UserIcon,
 } from 'lucide-react';
 import { useState  } from 'react';
@@ -74,7 +73,7 @@ type Props = {
 };
 
 /**
- * The five-tab employee form shared by the create and edit pages. Avatar
+ * The four-tab employee form shared by the create and edit pages. Avatar
  * uploads force a multipart request; edits spoof the PATCH verb via `_method`
  * so the file part still transmits.
  */
@@ -134,10 +133,6 @@ export default function EmployeeForm({
                     <TabsTrigger value="labor">
                         <Briefcase className="size-4" />
                         {t('ui.employees.tabs.labor')}
-                    </TabsTrigger>
-                    <TabsTrigger value="admin">
-                        <ShieldCheck className="size-4" />
-                        {t('ui.employees.tabs.admin')}
                     </TabsTrigger>
                     <TabsTrigger value="contact">
                         <Phone className="size-4" />
@@ -430,22 +425,6 @@ export default function EmployeeForm({
                             />
                         </FormField>
                     </div>
-                </TabsContent>
-
-                {/* Admin / Benefits */}
-                <TabsContent value="admin" className="grid gap-6 pt-2">
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            id="is_admin"
-                            checked={data.is_admin}
-                            onCheckedChange={(checked) =>
-                                setData('is_admin', checked === true)
-                            }
-                        />
-                        <Label htmlFor="is_admin">
-                            {t('ui.employees.form.is_admin')}
-                        </Label>
-                    </div>
 
                     <div className="grid gap-6 sm:grid-cols-3">
                         <FormField
@@ -597,6 +576,19 @@ export default function EmployeeForm({
 
                 {/* System */}
                 <TabsContent value="system" className="grid gap-6 pt-2">
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="is_admin"
+                            checked={data.is_admin}
+                            onCheckedChange={(checked) =>
+                                setData('is_admin', checked === true)
+                            }
+                        />
+                        <Label htmlFor="is_admin">
+                            {t('ui.employees.form.is_admin')}
+                        </Label>
+                    </div>
+
                     <div className="grid gap-6 sm:grid-cols-2">
                         <FormField
                             label={t('ui.employees.form.timezone')}

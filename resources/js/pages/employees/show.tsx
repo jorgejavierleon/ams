@@ -36,6 +36,10 @@ type Employee = {
     supervisor: string | null;
     contract_start_date: string | null;
     contract_end_date: string | null;
+    vacation_days: number;
+    additional_vacation_days: number;
+    administrative_days: number;
+    has_additional_sundays: boolean;
     is_active: boolean;
     is_admin: boolean;
     timezone: string;
@@ -48,9 +52,16 @@ type Shifts = {
     shiftOptions: ComboboxOption[];
 };
 
+type VacationBalance = {
+    used: number;
+    available: number;
+    total: number;
+};
+
 type Props = {
     employee: Employee;
     shifts?: Shifts;
+    vacationBalance: VacationBalance;
 };
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
@@ -64,7 +75,11 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
     );
 }
 
-export default function ShowEmployee({ employee, shifts }: Props) {
+export default function ShowEmployee({
+    employee,
+    shifts,
+    vacationBalance,
+}: Props) {
     const { t } = useTranslations();
 
     return (
@@ -128,6 +143,9 @@ export default function ShowEmployee({ employee, shifts }: Props) {
                         <TabsTrigger value="info">
                             {t('ui.employees.show.tab_info')}
                         </TabsTrigger>
+                        <TabsTrigger value="labor">
+                            {t('ui.employees.show.tab_labor')}
+                        </TabsTrigger>
                         <TabsTrigger value="shifts">
                             {t('ui.employees.show.tab_shifts')}
                         </TabsTrigger>
@@ -153,6 +171,37 @@ export default function ShowEmployee({ employee, shifts }: Props) {
                                     label={t('ui.employees.form.phone')}
                                     value={employee.phone}
                                 />
+                                <Field
+                                    label={t('ui.employees.form.nationality')}
+                                    value={employee.nationality}
+                                />
+                                <Field
+                                    label={t('ui.employees.form.gender')}
+                                    value={employee.gender}
+                                />
+                                <Field
+                                    label={t('ui.employees.form.timezone')}
+                                    value={employee.timezone}
+                                />
+                                <Field
+                                    label={t(
+                                        'ui.employees.form.emergency_contact_name',
+                                    )}
+                                    value={employee.emergency_contact_name}
+                                />
+                                <Field
+                                    label={t(
+                                        'ui.employees.form.emergency_contact_phone',
+                                    )}
+                                    value={employee.emergency_contact_phone}
+                                />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="labor">
+                        <Card>
+                            <CardContent className="grid gap-6 pt-6 sm:grid-cols-2 lg:grid-cols-3">
                                 <Field
                                     label={t('ui.employees.form.company')}
                                     value={employee.company}
@@ -182,28 +231,64 @@ export default function ShowEmployee({ employee, shifts }: Props) {
                                     value={employee.contract_end_date}
                                 />
                                 <Field
-                                    label={t('ui.employees.form.nationality')}
-                                    value={employee.nationality}
-                                />
-                                <Field
-                                    label={t('ui.employees.form.gender')}
-                                    value={employee.gender}
-                                />
-                                <Field
-                                    label={t('ui.employees.form.timezone')}
-                                    value={employee.timezone}
+                                    label={t('ui.employees.form.vacation_days')}
+                                    value={String(employee.vacation_days)}
                                 />
                                 <Field
                                     label={t(
-                                        'ui.employees.form.emergency_contact_name',
+                                        'ui.employees.form.additional_vacation_days',
                                     )}
-                                    value={employee.emergency_contact_name}
+                                    value={String(
+                                        employee.additional_vacation_days,
+                                    )}
                                 />
                                 <Field
                                     label={t(
-                                        'ui.employees.form.emergency_contact_phone',
+                                        'ui.employees.form.administrative_days',
                                     )}
-                                    value={employee.emergency_contact_phone}
+                                    value={String(employee.administrative_days)}
+                                />
+                                <Field
+                                    label={t(
+                                        'ui.employees.form.has_additional_sundays',
+                                    )}
+                                    value={
+                                        employee.has_additional_sundays
+                                            ? t('ui.employees.show.yes')
+                                            : t('ui.employees.show.no')
+                                    }
+                                />
+                                <Field
+                                    label={t(
+                                        'ui.employees.vacation_balance.title',
+                                    )}
+                                    value={
+                                        <span className="grid gap-0.5">
+                                            <span className="font-medium">
+                                                {t(
+                                                    'ui.employees.vacation_balance.available',
+                                                    {
+                                                        available: String(
+                                                            vacationBalance.available,
+                                                        ),
+                                                    },
+                                                )}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground tabular-nums">
+                                                {t(
+                                                    'ui.employees.vacation_balance.summary',
+                                                    {
+                                                        used: String(
+                                                            vacationBalance.used,
+                                                        ),
+                                                        total: String(
+                                                            vacationBalance.total,
+                                                        ),
+                                                    },
+                                                )}
+                                            </span>
+                                        </span>
+                                    }
                                 />
                             </CardContent>
                         </Card>

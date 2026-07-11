@@ -278,14 +278,24 @@ test('the is_active state can be toggled inline', function () {
 
 test('admin can view an employee detail page', function () {
     $admin = employeeAdmin();
-    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $employee = User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'vacation_days' => 12,
+        'additional_vacation_days' => 3,
+        'administrative_days' => 2,
+        'has_additional_sundays' => true,
+    ]);
 
     $this->actingAs($admin)
         ->get(route('employees.show', $employee))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('employees/show')
-            ->where('employee.id', $employee->id));
+            ->where('employee.id', $employee->id)
+            ->where('employee.vacation_days', 12)
+            ->where('employee.additional_vacation_days', 3)
+            ->where('employee.administrative_days', 2)
+            ->where('employee.has_additional_sundays', true));
 });
 
 test('admin cannot view an employee from another organization', function () {

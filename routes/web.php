@@ -7,6 +7,7 @@ use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\PasswordChangeController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
+use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
@@ -62,6 +63,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('shift-assignments.end');
     Route::delete('shift-assignments/{shiftAssignment}', [ShiftAssignmentController::class, 'destroy'])
         ->name('shift-assignments.destroy');
+
+    Route::resource('leaves', LeaveController::class)
+        ->only(['index', 'create', 'store']);
+    Route::get('leaves/business-days', [LeaveController::class, 'businessDays'])
+        ->name('leaves.business-days');
+    Route::post('leaves/{leave}/approve', [LeaveController::class, 'approve'])
+        ->name('leaves.approve');
+    Route::post('leaves/{leave}/reject', [LeaveController::class, 'reject'])
+        ->name('leaves.reject');
 
     Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
         ->name('regions.communes');
