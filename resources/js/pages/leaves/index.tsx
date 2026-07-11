@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Check, Plus, X } from 'lucide-react';
+import { Check, Eye, Plus, X } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
@@ -10,7 +11,16 @@ import type { FacetedOption } from '@/components/data-table-faceted-filter';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { approve, create, index, reject } from '@/routes/leaves';
@@ -30,6 +40,10 @@ type Leave = {
     status_label: string;
     approved_by: string | null;
     is_medical: boolean;
+    medical_leave_number: string | null;
+    medical_leave_doctor: string | null;
+    notes: string | null;
+    created_at: string | null;
 };
 
 type Option = { value: string; label: string };
@@ -54,6 +68,21 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = 
     rejected: 'destructive',
 };
 
+function DetailRow({
+    label,
+    value,
+}: {
+    label: string;
+    value: ReactNode;
+}) {
+    return (
+        <div className="flex items-center justify-between gap-4">
+            <dt className="text-sm text-muted-foreground">{label}</dt>
+            <dd className="text-sm font-medium">{value}</dd>
+        </div>
+    );
+}
+
 export default function LeavesIndex({
     leaves,
     filters,
@@ -69,6 +98,7 @@ export default function LeavesIndex({
     const [from, setFrom] = useState(filters.from ?? '');
     const [to, setTo] = useState(filters.to ?? '');
 
+    const [viewTarget, setViewTarget] = useState<Leave | null>(null);
     const [approveTarget, setApproveTarget] = useState<Leave | null>(null);
     const [rejectTarget, setRejectTarget] = useState<Leave | null>(null);
 
@@ -222,6 +252,14 @@ export default function LeavesIndex({
                 header: () => null,
                 cell: ({ row }) => (
                     <div className="flex justify-end gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setViewTarget(row.original)}
+                            aria-label={t('ui.leaves.actions.view')}
+                        >
+                            <Eye className="size-4" />
+                        </Button>
                         {row.original.status !== 'approved' && (
                             <Button
                                 variant="ghost"
@@ -322,6 +360,153 @@ export default function LeavesIndex({
                     }
                 />
             </div>
+
+            <Dialog
+                open={viewTarget !== null}
+                onOpenChange={(open) => !open && setViewTarget(null)}
+            >
+                <DialogContent className="max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{t('ui.leaves.detail.title')}</DialogTitle>
+                        <DialogDescription>
+                            {viewTarget?.employee ?? t('ui.leaves.detail.none')}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {viewTarget && (
+                        <div className="flex flex-col gap-4 py-2">
+                            <dl className="grid gap-3">
+                                <DetailRow
+                                    label={t('ui.leaves.detail.type')}
+                                    value={
+                                        <Badge variant="outline">
+                                            {viewTarget.type_label}
+                                        </Badge>
+                                    }
+                                />
+                                <DetailRow
+                                    label={t('ui.leaves.detail.status')}
+                                    value={
+                                        <Badge
+                                            variant={
+                                                STATUS_VARIANT[
+                                                    viewTarget.status
+                                                ] ?? 'outline'
+                                            }
+                                        >
+                                            {viewTarget.status_label}
+                                        </Badge>
+                                    }
+                                />
+                                <DetailRow
+                                    label={t('ui.leaves.detail.start_date')}
+                                    value={viewTarget.start_date}
+                                />
+                                <DetailRow
+                                    label={t('ui.leaves.detail.end_date')}
+                                    value={viewTarget.end_date}
+                                />
+                                {viewTarget.half_day &&
+                                    viewTarget.half_day_type && (
+                                        <DetailRow
+                                            label={t('ui.leaves.detail.half_day')}
+                                            value={t(
+                                                `ui.leaves.half_day_types.${viewTarget.half_day_type}`,
+                                            )}
+                                        />
+                                    )}
+                                <DetailRow
+                                    label={t('ui.leaves.detail.days')}
+                                    value={viewTarget.business_days_requested}
+                                />
+                                <DetailRow
+                                    label={t('ui.leaves.detail.approved_by')}
+                                    value={
+                                        viewTarget.approved_by ??
+                                        t('ui.leaves.detail.none')
+                                    }
+                                />
+                                <DetailRow
+                                    label={t('ui.leaves.detail.created_at')}
+                                    value={
+                                        viewTarget.created_at ??
+                                        t('ui.leaves.detail.none')
+                                    }
+                                />
+                            </dl>
+
+                            {viewTarget.is_medical && (
+                                <>
+                                    <Separator />
+                                    <div className="grid gap-3">
+                                        <h3 className="text-sm font-medium">
+                                            {t('ui.leaves.detail.medical')}
+                                        </h3>
+                                        <DetailRow
+                                            label={t(
+                                                'ui.leaves.detail.medical_leave_number',
+                                            )}
+                                            value={
+                                                viewTarget.medical_leave_number ??
+                                                t('ui.leaves.detail.none')
+                                            }
+                                        />
+                                        <DetailRow
+                                            label={t(
+                                                'ui.leaves.detail.medical_leave_doctor',
+                                            )}
+                                            value={
+                                                viewTarget.medical_leave_doctor ??
+                                                t('ui.leaves.detail.none')
+                                            }
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            <Separator />
+                            <div className="grid gap-2">
+                                <h3 className="text-sm font-medium">
+                                    {t('ui.leaves.detail.notes')}
+                                </h3>
+                                <p className="text-sm whitespace-pre-line text-muted-foreground">
+                                    {viewTarget.notes ||
+                                        t('ui.leaves.detail.no_notes')}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        {viewTarget && viewTarget.status !== 'approved' && (
+                            <Button
+                                onClick={() => {
+                                    setApproveTarget(viewTarget);
+                                    setViewTarget(null);
+                                }}
+                            >
+                                <Check className="size-4" />
+                                {t('ui.leaves.actions.approve')}
+                            </Button>
+                        )}
+                        {viewTarget &&
+                            viewTarget.status !== 'rejected' &&
+                            !viewTarget.is_medical && (
+                                <Button
+                                    variant="outline"
+                                    className="text-destructive hover:text-destructive"
+                                    onClick={() => {
+                                        setRejectTarget(viewTarget);
+                                        setViewTarget(null);
+                                    }}
+                                >
+                                    <X className="size-4" />
+                                    {t('ui.leaves.actions.reject')}
+                                </Button>
+                            )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <ConfirmDialog
                 open={approveTarget !== null}

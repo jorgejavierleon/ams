@@ -65,6 +65,10 @@ class LeaveController extends Controller
                 'status_label' => $leave->status->label(),
                 'approved_by' => $leave->approver?->name,
                 'is_medical' => $leave->type === LeaveType::Medical,
+                'medical_leave_number' => $leave->medical_leave_number,
+                'medical_leave_doctor' => $leave->medical_leave_doctor,
+                'notes' => $leave->notes,
+                'created_at' => $leave->created_at?->format('Y-m-d H:i'),
             ]),
             'filters' => [
                 'status' => $status?->value,

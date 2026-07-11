@@ -820,6 +820,7 @@ return [
         ],
 
         'actions' => [
+            'view' => 'View details',
             'approve' => 'Approve',
             'reject' => 'Reject',
         ],
@@ -828,6 +829,25 @@ return [
             'pending' => 'Pending',
             'approved' => 'Approved',
             'rejected' => 'Rejected',
+        ],
+
+        'detail' => [
+            'title' => 'Leave details',
+            'employee' => 'Employee',
+            'type' => 'Type',
+            'status' => 'Status',
+            'start_date' => 'Start date',
+            'end_date' => 'End date',
+            'half_day' => 'Half day',
+            'days' => 'Business days',
+            'approved_by' => 'Approved by',
+            'created_at' => 'Requested at',
+            'medical' => 'Medical leave',
+            'medical_leave_number' => 'Leave number',
+            'medical_leave_doctor' => 'Doctor',
+            'notes' => 'Notes',
+            'no_notes' => 'No notes provided.',
+            'none' => '—',
         ],
 
         'types' => [

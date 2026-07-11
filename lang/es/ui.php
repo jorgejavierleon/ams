@@ -820,6 +820,7 @@ return [
         ],
 
         'actions' => [
+            'view' => 'Ver detalles',
             'approve' => 'Aprobar',
             'reject' => 'Rechazar',
         ],
@@ -828,6 +829,25 @@ return [
             'pending' => 'Pendiente',
             'approved' => 'Aprobado',
             'rejected' => 'Rechazado',
+        ],
+
+        'detail' => [
+            'title' => 'Detalles del permiso',
+            'employee' => 'Empleado',
+            'type' => 'Tipo',
+            'status' => 'Estado',
+            'start_date' => 'Fecha de inicio',
+            'end_date' => 'Fecha de fin',
+            'half_day' => 'Medio día',
+            'days' => 'Días hábiles',
+            'approved_by' => 'Aprobado por',
+            'created_at' => 'Solicitado el',
+            'medical' => 'Licencia médica',
+            'medical_leave_number' => 'Número de licencia',
+            'medical_leave_doctor' => 'Médico',
+            'notes' => 'Notas',
+            'no_notes' => 'Sin notas.',
+            'none' => '—',
         ],
 
         'types' => [

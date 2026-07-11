@@ -81,6 +81,30 @@ test('admin sees the leaves list scoped to their organization', function () {
             ->where('leaves.data.0.employee', $employee->name));
 });
 
+test('the index exposes detail fields for the leave view panel', function () {
+    $admin = leaveAdmin();
+    $organization = $admin->organization;
+    $employee = leaveEmployee($organization);
+
+    Leave::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'created_by' => $admin->id,
+        'type' => LeaveType::Medical,
+        'medical_leave_number' => '12345',
+        'medical_leave_doctor' => 'Dr. House',
+        'notes' => 'Bed rest for a week.',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('leaves.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('leaves.data.0.medical_leave_number', '12345')
+            ->where('leaves.data.0.medical_leave_doctor', 'Dr. House')
+            ->where('leaves.data.0.notes', 'Bed rest for a week.')
+            ->whereNot('leaves.data.0.created_at', null));
+});
+
 test('the status filter narrows the list', function () {
     $admin = leaveAdmin();
     $organization = $admin->organization;
