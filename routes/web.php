@@ -65,7 +65,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('shift-assignments.destroy');
 
     Route::resource('leaves', LeaveController::class)
-        ->only(['index', 'create', 'store']);
+        ->only(['index', 'create', 'store', 'destroy'])
+        ->parameter('leaves', 'leave');
     Route::get('leaves/business-days', [LeaveController::class, 'businessDays'])
         ->name('leaves.business-days');
     Route::post('leaves/{leave}/approve', [LeaveController::class, 'approve'])

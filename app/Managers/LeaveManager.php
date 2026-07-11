@@ -40,6 +40,25 @@ class LeaveManager
         }
     }
 
+    /**
+     * Permanently remove a leave, refunding the vacation balance when an
+     * already-approved vacation is deleted. Deletion flows through the model so
+     * the {@see LeaveObserver} still fires workday recalculation.
+     *
+     * @throws Throwable
+     */
+    public function delete(Leave $leave): void
+    {
+        DB::transaction(function () use ($leave): void {
+            if ($leave->type === LeaveType::Vacation && $leave->status === LeaveStatus::Approved) {
+                $leave->user->vacation_days += $leave->business_days_requested;
+                $leave->user->save();
+            }
+
+            $leave->delete();
+        });
+    }
+
     private function approveGeneralLeave(Leave $leave): void
     {
         $leave->status = LeaveStatus::Approved;

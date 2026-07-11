@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Check, Eye, Plus, X } from 'lucide-react';
+import { Check, Eye, MoreVertical, Plus, Trash2, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -19,11 +19,18 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { approve, create, index, reject } from '@/routes/leaves';
+import { approve, create, destroy, index, reject } from '@/routes/leaves';
 import type { Paginated } from '@/types/ui';
 
 type Leave = {
@@ -62,19 +69,14 @@ type Props = {
     statusOptions: Option[];
 };
 
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-    pending: 'secondary',
-    approved: 'default',
-    rejected: 'destructive',
-};
+const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> =
+    {
+        pending: 'secondary',
+        approved: 'default',
+        rejected: 'destructive',
+    };
 
-function DetailRow({
-    label,
-    value,
-}: {
-    label: string;
-    value: ReactNode;
-}) {
+function DetailRow({ label, value }: { label: string; value: ReactNode }) {
     return (
         <div className="flex items-center justify-between gap-4">
             <dt className="text-sm text-muted-foreground">{label}</dt>
@@ -101,6 +103,7 @@ export default function LeavesIndex({
     const [viewTarget, setViewTarget] = useState<Leave | null>(null);
     const [approveTarget, setApproveTarget] = useState<Leave | null>(null);
     const [rejectTarget, setRejectTarget] = useState<Leave | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<Leave | null>(null);
 
     const extraParams = useMemo(
         () => ({
@@ -113,7 +116,10 @@ export default function LeavesIndex({
     );
 
     const statusTabs = useMemo(
-        () => [{ value: 'all', label: t('ui.leaves.tabs.all') }, ...statusOptions],
+        () => [
+            { value: 'all', label: t('ui.leaves.tabs.all') },
+            ...statusOptions,
+        ],
         [statusOptions, t],
     );
 
@@ -145,6 +151,17 @@ export default function LeavesIndex({
                 onFinish: () => setRejectTarget(null),
             },
         );
+    }
+
+    function confirmDelete() {
+        if (!deleteTarget) {
+            return;
+        }
+
+        router.delete(destroy(deleteTarget.id).url, {
+            preserveScroll: true,
+            onFinish: () => setDeleteTarget(null),
+        });
     }
 
     const columns = useMemo<ColumnDef<Leave>[]>(
@@ -229,7 +246,9 @@ export default function LeavesIndex({
                 header: () => t('ui.leaves.columns.status'),
                 cell: ({ row }) => (
                     <Badge
-                        variant={STATUS_VARIANT[row.original.status] ?? 'outline'}
+                        variant={
+                            STATUS_VARIANT[row.original.status] ?? 'outline'
+                        }
                     >
                         {row.original.status_label}
                     </Badge>
@@ -252,14 +271,6 @@ export default function LeavesIndex({
                 header: () => null,
                 cell: ({ row }) => (
                     <div className="flex justify-end gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setViewTarget(row.original)}
-                            aria-label={t('ui.leaves.actions.view')}
-                        >
-                            <Eye className="size-4" />
-                        </Button>
                         {row.original.status !== 'approved' && (
                             <Button
                                 variant="ghost"
@@ -277,12 +288,43 @@ export default function LeavesIndex({
                                     variant="ghost"
                                     size="icon"
                                     className="text-destructive hover:text-destructive"
-                                    onClick={() => setRejectTarget(row.original)}
+                                    onClick={() =>
+                                        setRejectTarget(row.original)
+                                    }
                                     aria-label={t('ui.leaves.actions.reject')}
                                 >
                                     <X className="size-4" />
                                 </Button>
                             )}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t('ui.leaves.actions.more')}
+                                >
+                                    <MoreVertical className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                    onSelect={() => setViewTarget(row.original)}
+                                >
+                                    <Eye className="size-4" />
+                                    {t('ui.leaves.actions.view')}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    onSelect={() =>
+                                        setDeleteTarget(row.original)
+                                    }
+                                >
+                                    <Trash2 className="size-4" />
+                                    {t('ui.leaves.actions.delete')}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 ),
             },
@@ -345,7 +387,9 @@ export default function LeavesIndex({
                             <Input
                                 type="date"
                                 value={from}
-                                onChange={(event) => setFrom(event.target.value)}
+                                onChange={(event) =>
+                                    setFrom(event.target.value)
+                                }
                                 aria-label={t('ui.leaves.filters.from')}
                                 className="w-[150px]"
                             />
@@ -409,7 +453,9 @@ export default function LeavesIndex({
                                 {viewTarget.half_day &&
                                     viewTarget.half_day_type && (
                                         <DetailRow
-                                            label={t('ui.leaves.detail.half_day')}
+                                            label={t(
+                                                'ui.leaves.detail.half_day',
+                                            )}
                                             value={t(
                                                 `ui.leaves.half_day_types.${viewTarget.half_day_type}`,
                                             )}
@@ -504,6 +550,19 @@ export default function LeavesIndex({
                                     {t('ui.leaves.actions.reject')}
                                 </Button>
                             )}
+                        {viewTarget && (
+                            <Button
+                                variant="outline"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => {
+                                    setDeleteTarget(viewTarget);
+                                    setViewTarget(null);
+                                }}
+                            >
+                                <Trash2 className="size-4" />
+                                {t('ui.leaves.actions.delete')}
+                            </Button>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -528,6 +587,17 @@ export default function LeavesIndex({
                 })}
                 confirmLabel={t('ui.leaves.actions.reject')}
                 onConfirm={confirmReject}
+            />
+
+            <ConfirmDialog
+                open={deleteTarget !== null}
+                onOpenChange={(open) => !open && setDeleteTarget(null)}
+                title={t('ui.leaves.delete_dialog.title')}
+                description={t('ui.leaves.delete_dialog.description', {
+                    name: deleteTarget?.employee ?? '',
+                })}
+                confirmLabel={t('ui.leaves.actions.delete')}
+                onConfirm={confirmDelete}
             />
         </>
     );
