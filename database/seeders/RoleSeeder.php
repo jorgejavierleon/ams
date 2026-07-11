@@ -3,14 +3,38 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleSeeder extends Seeder
 {
+    /**
+     * Self-service leave permissions granted to the `employee` role. Application
+     * code gates on these permissions (not the role name) per Spatie best practice.
+     *
+     * @var array<int, string>
+     */
+    private const EMPLOYEE_PERMISSIONS = [
+        'RequestOwn:Leave',
+        'ViewOwn:Leave',
+        'CancelOwn:Leave',
+    ];
+
     public function run(): void
     {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $roles = [];
+
         foreach (['admin', 'employee', 'dt', 'saas'] as $role) {
-            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+            $roles[$role] = Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
+
+        foreach (self::EMPLOYEE_PERMISSIONS as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+
+        $roles['employee']->givePermissionTo(self::EMPLOYEE_PERMISSIONS);
     }
 }

@@ -29,6 +29,7 @@ return [
         'employees' => 'Employees',
         'holidays' => 'Holidays',
         'leaves' => 'Leaves',
+        'my_leaves' => 'My leaves',
     ],
 
     'user_menu' => [
@@ -824,6 +825,7 @@ return [
             'approve' => 'Approve',
             'reject' => 'Reject',
             'delete' => 'Delete',
+            'cancel' => 'Cancel request',
             'more' => 'More actions',
         ],
 
@@ -910,6 +912,24 @@ return [
         'delete_dialog' => [
             'title' => 'Delete leave',
             'description' => "Delete :name's leave request? This cannot be undone. For an approved vacation, the days will be returned to their balance.",
+        ],
+
+        'my' => [
+            'title' => 'My leaves',
+            'description' => 'Request time off and track your requests',
+            'new' => 'Request leave',
+            'empty' => 'You have no leave requests yet.',
+
+            'create' => [
+                'title' => 'Request leave',
+                'description' => 'Submit a time-off request for approval',
+                'submit' => 'Submit request',
+            ],
+
+            'cancel_dialog' => [
+                'title' => 'Cancel request',
+                'description' => 'Cancel this pending leave request? This cannot be undone.',
+            ],
         ],
 
         'flash' => [
