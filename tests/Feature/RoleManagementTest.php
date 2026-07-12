@@ -211,6 +211,26 @@ it('admin can sync permissions for a role', function () {
         ->and($role->fresh()->hasPermissionTo('create_employee'))->toBeFalse();
 });
 
+it('syncs permissions submitted as string ids from the form', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web']);
+
+    $p1 = Permission::firstOrCreate(['name' => 'ViewTeam:Leave', 'guard_name' => 'web']);
+    $p2 = Permission::firstOrCreate(['name' => 'ApproveTeam:Leave', 'guard_name' => 'web']);
+    $role->givePermissionTo([$p1, $p2]);
+
+    // The roles form submits permission ids as strings; syncPermissions() would
+    // otherwise treat a string id as a permission name and blow up.
+    $this->actingAs($admin)
+        ->put(route('roles.update', $role), ['permissions' => [(string) $p1->id]])
+        ->assertRedirect(route('roles.show', $role));
+
+    expect($role->fresh()->hasPermissionTo('ViewTeam:Leave'))->toBeTrue()
+        ->and($role->fresh()->hasPermissionTo('ApproveTeam:Leave'))->toBeFalse();
+});
+
 it('admin can remove all permissions from a role', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');

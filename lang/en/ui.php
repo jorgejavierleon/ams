@@ -30,6 +30,7 @@ return [
         'holidays' => 'Holidays',
         'leaves' => 'Leaves',
         'my_leaves' => 'My leaves',
+        'team_leaves' => 'Team leaves',
     ],
 
     'user_menu' => [

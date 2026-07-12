@@ -9,11 +9,14 @@ use App\Enums\LeaveType;
 use App\Http\Controllers\Controller;
 use App\Managers\LeaveManager;
 use App\Models\Leave;
+use App\Notifications\LeaveRequestSubmitted;
 use App\Services\BusinessDaysCalculator;
+use App\Services\LeaveApprovers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -94,7 +97,7 @@ class LeaveController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, LeaveApprovers $approvers): RedirectResponse
     {
         $user = $request->user();
 
@@ -122,7 +125,7 @@ class LeaveController extends Controller
             $data['half_day_type'] = null;
         }
 
-        Leave::create([
+        $leave = Leave::create([
             ...$data,
             // The requester is always the authenticated employee.
             'user_id' => $user->id,
@@ -130,6 +133,11 @@ class LeaveController extends Controller
             'company_id' => $user->company_id,
             'status' => LeaveStatus::Pending,
         ]);
+
+        Notification::send(
+            $approvers->submissionRecipients($leave),
+            new LeaveRequestSubmitted($leave),
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.leaves.flash.created')]);
 

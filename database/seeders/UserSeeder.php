@@ -39,8 +39,27 @@ class UserSeeder extends Seeder
                 ->forCompany($company)
                 ->create(['name' => $name]));
 
+        // A stable demo supervisor: an employee who also carries the
+        // `supervisor` role, so they can review and approve/reject the leaves of
+        // their own team. The team is wired up via `supervisor_id` below.
+        $supervisor = User::factory()->employee()->create([
+            'name' => 'Supervisor Demo',
+            'first_name' => 'Supervisor',
+            'last_name' => 'Demo',
+            'email' => 'supervisor@example.com',
+            'password' => 'admin',
+            'organization_id' => $organization->id,
+            'company_id' => $company->id,
+            'premise_id' => $premises->first()->id,
+            'rut' => '24805654-1',
+            'vacation_days' => 15,
+            'additional_vacation_days' => 2,
+        ]);
+        $supervisor->assignRole('supervisor');
+
         // A stable demo employee for logging in and exercising the employee
-        // self-service flow (shares the single demo password).
+        // self-service flow (shares the single demo password). Reports to the
+        // demo supervisor so their requests land in the supervisor's queue.
         User::factory()->employee()->create([
             'name' => 'Empleado Demo',
             'first_name' => 'Empleado',
@@ -50,6 +69,7 @@ class UserSeeder extends Seeder
             'organization_id' => $organization->id,
             'company_id' => $company->id,
             'premise_id' => $premises->first()->id,
+            'supervisor_id' => $supervisor->id,
             'rut' => '21437581-8',
             'vacation_days' => 15,
             'additional_vacation_days' => 2,
@@ -64,7 +84,9 @@ class UserSeeder extends Seeder
         ];
 
         // A handful of employees so the Employees list is populated for demos,
-        // split evenly across the two branches, each with a valid RUT.
+        // split evenly across the two branches, each with a valid RUT. The first
+        // half report to the demo supervisor so their team-leaves queue has a
+        // spread of pending/approved/rejected requests to review.
         User::factory()
             ->count(12)
             ->employee()
@@ -75,6 +97,7 @@ class UserSeeder extends Seeder
             ->each(fn (User $employee, int $index) => $employee->update([
                 'premise_id' => $premises[$index % $premises->count()]->id,
                 'rut' => $ruts[$index],
+                'supervisor_id' => $index < 6 ? $supervisor->id : null,
             ]));
 
         // DT inspector

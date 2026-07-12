@@ -67,6 +67,11 @@ type Props = {
     };
     employeeOptions: FacetedOption[];
     statusOptions: Option[];
+    can: {
+        create: boolean;
+        delete: boolean;
+        approve: boolean;
+    };
 };
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> =
@@ -90,6 +95,7 @@ export default function LeavesIndex({
     filters,
     employeeOptions,
     statusOptions,
+    can,
 }: Props) {
     const { t } = useTranslations();
 
@@ -271,7 +277,7 @@ export default function LeavesIndex({
                 header: () => null,
                 cell: ({ row }) => (
                     <div className="flex justify-end gap-2">
-                        {row.original.status !== 'approved' && (
+                        {can.approve && row.original.status !== 'approved' && (
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -282,7 +288,8 @@ export default function LeavesIndex({
                                 <Check className="size-4" />
                             </Button>
                         )}
-                        {row.original.status !== 'rejected' &&
+                        {can.approve &&
+                            row.original.status !== 'rejected' &&
                             !row.original.is_medical && (
                                 <Button
                                     variant="ghost"
@@ -313,23 +320,27 @@ export default function LeavesIndex({
                                     <Eye className="size-4" />
                                     {t('ui.leaves.actions.view')}
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    variant="destructive"
-                                    onSelect={() =>
-                                        setDeleteTarget(row.original)
-                                    }
-                                >
-                                    <Trash2 className="size-4" />
-                                    {t('ui.leaves.actions.delete')}
-                                </DropdownMenuItem>
+                                {can.delete && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            variant="destructive"
+                                            onSelect={() =>
+                                                setDeleteTarget(row.original)
+                                            }
+                                        >
+                                            <Trash2 className="size-4" />
+                                            {t('ui.leaves.actions.delete')}
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                 ),
             },
         ],
-        [t],
+        [t, can.delete, can.approve],
     );
 
     return (
@@ -342,12 +353,14 @@ export default function LeavesIndex({
                         title={t('ui.leaves.title')}
                         description={t('ui.leaves.description')}
                     />
-                    <Button asChild>
-                        <Link href={create()}>
-                            <Plus className="size-4" />
-                            {t('ui.leaves.new')}
-                        </Link>
-                    </Button>
+                    {can.create && (
+                        <Button asChild>
+                            <Link href={create()}>
+                                <Plus className="size-4" />
+                                {t('ui.leaves.new')}
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
@@ -524,18 +537,21 @@ export default function LeavesIndex({
                     )}
 
                     <DialogFooter>
-                        {viewTarget && viewTarget.status !== 'approved' && (
-                            <Button
-                                onClick={() => {
-                                    setApproveTarget(viewTarget);
-                                    setViewTarget(null);
-                                }}
-                            >
-                                <Check className="size-4" />
-                                {t('ui.leaves.actions.approve')}
-                            </Button>
-                        )}
-                        {viewTarget &&
+                        {can.approve &&
+                            viewTarget &&
+                            viewTarget.status !== 'approved' && (
+                                <Button
+                                    onClick={() => {
+                                        setApproveTarget(viewTarget);
+                                        setViewTarget(null);
+                                    }}
+                                >
+                                    <Check className="size-4" />
+                                    {t('ui.leaves.actions.approve')}
+                                </Button>
+                            )}
+                        {can.approve &&
+                            viewTarget &&
                             viewTarget.status !== 'rejected' &&
                             !viewTarget.is_medical && (
                                 <Button
@@ -550,7 +566,7 @@ export default function LeavesIndex({
                                     {t('ui.leaves.actions.reject')}
                                 </Button>
                             )}
-                        {viewTarget && (
+                        {viewTarget && can.delete && (
                             <Button
                                 variant="outline"
                                 className="text-destructive hover:text-destructive"

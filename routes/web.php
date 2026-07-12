@@ -66,17 +66,25 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('shift-assignments.destroy');
 
     Route::resource('leaves', LeaveController::class)
-        ->only(['index', 'create', 'store', 'destroy'])
+        ->only(['create', 'store', 'destroy'])
         ->parameter('leaves', 'leave');
     Route::get('leaves/business-days', [LeaveController::class, 'businessDays'])
         ->name('leaves.business-days');
+
+    Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
+        ->name('regions.communes');
+});
+
+// Leave review routes shared by admins and supervisors. Authorization is
+// enforced per request in the controller/LeavePolicy: admins see every leave,
+// supervisors only their own team.
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('leaves', [LeaveController::class, 'index'])
+        ->name('leaves.index');
     Route::post('leaves/{leave}/approve', [LeaveController::class, 'approve'])
         ->name('leaves.approve');
     Route::post('leaves/{leave}/reject', [LeaveController::class, 'reject'])
         ->name('leaves.reject');
-
-    Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
-        ->name('regions.communes');
 });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)
