@@ -5,12 +5,54 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\Leave;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
 
 class LeavePolicy
 {
     use HandlesAuthorization;
+
+    /**
+     * View the team leaves index. Admins see every request; a supervisor with
+     * the `ViewTeam:Leave` permission sees their direct reports' requests.
+     */
+    public function viewTeam(User $user): bool
+    {
+        return $user->hasRole('admin') || $user->can('ViewTeam:Leave');
+    }
+
+    /**
+     * Approve a leave. Admins may approve any request; a supervisor may approve
+     * only their own team's requests, and only while the `ApproveTeam:Leave`
+     * permission is granted to their role (the admin's control switch).
+     */
+    public function approve(User $user, Leave $leave): bool
+    {
+        return $this->canDecide($user, $leave);
+    }
+
+    /**
+     * Reject a leave — same authority rules as {@see approve()}.
+     */
+    public function reject(User $user, Leave $leave): bool
+    {
+        return $this->canDecide($user, $leave);
+    }
+
+    /**
+     * Shared authority check for approve/reject: admin, or the requester's
+     * direct supervisor holding the team-approval permission.
+     */
+    private function canDecide(User $user, Leave $leave): bool
+    {
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        return $user->can('ApproveTeam:Leave')
+            && $leave->user->supervisor_id === $user->id;
+    }
 
     public function viewAny(AuthUser $authUser): bool
     {

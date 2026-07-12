@@ -21,20 +21,33 @@ class RoleSeeder extends Seeder
         'CancelOwn:Leave',
     ];
 
+    /**
+     * Team leave-management permissions granted to the `supervisor` role by
+     * default. Admins can revoke these in the Roles screen to keep leave
+     * approval centralized; team scoping itself is enforced in the LeavePolicy.
+     *
+     * @var array<int, string>
+     */
+    private const SUPERVISOR_PERMISSIONS = [
+        'ViewTeam:Leave',
+        'ApproveTeam:Leave',
+    ];
+
     public function run(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $roles = [];
 
-        foreach (['admin', 'employee', 'dt', 'saas'] as $role) {
+        foreach (['admin', 'employee', 'supervisor', 'dt', 'saas'] as $role) {
             $roles[$role] = Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
 
-        foreach (self::EMPLOYEE_PERMISSIONS as $permission) {
+        foreach ([...self::EMPLOYEE_PERMISSIONS, ...self::SUPERVISOR_PERMISSIONS] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
         $roles['employee']->givePermissionTo(self::EMPLOYEE_PERMISSIONS);
+        $roles['supervisor']->givePermissionTo(self::SUPERVISOR_PERMISSIONS);
     }
 }

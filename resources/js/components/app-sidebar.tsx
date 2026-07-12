@@ -42,6 +42,8 @@ export function AppSidebar() {
     // Feature access is gated by permissions, not roles. Employees see a
     // minimal self-service nav; everyone else keeps the admin navigation.
     const isEmployee = auth.permissions.includes('ViewOwn:Leave');
+    // Supervisors are employees who may also review their team's leaves.
+    const canReviewTeamLeaves = auth.permissions.includes('ViewTeam:Leave');
 
     const employeeNavGroups: Array<{ label: string; items: NavItem[] }> = [
         {
@@ -57,6 +59,15 @@ export function AppSidebar() {
                     href: myLeavesIndex(),
                     icon: Sun,
                 },
+                ...(canReviewTeamLeaves
+                    ? [
+                          {
+                              title: t('ui.nav.team_leaves'),
+                              href: leavesIndex(),
+                              icon: Users,
+                          },
+                      ]
+                    : []),
             ],
         },
     ];

@@ -5,6 +5,8 @@ namespace App\Managers;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\Leave;
+use App\Notifications\LeaveApproved;
+use App\Notifications\LeaveRejected;
 use App\Observers\LeaveObserver;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -26,6 +28,8 @@ class LeaveManager
         } else {
             DB::transaction(fn () => $this->approveGeneralLeave($leave));
         }
+
+        $leave->user->notify(new LeaveApproved($leave));
     }
 
     /**
@@ -38,6 +42,8 @@ class LeaveManager
         } else {
             DB::transaction(fn () => $this->rejectGeneralLeave($leave));
         }
+
+        $leave->user->notify(new LeaveRejected($leave));
     }
 
     /**

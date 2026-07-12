@@ -30,6 +30,7 @@ return [
         'holidays' => 'Feriados',
         'leaves' => 'Permisos',
         'my_leaves' => 'Mis permisos',
+        'team_leaves' => 'Permisos del equipo',
     ],
 
     'user_menu' => [

@@ -10,11 +10,15 @@ use App\Managers\LeaveManager;
 use App\Models\Company;
 use App\Models\Leave;
 use App\Models\User;
+use App\Notifications\LeaveRequestSubmitted;
 use App\Services\BusinessDaysCalculator;
+use App\Services\LeaveApprovers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -27,6 +31,12 @@ class LeaveController extends Controller
 
     public function index(Request $request): Response
     {
+        Gate::authorize('viewTeam', Leave::class);
+
+        // Admins manage every request; supervisors are scoped to their own team.
+        $isAdmin = $request->user()->hasRole('admin');
+        $supervisorId = $isAdmin ? null : $request->user()->id;
+
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
             ['start_date', 'end_date', 'business_days_requested', 'created_at'],
@@ -41,6 +51,10 @@ class LeaveController extends Controller
 
         $leaves = Leave::query()
             ->with(['user:id,name', 'approver:id,name'])
+            ->when($supervisorId, fn ($query) => $query->whereHas(
+                'user',
+                fn ($user) => $user->where('supervisor_id', $supervisorId),
+            ))
             ->when($status, fn ($query) => $query->where('status', $status))
             ->when($employeeIds, fn ($query) => $query->whereIn('user_id', $employeeIds))
             // Overlap match: the leave touches the requested [from, to] window.
@@ -78,8 +92,16 @@ class LeaveController extends Controller
                 'sort' => $sort,
                 'direction' => $direction,
             ],
-            'employeeOptions' => $this->employeeOptions(),
+            'employeeOptions' => $this->employeeOptions($supervisorId),
             'statusOptions' => LeaveStatus::options(),
+            // Creating-for-others and deleting stay admin-only; approve/reject is
+            // available to admins and to supervisors holding ApproveTeam:Leave
+            // (the list is already scoped to the supervisor's own team).
+            'can' => [
+                'create' => $isAdmin,
+                'delete' => $isAdmin,
+                'approve' => $isAdmin || $request->user()->can('ApproveTeam:Leave'),
+            ],
         ]);
     }
 
@@ -92,7 +114,7 @@ class LeaveController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, LeaveApprovers $approvers): RedirectResponse
     {
         $organizationId = Company::currentOrganizationId();
 
@@ -130,7 +152,7 @@ class LeaveController extends Controller
             $data['half_day_type'] = null;
         }
 
-        Leave::create([
+        $leave = Leave::create([
             ...$data,
             'organization_id' => $organizationId,
             'company_id' => $employee->company_id,
@@ -138,6 +160,15 @@ class LeaveController extends Controller
             // auto-approved by the observer.
             'status' => LeaveStatus::Pending,
         ]);
+
+        // Notify approvers only for requests that actually need a decision;
+        // medical leaves are auto-approved on creation.
+        if ($leave->status === LeaveStatus::Pending) {
+            Notification::send(
+                $approvers->submissionRecipients($leave),
+                new LeaveRequestSubmitted($leave),
+            );
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.leaves.flash.created')]);
 
@@ -177,6 +208,8 @@ class LeaveController extends Controller
      */
     public function approve(Leave $leave, LeaveManager $manager): RedirectResponse
     {
+        Gate::authorize('approve', $leave);
+
         abort_if($leave->status === LeaveStatus::Approved, 403);
 
         $manager->approve($leave);
@@ -191,6 +224,8 @@ class LeaveController extends Controller
      */
     public function reject(Leave $leave, LeaveManager $manager): RedirectResponse
     {
+        Gate::authorize('reject', $leave);
+
         // Medical leaves are auto-approved and cannot be rejected.
         abort_if($leave->status === LeaveStatus::Rejected || $leave->type === LeaveType::Medical, 403);
 
@@ -238,15 +273,17 @@ class LeaveController extends Controller
     }
 
     /**
-     * Employees of the current organization for the select/filter inputs.
+     * Employees of the current organization for the select/filter inputs. When
+     * a supervisor id is given, the list is scoped to that supervisor's team.
      *
      * @return array<int, array{value: string, label: string}>
      */
-    private function employeeOptions(): array
+    private function employeeOptions(?int $supervisorId = null): array
     {
         return User::query()
             ->employees()
             ->where('organization_id', Company::currentOrganizationId())
+            ->when($supervisorId, fn ($query) => $query->where('supervisor_id', $supervisorId))
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn (User $employee) => ['value' => (string) $employee->id, 'label' => $employee->name])
