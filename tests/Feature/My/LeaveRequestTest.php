@@ -33,8 +33,7 @@ test('unauthenticated users are redirected to login', function () {
 });
 
 test('a user without the self-service permissions is forbidden', function () {
-    $user = User::factory()->create();
-    $user->assignRole('admin'); // admin has no self-service permissions
+    $user = User::factory()->create(); // no roles, so no permissions
 
     $this->actingAs($user)
         ->get(route('my.leaves.index'))

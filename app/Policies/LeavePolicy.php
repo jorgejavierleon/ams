@@ -14,18 +14,19 @@ class LeavePolicy
     use HandlesAuthorization;
 
     /**
-     * View the team leaves index. Admins see every request; a supervisor with
-     * the `ViewTeam:Leave` permission sees their direct reports' requests.
+     * View the team leaves index. Admins reach this via the super-admin gate;
+     * a supervisor with the `ViewTeam:Leave` permission sees their direct
+     * reports' requests.
      */
     public function viewTeam(User $user): bool
     {
-        return $user->hasRole('admin') || $user->can('ViewTeam:Leave');
+        return $user->can('ViewTeam:Leave');
     }
 
     /**
-     * Approve a leave. Admins may approve any request; a supervisor may approve
-     * only their own team's requests, and only while the `ApproveTeam:Leave`
-     * permission is granted to their role (the admin's control switch).
+     * Approve a leave. Admins may approve any request via the super-admin gate;
+     * a supervisor may approve only their own team's requests, and only while
+     * the `ApproveTeam:Leave` permission is granted to their role.
      */
     public function approve(User $user, Leave $leave): bool
     {
@@ -41,15 +42,12 @@ class LeavePolicy
     }
 
     /**
-     * Shared authority check for approve/reject: admin, or the requester's
-     * direct supervisor holding the team-approval permission.
+     * Shared authority check for approve/reject: the requester's direct
+     * supervisor holding the team-approval permission. Admins are handled
+     * earlier by the super-admin gate.
      */
     private function canDecide(User $user, Leave $leave): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
         return $user->can('ApproveTeam:Leave')
             && $leave->user->supervisor_id === $user->id;
     }
