@@ -77,7 +77,11 @@ class RoleController extends Controller
             'permissions.*' => ['integer', 'exists:permissions,id'],
         ]);
 
-        $role->syncPermissions($validated['permissions']);
+        // Resolve to Permission models by id: the form submits ids as strings,
+        // and syncPermissions() would otherwise treat a string id as a name.
+        $permissions = Permission::whereKey($validated['permissions'])->get();
+
+        $role->syncPermissions($permissions);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Permissions updated.')]);
 
