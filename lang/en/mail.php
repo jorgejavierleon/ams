@@ -8,6 +8,15 @@ return [
         'warning' => 'If you did not perform this action or believe this is a mistake, please contact your administrator.',
     ],
 
+    'mark_created' => [
+        'subject' => 'Attendance mark receipt',
+        'heading' => 'Mark registered',
+        'body' => 'Your attendance mark has been registered with the following details:',
+        'type' => 'Type',
+        'date_time' => 'Date and time',
+        'checksum' => 'Verification code',
+    ],
+
     'leave' => [
         'type' => 'Type',
         'dates' => 'Dates',

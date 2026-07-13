@@ -59,6 +59,50 @@ return [
         'title' => 'Dashboard',
     ],
 
+    'marks' => [
+        'title' => 'Attendance mark',
+        'subtitle' => 'Register when you enter and leave work.',
+        'greeting' => 'Hi, :name',
+        'no_shift' => 'You have no shift assigned for today.',
+        'no_shift_chip' => 'No shift today',
+        'shift_for_today' => "Today's shift: :start to :end",
+        'check_in' => 'Check in',
+        'check_out' => 'Check out',
+        'complete_cta' => 'Workday complete',
+        'worked' => 'Worked',
+        'in_progress' => 'in progress',
+        'current_time' => 'Current time',
+        'in_marked' => 'Entry marked',
+        'in_pending' => 'Entry pending',
+        'out_marked' => 'Exit marked',
+        'out_pending' => 'Exit pending',
+        'marked_at' => 'Marked at :time',
+        'types' => [
+            'in' => 'Entry',
+            'out' => 'Exit',
+        ],
+        'status' => [
+            'idle' => "You haven't checked in yet",
+            'working' => 'Working · :elapsed',
+            'complete' => 'Workday recorded',
+        ],
+        'note' => [
+            'idle' => 'The time is recorded automatically when you confirm.',
+            'working' => 'Checking out closes your workday for today.',
+            'complete' => 'You can mark your next entry tomorrow.',
+        ],
+        'confirm' => [
+            'check_in_title' => 'Confirm check in',
+            'check_out_title' => 'Confirm check out',
+            'description' => 'Your mark will be registered with the current time. This action cannot be undone.',
+            'action' => 'Confirm',
+        ],
+        'flash' => [
+            'registered' => 'Mark registered successfully.',
+            'already_marked' => 'You already registered this mark today.',
+        ],
+    ],
+
     'settings' => [
         'title' => 'Settings',
         'description' => 'Manage your profile and account settings',

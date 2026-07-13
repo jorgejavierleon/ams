@@ -10,8 +10,8 @@ use Spatie\Permission\PermissionRegistrar;
 class RoleSeeder extends Seeder
 {
     /**
-     * Self-service leave permissions granted to the `employee` role. Application
-     * code gates on these permissions (not the role name) per Spatie best practice.
+     * Self-service permissions granted to the `employee` role. Application code
+     * gates on these permissions (not the role name) per Spatie best practice.
      *
      * @var array<int, string>
      */
@@ -19,6 +19,22 @@ class RoleSeeder extends Seeder
         'RequestOwn:Leave',
         'ViewOwn:Leave',
         'CancelOwn:Leave',
+        'ClockOwn:Mark',
+        'ViewOwn:Mark',
+    ];
+
+    /**
+     * Self-service permissions granted to the `admin` role directly. Admins get
+     * their policy abilities through the super-admin gate, but the attendance
+     * widget's store route is guarded by Spatie's `permission:` middleware,
+     * which the gate does not bypass — so an admin who clocks in/out must hold
+     * these permissions explicitly.
+     *
+     * @var array<int, string>
+     */
+    private const ADMIN_PERMISSIONS = [
+        'ClockOwn:Mark',
+        'ViewOwn:Mark',
     ];
 
     /**
@@ -43,11 +59,12 @@ class RoleSeeder extends Seeder
             $roles[$role] = Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
 
-        foreach ([...self::EMPLOYEE_PERMISSIONS, ...self::SUPERVISOR_PERMISSIONS] as $permission) {
+        foreach ([...self::EMPLOYEE_PERMISSIONS, ...self::SUPERVISOR_PERMISSIONS, ...self::ADMIN_PERMISSIONS] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
         $roles['employee']->givePermissionTo(self::EMPLOYEE_PERMISSIONS);
         $roles['supervisor']->givePermissionTo(self::SUPERVISOR_PERMISSIONS);
+        $roles['admin']->givePermissionTo(self::ADMIN_PERMISSIONS);
     }
 }

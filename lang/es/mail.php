@@ -8,6 +8,15 @@ return [
         'warning' => 'Si no realizaste esta acción o crees que es un error, por favor contacta a tu administrador.',
     ],
 
+    'mark_created' => [
+        'subject' => 'Comprobante de marca de asistencia',
+        'heading' => 'Marca registrada',
+        'body' => 'Se ha registrado tu marca de asistencia con los siguientes datos:',
+        'type' => 'Tipo',
+        'date_time' => 'Fecha y hora',
+        'checksum' => 'Código de verificación',
+    ],
+
     'leave' => [
         'type' => 'Tipo',
         'dates' => 'Fechas',

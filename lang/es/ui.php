@@ -59,6 +59,50 @@ return [
         'title' => 'Panel',
     ],
 
+    'marks' => [
+        'title' => 'Marca de asistencia',
+        'subtitle' => 'Registra tu entrada y tu salida del trabajo.',
+        'greeting' => 'Hola, :name',
+        'no_shift' => 'No tienes un turno asignado para hoy.',
+        'no_shift_chip' => 'Sin turno hoy',
+        'shift_for_today' => 'Turno de hoy: :start a :end',
+        'check_in' => 'Marcar entrada',
+        'check_out' => 'Marcar salida',
+        'complete_cta' => 'Jornada completa',
+        'worked' => 'Trabajado',
+        'in_progress' => 'en curso',
+        'current_time' => 'Hora actual',
+        'in_marked' => 'Entrada marcada',
+        'in_pending' => 'Entrada pendiente',
+        'out_marked' => 'Salida marcada',
+        'out_pending' => 'Salida pendiente',
+        'marked_at' => 'Marcada a las :time',
+        'types' => [
+            'in' => 'Entrada',
+            'out' => 'Salida',
+        ],
+        'status' => [
+            'idle' => 'Aún no registras tu entrada',
+            'working' => 'Trabajando · :elapsed',
+            'complete' => 'Jornada registrada',
+        ],
+        'note' => [
+            'idle' => 'La hora se registra automáticamente al confirmar.',
+            'working' => 'Al marcar salida se cierra tu jornada de hoy.',
+            'complete' => 'Mañana podrás marcar tu próxima entrada.',
+        ],
+        'confirm' => [
+            'check_in_title' => 'Confirmar entrada',
+            'check_out_title' => 'Confirmar salida',
+            'description' => 'Se registrará tu marca con la hora actual. Esta acción no se puede deshacer.',
+            'action' => 'Confirmar',
+        ],
+        'flash' => [
+            'registered' => 'Marca registrada correctamente.',
+            'already_marked' => 'Ya registraste esta marca hoy.',
+        ],
+    ],
+
     'settings' => [
         'title' => 'Configuración',
         'description' => 'Administre su perfil y la configuración de su cuenta',
