@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CommuneController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\PasswordChangeController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\My\LeaveController as MyLeaveController;
+use App\Http\Controllers\My\MarkController as MyMarkController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -27,7 +29,7 @@ Route::inertia('/', 'welcome')->name('home');
 Route::put('locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
 // Admin panel routes (role:admin required)
@@ -104,6 +106,10 @@ Route::middleware(['auth', 'verified'])->prefix('my')->name('my.')->group(functi
     Route::delete('leaves/{leave}', [MyLeaveController::class, 'destroy'])
         ->middleware('permission:CancelOwn:Leave')
         ->name('leaves.destroy');
+
+    Route::post('marks', [MyMarkController::class, 'store'])
+        ->middleware('permission:ClockOwn:Mark')
+        ->name('marks.store');
 });
 
 // DT panel routes
