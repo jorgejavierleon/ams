@@ -57,6 +57,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('workdays', [WorkdayController::class, 'index'])->name('workdays.index');
     Route::post('workdays/bulk-modify', [WorkdayController::class, 'bulkModify'])
         ->name('workdays.bulk-modify');
+    Route::post('workdays/{workday}/modify', [WorkdayController::class, 'modify'])
+        ->name('workdays.modify');
 
     Route::resource('holidays', HolidayController::class)
         ->only(['index', 'store', 'update', 'destroy']);

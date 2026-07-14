@@ -42,4 +42,18 @@ return [
         'heading' => 'Leave request rejected',
         'body' => 'Your leave request has been rejected. Please contact your supervisor if you have questions.',
     ],
+
+    'mark_modification_requested' => [
+        'subject' => 'Attendance mark correction awaiting your review',
+        'heading' => 'Mark correction requested',
+        'body' => 'A correction to one of your attendance marks has been requested with the following details:',
+        'mark_type' => 'Mark',
+        'original' => 'Original mark',
+        'no_mark' => 'No mark',
+        'new' => 'New time',
+        'reason' => 'Reason',
+        'notes' => 'Notes',
+        'auto_approve' => 'If you do not approve or decline it, this request will be approved automatically in 48 hours.',
+        'action' => 'Review request',
+    ],
 ];

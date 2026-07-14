@@ -1,8 +1,8 @@
 import { Head, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { AlertTriangle, Eye } from 'lucide-react';
+import { AlertTriangle, Eye, PencilLine } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/sheet';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { bulkModify, index } from '@/routes/workdays';
+import { bulkModify, index, modify } from '@/routes/workdays';
 import type { Paginated } from '@/types/ui';
 
 type Workday = {
@@ -127,6 +127,7 @@ export default function WorkdaysIndex({
 
     const [viewTarget, setViewTarget] = useState<Workday | null>(null);
     const [bulkTargets, setBulkTargets] = useState<Workday[]>([]);
+    const [modifyTarget, setModifyTarget] = useState<Workday | null>(null);
     const [resetSelection, setResetSelection] = useState<() => void>(
         () => () => {},
     );
@@ -135,6 +136,13 @@ export default function WorkdaysIndex({
         workdays: [] as number[],
         mark_type: markTypeOptions[0]?.value ?? 'in',
         time: '',
+        reason: reasonOptions[0]?.value ?? '',
+        notes: '',
+    });
+
+    const modifyForm = useForm({
+        mark_in: '',
+        mark_out: '',
         reason: reasonOptions[0]?.value ?? '',
         notes: '',
     });
@@ -213,6 +221,39 @@ export default function WorkdaysIndex({
                 bulkForm.reset('notes', 'time');
                 resetSelection();
                 setBulkTargets([]);
+            },
+        });
+    }
+
+    const openModify = useCallback(
+        (workday: Workday) => {
+            setModifyTarget(workday);
+            // Prefill the pickers with the times already on the row; the server
+            // only opens a request for a mark whose time the admin actually
+            // changes, so untouched pickers submit nothing.
+            modifyForm.clearErrors();
+            modifyForm.setData({
+                mark_in: workday.mark_in_at ?? '',
+                mark_out: workday.mark_out_at ?? '',
+                reason: reasonOptions[0]?.value ?? '',
+                notes: '',
+            });
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [reasonOptions],
+    );
+
+    function submitModify() {
+        if (modifyTarget === null) {
+            return;
+        }
+
+        modifyForm.post(modify(modifyTarget.id).url, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                modifyForm.reset();
+                setModifyTarget(null);
             },
         });
     }
@@ -382,18 +423,28 @@ export default function WorkdaysIndex({
                 },
                 header: () => null,
                 cell: ({ row }) => (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setViewTarget(row.original)}
-                        aria-label={t('ui.workdays.actions.view')}
-                    >
-                        <Eye className="size-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openModify(row.original)}
+                            aria-label={t('ui.workdays.actions.modify')}
+                        >
+                            <PencilLine className="size-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setViewTarget(row.original)}
+                            aria-label={t('ui.workdays.actions.view')}
+                        >
+                            <Eye className="size-4" />
+                        </Button>
+                    </div>
                 ),
             },
         ],
-        [t],
+        [t, openModify],
     );
 
     return (
@@ -570,6 +621,18 @@ export default function WorkdaysIndex({
                                 label={t('ui.workdays.detail.pending')}
                                 value={viewTarget.pending_modifications}
                             />
+
+                            <Button
+                                className="mt-2"
+                                onClick={() => {
+                                    const target = viewTarget;
+                                    setViewTarget(null);
+                                    openModify(target);
+                                }}
+                            >
+                                <PencilLine className="size-4" />
+                                {t('ui.workdays.actions.modify')}
+                            </Button>
                         </dl>
                     )}
                 </SheetContent>
@@ -694,6 +757,127 @@ export default function WorkdaysIndex({
                             disabled={bulkForm.processing}
                         >
                             {t('ui.workdays.bulk.submit')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={modifyTarget !== null}
+                onOpenChange={(open) => !open && setModifyTarget(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('ui.workdays.modify.title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('ui.workdays.modify.description', {
+                                employee: modifyTarget?.employee ?? '—',
+                                date: modifyTarget?.date ?? '',
+                            })}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-2">
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                label={t('ui.workdays.modify.mark_in')}
+                                htmlFor="modify_mark_in"
+                                error={modifyForm.errors.mark_in}
+                            >
+                                <Input
+                                    id="modify_mark_in"
+                                    type="time"
+                                    value={modifyForm.data.mark_in}
+                                    onChange={(event) =>
+                                        modifyForm.setData(
+                                            'mark_in',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </FormField>
+
+                            <FormField
+                                label={t('ui.workdays.modify.mark_out')}
+                                htmlFor="modify_mark_out"
+                                error={modifyForm.errors.mark_out}
+                            >
+                                <Input
+                                    id="modify_mark_out"
+                                    type="time"
+                                    value={modifyForm.data.mark_out}
+                                    onChange={(event) =>
+                                        modifyForm.setData(
+                                            'mark_out',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </FormField>
+                        </div>
+
+                        <FormField
+                            label={t('ui.workdays.modify.reason')}
+                            htmlFor="modify_reason"
+                            required
+                            error={modifyForm.errors.reason}
+                        >
+                            <Select
+                                value={modifyForm.data.reason}
+                                onValueChange={(value) =>
+                                    modifyForm.setData('reason', value)
+                                }
+                            >
+                                <SelectTrigger id="modify_reason">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {reasonOptions.map((option) => (
+                                        <SelectItem
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+
+                        <FormField
+                            label={t('ui.workdays.modify.notes')}
+                            htmlFor="modify_notes"
+                            error={modifyForm.errors.notes}
+                        >
+                            <textarea
+                                id="modify_notes"
+                                rows={3}
+                                value={modifyForm.data.notes}
+                                onChange={(event) =>
+                                    modifyForm.setData(
+                                        'notes',
+                                        event.target.value,
+                                    )
+                                }
+                                className="flex min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </FormField>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setModifyTarget(null)}
+                        >
+                            {t('ui.common.cancel')}
+                        </Button>
+                        <Button
+                            onClick={submitModify}
+                            disabled={modifyForm.processing}
+                        >
+                            {t('ui.workdays.modify.submit')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
