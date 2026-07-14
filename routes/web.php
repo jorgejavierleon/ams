@@ -21,6 +21,7 @@ use App\Http\Controllers\Saas\OrganizationController;
 use App\Http\Controllers\ShiftAssignmentController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\UserRoleController;
+use App\Http\Controllers\WorkdayController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -52,6 +53,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::resource('shifts', ShiftController::class)
         ->except(['show']);
+
+    Route::get('workdays', [WorkdayController::class, 'index'])->name('workdays.index');
+    Route::post('workdays/bulk-modify', [WorkdayController::class, 'bulkModify'])
+        ->name('workdays.bulk-modify');
 
     Route::resource('holidays', HolidayController::class)
         ->only(['index', 'store', 'update', 'destroy']);

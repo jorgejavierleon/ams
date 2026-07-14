@@ -3,6 +3,7 @@ import {
     Building2,
     CalendarClock,
     CalendarDays,
+    ClipboardList,
     IdCard,
     LayoutGrid,
     MapPin,
@@ -33,6 +34,7 @@ import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
 import { index as shiftsIndex } from '@/routes/shifts';
+import { index as workdaysIndex } from '@/routes/workdays';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -106,6 +108,11 @@ export function AppSidebar() {
         {
             label: t('ui.nav.workdays'),
             items: [
+                {
+                    title: t('ui.nav.workdays_list'),
+                    href: workdaysIndex(),
+                    icon: ClipboardList,
+                },
                 {
                     title: t('ui.nav.shifts'),
                     href: shiftsIndex(),

@@ -26,6 +26,7 @@ return [
         'companies' => 'Empresas',
         'premises' => 'Sucursales',
         'shifts' => 'Turnos',
+        'workdays_list' => 'Jornadas',
         'employees' => 'Empleados',
         'holidays' => 'Feriados',
         'leaves' => 'Permisos',
@@ -982,6 +983,96 @@ return [
             'approved' => 'Permiso aprobado.',
             'rejected' => 'Permiso rechazado.',
             'deleted' => 'Permiso eliminado.',
+        ],
+    ],
+
+    'workdays' => [
+        'title' => 'Jornadas',
+        'description' => 'Asistencia diaria de cada empleado',
+        'empty' => 'No se encontraron jornadas para este rango.',
+        'select_all' => 'Seleccionar todas las filas',
+        'select_row' => 'Seleccionar fila',
+        'selected' => ':count seleccionadas',
+        'pending_hint' => 'Solicitudes de modificación de marca pendientes',
+
+        'ranges' => [
+            'today' => 'Hoy',
+            'yesterday' => 'Ayer',
+            'week' => 'Esta semana',
+            'month' => 'Este mes',
+        ],
+
+        'columns' => [
+            'employee' => 'Empleado',
+            'date' => 'Fecha',
+            'status' => 'Estado',
+            'mark_in' => 'Entrada',
+            'mark_out' => 'Salida',
+            'worked' => 'Trabajado',
+            'shift_delta' => 'Diferencia (entrada / salida)',
+            'shift' => 'Turno',
+            'leave' => 'Permiso',
+        ],
+
+        'filters' => [
+            'status' => 'Estado',
+            'employee' => 'Empleado',
+            'position' => 'Cargo',
+            'premise' => 'Sucursal',
+            'from' => 'Desde',
+            'to' => 'Hasta',
+        ],
+
+        'statuses' => [
+            'regular' => 'Regular',
+            'irregular' => 'Irregular',
+            'absent' => 'Ausente',
+            'incomplete' => 'Incompleta',
+            'justified' => 'Justificada',
+        ],
+
+        'actions' => [
+            'view' => 'Ver detalles',
+        ],
+
+        'detail' => [
+            'title' => 'Detalles de la jornada',
+            'in_delta' => 'Diferencia de entrada',
+            'out_delta' => 'Diferencia de salida',
+            'pending' => 'Modificaciones pendientes',
+        ],
+
+        'bulk' => [
+            'trigger' => 'Modificar marcas',
+            'title' => 'Modificar marcas',
+            'description' => 'Abrir una solicitud de modificación de marca para :count jornada(s) seleccionada(s).',
+            'mark_type' => 'Marca',
+            'time' => 'Nueva hora',
+            'reason' => 'Motivo',
+            'notes' => 'Notas',
+            'submit' => 'Enviar solicitudes',
+        ],
+
+        'flash' => [
+            'bulk_modified' => ':count solicitud(es) de modificación de marca creada(s).',
+        ],
+    ],
+
+    'mark_modifications' => [
+        'statuses' => [
+            'pending' => 'Pendiente',
+            'approved' => 'Aprobada',
+            'declined' => 'Rechazada',
+        ],
+
+        'reasons' => [
+            'mark_forgotten' => 'Marca olvidada',
+            'mark_incorrect' => 'Marca incorrecta',
+            'system_error' => 'Error del sistema',
+            'shift_change' => 'Cambio de turno',
+            'justified_missing_time' => 'Tiempo faltante justificado',
+            'inside_tolerance_time' => 'Dentro de la tolerancia',
+            'other' => 'Otro',
         ],
     ],
 
