@@ -42,4 +42,18 @@ return [
         'heading' => 'Solicitud de permiso rechazada',
         'body' => 'Tu solicitud de permiso ha sido rechazada. Contacta a tu supervisor si tienes dudas.',
     ],
+
+    'mark_modification_requested' => [
+        'subject' => 'Corrección de marca pendiente de tu revisión',
+        'heading' => 'Corrección de marca solicitada',
+        'body' => 'Se ha solicitado una corrección a una de tus marcas de asistencia con la siguiente información:',
+        'mark_type' => 'Marca',
+        'original' => 'Marca original',
+        'no_mark' => 'Sin marca',
+        'new' => 'Nueva hora',
+        'reason' => 'Motivo',
+        'notes' => 'Notas',
+        'auto_approve' => 'De no aprobarla o rechazarla, esta solicitud será aprobada automáticamente en 48 horas.',
+        'action' => 'Revisar solicitud',
+    ],
 ];

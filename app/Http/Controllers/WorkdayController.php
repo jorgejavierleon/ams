@@ -7,12 +7,14 @@ use App\Enums\MarkModificationReason;
 use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
 use App\Enums\WorkdayStatus;
+use App\Managers\MarkModificationManager;
 use App\Models\Company;
 use App\Models\MarkModification;
 use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
 use App\Models\Workday;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -159,6 +161,80 @@ class WorkdayController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * Open a mark-modification request against a single workday for its entry
+     * mark, exit mark, or both. The employee is notified to review each new
+     * request; a mark that already has a pending request is left untouched by
+     * the manager's duplicate guard.
+     */
+    public function modify(Request $request, Workday $workday, MarkModificationManager $manager): RedirectResponse
+    {
+        Gate::authorize('update', $workday);
+
+        $data = $request->validate([
+            'mark_in' => ['nullable', 'date_format:H:i'],
+            'mark_out' => ['nullable', 'date_format:H:i'],
+            'reason' => ['required', Rule::enum(MarkModificationReason::class)],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        // Only the marks whose submitted time differs from the one already on
+        // the workday count as a change; a blank or unchanged picker is ignored
+        // so editing one mark never opens a redundant request for the other.
+        $changes = array_filter([
+            'mark_in' => $this->changedMarkTime($workday->mark_in_at, $data['mark_in'] ?? null),
+            'mark_out' => $this->changedMarkTime($workday->mark_out_at, $data['mark_out'] ?? null),
+        ]);
+
+        if ($changes === []) {
+            Inertia::flash('toast', [
+                'type' => 'info',
+                'message' => __('ui.workdays.flash.no_changes'),
+            ]);
+
+            return back();
+        }
+
+        $created = $manager->modifyFromWorkday($workday, [
+            ...$changes,
+            'reason' => MarkModificationReason::from($data['reason']),
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        if ($created->isEmpty()) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('ui.workdays.flash.modify_blocked'),
+            ]);
+
+            return back();
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.workdays.flash.modified', ['count' => $created->count()]),
+        ]);
+
+        return back();
+    }
+
+    /**
+     * The submitted time for a mark when it is a real change — a different time,
+     * or a time added to a currently missing mark — or null when the picker is
+     * blank or matches the time already on the workday and should not open a
+     * request.
+     */
+    private function changedMarkTime(?CarbonInterface $current, ?string $submitted): ?string
+    {
+        $submitted = $submitted !== '' ? $submitted : null;
+
+        if ($submitted === null || $submitted === $current?->format('H:i')) {
+            return null;
+        }
+
+        return $submitted;
     }
 
     /**

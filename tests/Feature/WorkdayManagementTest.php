@@ -1,14 +1,19 @@
 <?php
 
+use App\Enums\MarkModificationReason;
 use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
 use App\Enums\WorkdayStatus;
+use App\Managers\MarkModificationManager;
 use App\Models\MarkModification;
 use App\Models\Organization;
 use App\Models\User;
 use App\Models\Workday;
+use App\Notifications\MarkModificationRequested;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -195,4 +200,193 @@ test('bulk modify cannot target workdays from another organization', function ()
         ->assertSessionHasErrors('workdays.0');
 
     expect(MarkModification::query()->count())->toBe(0);
+});
+
+// --- Single workday modify ---
+
+test('admin requests a mark modification and the employee is notified', function () {
+    Notification::fake();
+
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $workday), [
+            'mark_in' => '08:05',
+            'reason' => MarkModificationReason::MarkForgotten->value,
+            'notes' => 'Se olvidó de marcar',
+        ])
+        ->assertRedirect();
+
+    $modification = MarkModification::query()->sole();
+    expect($modification->status)->toBe(MarkModificationStatus::Pending)
+        ->and($modification->mark_type)->toBe(MarkType::In)
+        ->and($modification->created_by)->toBe($admin->id)
+        ->and($modification->user_id)->toBe($employee->id)
+        ->and($modification->date_time->format('Y-m-d H:i'))->toBe(Carbon::today()->format('Y-m-d').' 08:05');
+
+    Notification::assertSentTo($employee, MarkModificationRequested::class);
+});
+
+test('modify can target both the entry and exit marks at once', function () {
+    Notification::fake();
+
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $workday), [
+            'mark_in' => '08:00',
+            'mark_out' => '17:00',
+            'reason' => MarkModificationReason::MarkIncorrect->value,
+        ])
+        ->assertRedirect();
+
+    expect($workday->markModifications()->count())->toBe(2);
+    Notification::assertSentToTimes($employee, MarkModificationRequested::class, 2);
+});
+
+test('a pending modification blocks a second request for the same mark', function () {
+    Notification::fake();
+
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+
+    MarkModification::factory()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $workday->id,
+        'user_id' => $employee->id,
+        'mark_type' => MarkType::In,
+        'status' => MarkModificationStatus::Pending,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $workday), [
+            'mark_in' => '08:10',
+            'reason' => MarkModificationReason::MarkForgotten->value,
+        ])
+        ->assertRedirect();
+
+    // The guard leaves the single pre-existing request in place.
+    expect($workday->markModifications()->where('mark_type', MarkType::In)->count())->toBe(1);
+    Notification::assertNothingSent();
+});
+
+test('submitting the marks unchanged requests no modification', function () {
+    Notification::fake();
+
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, [
+        'date' => Carbon::today(),
+        'mark_in_at' => Carbon::today()->setTime(8, 0),
+        'mark_out_at' => Carbon::today()->setTime(17, 0),
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $workday), [
+            'mark_in' => '08:00',
+            'mark_out' => '17:00',
+            'reason' => MarkModificationReason::MarkForgotten->value,
+        ])
+        ->assertRedirect();
+
+    expect(MarkModification::query()->count())->toBe(0);
+    Notification::assertNothingSent();
+});
+
+test('only the mark whose time changed opens a request', function () {
+    Notification::fake();
+
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, [
+        'date' => Carbon::today(),
+        'mark_in_at' => Carbon::today()->setTime(8, 0),
+        'mark_out_at' => Carbon::today()->setTime(17, 0),
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $workday), [
+            'mark_in' => '08:00',  // unchanged — must not create a request
+            'mark_out' => '17:30', // changed
+            'reason' => MarkModificationReason::MarkIncorrect->value,
+        ])
+        ->assertRedirect();
+
+    $modifications = $workday->markModifications()->get();
+    expect($modifications)->toHaveCount(1)
+        ->and($modifications->first()->mark_type)->toBe(MarkType::Out)
+        ->and($modifications->first()->date_time->format('H:i'))->toBe('17:30');
+
+    Notification::assertSentToTimes($employee, MarkModificationRequested::class, 1);
+});
+
+test('adding a time to a missing mark opens a request', function () {
+    Notification::fake();
+
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, [
+        'date' => Carbon::today(),
+        'mark_in_at' => Carbon::today()->setTime(8, 0),
+        'mark_out_at' => null,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $workday), [
+            'mark_in' => '08:00',  // unchanged
+            'mark_out' => '17:00', // added to the missing mark
+            'reason' => MarkModificationReason::MarkForgotten->value,
+        ])
+        ->assertRedirect();
+
+    $modifications = $workday->markModifications()->get();
+    expect($modifications)->toHaveCount(1)
+        ->and($modifications->first()->mark_type)->toBe(MarkType::Out);
+});
+
+test('modify cannot target a workday from another organization', function () {
+    $admin = workdayAdmin();
+
+    $otherOrg = Organization::factory()->create();
+    $otherEmployee = User::factory()->employee()->create(['organization_id' => $otherOrg->id]);
+    $foreignWorkday = makeWorkday($otherOrg, $otherEmployee, ['date' => Carbon::today()]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $foreignWorkday), [
+            'mark_in' => '08:00',
+            'reason' => MarkModificationReason::MarkForgotten->value,
+        ])
+        ->assertNotFound();
+
+    expect(MarkModification::query()->count())->toBe(0);
+});
+
+test('modify delegates to the MarkModificationManager', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+
+    $this->mock(MarkModificationManager::class)
+        ->shouldReceive('modifyFromWorkday')
+        ->once()
+        ->andReturn(new Collection([new MarkModification]));
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $workday), [
+            'mark_in' => '08:00',
+            'reason' => MarkModificationReason::MarkForgotten->value,
+        ])
+        ->assertRedirect();
 });

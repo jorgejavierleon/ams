@@ -1033,6 +1033,18 @@ return [
 
         'actions' => [
             'view' => 'Ver detalles',
+            'modify' => 'Modificar marcas',
+        ],
+
+        'modify' => [
+            'title' => 'Modificar marcas',
+            'description' => 'Ajusta las horas de :employee del :date. Solo se envían a revisión las marcas que cambies; se notifica al empleado.',
+            'mark_in' => 'Marca de entrada',
+            'mark_out' => 'Marca de salida',
+            'no_mark' => 'Sin marca registrada',
+            'reason' => 'Motivo',
+            'notes' => 'Notas',
+            'submit' => 'Enviar solicitud',
         ],
 
         'detail' => [
@@ -1055,6 +1067,9 @@ return [
 
         'flash' => [
             'bulk_modified' => ':count solicitud(es) de modificación de marca creada(s).',
+            'modified' => ':count solicitud(es) de modificación de marca creada(s).',
+            'modify_blocked' => 'No se crearon solicitudes: las marcas modificadas ya tienen solicitudes pendientes.',
+            'no_changes' => 'No se detectaron cambios: no se solicitó ninguna modificación.',
         ],
     ],
 

@@ -1033,6 +1033,18 @@ return [
 
         'actions' => [
             'view' => 'View details',
+            'modify' => 'Modify marks',
+        ],
+
+        'modify' => [
+            'title' => 'Modify marks',
+            'description' => 'Adjust the times below for :employee on :date. Only the marks you change are sent for review; the employee is notified.',
+            'mark_in' => 'Entry mark',
+            'mark_out' => 'Exit mark',
+            'no_mark' => 'No mark registered yet',
+            'reason' => 'Reason',
+            'notes' => 'Notes',
+            'submit' => 'Submit request',
         ],
 
         'detail' => [
@@ -1055,6 +1067,9 @@ return [
 
         'flash' => [
             'bulk_modified' => ':count mark modification request(s) created.',
+            'modified' => ':count mark modification request(s) created.',
+            'modify_blocked' => 'No requests were created — the changed marks already have pending requests.',
+            'no_changes' => 'No changes detected — no modification was requested.',
         ],
     ],
 
