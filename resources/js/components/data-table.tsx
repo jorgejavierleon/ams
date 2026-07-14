@@ -12,11 +12,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    useServerTable
-    
-} from '@/hooks/use-server-table';
-import type {ServerTableFilters} from '@/hooks/use-server-table';
+import { useServerTable } from '@/hooks/use-server-table';
+import type { ServerTableFilters } from '@/hooks/use-server-table';
 import { useTranslations } from '@/hooks/use-translations';
 import type { Paginated } from '@/types/ui';
 
@@ -45,6 +42,15 @@ type DataTableProps<TData> = {
     getRowId?: (row: TData, index: number) => string;
     /** Extra controls rendered on the left of the toolbar row. */
     toolbar?: ReactNode;
+    /**
+     * Bulk actions rendered in a bar above the table while one or more rows are
+     * selected. Receives the selected rows and a callback to clear the
+     * selection (e.g. after the action completes).
+     */
+    renderSelectionActions?: (
+        selectedRows: TData[],
+        resetSelection: () => void,
+    ) => ReactNode;
 };
 
 /**
@@ -68,6 +74,7 @@ export function DataTable<TData>({
     enableRowSelection,
     getRowId,
     toolbar,
+    renderSelectionActions,
 }: DataTableProps<TData>) {
     // TanStack Table's instance has a stable identity the compiler cannot
     // track; opt this component out so state reads stay live.
@@ -87,9 +94,20 @@ export function DataTable<TData>({
 
     const columnCount = table.getAllLeafColumns().length;
     const hasToolbar = Boolean(searchPlaceholder) || Boolean(toolbar);
+    const selectedRows = enableRowSelection
+        ? table.getSelectedRowModel().rows.map((row) => row.original)
+        : [];
 
     return (
         <div className="space-y-4">
+            {renderSelectionActions && selectedRows.length > 0 && (
+                <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/50 px-4 py-2">
+                    {renderSelectionActions(selectedRows, () =>
+                        table.resetRowSelection(),
+                    )}
+                </div>
+            )}
+
             {hasToolbar && (
                 <div className="flex items-center justify-between gap-4">
                     {searchPlaceholder ? (
@@ -120,7 +138,8 @@ export function DataTable<TData>({
                                         key={header.id}
                                         className={
                                             (
-                                                header.column.columnDef.meta as {
+                                                header.column.columnDef
+                                                    .meta as {
                                                     headClassName?: string;
                                                 }
                                             )?.headClassName
@@ -129,7 +148,8 @@ export function DataTable<TData>({
                                         {header.isPlaceholder
                                             ? null
                                             : flexRender(
-                                                  header.column.columnDef.header,
+                                                  header.column.columnDef
+                                                      .header,
                                                   header.getContext(),
                                               )}
                                     </TableHead>
@@ -174,7 +194,8 @@ export function DataTable<TData>({
                                     colSpan={columnCount}
                                     className="py-8 text-center text-muted-foreground"
                                 >
-                                    {emptyLabel ?? t('ui.common.data_table.empty')}
+                                    {emptyLabel ??
+                                        t('ui.common.data_table.empty')}
                                 </TableCell>
                             </TableRow>
                         )}

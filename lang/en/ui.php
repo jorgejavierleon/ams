@@ -26,6 +26,7 @@ return [
         'companies' => 'Companies',
         'premises' => 'Premises',
         'shifts' => 'Shifts',
+        'workdays_list' => 'Workdays',
         'employees' => 'Employees',
         'holidays' => 'Holidays',
         'leaves' => 'Leaves',
@@ -982,6 +983,96 @@ return [
             'approved' => 'Leave approved.',
             'rejected' => 'Leave rejected.',
             'deleted' => 'Leave deleted.',
+        ],
+    ],
+
+    'workdays' => [
+        'title' => 'Workdays',
+        'description' => 'Daily attendance for every employee',
+        'empty' => 'No workdays found for this range.',
+        'select_all' => 'Select all rows',
+        'select_row' => 'Select row',
+        'selected' => ':count selected',
+        'pending_hint' => 'Pending mark modification requests',
+
+        'ranges' => [
+            'today' => 'Today',
+            'yesterday' => 'Yesterday',
+            'week' => 'This week',
+            'month' => 'This month',
+        ],
+
+        'columns' => [
+            'employee' => 'Employee',
+            'date' => 'Date',
+            'status' => 'Status',
+            'mark_in' => 'In',
+            'mark_out' => 'Out',
+            'worked' => 'Worked',
+            'shift_delta' => 'Delta (in / out)',
+            'shift' => 'Shift',
+            'leave' => 'Leave',
+        ],
+
+        'filters' => [
+            'status' => 'Status',
+            'employee' => 'Employee',
+            'position' => 'Position',
+            'premise' => 'Premise',
+            'from' => 'From',
+            'to' => 'To',
+        ],
+
+        'statuses' => [
+            'regular' => 'Regular',
+            'irregular' => 'Irregular',
+            'absent' => 'Absent',
+            'incomplete' => 'Incomplete',
+            'justified' => 'Justified',
+        ],
+
+        'actions' => [
+            'view' => 'View details',
+        ],
+
+        'detail' => [
+            'title' => 'Workday details',
+            'in_delta' => 'Entry delta',
+            'out_delta' => 'Exit delta',
+            'pending' => 'Pending modifications',
+        ],
+
+        'bulk' => [
+            'trigger' => 'Modify marks',
+            'title' => 'Modify marks',
+            'description' => 'Open a mark modification request for :count selected workday(s).',
+            'mark_type' => 'Mark',
+            'time' => 'New time',
+            'reason' => 'Reason',
+            'notes' => 'Notes',
+            'submit' => 'Submit requests',
+        ],
+
+        'flash' => [
+            'bulk_modified' => ':count mark modification request(s) created.',
+        ],
+    ],
+
+    'mark_modifications' => [
+        'statuses' => [
+            'pending' => 'Pending',
+            'approved' => 'Approved',
+            'declined' => 'Declined',
+        ],
+
+        'reasons' => [
+            'mark_forgotten' => 'Forgotten mark',
+            'mark_incorrect' => 'Incorrect mark',
+            'system_error' => 'System error',
+            'shift_change' => 'Shift change',
+            'justified_missing_time' => 'Justified missing time',
+            'inside_tolerance_time' => 'Within tolerance',
+            'other' => 'Other',
         ],
     ],
 
