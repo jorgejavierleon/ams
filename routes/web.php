@@ -10,6 +10,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\MarkModificationReviewController;
 use App\Http\Controllers\My\LeaveController as MyLeaveController;
 use App\Http\Controllers\My\MarkController as MyMarkController;
 use App\Http\Controllers\PositionController;
@@ -28,6 +29,15 @@ Route::inertia('/', 'welcome')->name('home');
 
 // Switch the active UI locale (persisted in the session, applied by SetLocale)
 Route::put('locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
+
+// Public, no-auth mark-modification review. Employees reach these through the
+// ULID link emailed to them and approve or decline the correction without
+// logging in, so the routes sit outside every authenticated group.
+Route::prefix('mark-modifications/{modification:ulid}')->name('mark-modifications.')->group(function () {
+    Route::get('/', [MarkModificationReviewController::class, 'show'])->name('review');
+    Route::post('approve', [MarkModificationReviewController::class, 'approve'])->name('approve');
+    Route::post('decline', [MarkModificationReviewController::class, 'decline'])->name('decline');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');

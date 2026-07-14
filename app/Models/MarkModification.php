@@ -68,6 +68,39 @@ class MarkModification extends Model
     }
 
     /**
+     * Whether the modification is still awaiting the employee's review.
+     */
+    public function isPending(): bool
+    {
+        return $this->status === MarkModificationStatus::Pending;
+    }
+
+    /**
+     * Whether a still-pending modification has outlived its review window and
+     * can no longer be approved or declined from the public page. The window is
+     * measured from creation and configured by `ams.mark_modification_timeout_hours`.
+     */
+    public function isExpired(): bool
+    {
+        if (! $this->isPending()) {
+            return false;
+        }
+
+        $timeoutHours = (int) config('ams.mark_modification_timeout_hours');
+
+        return $this->created_at->addHours($timeoutHours)->isPast();
+    }
+
+    /**
+     * Whether the employee may still act on the modification (pending and within
+     * the review window).
+     */
+    public function isActionable(): bool
+    {
+        return $this->isPending() && ! $this->isExpired();
+    }
+
+    /**
      * @return BelongsTo<Workday, $this>
      */
     public function workday(): BelongsTo

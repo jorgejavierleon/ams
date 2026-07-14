@@ -5,22 +5,93 @@ namespace App\Managers;
 use App\Enums\MarkModificationReason;
 use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
+use App\Models\Mark;
 use App\Models\MarkModification;
 use App\Models\Workday;
 use App\Notifications\MarkModificationRequested;
+use App\Services\WorkdayCalculator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Owns the mark-modification request lifecycle. A modification captures a
  * proposed correction to an attendance mark (or the addition of a missing one)
  * and stays PENDING until the employee reviews it. Creating one notifies the
  * employee; a pending request of the same type blocks a duplicate against the
- * same workday.
+ * same workday. Reviewing one either rewrites the underlying mark (approve) or
+ * closes the request untouched (decline).
  */
 class MarkModificationManager
 {
+    public function __construct(private readonly WorkdayCalculator $workdayCalculator) {}
+
+    /**
+     * Approve the modification: write the proposed time onto the underlying
+     * mark — creating the mark and attaching it to the workday when the request
+     * adds a previously missing punch — mark the request reviewed, then
+     * recalculate the workday so its totals reflect the corrected time.
+     */
+    public function approve(MarkModification $modification): void
+    {
+        DB::transaction(function () use ($modification): void {
+            $mark = $modification->mark;
+
+            if ($mark === null) {
+                $workday = $modification->workday;
+
+                // The review page is public and has no tenant context, so the
+                // organization is taken from the workday rather than the
+                // BelongsToOrganization stamp (which would resolve to null).
+                $mark = new Mark([
+                    'user_id' => $modification->user_id,
+                    'type' => $modification->mark_type,
+                    'date_time' => $modification->date_time,
+                    'premise_id' => $workday->premise_id,
+                    'shift_id' => $workday->shift_id,
+                    'shift_start_time' => $workday->shift_start_time,
+                    'shift_end_time' => $workday->shift_end_time,
+                ]);
+                $mark->organization_id = $workday->organization_id;
+                $mark->save();
+
+                $workday->update([
+                    $modification->mark_type === MarkType::In ? 'mark_in_id' : 'mark_out_id' => $mark->id,
+                ]);
+            } else {
+                $mark->update(['date_time' => $modification->date_time]);
+            }
+
+            $modification->update([
+                'status' => MarkModificationStatus::Approved,
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+                'mark_id' => $mark->id,
+            ]);
+
+            if (! $this->workdayCalculator->recalculateWorkday($modification->workday)) {
+                Log::error('Failed to recalculate workday after approving mark modification', [
+                    'mark_modification_id' => $modification->id,
+                    'workday_id' => $modification->workday_id,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Decline the modification: close the request as reviewed without touching
+     * the underlying mark or workday.
+     */
+    public function decline(MarkModification $modification): void
+    {
+        $modification->update([
+            'status' => MarkModificationStatus::Declined,
+            'reviewed_by' => Auth::id(),
+            'reviewed_at' => now(),
+        ]);
+    }
+
     /**
      * Open a mark-modification request against the given workday for the
      * entry mark, the exit mark, or both, as present in `$data`. Each new

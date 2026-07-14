@@ -17,4 +17,18 @@ return [
     'max_weekly_hours' => 45,
     'max_daily_hours' => 10,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Mark-modification review window
+    |--------------------------------------------------------------------------
+    |
+    | How long an employee has to approve or decline a requested correction to
+    | one of their attendance marks before the request lapses. After this many
+    | hours a still-pending modification is considered expired and can no longer
+    | be actioned from the public review page.
+    |
+    */
+
+    'mark_modification_timeout_hours' => 48,
+
 ];

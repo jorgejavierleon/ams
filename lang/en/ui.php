@@ -1089,6 +1089,26 @@ return [
             'inside_tolerance_time' => 'Within tolerance',
             'other' => 'Other',
         ],
+
+        'review' => [
+            'title' => 'Review mark correction',
+            'description' => 'Approve or decline the requested change to your attendance mark.',
+            'employee' => 'Employee',
+            'mark_type' => 'Mark',
+            'original' => 'Original time',
+            'proposed' => 'Proposed time',
+            'no_mark' => 'No mark on record',
+            'reason' => 'Reason',
+            'notes' => 'Notes',
+            'approve' => 'Approve',
+            'decline' => 'Decline',
+            'approved_title' => 'Correction approved',
+            'approved_body' => 'Your attendance mark has been updated. You can close this page.',
+            'declined_title' => 'Correction declined',
+            'declined_body' => 'The request was declined and your mark stays unchanged. You can close this page.',
+            'expired_title' => 'Request expired',
+            'expired_body' => 'This correction was not reviewed in time and can no longer be approved or declined.',
+        ],
     ],
 
 ];

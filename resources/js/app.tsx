@@ -17,6 +17,7 @@ createInertiaApp({
             case name === 'welcome':
                 return null;
             case name.startsWith('auth/'):
+            case name.startsWith('mark-modifications/'):
                 return GuestLayout;
             case name.startsWith('dt/'):
                 return DtLayout;
