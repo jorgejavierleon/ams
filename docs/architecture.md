@@ -60,6 +60,10 @@ Organization-scoped via the `App\Models\Concerns\BelongsToOrganization` trait. A
 
 The "current organization" is resolved by `BelongsToOrganization::currentOrganizationId()`: it prefers an explicit `session('organization_id')` (set by the future tenant switcher, #48) and otherwise falls back to the authenticated user's `organization_id`. When neither resolves (unauthenticated requests, console commands, seeders) the scope is a **no-op**, leaving queries unscoped — so factories/seeders must set `organization_id` explicitly.
 
+### Public no-auth pages (mark-modification review)
+
+The mark-modification review page (`/mark-modifications/{ulid}`, #11) is reached by employees through an emailed ULID link with **no authentication**. It deliberately relies on the scope no-op above: with no tenant resolved, the `MarkModification` lookup by ULID succeeds regardless of org. The flip side is that any org-owned model *written* from such a request (e.g. the `Mark` created when approving a missing punch) has no tenant context to stamp, so `organization_id` must be set **explicitly** from a related record (`MarkModificationManager::approve()` copies it from the workday). The review window is `ams.mark_modification_timeout_hours` (48h); a still-pending request past it is treated as expired and can no longer be actioned.
+
 ### Shared/hybrid ownership (holidays)
 
 `Holiday` is the exception to the "always org-scoped" rule. A holiday is either **official** (`organization_id = null`) — the national list synced from the Boostr API (`holidays:sync` / `App\Actions\SyncOfficialHolidays`) and managed only in the SaaS panel — or **organization-owned**. It therefore uses a dedicated `App\Models\Scopes\HolidayScope` (not `BelongsToOrganization`) that exposes *official ∪ current org* to each tenant. Tenants may CRUD their own holidays but official rows are read-only to them (enforced in `HolidayController` via `Holiday::isOfficial()`). The unique key is `(organization_id, country, date)`, so an org may add a same-date holiday alongside an official one.

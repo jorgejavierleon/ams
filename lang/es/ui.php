@@ -1089,6 +1089,26 @@ return [
             'inside_tolerance_time' => 'Dentro de la tolerancia',
             'other' => 'Otro',
         ],
+
+        'review' => [
+            'title' => 'Revisar corrección de marca',
+            'description' => 'Aprueba o rechaza el cambio solicitado a tu marca de asistencia.',
+            'employee' => 'Empleado',
+            'mark_type' => 'Marca',
+            'original' => 'Hora original',
+            'proposed' => 'Hora propuesta',
+            'no_mark' => 'Sin marca registrada',
+            'reason' => 'Motivo',
+            'notes' => 'Notas',
+            'approve' => 'Aprobar',
+            'decline' => 'Rechazar',
+            'approved_title' => 'Corrección aprobada',
+            'approved_body' => 'Tu marca de asistencia fue actualizada. Puedes cerrar esta página.',
+            'declined_title' => 'Corrección rechazada',
+            'declined_body' => 'La solicitud fue rechazada y tu marca queda sin cambios. Puedes cerrar esta página.',
+            'expired_title' => 'Solicitud expirada',
+            'expired_body' => 'Esta corrección no se revisó a tiempo y ya no puede aprobarse ni rechazarse.',
+        ],
     ],
 
 ];
