@@ -1199,6 +1199,7 @@ return [
         'nav' => [
             'dashboard' => 'Dashboard',
             'validate_mark' => 'Validate mark',
+            'incidents' => 'Incidents',
             'select_organization' => 'Change employer',
         ],
         'organization' => [
@@ -1238,6 +1239,22 @@ return [
                 'checksum_value' => 'Checksum',
                 'not_available' => 'Not available',
             ],
+        ],
+        'incidents' => [
+            'title' => 'Technical incidents',
+            'description' => 'Outages of the electronic attendance system recorded for the audited employer.',
+            'columns' => [
+                'start_time' => 'Start',
+                'end_time' => 'End',
+                'duration' => 'Duration',
+                'description' => 'Description',
+            ],
+            'filters' => [
+                'from' => 'From date',
+                'to' => 'To date',
+            ],
+            'ongoing' => 'Ongoing',
+            'empty' => 'No incidents were recorded for this employer.',
         ],
     ],
 
