@@ -30,6 +30,7 @@ return [
         'employees' => 'Empleados',
         'holidays' => 'Feriados',
         'leaves' => 'Permisos',
+        'leaves_calendar' => 'Calendario de permisos',
         'my_leaves' => 'Mis permisos',
         'my_workdays' => 'Mis jornadas',
         'team_leaves' => 'Permisos del equipo',
@@ -845,6 +846,17 @@ return [
         'description' => 'Gestiona las solicitudes de ausencia de los empleados',
         'new' => 'Nuevo permiso',
         'empty' => 'No se encontraron solicitudes de permiso.',
+
+        'calendar' => [
+            'title' => 'Calendario de permisos',
+            'description' => 'Ausencias aprobadas en toda la organización',
+            'legend' => 'Tipos de permiso',
+            'employee' => 'Empleado',
+            'type' => 'Tipo',
+            'dates' => 'Fechas',
+            'approved_by' => 'Aprobado por',
+            'none' => '—',
+        ],
 
         'tabs' => [
             'all' => 'Todos',

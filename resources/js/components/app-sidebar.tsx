@@ -3,6 +3,7 @@ import {
     Building2,
     CalendarClock,
     CalendarDays,
+    CalendarRange,
     ClipboardList,
     IdCard,
     LayoutGrid,
@@ -28,7 +29,7 @@ import { dashboard } from '@/routes';
 import { index as companiesIndex } from '@/routes/companies';
 import { index as employeesIndex } from '@/routes/employees';
 import { index as holidaysIndex } from '@/routes/holidays';
-import { index as leavesIndex } from '@/routes/leaves';
+import { calendar as leavesCalendar, index as leavesIndex } from '@/routes/leaves';
 import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 import { index as positionsIndex } from '@/routes/positions';
@@ -79,6 +80,11 @@ export function AppSidebar() {
                               title: t('ui.nav.team_leaves'),
                               href: leavesIndex(),
                               icon: Users,
+                          },
+                          {
+                              title: t('ui.nav.leaves_calendar'),
+                              href: leavesCalendar(),
+                              icon: CalendarRange,
                           },
                       ]
                     : []),
@@ -144,6 +150,11 @@ export function AppSidebar() {
                     title: t('ui.nav.leaves'),
                     href: leavesIndex(),
                     icon: Sun,
+                },
+                {
+                    title: t('ui.nav.leaves_calendar'),
+                    href: leavesCalendar(),
+                    icon: CalendarRange,
                 },
             ],
         },

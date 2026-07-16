@@ -19,6 +19,20 @@ enum LeaveType: string
     }
 
     /**
+     * Hex color used to render this type on the leaves calendar and its legend.
+     */
+    public function color(): string
+    {
+        return match ($this) {
+            self::Vacation => '#059669',
+            self::Medical => '#dc2626',
+            self::Unpaid => '#d97706',
+            self::Paid => '#2563eb',
+            self::Other => '#6b7280',
+        };
+    }
+
+    /**
      * All types as value/label pairs for select inputs.
      *
      * @return array<int, array{value: string, label: string}>
@@ -27,6 +41,23 @@ enum LeaveType: string
     {
         return array_map(
             fn (self $type): array => ['value' => $type->value, 'label' => $type->label()],
+            self::cases(),
+        );
+    }
+
+    /**
+     * All types as value/label/color triples for the calendar legend.
+     *
+     * @return array<int, array{value: string, label: string, color: string}>
+     */
+    public static function legendOptions(): array
+    {
+        return array_map(
+            fn (self $type): array => [
+                'value' => $type->value,
+                'label' => $type->label(),
+                'color' => $type->color(),
+            ],
             self::cases(),
         );
     }

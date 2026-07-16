@@ -141,3 +141,28 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Align FullCalendar with the app's theme tokens so it reads correctly in
+   both light and dark mode. */
+.leaves-calendar {
+    --fc-border-color: var(--border);
+    --fc-page-bg-color: transparent;
+    --fc-neutral-bg-color: var(--muted);
+    --fc-today-bg-color: var(--accent);
+    --fc-button-bg-color: var(--primary);
+    --fc-button-border-color: var(--primary);
+    --fc-button-text-color: var(--primary-foreground);
+    --fc-button-hover-bg-color: var(--primary);
+    --fc-button-hover-border-color: var(--primary);
+    --fc-button-active-bg-color: var(--primary);
+    --fc-button-active-border-color: var(--primary);
+}
+
+.leaves-calendar .fc .fc-button {
+    text-transform: capitalize;
+    box-shadow: none;
+}
+
+.leaves-calendar .fc .fc-event {
+    cursor: pointer;
+}
