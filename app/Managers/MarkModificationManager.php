@@ -164,6 +164,9 @@ class MarkModificationManager
             'reason' => $reason,
             'status' => MarkModificationStatus::Pending,
             'date_time' => $workday->date->copy()->setTimeFromTimeString($time),
+            // Snapshot the mark's current time: approving rewrites the mark, so
+            // the original can no longer be read back from it afterwards.
+            'original_date_time' => $type === MarkType::In ? $workday->mark_in_at : $workday->mark_out_at,
             'mark_type' => $type,
             'notes' => $notes,
         ]);

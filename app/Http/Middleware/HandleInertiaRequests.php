@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\MarkModificationStatus;
+use App\Models\MarkModification;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -45,6 +47,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? collect(),
+                'pendingModificationsCount' => fn () => $this->pendingModificationsCount($request),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
@@ -57,6 +60,25 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * How many mark-correction requests are awaiting the authenticated
+     * employee's review, for the self-service nav badge. Zero for anyone who
+     * cannot review their own corrections, so the query stays employee-only.
+     */
+    private function pendingModificationsCount(Request $request): int
+    {
+        $user = $request->user();
+
+        if ($user === null || ! $user->getAllPermissions()->pluck('name')->contains('ReviewOwn:MarkModification')) {
+            return 0;
+        }
+
+        return MarkModification::query()
+            ->where('user_id', $user->id)
+            ->where('status', MarkModificationStatus::Pending)
+            ->count();
     }
 
     /**

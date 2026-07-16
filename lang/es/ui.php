@@ -31,6 +31,7 @@ return [
         'holidays' => 'Feriados',
         'leaves' => 'Permisos',
         'my_leaves' => 'Mis permisos',
+        'my_workdays' => 'Mis jornadas',
         'team_leaves' => 'Permisos del equipo',
     ],
 
@@ -1154,6 +1155,53 @@ return [
             'modified' => ':count solicitud(es) de modificación de marca creada(s).',
             'modify_blocked' => 'No se crearon solicitudes: las marcas modificadas ya tienen solicitudes pendientes.',
             'no_changes' => 'No se detectaron cambios: no se solicitó ninguna modificación.',
+        ],
+
+        'my' => [
+            'title' => 'Mis jornadas',
+            'description' => 'Revisa tu asistencia y responde a las correcciones solicitadas.',
+            'empty' => 'No tienes jornadas registradas en este rango.',
+            'back' => 'Volver a mis jornadas',
+
+            'pending' => [
+                'title' => 'Correcciones por revisar',
+                'subtitle' => 'Un administrador solicitó ajustar estas marcas. Apruébalas o recházalas.',
+                'count' => ':count por revisar',
+                'requested_by' => 'Solicitada por :name',
+                'original' => 'Marca actual',
+                'proposed' => 'Marca propuesta',
+                'no_mark' => 'Sin marca',
+                'reason' => 'Motivo',
+                'notes' => 'Comentario',
+                'approve' => 'Aprobar',
+                'decline' => 'Rechazar',
+                'expired' => 'Plazo vencido',
+                'expired_hint' => 'El plazo para revisar esta corrección venció.',
+            ],
+
+            'list' => [
+                'title' => 'Historial de jornadas',
+                'pending_flag' => 'Corrección pendiente',
+            ],
+
+            'columns' => [
+                'date' => 'Fecha',
+                'status' => 'Estado',
+                'mark_in' => 'Entrada',
+                'mark_out' => 'Salida',
+                'worked' => 'Trabajado',
+                'shift' => 'Turno',
+            ],
+
+            'filters' => [
+                'from' => 'Desde',
+                'to' => 'Hasta',
+            ],
+
+            'flash' => [
+                'approved' => 'Corrección aprobada. Tu marca fue actualizada.',
+                'declined' => 'Corrección rechazada. Tu marca queda sin cambios.',
+            ],
         ],
     ],
 

@@ -21,6 +21,8 @@ class RoleSeeder extends Seeder
         'CancelOwn:Leave',
         'ClockOwn:Mark',
         'ViewOwn:Mark',
+        'ViewOwn:Workday',
+        'ReviewOwn:MarkModification',
     ];
 
     /**
