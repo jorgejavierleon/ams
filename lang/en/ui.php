@@ -227,6 +227,68 @@ return [
         ],
     ],
 
+    'document_variables' => [
+        'nav' => 'Document variables',
+        'title' => 'Document variables',
+        'description' => 'Global placeholders resolved when rendering documents',
+        'new' => 'New variable',
+        'search_placeholder' => 'Search by name or key...',
+        'empty' => 'No document variables found.',
+
+        'columns' => [
+            'name' => 'Name',
+            'key' => 'Key',
+            'description' => 'Description',
+            'created' => 'Created',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+        ],
+
+        'pagination' => [
+            'showing' => 'Showing :from–:to of :total',
+            'none' => 'No results',
+            'previous' => 'Previous',
+            'next' => 'Next',
+        ],
+
+        'form' => [
+            'name' => 'Name',
+            'key' => 'Key',
+            'key_hint' => 'Use the {{snake_case}} format, e.g. {{employee_name}}.',
+            'description' => 'Description',
+        ],
+
+        'validation' => [
+            'key_format' => 'The key must follow the {{snake_case}} format, e.g. {{employee_name}}.',
+        ],
+
+        'create' => [
+            'title' => 'New document variable',
+            'description' => 'Define a new global placeholder',
+            'submit' => 'Create variable',
+        ],
+
+        'edit' => [
+            'title' => 'Edit document variable',
+            'submit' => 'Save changes',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete document variable',
+            'description' => 'Are you sure you want to delete :name? This action cannot be undone.',
+            'confirm' => 'Delete',
+        ],
+
+        'flash' => [
+            'created' => 'Document variable created.',
+            'updated' => 'Document variable updated.',
+            'deleted' => 'Document variable deleted.',
+        ],
+    ],
+
     'roles' => [
         'title' => 'Roles',
         'description' => 'Manage roles and their permissions',
