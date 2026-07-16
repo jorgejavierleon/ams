@@ -64,6 +64,10 @@ The "current organization" is resolved by `BelongsToOrganization::currentOrganiz
 
 The mark-modification review page (`/mark-modifications/{ulid}`, #11) is reached by employees through an emailed ULID link with **no authentication**. It deliberately relies on the scope no-op above: with no tenant resolved, the `MarkModification` lookup by ULID succeeds regardless of org. The flip side is that any org-owned model *written* from such a request (e.g. the `Mark` created when approving a missing punch) has no tenant context to stamp, so `organization_id` must be set **explicitly** from a related record (`MarkModificationManager::approve()` copies it from the workday). The review window is `ams.mark_modification_timeout_hours` (48h); a still-pending request past it is treated as expired and can no longer be actioned.
 
+### Cross-tenant reads (DT inspectors)
+
+DT (Dirección del Trabajo) inspectors authenticate on the `dt` guard but carry **no** `organization_id` — they are government auditors, not tenant members. The checksum-validation page (`/dt/marks/validate`, #23) relies on the scope no-op above: with no tenant resolved, `Mark::where('checksum', …)` spans every employer, which is the point — an inspector verifies a printed attendance proof from any organization. Do not add explicit org scoping to DT lookups.
+
 ### Shared/hybrid ownership (holidays)
 
 `Holiday` is the exception to the "always org-scoped" rule. A holiday is either **official** (`organization_id = null`) — the national list synced from the Boostr API (`holidays:sync` / `App\Actions\SyncOfficialHolidays`) and managed only in the SaaS panel — or **organization-owned**. It therefore uses a dedicated `App\Models\Scopes\HolidayScope` (not `BelongsToOrganization`) that exposes *official ∪ current org* to each tenant. Tenants may CRUD their own holidays but official rows are read-only to them (enforced in `HolidayController` via `Holiday::isOfficial()`). The unique key is `(organization_id, country, date)`, so an org may add a same-date holiday alongside an official one.

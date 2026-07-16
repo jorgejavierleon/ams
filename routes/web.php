@@ -5,6 +5,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\LoginController;
+use App\Http\Controllers\Dt\MarkValidationController;
 use App\Http\Controllers\Dt\PasswordChangeController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
@@ -158,6 +159,10 @@ Route::prefix('dt')->name('dt.')->group(function () {
         // All other DT routes require an active (non-expired) password
         Route::middleware('password_expires')->group(function () {
             Route::inertia('dashboard', 'dt/dashboard')->name('dashboard');
+
+            // Validate a printed attendance proof by its SHA-256 checksum.
+            Route::get('marks/validate', [MarkValidationController::class, 'create'])->name('marks.validate');
+            Route::post('marks/validate', [MarkValidationController::class, 'store'])->name('marks.validate.store');
         });
     });
 });

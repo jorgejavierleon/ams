@@ -1195,4 +1195,34 @@ return [
         ],
     ],
 
+    'dt' => [
+        'nav' => [
+            'dashboard' => 'Dashboard',
+            'validate_mark' => 'Validate mark',
+        ],
+        'marks' => [
+            'validate' => [
+                'title' => 'Validate mark',
+                'description' => 'Paste the SHA-256 checksum printed on an attendance proof to verify its integrity against the database.',
+                'checksum' => 'Checksum or hash',
+                'checksum_placeholder' => 'Paste the mark checksum here',
+                'submit' => 'Validate',
+                'not_found' => 'No mark was found with that checksum.',
+                'result_title' => 'Mark information',
+                'result_description' => 'The checksum matches the following mark information.',
+                'employee_name' => 'Employee name',
+                'employee_rut' => 'Employee RUT',
+                'employer_name' => 'Employer name',
+                'employer_rut' => 'Employer RUT',
+                'date_time' => 'Registration date and time',
+                'type' => 'Mark type',
+                'premise_name' => 'Premise',
+                'premise_address' => 'Premise address',
+                'coordinates' => 'Coordinates',
+                'checksum_value' => 'Checksum',
+                'not_available' => 'Not available',
+            ],
+        ],
+    ],
+
 ];
