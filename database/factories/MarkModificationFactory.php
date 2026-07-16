@@ -43,4 +43,18 @@ class MarkModificationFactory extends Factory
             'reviewed_at' => now(),
         ]);
     }
+
+    /**
+     * A pending modification whose opposition window has already closed: the
+     * employee was notified more than the configured timeout ago.
+     */
+    public function overdue(): static
+    {
+        $timeoutHours = (int) config('ams.mark_modification_timeout_hours');
+
+        return $this->state(fn (): array => [
+            'status' => MarkModificationStatus::Pending,
+            'notified_at' => now()->subHours($timeoutHours + 1),
+        ]);
+    }
 }

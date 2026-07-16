@@ -162,13 +162,15 @@ test('pending mark modifications surface as an indicator on the row', function (
 // --- Bulk modify ---
 
 test('bulk modify opens a pending mark modification for each selected workday', function () {
+    Notification::fake();
+
     $admin = workdayAdmin();
     $organization = $admin->organization;
     $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
     $other = User::factory()->employee()->create(['organization_id' => $organization->id]);
 
-    $first = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
-    $second = makeWorkday($organization, $other, ['date' => Carbon::today()]);
+    $first = makeWorkday($organization, $employee, ['date' => Carbon::today()->subWeek()]);
+    $second = makeWorkday($organization, $other, ['date' => Carbon::today()->subWeek()]);
 
     $this->actingAs($admin)
         ->post(route('workdays.bulk-modify'), [
@@ -182,6 +184,30 @@ test('bulk modify opens a pending mark modification for each selected workday', 
 
     expect(MarkModification::query()->where('status', MarkModificationStatus::Pending)->count())->toBe(2);
     expect(MarkModification::query()->where('workday_id', $first->id)->value('created_by'))->toBe($admin->id);
+
+    // Every bulk correction must notify the employee (art. 40 b).
+    Notification::assertSentTo($employee, MarkModificationRequested::class);
+    Notification::assertSentTo($other, MarkModificationRequested::class);
+});
+
+test('bulk modify skips workdays whose business-day window has not opened', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+
+    // Dated today — art. 41 c) forbids correcting it before the next business day.
+    $today = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.bulk-modify'), [
+            'workdays' => [$today->id],
+            'mark_type' => MarkType::In->value,
+            'time' => '08:15',
+            'reason' => 'mark_forgotten',
+        ])
+        ->assertRedirect();
+
+    expect(MarkModification::query()->count())->toBe(0);
 });
 
 test('bulk modify cannot target workdays from another organization', function () {
@@ -211,7 +237,8 @@ test('admin requests a mark modification and the employee is notified', function
     $admin = workdayAdmin();
     $organization = $admin->organization;
     $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
-    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+    $date = Carbon::today()->subWeek();
+    $workday = makeWorkday($organization, $employee, ['date' => $date]);
 
     $this->actingAs($admin)
         ->post(route('workdays.modify', $workday), [
@@ -226,7 +253,7 @@ test('admin requests a mark modification and the employee is notified', function
         ->and($modification->mark_type)->toBe(MarkType::In)
         ->and($modification->created_by)->toBe($admin->id)
         ->and($modification->user_id)->toBe($employee->id)
-        ->and($modification->date_time->format('Y-m-d H:i'))->toBe(Carbon::today()->format('Y-m-d').' 08:05');
+        ->and($modification->date_time->format('Y-m-d H:i'))->toBe($date->format('Y-m-d').' 08:05');
 
     Notification::assertSentTo($employee, MarkModificationRequested::class);
 });
@@ -237,7 +264,7 @@ test('modify can target both the entry and exit marks at once', function () {
     $admin = workdayAdmin();
     $organization = $admin->organization;
     $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
-    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()->subWeek()]);
 
     $this->actingAs($admin)
         ->post(route('workdays.modify', $workday), [
@@ -257,7 +284,7 @@ test('a pending modification blocks a second request for the same mark', functio
     $admin = workdayAdmin();
     $organization = $admin->organization;
     $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
-    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()->subWeek()]);
 
     MarkModification::factory()->create([
         'organization_id' => $organization->id,
@@ -285,10 +312,11 @@ test('submitting the marks unchanged requests no modification', function () {
     $admin = workdayAdmin();
     $organization = $admin->organization;
     $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $date = Carbon::today()->subWeek();
     $workday = makeWorkday($organization, $employee, [
-        'date' => Carbon::today(),
-        'mark_in_at' => Carbon::today()->setTime(8, 0),
-        'mark_out_at' => Carbon::today()->setTime(17, 0),
+        'date' => $date,
+        'mark_in_at' => $date->copy()->setTime(8, 0),
+        'mark_out_at' => $date->copy()->setTime(17, 0),
     ]);
 
     $this->actingAs($admin)
@@ -309,10 +337,11 @@ test('only the mark whose time changed opens a request', function () {
     $admin = workdayAdmin();
     $organization = $admin->organization;
     $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $date = Carbon::today()->subWeek();
     $workday = makeWorkday($organization, $employee, [
-        'date' => Carbon::today(),
-        'mark_in_at' => Carbon::today()->setTime(8, 0),
-        'mark_out_at' => Carbon::today()->setTime(17, 0),
+        'date' => $date,
+        'mark_in_at' => $date->copy()->setTime(8, 0),
+        'mark_out_at' => $date->copy()->setTime(17, 0),
     ]);
 
     $this->actingAs($admin)
@@ -337,9 +366,10 @@ test('adding a time to a missing mark opens a request', function () {
     $admin = workdayAdmin();
     $organization = $admin->organization;
     $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $date = Carbon::today()->subWeek();
     $workday = makeWorkday($organization, $employee, [
-        'date' => Carbon::today(),
-        'mark_in_at' => Carbon::today()->setTime(8, 0),
+        'date' => $date,
+        'mark_in_at' => $date->copy()->setTime(8, 0),
         'mark_out_at' => null,
     ]);
 
@@ -377,7 +407,7 @@ test('modify delegates to the MarkModificationManager', function () {
     $admin = workdayAdmin();
     $organization = $admin->organization;
     $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
-    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()->subWeek()]);
 
     $this->mock(MarkModificationManager::class)
         ->shouldReceive('modifyFromWorkday')
@@ -390,6 +420,27 @@ test('modify delegates to the MarkModificationManager', function () {
             'reason' => MarkModificationReason::MarkForgotten->value,
         ])
         ->assertRedirect();
+});
+
+test('modify is blocked before the next business day (art. 41 c)', function () {
+    Notification::fake();
+
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+
+    // A workday dated today cannot be corrected until the next business day.
+    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $workday), [
+            'mark_in' => '08:00',
+            'reason' => MarkModificationReason::MarkForgotten->value,
+        ])
+        ->assertRedirect();
+
+    expect(MarkModification::query()->count())->toBe(0);
+    Notification::assertNothingSent();
 });
 
 // --- Detail page ---
@@ -502,9 +553,10 @@ test('requesting a modification snapshots the mark original time', function () {
     $admin = workdayAdmin();
     $organization = $admin->organization;
     $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $date = Carbon::today()->subWeek();
     $workday = makeWorkday($organization, $employee, [
-        'date' => Carbon::today(),
-        'mark_in_at' => Carbon::today()->setTime(8, 2),
+        'date' => $date,
+        'mark_in_at' => $date->copy()->setTime(8, 2),
     ]);
 
     $this->actingAs($admin)

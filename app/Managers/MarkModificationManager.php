@@ -80,6 +80,41 @@ class MarkModificationManager
     }
 
     /**
+     * Consolidate every pending modification whose opposition window has closed
+     * without the employee objecting (Resolución 38, art. 40 d): silence counts
+     * as consent, so the proposed time takes effect. Runs from the scheduled
+     * `mark-modifications:approve-overdue` command. Each row is approved in its
+     * own transaction and failures are logged without stopping the batch.
+     */
+    public function approveOverdueModifications(): int
+    {
+        $timeoutHours = (int) config('ams.mark_modification_timeout_hours');
+        $cutoff = now()->subHours($timeoutHours);
+
+        $approved = 0;
+
+        MarkModification::query()
+            ->where('status', MarkModificationStatus::Pending)
+            ->whereRaw('COALESCE(notified_at, created_at) < ?', [$cutoff])
+            ->with(['workday', 'mark'])
+            ->get()
+            ->each(function (MarkModification $modification) use (&$approved): void {
+                try {
+                    $this->approve($modification);
+                    $approved++;
+                } catch (\Throwable $exception) {
+                    Log::error('Failed to auto-approve overdue mark modification', [
+                        'mark_modification_id' => $modification->id,
+                        'workday_id' => $modification->workday_id,
+                        'exception' => $exception->getMessage(),
+                    ]);
+                }
+            });
+
+        return $approved;
+    }
+
+    /**
      * Decline the modification: close the request as reviewed without touching
      * the underlying mark or workday.
      */

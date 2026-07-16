@@ -6,6 +6,7 @@ use App\Enums\MarkModificationReason;
 use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
 use App\Models\Concerns\BelongsToOrganization;
+use Carbon\CarbonInterface;
 use Database\Factories\MarkModificationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +27,7 @@ use Illuminate\Support\Str;
  * @property int|null $created_by
  * @property int|null $reviewed_by
  * @property Carbon|null $reviewed_at
+ * @property Carbon|null $notified_at
  * @property MarkModificationReason|null $reason
  * @property MarkModificationStatus|null $status
  * @property Carbon $date_time
@@ -53,6 +55,7 @@ class MarkModification extends Model
             'date_time' => 'datetime',
             'original_date_time' => 'datetime',
             'reviewed_at' => 'datetime',
+            'notified_at' => 'datetime',
         ];
     }
 
@@ -78,9 +81,21 @@ class MarkModification extends Model
     }
 
     /**
-     * Whether a still-pending modification has outlived its review window and
-     * can no longer be approved or declined from the public page. The window is
-     * measured from creation and configured by `ams.mark_modification_timeout_hours`.
+     * When the employee's opposition window starts counting: the moment the
+     * notification was sent, falling back to creation time for rows created
+     * before send-time was tracked (Resolución 38, art. 40 c).
+     */
+    public function reviewWindowStartedAt(): CarbonInterface
+    {
+        return $this->notified_at ?? $this->created_at;
+    }
+
+    /**
+     * Whether a still-pending modification has outlived its opposition window.
+     * Past this point the employee can no longer oppose from the public page and
+     * the change consolidates automatically (art. 40 d), handled by the
+     * scheduled `mark-modifications:approve-overdue` command. The window length
+     * is configured by `ams.mark_modification_timeout_hours`.
      */
     public function isExpired(): bool
     {
@@ -90,7 +105,7 @@ class MarkModification extends Model
 
         $timeoutHours = (int) config('ams.mark_modification_timeout_hours');
 
-        return $this->created_at->addHours($timeoutHours)->isPast();
+        return $this->reviewWindowStartedAt()->addHours($timeoutHours)->isPast();
     }
 
     /**

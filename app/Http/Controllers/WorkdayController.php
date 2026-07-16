@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesTableSort;
 use App\Enums\MarkModificationReason;
-use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
 use App\Enums\WorkdayStatus;
 use App\Managers\MarkModificationManager;
@@ -14,6 +13,7 @@ use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
 use App\Models\Workday;
+use App\Services\BusinessDayResolver;
 use App\Services\WorkdayPresenter;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -119,7 +119,7 @@ class WorkdayController extends Controller
      * Open a pending mark-modification request against each selected workday.
      * The requests surface as pending indicators for HR to review and approve.
      */
-    public function bulkModify(Request $request): RedirectResponse
+    public function bulkModify(Request $request, MarkModificationManager $manager, BusinessDayResolver $businessDays): RedirectResponse
     {
         Gate::authorize('update', Workday::class);
 
@@ -137,33 +137,39 @@ class WorkdayController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $workdays = Workday::query()->whereIn('id', $data['workdays'])->get();
+        // Art. 41 c): drop workdays that cannot yet be corrected because the
+        // following business day has not arrived.
+        $workdays = Workday::query()
+            ->whereIn('id', $data['workdays'])
+            ->get()
+            ->filter(fn (Workday $workday): bool => $businessDays->correctionAllowed($workday->date));
 
-        DB::transaction(function () use ($workdays, $data, $request): void {
-            foreach ($workdays as $workday) {
-                MarkModification::create([
-                    'workday_id' => $workday->id,
-                    'mark_id' => $data['mark_type'] === MarkType::In->value
-                        ? $workday->mark_in_id
-                        : $workday->mark_out_id,
-                    'user_id' => $workday->user_id,
-                    'created_by' => $request->user()->id,
-                    'reason' => $data['reason'],
-                    'status' => MarkModificationStatus::Pending,
-                    'date_time' => $workday->date->copy()->setTimeFromTimeString($data['time']),
-                    // Snapshot the mark's current time before approval rewrites it.
-                    'original_date_time' => $data['mark_type'] === MarkType::In->value
-                        ? $workday->mark_in_at
-                        : $workday->mark_out_at,
-                    'mark_type' => $data['mark_type'],
-                    'notes' => $data['notes'] ?? null,
-                ]);
-            }
-        });
+        if ($workdays->isEmpty()) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('ui.workdays.flash.too_soon'),
+            ]);
+
+            return back();
+        }
+
+        $type = MarkType::from($data['mark_type']);
+        $reason = MarkModificationReason::from($data['reason']);
+
+        $count = DB::transaction(fn (): int => $workdays
+            ->map(fn (Workday $workday) => $manager->createModification(
+                $workday,
+                $type,
+                $data['time'],
+                $reason,
+                $data['notes'] ?? null,
+            ))
+            ->filter()
+            ->count());
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('ui.workdays.flash.bulk_modified', ['count' => $workdays->count()]),
+            'message' => __('ui.workdays.flash.bulk_modified', ['count' => $count]),
         ]);
 
         return back();
@@ -175,9 +181,20 @@ class WorkdayController extends Controller
      * request; a mark that already has a pending request is left untouched by
      * the manager's duplicate guard.
      */
-    public function modify(Request $request, Workday $workday, MarkModificationManager $manager): RedirectResponse
+    public function modify(Request $request, Workday $workday, MarkModificationManager $manager, BusinessDayResolver $businessDays): RedirectResponse
     {
         Gate::authorize('update', $workday);
+
+        // Art. 41 c): a correction cannot be made before the business day that
+        // follows the day being corrected.
+        if (! $businessDays->correctionAllowed($workday->date)) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('ui.workdays.flash.too_soon'),
+            ]);
+
+            return back();
+        }
 
         $data = $request->validate([
             'mark_in' => ['nullable', 'date_format:H:i'],

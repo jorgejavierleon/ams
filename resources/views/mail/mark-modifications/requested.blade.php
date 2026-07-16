@@ -4,8 +4,8 @@
 {{ __('mail.mark_modification_requested.body') }}
 
 - **{{ __('mail.mark_modification_requested.mark_type') }}:** {{ $markModification->mark_type?->label() }}
-- **{{ __('mail.mark_modification_requested.original') }}:** {{ $markModification->mark?->date_time?->format('d-m-Y H:i') ?? __('mail.mark_modification_requested.no_mark') }}
-- **{{ __('mail.mark_modification_requested.new') }}:** {{ $markModification->date_time->format('d-m-Y H:i') }}
+- **{{ __('mail.mark_modification_requested.original') }}:** {{ $markModification->original_date_time?->format('d-m-Y H:i:s') ?? __('mail.mark_modification_requested.no_mark') }}
+- **{{ __('mail.mark_modification_requested.new') }}:** {{ $markModification->date_time->format('d-m-Y H:i:s') }}
 - **{{ __('mail.mark_modification_requested.reason') }}:** {{ $markModification->reason?->label() }}
 @if ($markModification->notes)
 - **{{ __('mail.mark_modification_requested.notes') }}:** {{ $markModification->notes }}
