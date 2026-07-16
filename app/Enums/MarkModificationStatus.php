@@ -21,6 +21,19 @@ enum MarkModificationStatus: string
     }
 
     /**
+     * A shared, semantic badge tone for the status so the UI colours are
+     * decided once here rather than per component.
+     */
+    public function badge(): string
+    {
+        return match ($this) {
+            self::Approved => 'success',
+            self::Pending => 'warning',
+            self::Declined => 'destructive',
+        };
+    }
+
+    /**
      * All statuses as value/label pairs for select inputs.
      *
      * @return array<int, array{value: string, label: string}>

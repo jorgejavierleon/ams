@@ -1,7 +1,6 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { AlertTriangle, Eye, PencilLine } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
@@ -28,16 +27,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-} from '@/components/ui/sheet';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { bulkModify, index, modify } from '@/routes/workdays';
+import { bulkModify, index, modify, show } from '@/routes/workdays';
 import type { Paginated } from '@/types/ui';
 
 type Workday = {
@@ -93,15 +85,6 @@ function toDateString(date: Date): string {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-function DetailRow({ label, value }: { label: string; value: ReactNode }) {
-    return (
-        <div className="flex items-center justify-between gap-4">
-            <dt className="text-sm text-muted-foreground">{label}</dt>
-            <dd className="text-sm font-medium">{value}</dd>
-        </div>
-    );
-}
-
 export default function WorkdaysIndex({
     workdays,
     filters,
@@ -125,7 +108,6 @@ export default function WorkdaysIndex({
     );
     const [premises, setPremises] = useState<string[]>(filters.premises ?? []);
 
-    const [viewTarget, setViewTarget] = useState<Workday | null>(null);
     const [bulkTargets, setBulkTargets] = useState<Workday[]>([]);
     const [modifyTarget, setModifyTarget] = useState<Workday | null>(null);
     const [resetSelection, setResetSelection] = useState<() => void>(
@@ -435,10 +417,12 @@ export default function WorkdaysIndex({
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setViewTarget(row.original)}
+                            asChild
                             aria-label={t('ui.workdays.actions.view')}
                         >
-                            <Eye className="size-4" />
+                            <Link href={show(row.original.id).url}>
+                                <Eye className="size-4" />
+                            </Link>
                         </Button>
                     </div>
                 ),
@@ -555,88 +539,6 @@ export default function WorkdaysIndex({
                     }
                 />
             </div>
-
-            <Sheet
-                open={viewTarget !== null}
-                onOpenChange={(open) => !open && setViewTarget(null)}
-            >
-                <SheetContent className="overflow-y-auto">
-                    <SheetHeader>
-                        <SheetTitle>{t('ui.workdays.detail.title')}</SheetTitle>
-                        <SheetDescription>
-                            {viewTarget?.employee ?? '—'} · {viewTarget?.date}
-                        </SheetDescription>
-                    </SheetHeader>
-
-                    {viewTarget && (
-                        <dl className="grid gap-3 px-4 pb-6">
-                            <DetailRow
-                                label={t('ui.workdays.columns.status')}
-                                value={
-                                    viewTarget.status ? (
-                                        <Badge
-                                            variant={
-                                                STATUS_BADGE[
-                                                    viewTarget.status_badge ??
-                                                        ''
-                                                ] ?? 'outline'
-                                            }
-                                        >
-                                            {viewTarget.status_label}
-                                        </Badge>
-                                    ) : (
-                                        '—'
-                                    )
-                                }
-                            />
-                            <DetailRow
-                                label={t('ui.workdays.columns.shift')}
-                                value={viewTarget.shift ?? '—'}
-                            />
-                            <DetailRow
-                                label={t('ui.workdays.columns.mark_in')}
-                                value={viewTarget.mark_in_at ?? '—'}
-                            />
-                            <DetailRow
-                                label={t('ui.workdays.columns.mark_out')}
-                                value={viewTarget.mark_out_at ?? '—'}
-                            />
-                            <DetailRow
-                                label={t('ui.workdays.columns.worked')}
-                                value={viewTarget.worked_time ?? '—'}
-                            />
-                            <DetailRow
-                                label={t('ui.workdays.detail.in_delta')}
-                                value={viewTarget.in_time_difference ?? '—'}
-                            />
-                            <DetailRow
-                                label={t('ui.workdays.detail.out_delta')}
-                                value={viewTarget.out_time_difference ?? '—'}
-                            />
-                            <DetailRow
-                                label={t('ui.workdays.columns.leave')}
-                                value={viewTarget.leave_type ?? '—'}
-                            />
-                            <DetailRow
-                                label={t('ui.workdays.detail.pending')}
-                                value={viewTarget.pending_modifications}
-                            />
-
-                            <Button
-                                className="mt-2"
-                                onClick={() => {
-                                    const target = viewTarget;
-                                    setViewTarget(null);
-                                    openModify(target);
-                                }}
-                            >
-                                <PencilLine className="size-4" />
-                                {t('ui.workdays.actions.modify')}
-                            </Button>
-                        </dl>
-                    )}
-                </SheetContent>
-            </Sheet>
 
             <Dialog
                 open={bulkTargets.length > 0}

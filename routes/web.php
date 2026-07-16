@@ -65,10 +65,17 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->except(['show']);
 
     Route::get('workdays', [WorkdayController::class, 'index'])->name('workdays.index');
+    Route::get('workdays/{workday}', [WorkdayController::class, 'show'])->name('workdays.show');
     Route::post('workdays/bulk-modify', [WorkdayController::class, 'bulkModify'])
         ->name('workdays.bulk-modify');
     Route::post('workdays/{workday}/modify', [WorkdayController::class, 'modify'])
         ->name('workdays.modify');
+    Route::post('workdays/{workday}/modifications/{markModification}/approve', [WorkdayController::class, 'approveModification'])
+        ->scopeBindings()
+        ->name('workdays.modifications.approve');
+    Route::post('workdays/{workday}/modifications/{markModification}/decline', [WorkdayController::class, 'declineModification'])
+        ->scopeBindings()
+        ->name('workdays.modifications.decline');
 
     Route::resource('holidays', HolidayController::class)
         ->only(['index', 'store', 'update', 'destroy']);
