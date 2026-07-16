@@ -51,6 +51,10 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
             ],
+            'dtOrganization' => fn () => $request->session()->get('dt_organization_id') === null ? null : [
+                'id' => (int) $request->session()->get('dt_organization_id'),
+                'name' => $request->session()->get('organization_name'),
+            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

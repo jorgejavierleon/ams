@@ -1199,6 +1199,22 @@ return [
         'nav' => [
             'dashboard' => 'Inicio',
             'validate_mark' => 'Validar marca',
+            'select_organization' => 'Cambiar empleador',
+        ],
+        'organization' => [
+            'select' => [
+                'title' => 'Seleccione un empleador a fiscalizar',
+                'description' => 'Elija el empleador cuyos registros desea revisar. Todas las vistas de esta sesión se limitarán a su selección.',
+                'search_placeholder' => 'Buscar por nombre o RUT',
+                'columns' => [
+                    'name' => 'Empleador',
+                    'rut' => 'RUT',
+                ],
+                'current' => 'Fiscalizando actualmente',
+                'submit' => 'Fiscalizar este empleador',
+                'empty' => 'No hay empleadores disponibles para fiscalizar.',
+                'no_results' => 'Ningún empleador coincide con su búsqueda.',
+            ],
         ],
         'marks' => [
             'validate' => [

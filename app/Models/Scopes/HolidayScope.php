@@ -36,11 +36,18 @@ class HolidayScope implements Scope
     /**
      * Resolve the organization the current request/session is scoped to.
      *
-     * Mirrors {@see BelongsToOrganization::currentOrganizationId()}:
-     * prefers the tenant-switcher session override, then the authenticated user.
+     * Mirrors {@see BelongsToOrganization::currentOrganizationId()}: prefers the
+     * DT audit session organization, then the tenant-switcher override, and
+     * finally the authenticated user.
      */
     public static function currentOrganizationId(): ?int
     {
+        $dtOrganizationId = session('dt_organization_id');
+
+        if ($dtOrganizationId !== null) {
+            return (int) $dtOrganizationId;
+        }
+
         $sessionOrganizationId = session('organization_id');
 
         if ($sessionOrganizationId !== null) {

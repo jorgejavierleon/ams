@@ -58,7 +58,7 @@ $user->can('create_mark')       // MarkPolicy::create
 
 Organization-scoped via the `App\Models\Concerns\BelongsToOrganization` trait. All models belonging to an org must use this trait. It applies `App\Models\Scopes\OrganizationScope` (constrains every read to the current org) and stamps `organization_id` on creation. Never bypass this scope on org-owned models.
 
-The "current organization" is resolved by `BelongsToOrganization::currentOrganizationId()`: it prefers an explicit `session('organization_id')` (set by the future tenant switcher, #48) and otherwise falls back to the authenticated user's `organization_id`. When neither resolves (unauthenticated requests, console commands, seeders) the scope is a **no-op**, leaving queries unscoped — so factories/seeders must set `organization_id` explicitly.
+The "current organization" is resolved by `BelongsToOrganization::currentOrganizationId()` (mirrored by `HolidayScope`): it prefers the DT audit session's `session('dt_organization_id')` (see *Cross-tenant reads* below), then an explicit `session('organization_id')` (set by the future tenant switcher, #48), and otherwise falls back to the authenticated user's `organization_id`. When none resolves (unauthenticated requests, console commands, seeders) the scope is a **no-op**, leaving queries unscoped — so factories/seeders must set `organization_id` explicitly.
 
 ### Public no-auth pages (mark-modification review)
 
@@ -66,7 +66,12 @@ The mark-modification review page (`/mark-modifications/{ulid}`, #11) is reached
 
 ### Cross-tenant reads (DT inspectors)
 
-DT (Dirección del Trabajo) inspectors authenticate on the `dt` guard but carry **no** `organization_id` — they are government auditors, not tenant members. The checksum-validation page (`/dt/marks/validate`, #23) relies on the scope no-op above: with no tenant resolved, `Mark::where('checksum', …)` spans every employer, which is the point — an inspector verifies a printed attendance proof from any organization. Do not add explicit org scoping to DT lookups.
+DT (Dirección del Trabajo) inspectors authenticate on the `dt` guard but carry **no** `organization_id` — they are government auditors, not tenant members. Two distinct scoping modes apply:
+
+- **Cross-tenant tools** — the checksum-validation page (`/dt/marks/validate`, #23) deliberately runs with *no* audit organization selected: with no tenant resolved the scope is a no-op, so `Mark::where('checksum', …)` spans every employer, which is the point. It is intentionally left outside the org gate. Do not add explicit org scoping to it.
+- **Audit session (org-scoped views)** — before viewing an employer's data an inspector picks one via the organization selector (`/dt/select-organization`, #26; `Dt\OrganizationController`), which stores `dt_organization_id` in the session. `currentOrganizationId()` then resolves *that* org, so every `BelongsToOrganization` model scopes to the audited employer with no per-query changes. The `dt_organization_selected` middleware (`EnsureDtOrganizationSelected`) gates these views, bouncing to the selector until a choice is made; DT logout flushes the session, clearing the selection.
+
+The selector implements Resolución 38 **Art. 24**: an alphabetical list of employers with a **name/RUT search**, and on selection an automatic **non-nominative audit notice** (`Mail\DtAuditNotification`, fixed legal wording, castellano) to the employer's email. The **employer identity** the inspector searches and audits (`rut`, `email`, `phone`, `address`; razón social = `name`) lives on `Organization` itself — added in #26 rather than sourced from `Company`, since one organization represents one employer. Consolidating the remaining employer profile onto `Organization` / retiring `Company` is deferred to a later ticket.
 
 ### Shared/hybrid ownership (holidays)
 

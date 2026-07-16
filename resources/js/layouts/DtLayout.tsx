@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Fingerprint, LayoutGrid, LogOut } from 'lucide-react';
+import { Building2, Fingerprint, LayoutGrid, LogOut } from 'lucide-react';
 import MarkValidationController from '@/actions/App/Http/Controllers/Dt/MarkValidationController';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
@@ -19,10 +19,11 @@ import { useInitials } from '@/hooks/use-initials';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { dashboard, logout } from '@/routes/dt';
+import { select as selectOrganization } from '@/routes/dt/organization';
 import type { AppLayoutProps, NavItem } from '@/types';
 
 export default function DtLayout({ children }: AppLayoutProps) {
-    const { auth } = usePage().props;
+    const { auth, dtOrganization } = usePage().props;
     const getInitials = useInitials();
     const { t } = useTranslations();
     const { isCurrentUrl } = useCurrentUrl();
@@ -38,6 +39,11 @@ export default function DtLayout({ children }: AppLayoutProps) {
             href: MarkValidationController.create(),
             icon: Fingerprint,
         },
+        {
+            title: t('ui.dt.nav.select_organization'),
+            href: selectOrganization(),
+            icon: Building2,
+        },
     ];
 
     return (
@@ -47,6 +53,13 @@ export default function DtLayout({ children }: AppLayoutProps) {
                     <span className="text-sm font-semibold whitespace-nowrap">
                         AMS – DT
                     </span>
+
+                    {auth.user && dtOrganization?.name && (
+                        <span className="hidden items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground sm:inline-flex">
+                            <Building2 className="size-3.5" />
+                            {dtOrganization.name}
+                        </span>
+                    )}
 
                     {auth.user && (
                         <nav className="flex items-center gap-1">

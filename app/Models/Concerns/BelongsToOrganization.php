@@ -30,11 +30,18 @@ trait BelongsToOrganization
     /**
      * Resolve the organization the current request/session is scoped to.
      *
-     * Prefers an explicit session override (used by the tenant switcher) and
-     * falls back to the authenticated user's organization.
+     * Prefers the DT audit session organization (set by the inspector's
+     * organization selector), then an explicit tenant-switcher override, and
+     * finally falls back to the authenticated user's organization.
      */
     public static function currentOrganizationId(): ?int
     {
+        $dtOrganizationId = session('dt_organization_id');
+
+        if ($dtOrganizationId !== null) {
+            return (int) $dtOrganizationId;
+        }
+
         $sessionOrganizationId = session('organization_id');
 
         if ($sessionOrganizationId !== null) {
