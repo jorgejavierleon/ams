@@ -19,6 +19,7 @@ return [
         'workdays' => 'Jornadas',
         'approvals' => 'Aprobaciones',
         'documents' => 'Documentos',
+        'documents_list' => 'Documentos',
         'settings' => 'Configuración',
         'dashboard' => 'Panel',
         'roles' => 'Roles',
@@ -44,6 +45,10 @@ return [
     'common' => [
         'save' => 'Guardar',
         'cancel' => 'Cancelar',
+        'search' => 'Buscar...',
+        'no_results' => 'No se encontraron resultados.',
+        'yes' => 'Sí',
+        'no' => 'No',
 
         'data_table' => [
             'empty' => 'Sin resultados.',
@@ -1378,6 +1383,147 @@ return [
             ],
             'ongoing' => 'En curso',
             'empty' => 'No se registraron incidentes para este empleador.',
+        ],
+    ],
+
+    'documents' => [
+        'title' => 'Documentos',
+        'description' => 'Redacta, publica y da seguimiento a los documentos de los empleados',
+        'new' => 'Nuevo documento',
+        'search_placeholder' => 'Buscar por título...',
+        'empty' => 'No se encontraron documentos.',
+
+        'columns' => [
+            'title' => 'Título',
+            'type' => 'Tipo',
+            'employee' => 'Empleado',
+            'status' => 'Estado',
+            'published_at' => 'Publicado',
+            'signed_at' => 'Firmado',
+        ],
+
+        'filters' => [
+            'status_all' => 'Estado: todos',
+            'type_all' => 'Tipo: todos',
+            'employee' => 'Empleado',
+            'from' => 'Publicado desde',
+            'to' => 'Publicado hasta',
+            'clear' => 'Limpiar filtros',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+            'publish' => 'Publicar',
+        ],
+
+        'statuses' => [
+            'draft' => 'Borrador',
+            'published' => 'Publicado',
+            'pending_signature' => 'Pendiente de firma',
+            'signed' => 'Firmado',
+            'rejected' => 'Rechazado',
+            'archived' => 'Archivado',
+        ],
+
+        'types' => [
+            'annexes' => 'Anexo',
+            'contracts' => 'Contrato',
+            'certificates' => 'Certificado',
+            'regulations' => 'Reglamento',
+            'pacts' => 'Pacto',
+            'notifications' => 'Notificación',
+            'requests' => 'Solicitud',
+            'others' => 'Otro',
+        ],
+
+        'create' => [
+            'title' => 'Nuevo documento',
+            'description' => 'Redacta un documento para un empleado',
+            'submit' => 'Crear documento',
+        ],
+
+        'edit' => [
+            'title' => 'Editar documento',
+            'description' => 'Actualiza los datos del documento',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'form' => [
+            'title' => 'Título',
+            'type' => 'Tipo de documento',
+            'type_placeholder' => 'Selecciona un tipo',
+            'employee' => 'Empleado',
+            'employee_placeholder' => 'Selecciona un empleado',
+            'body' => 'Cuerpo',
+            'body_hint' => 'Usa "Insertar variable" para agregar marcadores que se resuelven al publicar.',
+            'body_placeholder' => 'Redacta el documento…',
+            'signature_config' => 'Configuración de firma',
+            'legal_rep_signatories' => 'Firmantes representantes legales',
+            'legal_rep_signatories_hint' => 'Cuántos representantes legales deben firmar.',
+            'ordered_signing' => 'Firma ordenada',
+            'ordered_signing_hint' => 'Exigir que los representantes legales firmen en orden.',
+        ],
+
+        'editor' => [
+            'bold' => 'Negrita',
+            'italic' => 'Cursiva',
+            'heading' => 'Encabezado',
+            'bullet_list' => 'Lista con viñetas',
+            'ordered_list' => 'Lista numerada',
+            'quote' => 'Cita',
+            'undo' => 'Deshacer',
+            'redo' => 'Rehacer',
+            'insert_variable' => 'Insertar variable',
+            'variable_search' => 'Buscar variables...',
+            'variable_empty' => 'No se encontraron variables.',
+        ],
+
+        'show' => [
+            'back' => 'Volver a documentos',
+            'body' => 'Cuerpo del documento',
+            'body_hint' => 'Vista previa con las variables resueltas para este empleado.',
+            'body_empty' => 'Este documento aún no tiene cuerpo.',
+            'details' => 'Detalles',
+            'employee' => 'Empleado',
+            'legal_rep_signatories' => 'Firmantes representantes legales',
+            'ordered_signing' => 'Firma ordenada',
+            'signatures' => 'Firmas',
+            'signatures_soon' => 'El panel de estado de firmas estará disponible pronto.',
+            'activity' => 'Actividad',
+            'activity_soon' => 'La línea de tiempo de actividad estará disponible pronto.',
+        ],
+
+        'signatures' => [
+            'statuses' => [
+                'pending' => 'Pendiente',
+                'signed' => 'Firmado',
+                'rejected' => 'Rechazado',
+            ],
+            'types' => [
+                'employee' => 'Empleado',
+                'legal_rep' => 'Representante legal',
+                'supervisor' => 'Supervisor',
+            ],
+        ],
+
+        'flash' => [
+            'created' => 'Documento creado.',
+            'updated' => 'Documento actualizado.',
+            'deleted' => 'Documento eliminado.',
+            'published' => 'Documento publicado.',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar documento',
+            'description' => '¿Seguro que deseas eliminar ":title"? Esta acción no se puede deshacer.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'publish_dialog' => [
+            'title' => 'Publicar documento',
+            'description' => 'Al publicar se resuelven las variables del documento y se registra la fecha de publicación. ¿Continuar?',
+            'confirm' => 'Publicar',
         ],
     ],
 

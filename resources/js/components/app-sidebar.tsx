@@ -5,6 +5,7 @@ import {
     CalendarDays,
     CalendarRange,
     ClipboardList,
+    FileText,
     IdCard,
     LayoutGrid,
     MapPin,
@@ -27,9 +28,13 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
 import { index as companiesIndex } from '@/routes/companies';
+import { index as documentsIndex } from '@/routes/documents';
 import { index as employeesIndex } from '@/routes/employees';
 import { index as holidaysIndex } from '@/routes/holidays';
-import { calendar as leavesCalendar, index as leavesIndex } from '@/routes/leaves';
+import {
+    calendar as leavesCalendar,
+    index as leavesIndex,
+} from '@/routes/leaves';
 import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 import { index as positionsIndex } from '@/routes/positions';
@@ -158,7 +163,16 @@ export function AppSidebar() {
                 },
             ],
         },
-        { label: t('ui.nav.documents'), items: [] },
+        {
+            label: t('ui.nav.documents'),
+            items: [
+                {
+                    title: t('ui.nav.documents_list'),
+                    href: documentsIndex(),
+                    icon: FileText,
+                },
+            ],
+        },
         {
             label: t('ui.nav.settings'),
             items: [

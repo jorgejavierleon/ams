@@ -3,6 +3,7 @@
 use App\Http\Controllers\CommuneController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\IncidentController as DtIncidentController;
 use App\Http\Controllers\Dt\LoginController;
@@ -96,6 +97,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('shift-assignments.end');
     Route::delete('shift-assignments/{shiftAssignment}', [ShiftAssignmentController::class, 'destroy'])
         ->name('shift-assignments.destroy');
+
+    Route::post('documents/{document}/publish', [DocumentController::class, 'publish'])
+        ->name('documents.publish');
+    Route::resource('documents', DocumentController::class);
 
     Route::resource('leaves', LeaveController::class)
         ->only(['create', 'store', 'destroy'])

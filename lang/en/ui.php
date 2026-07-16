@@ -19,6 +19,7 @@ return [
         'workdays' => 'Workdays',
         'approvals' => 'Approvals',
         'documents' => 'Documents',
+        'documents_list' => 'Documents',
         'settings' => 'Settings',
         'dashboard' => 'Dashboard',
         'roles' => 'Roles',
@@ -44,6 +45,10 @@ return [
     'common' => [
         'save' => 'Save',
         'cancel' => 'Cancel',
+        'search' => 'Search...',
+        'no_results' => 'No results found.',
+        'yes' => 'Yes',
+        'no' => 'No',
 
         'data_table' => [
             'empty' => 'No results.',
@@ -1378,6 +1383,147 @@ return [
             ],
             'ongoing' => 'Ongoing',
             'empty' => 'No incidents were recorded for this employer.',
+        ],
+    ],
+
+    'documents' => [
+        'title' => 'Documents',
+        'description' => 'Draft, publish and track employee documents',
+        'new' => 'New document',
+        'search_placeholder' => 'Search by title...',
+        'empty' => 'No documents found.',
+
+        'columns' => [
+            'title' => 'Title',
+            'type' => 'Type',
+            'employee' => 'Employee',
+            'status' => 'Status',
+            'published_at' => 'Published',
+            'signed_at' => 'Signed',
+        ],
+
+        'filters' => [
+            'status_all' => 'Status: all',
+            'type_all' => 'Type: all',
+            'employee' => 'Employee',
+            'from' => 'Published from',
+            'to' => 'Published to',
+            'clear' => 'Clear filters',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+            'publish' => 'Publish',
+        ],
+
+        'statuses' => [
+            'draft' => 'Draft',
+            'published' => 'Published',
+            'pending_signature' => 'Pending signature',
+            'signed' => 'Signed',
+            'rejected' => 'Rejected',
+            'archived' => 'Archived',
+        ],
+
+        'types' => [
+            'annexes' => 'Annex',
+            'contracts' => 'Contract',
+            'certificates' => 'Certificate',
+            'regulations' => 'Regulation',
+            'pacts' => 'Pact',
+            'notifications' => 'Notification',
+            'requests' => 'Request',
+            'others' => 'Other',
+        ],
+
+        'create' => [
+            'title' => 'New document',
+            'description' => 'Draft a document for an employee',
+            'submit' => 'Create document',
+        ],
+
+        'edit' => [
+            'title' => 'Edit document',
+            'description' => 'Update the document details',
+            'submit' => 'Save changes',
+        ],
+
+        'form' => [
+            'title' => 'Title',
+            'type' => 'Document type',
+            'type_placeholder' => 'Select a type',
+            'employee' => 'Employee',
+            'employee_placeholder' => 'Select an employee',
+            'body' => 'Body',
+            'body_hint' => 'Use "Insert variable" to drop in placeholders resolved on publish.',
+            'body_placeholder' => 'Write the document…',
+            'signature_config' => 'Signature configuration',
+            'legal_rep_signatories' => 'Legal rep signatories',
+            'legal_rep_signatories_hint' => 'How many legal representatives must sign.',
+            'ordered_signing' => 'Ordered signing',
+            'ordered_signing_hint' => 'Require the legal representatives to sign in order.',
+        ],
+
+        'editor' => [
+            'bold' => 'Bold',
+            'italic' => 'Italic',
+            'heading' => 'Heading',
+            'bullet_list' => 'Bullet list',
+            'ordered_list' => 'Numbered list',
+            'quote' => 'Quote',
+            'undo' => 'Undo',
+            'redo' => 'Redo',
+            'insert_variable' => 'Insert variable',
+            'variable_search' => 'Search variables...',
+            'variable_empty' => 'No variables found.',
+        ],
+
+        'show' => [
+            'back' => 'Back to documents',
+            'body' => 'Document body',
+            'body_hint' => 'Preview with variables resolved for this employee.',
+            'body_empty' => 'This document has no body yet.',
+            'details' => 'Details',
+            'employee' => 'Employee',
+            'legal_rep_signatories' => 'Legal rep signatories',
+            'ordered_signing' => 'Ordered signing',
+            'signatures' => 'Signatures',
+            'signatures_soon' => 'The signature status panel is coming soon.',
+            'activity' => 'Activity',
+            'activity_soon' => 'The activity timeline is coming soon.',
+        ],
+
+        'signatures' => [
+            'statuses' => [
+                'pending' => 'Pending',
+                'signed' => 'Signed',
+                'rejected' => 'Rejected',
+            ],
+            'types' => [
+                'employee' => 'Employee',
+                'legal_rep' => 'Legal representative',
+                'supervisor' => 'Supervisor',
+            ],
+        ],
+
+        'flash' => [
+            'created' => 'Document created.',
+            'updated' => 'Document updated.',
+            'deleted' => 'Document deleted.',
+            'published' => 'Document published.',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete document',
+            'description' => 'Are you sure you want to delete ":title"? This action cannot be undone.',
+            'confirm' => 'Delete',
+        ],
+
+        'publish_dialog' => [
+            'title' => 'Publish document',
+            'description' => 'Publishing resolves the document variables and stamps the publish date. Continue?',
+            'confirm' => 'Publish',
         ],
     ],
 
