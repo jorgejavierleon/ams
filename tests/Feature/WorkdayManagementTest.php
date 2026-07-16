@@ -496,6 +496,67 @@ test('the assigned reviewer approves a pending modification from the detail page
         ->and($mark->refresh()->date_time->format('H:i'))->toBe('08:30');
 });
 
+test('requesting a modification snapshots the mark original time', function () {
+    Notification::fake();
+
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, [
+        'date' => Carbon::today(),
+        'mark_in_at' => Carbon::today()->setTime(8, 2),
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modify', $workday), [
+            'mark_in' => '08:00',
+            'reason' => MarkModificationReason::MarkIncorrect->value,
+        ])
+        ->assertRedirect();
+
+    expect(MarkModification::query()->sole()->original_date_time?->format('H:i'))->toBe('08:02');
+});
+
+test('the modification timeline preserves the original time after approval rewrites the mark', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+
+    $mark = Mark::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $admin->id,
+        'type' => MarkType::Out,
+        'date_time' => Carbon::today()->setTime(22, 5),
+    ]);
+    $workday = makeWorkday($organization, $admin, [
+        'date' => Carbon::today(),
+        'mark_out_id' => $mark->id,
+    ]);
+    $modification = MarkModification::factory()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $workday->id,
+        'user_id' => $admin->id,
+        'mark_id' => $mark->id,
+        'mark_type' => MarkType::Out,
+        'status' => MarkModificationStatus::Pending,
+        'date_time' => Carbon::today()->setTime(22, 30),
+        'original_date_time' => Carbon::today()->setTime(22, 5),
+    ]);
+
+    // Approving rewrites the underlying mark to 22:30.
+    $this->actingAs($admin)
+        ->post(route('workdays.modifications.approve', [$workday, $modification]))
+        ->assertRedirect();
+
+    expect($mark->refresh()->date_time->format('H:i'))->toBe('22:30');
+
+    // The timeline must still read 22:05 → 22:30, not 22:30 → 22:30.
+    $this->actingAs($admin)
+        ->get(route('workdays.show', $workday))
+        ->assertInertia(fn ($page) => $page
+            ->where('modifications.0.original_time', '22:05:00')
+            ->where('modifications.0.modified_time', '22:30:00'));
+});
+
 test('the assigned reviewer declines a pending modification from the detail page', function () {
     $admin = workdayAdmin();
     $organization = $admin->organization;

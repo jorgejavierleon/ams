@@ -29,6 +29,7 @@ use Illuminate\Support\Str;
  * @property MarkModificationReason|null $reason
  * @property MarkModificationStatus|null $status
  * @property Carbon $date_time
+ * @property Carbon|null $original_date_time
  * @property MarkType|null $mark_type
  * @property string|null $notes
  * @property string $ulid
@@ -50,6 +51,7 @@ class MarkModification extends Model
             'reason' => MarkModificationReason::class,
             'mark_type' => MarkType::class,
             'date_time' => 'datetime',
+            'original_date_time' => 'datetime',
             'reviewed_at' => 'datetime',
         ];
     }

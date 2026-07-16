@@ -77,7 +77,7 @@ class MarkModificationReviewController extends Controller
         return [
             'ulid' => $modification->ulid,
             'employee_name' => $modification->user->name,
-            'original_date_time' => $modification->mark?->date_time?->format('d-m-Y H:i'),
+            'original_date_time' => ($modification->original_date_time ?? $modification->mark?->date_time)?->format('d-m-Y H:i'),
             'proposed_date_time' => $modification->date_time->format('d-m-Y H:i'),
             'mark_type' => $modification->mark_type?->label(),
             'reason' => $modification->reason?->label(),

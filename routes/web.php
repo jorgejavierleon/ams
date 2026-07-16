@@ -16,6 +16,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MarkModificationReviewController;
 use App\Http\Controllers\My\LeaveController as MyLeaveController;
 use App\Http\Controllers\My\MarkController as MyMarkController;
+use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -137,6 +138,21 @@ Route::middleware(['auth', 'verified'])->prefix('my')->name('my.')->group(functi
     Route::post('marks', [MyMarkController::class, 'store'])
         ->middleware('permission:ClockOwn:Mark')
         ->name('marks.store');
+
+    Route::get('workdays', [MyWorkdayController::class, 'index'])
+        ->middleware('permission:ViewOwn:Workday')
+        ->name('workdays.index');
+    Route::get('workdays/{workday}', [MyWorkdayController::class, 'show'])
+        ->middleware('permission:ViewOwn:Workday')
+        ->name('workdays.show');
+    Route::post('workdays/{workday}/modifications/{markModification}/approve', [MyWorkdayController::class, 'approveModification'])
+        ->scopeBindings()
+        ->middleware('permission:ReviewOwn:MarkModification')
+        ->name('workdays.modifications.approve');
+    Route::post('workdays/{workday}/modifications/{markModification}/decline', [MyWorkdayController::class, 'declineModification'])
+        ->scopeBindings()
+        ->middleware('permission:ReviewOwn:MarkModification')
+        ->name('workdays.modifications.decline');
 });
 
 // DT panel routes

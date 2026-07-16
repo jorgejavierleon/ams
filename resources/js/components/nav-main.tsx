@@ -3,6 +3,7 @@ import {
     SidebarGroup,
     SidebarGroupLabel,
     SidebarMenu,
+    SidebarMenuBadge,
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
@@ -28,6 +29,11 @@ export function NavMain({ items = [], label }: { items: NavItem[]; label?: strin
                                 <span>{item.title}</span>
                             </Link>
                         </SidebarMenuButton>
+                        {item.badge != null && item.badge > 0 && (
+                            <SidebarMenuBadge className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400">
+                                {item.badge}
+                            </SidebarMenuBadge>
+                        )}
                     </SidebarMenuItem>
                 ))}
             </SidebarMenu>

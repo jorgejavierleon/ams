@@ -31,6 +31,7 @@ return [
         'holidays' => 'Holidays',
         'leaves' => 'Leaves',
         'my_leaves' => 'My leaves',
+        'my_workdays' => 'My workdays',
         'team_leaves' => 'Team leaves',
     ],
 
@@ -1154,6 +1155,53 @@ return [
             'modified' => ':count mark modification request(s) created.',
             'modify_blocked' => 'No requests were created — the changed marks already have pending requests.',
             'no_changes' => 'No changes detected — no modification was requested.',
+        ],
+
+        'my' => [
+            'title' => 'My workdays',
+            'description' => 'Review your attendance and respond to requested corrections.',
+            'empty' => 'You have no workdays in this range.',
+            'back' => 'Back to my workdays',
+
+            'pending' => [
+                'title' => 'Corrections to review',
+                'subtitle' => 'An admin requested these mark adjustments. Approve or decline them.',
+                'count' => ':count to review',
+                'requested_by' => 'Requested by :name',
+                'original' => 'Current mark',
+                'proposed' => 'Proposed mark',
+                'no_mark' => 'No mark',
+                'reason' => 'Reason',
+                'notes' => 'Comment',
+                'approve' => 'Approve',
+                'decline' => 'Decline',
+                'expired' => 'Expired',
+                'expired_hint' => 'The window to review this correction has passed.',
+            ],
+
+            'list' => [
+                'title' => 'Workday history',
+                'pending_flag' => 'Pending correction',
+            ],
+
+            'columns' => [
+                'date' => 'Date',
+                'status' => 'Status',
+                'mark_in' => 'In',
+                'mark_out' => 'Out',
+                'worked' => 'Worked',
+                'shift' => 'Shift',
+            ],
+
+            'filters' => [
+                'from' => 'From',
+                'to' => 'To',
+            ],
+
+            'flash' => [
+                'approved' => 'Correction approved. Your mark was updated.',
+                'declined' => 'Correction declined. Your mark is unchanged.',
+            ],
         ],
     ],
 
