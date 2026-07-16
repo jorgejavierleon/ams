@@ -8,6 +8,7 @@ import {
     FileText,
     IdCard,
     LayoutGrid,
+    LayoutTemplate,
     MapPin,
     ShieldCheck,
     Sun,
@@ -28,6 +29,7 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
 import { index as companiesIndex } from '@/routes/companies';
+import { index as documentTemplatesIndex } from '@/routes/document-templates';
 import { index as documentsIndex } from '@/routes/documents';
 import { index as employeesIndex } from '@/routes/employees';
 import { index as holidaysIndex } from '@/routes/holidays';
@@ -170,6 +172,11 @@ export function AppSidebar() {
                     title: t('ui.nav.documents_list'),
                     href: documentsIndex(),
                     icon: FileText,
+                },
+                {
+                    title: t('ui.nav.document_templates'),
+                    href: documentTemplatesIndex(),
+                    icon: LayoutTemplate,
                 },
             ],
         },

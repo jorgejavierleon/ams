@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             OrganizationSeeder::class,
             RegionSeeder::class,
             DocumentVarSeeder::class,
+            DocumentTemplateSeeder::class,
         ]);
     }
 }

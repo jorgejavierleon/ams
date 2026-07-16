@@ -20,6 +20,7 @@ return [
         'approvals' => 'Approvals',
         'documents' => 'Documents',
         'documents_list' => 'Documents',
+        'document_templates' => 'Templates',
         'settings' => 'Settings',
         'dashboard' => 'Dashboard',
         'roles' => 'Roles',
@@ -1463,6 +1464,10 @@ return [
             'legal_rep_signatories_hint' => 'How many legal representatives must sign.',
             'ordered_signing' => 'Ordered signing',
             'ordered_signing_hint' => 'Require the legal representatives to sign in order.',
+            'load_template' => 'Load template',
+            'load_template_hint' => 'Pre-fill the body from a saved template.',
+            'template_search' => 'Search templates...',
+            'template_empty' => 'No templates found.',
         ],
 
         'editor' => [
@@ -1524,6 +1529,67 @@ return [
             'title' => 'Publish document',
             'description' => 'Publishing resolves the document variables and stamps the publish date. Continue?',
             'confirm' => 'Publish',
+        ],
+    ],
+
+    'document_templates' => [
+        'title' => 'Document templates',
+        'description' => 'Reusable document bodies you can load into new documents',
+        'new' => 'New template',
+        'search_placeholder' => 'Search by title...',
+        'empty' => 'No templates found.',
+
+        'columns' => [
+            'title' => 'Title',
+            'type' => 'Type',
+            'variables' => 'Variables',
+            'updated_at' => 'Updated',
+            'state' => 'State',
+        ],
+
+        'state' => [
+            'active' => 'Active',
+            'deleted' => 'Deleted',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+            'restore' => 'Restore',
+        ],
+
+        'create' => [
+            'title' => 'New template',
+            'description' => 'Draft a reusable document template',
+            'submit' => 'Create template',
+        ],
+
+        'edit' => [
+            'title' => 'Edit template',
+            'description' => 'Update the template details',
+            'submit' => 'Save changes',
+        ],
+
+        'form' => [
+            'title' => 'Title',
+            'type' => 'Document type',
+            'type_placeholder' => 'Select a type',
+            'body' => 'Body',
+            'body_hint' => 'Click a variable to insert its placeholder at the caret.',
+            'body_placeholder' => 'Write the template…',
+        ],
+
+        'flash' => [
+            'created' => 'Template created.',
+            'updated' => 'Template updated.',
+            'deleted' => 'Template deleted.',
+            'restored' => 'Template restored.',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete template',
+            'description' => 'Are you sure you want to delete ":title"? You can restore it later.',
+            'confirm' => 'Delete',
         ],
     ],
 

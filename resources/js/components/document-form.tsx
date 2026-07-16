@@ -1,4 +1,6 @@
 import { Link, useForm } from '@inertiajs/react';
+import { FileDown } from 'lucide-react';
+import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Combobox } from '@/components/combobox';
 import type { ComboboxOption } from '@/components/combobox';
@@ -6,8 +8,21 @@ import { FormField } from '@/components/form-field';
 import { RichEditor } from '@/components/rich-editor';
 import type { DocumentVariable } from '@/components/rich-editor';
 import { Button } from '@/components/ui/button';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -18,7 +33,10 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Toggle } from '@/components/ui/toggle';
 import { useTranslations } from '@/hooks/use-translations';
+import { body as templateBody } from '@/routes/document-templates';
 import { index } from '@/routes/documents';
+
+export type DocumentTemplateOption = { id: number; title: string };
 
 export type DocumentTypeOption = ComboboxOption & { signable: boolean };
 
@@ -43,6 +61,7 @@ type Props = {
     submitLabel: string;
     options: DocumentFormOptions;
     initial: DocumentFormData;
+    templates?: DocumentTemplateOption[];
 };
 
 export default function DocumentForm({
@@ -51,10 +70,28 @@ export default function DocumentForm({
     submitLabel,
     options,
     initial,
+    templates,
 }: Props) {
     const { t } = useTranslations();
     const { data, setData, post, patch, processing, errors } =
         useForm<DocumentFormData>(initial);
+    const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+    const [loadingTemplate, setLoadingTemplate] = useState(false);
+
+    async function loadTemplate(id: number) {
+        setTemplatePickerOpen(false);
+        setLoadingTemplate(true);
+
+        try {
+            const response = await fetch(templateBody(id).url, {
+                headers: { Accept: 'application/json' },
+            });
+            const payload = (await response.json()) as { body: string };
+            setData('body', payload.body ?? '');
+        } finally {
+            setLoadingTemplate(false);
+        }
+    }
 
     const selectedType = options.types.find((type) => type.value === data.type);
     const showSignatureConfig = selectedType?.signable ?? false;
@@ -123,6 +160,61 @@ export default function DocumentForm({
                     />
                 </FormField>
             </div>
+
+            {templates && templates.length > 0 && (
+                <div className="flex items-center gap-3">
+                    <Popover
+                        open={templatePickerOpen}
+                        onOpenChange={setTemplatePickerOpen}
+                    >
+                        <PopoverTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={loadingTemplate}
+                            >
+                                {loadingTemplate ? (
+                                    <Spinner />
+                                ) : (
+                                    <FileDown className="size-4" />
+                                )}
+                                {t('ui.documents.form.load_template')}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-0" align="start">
+                            <Command>
+                                <CommandInput
+                                    placeholder={t(
+                                        'ui.documents.form.template_search',
+                                    )}
+                                />
+                                <CommandList>
+                                    <CommandEmpty>
+                                        {t('ui.documents.form.template_empty')}
+                                    </CommandEmpty>
+                                    <CommandGroup>
+                                        {templates.map((template) => (
+                                            <CommandItem
+                                                key={template.id}
+                                                value={template.title}
+                                                onSelect={() =>
+                                                    loadTemplate(template.id)
+                                                }
+                                            >
+                                                {template.title}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                    <p className="text-xs text-muted-foreground">
+                        {t('ui.documents.form.load_template_hint')}
+                    </p>
+                </div>
+            )}
 
             <FormField
                 label={t('ui.documents.form.body')}

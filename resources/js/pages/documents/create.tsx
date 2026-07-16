@@ -3,6 +3,7 @@ import DocumentForm from '@/components/document-form';
 import type {
     DocumentFormData,
     DocumentFormOptions,
+    DocumentTemplateOption,
 } from '@/components/document-form';
 import Heading from '@/components/heading';
 import { useTranslations } from '@/hooks/use-translations';
@@ -10,6 +11,7 @@ import { store } from '@/routes/documents';
 
 type Props = {
     options: DocumentFormOptions;
+    templates: DocumentTemplateOption[];
 };
 
 const emptyDocument: DocumentFormData = {
@@ -21,7 +23,7 @@ const emptyDocument: DocumentFormData = {
     ordered_signing: false,
 };
 
-export default function CreateDocument({ options }: Props) {
+export default function CreateDocument({ options, templates }: Props) {
     const { t } = useTranslations();
 
     return (
@@ -40,6 +42,7 @@ export default function CreateDocument({ options }: Props) {
                     submitLabel={t('ui.documents.create.submit')}
                     options={options}
                     initial={emptyDocument}
+                    templates={templates}
                 />
             </div>
         </>
