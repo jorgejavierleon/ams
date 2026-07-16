@@ -1199,6 +1199,22 @@ return [
         'nav' => [
             'dashboard' => 'Dashboard',
             'validate_mark' => 'Validate mark',
+            'select_organization' => 'Change employer',
+        ],
+        'organization' => [
+            'select' => [
+                'title' => 'Select an employer to audit',
+                'description' => 'Choose the employer whose records you want to review. Every view in this session will be scoped to your selection.',
+                'search_placeholder' => 'Search by name or RUT',
+                'columns' => [
+                    'name' => 'Employer',
+                    'rut' => 'RUT',
+                ],
+                'current' => 'Currently auditing',
+                'submit' => 'Audit this employer',
+                'empty' => 'There are no employers available to audit.',
+                'no_results' => 'No employers match your search.',
+            ],
         ],
         'marks' => [
             'validate' => [

@@ -21,6 +21,10 @@ declare module '@inertiajs/core' {
                 success: string | null;
                 error: string | null;
             };
+            dtOrganization: {
+                id: number;
+                name: string | null;
+            } | null;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\MarkValidationController;
+use App\Http\Controllers\Dt\OrganizationController as DtOrganizationController;
 use App\Http\Controllers\Dt\PasswordChangeController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
@@ -158,11 +159,20 @@ Route::prefix('dt')->name('dt.')->group(function () {
 
         // All other DT routes require an active (non-expired) password
         Route::middleware('password_expires')->group(function () {
-            Route::inertia('dashboard', 'dt/dashboard')->name('dashboard');
+            // Audit session organization selector — the entry point that gates
+            // every organization-scoped view below, so it stays ungated itself.
+            Route::get('select-organization', [DtOrganizationController::class, 'index'])->name('organization.select');
+            Route::post('select-organization', [DtOrganizationController::class, 'store'])->name('organization.store');
 
-            // Validate a printed attendance proof by its SHA-256 checksum.
+            // Validate a printed attendance proof by its SHA-256 checksum. This
+            // tool spans every employer, so it needs no audit organization.
             Route::get('marks/validate', [MarkValidationController::class, 'create'])->name('marks.validate');
             Route::post('marks/validate', [MarkValidationController::class, 'store'])->name('marks.validate.store');
+
+            // Organization-scoped views require an active audit session.
+            Route::middleware('dt_organization_selected')->group(function () {
+                Route::inertia('dashboard', 'dt/dashboard')->name('dashboard');
+            });
         });
     });
 });

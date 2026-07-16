@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -80,8 +81,10 @@ test('dt user with active password can access dashboard', function () {
     $user = User::factory()->dtUser()->create([
         'password_changed_at' => now()->subDay(),
     ]);
+    $organization = Organization::factory()->create();
 
     $this->actingAs($user, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
         ->get('/dt/dashboard')
         ->assertOk();
 });
