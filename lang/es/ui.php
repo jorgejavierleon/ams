@@ -1195,4 +1195,34 @@ return [
         ],
     ],
 
+    'dt' => [
+        'nav' => [
+            'dashboard' => 'Inicio',
+            'validate_mark' => 'Validar marca',
+        ],
+        'marks' => [
+            'validate' => [
+                'title' => 'Validar marca',
+                'description' => 'Pega el checksum SHA-256 impreso en un comprobante de asistencia para verificar su integridad contra la base de datos.',
+                'checksum' => 'Checksum o hash',
+                'checksum_placeholder' => 'Pega aquí el checksum de la marca',
+                'submit' => 'Validar',
+                'not_found' => 'No se encontró una marca con ese checksum.',
+                'result_title' => 'Información de la marca',
+                'result_description' => 'El checksum coincide con la siguiente información de marca.',
+                'employee_name' => 'Nombre trabajador',
+                'employee_rut' => 'RUT trabajador',
+                'employer_name' => 'Nombre empleador',
+                'employer_rut' => 'RUT empleador',
+                'date_time' => 'Fecha y hora de registro',
+                'type' => 'Tipo de marca',
+                'premise_name' => 'Sucursal',
+                'premise_address' => 'Dirección sucursal',
+                'coordinates' => 'Coordenadas',
+                'checksum_value' => 'Checksum',
+                'not_available' => 'No disponible',
+            ],
+        ],
+    ],
+
 ];
