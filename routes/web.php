@@ -11,6 +11,7 @@ use App\Http\Controllers\Dt\OrganizationController as DtOrganizationController;
 use App\Http\Controllers\Dt\PasswordChangeController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
+use App\Http\Controllers\LeaveCalendarController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MarkModificationReviewController;
@@ -111,6 +112,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('leaves', [LeaveController::class, 'index'])
         ->name('leaves.index');
+    Route::get('leaves/calendar', [LeaveCalendarController::class, 'index'])
+        ->name('leaves.calendar');
+    Route::get('api/leaves/calendar', [LeaveCalendarController::class, 'events'])
+        ->name('leaves.calendar.events');
     Route::post('leaves/{leave}/approve', [LeaveController::class, 'approve'])
         ->name('leaves.approve');
     Route::post('leaves/{leave}/reject', [LeaveController::class, 'reject'])

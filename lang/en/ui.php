@@ -30,6 +30,7 @@ return [
         'employees' => 'Employees',
         'holidays' => 'Holidays',
         'leaves' => 'Leaves',
+        'leaves_calendar' => 'Leaves calendar',
         'my_leaves' => 'My leaves',
         'my_workdays' => 'My workdays',
         'team_leaves' => 'Team leaves',
@@ -845,6 +846,17 @@ return [
         'description' => 'Manage employee time-off requests',
         'new' => 'New leave',
         'empty' => 'No leave requests found.',
+
+        'calendar' => [
+            'title' => 'Leaves calendar',
+            'description' => 'Approved time off across the organization',
+            'legend' => 'Leave types',
+            'employee' => 'Employee',
+            'type' => 'Type',
+            'dates' => 'Dates',
+            'approved_by' => 'Approved by',
+            'none' => '—',
+        ],
 
         'tabs' => [
             'all' => 'All',
