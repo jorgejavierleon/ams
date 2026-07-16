@@ -1155,6 +1155,7 @@ return [
             'modified' => ':count mark modification request(s) created.',
             'modify_blocked' => 'No requests were created — the changed marks already have pending requests.',
             'no_changes' => 'No changes detected — no modification was requested.',
+            'too_soon' => 'A correction can only be made from the business day after the day being corrected.',
         ],
 
         'my' => [
@@ -1238,8 +1239,8 @@ return [
             'approved_body' => 'Your attendance mark has been updated. You can close this page.',
             'declined_title' => 'Correction declined',
             'declined_body' => 'The request was declined and your mark stays unchanged. You can close this page.',
-            'expired_title' => 'Request expired',
-            'expired_body' => 'This correction was not reviewed in time and can no longer be approved or declined.',
+            'expired_title' => 'Objection window closed',
+            'expired_body' => '48 hours passed without objection, so the correction was applied automatically. It can no longer be approved or declined.',
         ],
     ],
 

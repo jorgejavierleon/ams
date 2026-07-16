@@ -1155,6 +1155,7 @@ return [
             'modified' => ':count solicitud(es) de modificación de marca creada(s).',
             'modify_blocked' => 'No se crearon solicitudes: las marcas modificadas ya tienen solicitudes pendientes.',
             'no_changes' => 'No se detectaron cambios: no se solicitó ninguna modificación.',
+            'too_soon' => 'Una corrección solo puede realizarse a partir del día hábil siguiente al día que se corrige.',
         ],
 
         'my' => [
@@ -1238,8 +1239,8 @@ return [
             'approved_body' => 'Tu marca de asistencia fue actualizada. Puedes cerrar esta página.',
             'declined_title' => 'Corrección rechazada',
             'declined_body' => 'La solicitud fue rechazada y tu marca queda sin cambios. Puedes cerrar esta página.',
-            'expired_title' => 'Solicitud expirada',
-            'expired_body' => 'Esta corrección no se revisó a tiempo y ya no puede aprobarse ni rechazarse.',
+            'expired_title' => 'Plazo de objeción vencido',
+            'expired_body' => 'Pasaron 48 horas sin objeción, por lo que la corrección se aplicó automáticamente. Ya no es posible aprobarla ni rechazarla.',
         ],
     ],
 
