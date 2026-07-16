@@ -227,6 +227,68 @@ return [
         ],
     ],
 
+    'document_variables' => [
+        'nav' => 'Variables de documento',
+        'title' => 'Variables de documento',
+        'description' => 'Marcadores globales que se resuelven al generar documentos',
+        'new' => 'Nueva variable',
+        'search_placeholder' => 'Buscar por nombre o clave...',
+        'empty' => 'No se encontraron variables de documento.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'key' => 'Clave',
+            'description' => 'Descripción',
+            'created' => 'Creada',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+        ],
+
+        'pagination' => [
+            'showing' => 'Mostrando :from–:to de :total',
+            'none' => 'Sin resultados',
+            'previous' => 'Anterior',
+            'next' => 'Siguiente',
+        ],
+
+        'form' => [
+            'name' => 'Nombre',
+            'key' => 'Clave',
+            'key_hint' => 'Use el formato {{snake_case}}, por ejemplo {{employee_name}}.',
+            'description' => 'Descripción',
+        ],
+
+        'validation' => [
+            'key_format' => 'La clave debe seguir el formato {{snake_case}}, por ejemplo {{employee_name}}.',
+        ],
+
+        'create' => [
+            'title' => 'Nueva variable de documento',
+            'description' => 'Defina un nuevo marcador global',
+            'submit' => 'Crear variable',
+        ],
+
+        'edit' => [
+            'title' => 'Editar variable de documento',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar variable de documento',
+            'description' => '¿Está seguro de que desea eliminar :name? Esta acción no se puede deshacer.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'flash' => [
+            'created' => 'Variable de documento creada.',
+            'updated' => 'Variable de documento actualizada.',
+            'deleted' => 'Variable de documento eliminada.',
+        ],
+    ],
+
     'roles' => [
         'title' => 'Roles',
         'description' => 'Gestione los roles y sus permisos',

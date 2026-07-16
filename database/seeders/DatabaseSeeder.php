@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             WorkdaySeeder::class,
             OrganizationSeeder::class,
             RegionSeeder::class,
+            DocumentVarSeeder::class,
         ]);
     }
 }
