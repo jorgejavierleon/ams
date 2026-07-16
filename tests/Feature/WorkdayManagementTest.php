@@ -5,6 +5,7 @@ use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
 use App\Enums\WorkdayStatus;
 use App\Managers\MarkModificationManager;
+use App\Models\Mark;
 use App\Models\MarkModification;
 use App\Models\Organization;
 use App\Models\User;
@@ -389,4 +390,169 @@ test('modify delegates to the MarkModificationManager', function () {
             'reason' => MarkModificationReason::MarkForgotten->value,
         ])
         ->assertRedirect();
+});
+
+// --- Detail page ---
+
+test('the detail page renders the workday with its modification history', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, [
+        'date' => Carbon::today(),
+        'status' => WorkdayStatus::Regular,
+    ]);
+
+    MarkModification::factory()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $workday->id,
+        'user_id' => $employee->id,
+        'status' => MarkModificationStatus::Pending,
+        'mark_type' => MarkType::In,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('workdays.show', $workday))
+        ->assertInertia(fn ($page) => $page
+            ->component('workdays/show')
+            ->where('workday.id', $workday->id)
+            ->where('workday.employee.name', $employee->name)
+            // Data the redesigned view depends on: shift boundaries for the
+            // attendance strip, the per-mark scheduled time, and a relative
+            // "created X ago" stamp for the modification timeline.
+            ->has('workday.shift_start')
+            ->has('workday.shift_end')
+            ->has('workday.mark_in.scheduled')
+            ->has('modifications', 1)
+            ->where('modifications.0.status', 'pending')
+            ->has('modifications.0.created_ago')
+            // The admin is not the assigned reviewer, so cannot act inline.
+            ->where('modifications.0.can_review', false));
+});
+
+test('the detail page marks the request reviewable for the assigned reviewer', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $workday = makeWorkday($organization, $admin, ['date' => Carbon::today()]);
+
+    MarkModification::factory()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $workday->id,
+        'user_id' => $admin->id,
+        'status' => MarkModificationStatus::Pending,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('workdays.show', $workday))
+        ->assertInertia(fn ($page) => $page
+            ->where('modifications.0.can_review', true));
+});
+
+test('the detail page cannot show a workday from another organization', function () {
+    $admin = workdayAdmin();
+
+    $otherOrg = Organization::factory()->create();
+    $otherEmployee = User::factory()->employee()->create(['organization_id' => $otherOrg->id]);
+    $foreignWorkday = makeWorkday($otherOrg, $otherEmployee, ['date' => Carbon::today()]);
+
+    $this->actingAs($admin)
+        ->get(route('workdays.show', $foreignWorkday))
+        ->assertNotFound();
+});
+
+// --- Inline approve / decline ---
+
+test('the assigned reviewer approves a pending modification from the detail page', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+
+    $mark = Mark::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $admin->id,
+        'type' => MarkType::In,
+        'date_time' => Carbon::today()->setTime(8, 0),
+    ]);
+    $workday = makeWorkday($organization, $admin, [
+        'date' => Carbon::today(),
+        'mark_in_id' => $mark->id,
+    ]);
+    $modification = MarkModification::factory()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $workday->id,
+        'user_id' => $admin->id,
+        'mark_id' => $mark->id,
+        'mark_type' => MarkType::In,
+        'status' => MarkModificationStatus::Pending,
+        'date_time' => Carbon::today()->setTime(8, 30),
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modifications.approve', [$workday, $modification]))
+        ->assertRedirect();
+
+    $modification->refresh();
+    expect($modification->status)->toBe(MarkModificationStatus::Approved)
+        ->and($modification->reviewed_by)->toBe($admin->id)
+        ->and($mark->refresh()->date_time->format('H:i'))->toBe('08:30');
+});
+
+test('the assigned reviewer declines a pending modification from the detail page', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $workday = makeWorkday($organization, $admin, ['date' => Carbon::today()]);
+
+    $modification = MarkModification::factory()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $workday->id,
+        'user_id' => $admin->id,
+        'status' => MarkModificationStatus::Pending,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modifications.decline', [$workday, $modification]))
+        ->assertRedirect();
+
+    expect($modification->refresh()->status)->toBe(MarkModificationStatus::Declined)
+        ->and($modification->reviewed_by)->toBe($admin->id);
+});
+
+test('a non-reviewer cannot approve a modification from the detail page', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+
+    // The reviewer is the employee, not the acting admin.
+    $modification = MarkModification::factory()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $workday->id,
+        'user_id' => $employee->id,
+        'status' => MarkModificationStatus::Pending,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('workdays.modifications.approve', [$workday, $modification]))
+        ->assertForbidden();
+
+    expect($modification->refresh()->status)->toBe(MarkModificationStatus::Pending);
+});
+
+test('inline approve rejects a modification that belongs to another workday', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+
+    $workday = makeWorkday($organization, $admin, ['date' => Carbon::today()]);
+    $otherWorkday = makeWorkday($organization, $admin, ['date' => Carbon::yesterday()]);
+
+    $modification = MarkModification::factory()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $otherWorkday->id,
+        'user_id' => $admin->id,
+        'status' => MarkModificationStatus::Pending,
+    ]);
+
+    // The scoped binding must reject a modification not owned by {workday}.
+    $this->actingAs($admin)
+        ->post(route('workdays.modifications.approve', [$workday, $modification]))
+        ->assertNotFound();
 });
