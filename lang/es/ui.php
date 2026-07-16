@@ -1199,6 +1199,7 @@ return [
         'nav' => [
             'dashboard' => 'Inicio',
             'validate_mark' => 'Validar marca',
+            'incidents' => 'Incidentes',
             'select_organization' => 'Cambiar empleador',
         ],
         'organization' => [
@@ -1238,6 +1239,22 @@ return [
                 'checksum_value' => 'Checksum',
                 'not_available' => 'No disponible',
             ],
+        ],
+        'incidents' => [
+            'title' => 'Incidentes técnicos',
+            'description' => 'Interrupciones del sistema electrónico de asistencia registradas para el empleador fiscalizado.',
+            'columns' => [
+                'start_time' => 'Inicio',
+                'end_time' => 'Término',
+                'duration' => 'Duración',
+                'description' => 'Descripción',
+            ],
+            'filters' => [
+                'from' => 'Fecha desde',
+                'to' => 'Fecha hasta',
+            ],
+            'ongoing' => 'En curso',
+            'empty' => 'No se registraron incidentes para este empleador.',
         ],
     ],
 
