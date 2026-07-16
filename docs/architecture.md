@@ -100,6 +100,8 @@ Inertia SSR (`config/inertia.php` → `ssr.enabled`) evaluates page modules in N
 
 Pattern (see `MapPicker`/`MapCanvas`, and `leaves/calendar` + `LeavesCalendarCanvas` for FullCalendar): put the browser-only library and its React bindings in a **separate module**, load it with `React.lazy(() => import(...))`, and gate rendering on a client check via `useSyncExternalStore(subscribe, () => true, () => false)` (returns `false` on the server, so the `import()` never runs there). Avoid `useEffect(() => setState(true))` for this — the `react-hooks/set-state-in-effect` lint rule rejects it. Wrap the map in an error boundary so its fallback (here, manual lat/lng inputs) stays usable if the library or a remote tile/geocoding service fails. Type-only imports from the library (`import type { EventInput } from '@fullcalendar/core'`) are erased at build and stay safe in the page module.
 
+Tiptap (the document rich editor, `RichEditor`) is the exception that does **not** need this pattern: it is import-safe under SSR as long as `useEditor` is called with `immediatelyRender: false`. It does require the `'use no memo'` directive so the React Compiler leaves its imperative editor instance alone (same reason as `useServerTable`).
+
 ---
 
 ## Localization (i18n)
@@ -135,6 +137,17 @@ A `Shift` owns exactly seven `ShiftDay` rows (SQL weekday `0` = Monday … `6` =
 - **Entry/exit tolerance is a grace period, edited in minutes but stored as a `TIME`.** The UI and API use whole minutes (`30`, `120`); `ShiftController` converts them to/from `HH:MM:SS` because the `WorkdayCalculator` compares tolerance as a TIME against a mark's lateness (`ABS(TIMEDIFF(...)) BETWEEN '00:00:01' AND shifts.tolerance_in`). Keep the column a `TIME`.
 - Legal ceilings live in `config/ams.php` (`max_weekly_hours`, `max_daily_hours`); the weekly cap is validated server-side on save.
 - `shift_assignments` (employee → shift) has a minimal model here for the delete guard only; its full management and `ShiftAssignmentObserver` (which fires `WorkdaysRecalculationNeeded`) belong to ticket #20.
+
+---
+
+## Documents
+
+Employment documents (`Document`) are drafted per employee, published, and later signed. Two invariants:
+
+- **Variables resolve at publish, not at edit.** While a document is a draft, `body` holds the rich text with `{{token}}` placeholders (tokens are the `DocumentVar.key` values, seeded with braces). Publishing freezes the document: `DocumentObserver::saving` detects the `status` transition into `Published`, stamps `published_at`, and rewrites `body` through `DocumentVariableResolver`, which maps each token to the employee's real data (name, RUT, company, premise, position, organization, legal rep, dates). Do not resolve tokens on every save — only on the publish transition — or drafts lose their re-editable template. Unknown tokens are left verbatim so they surface as visible text.
+- **Signatory config is a count + toggle, not per-signer rows here.** `legal_rep_signatories` (0–2) and `ordered_signing` capture intent on the document; the actual `DocumentSignature` records and signing workflow belong to later tickets (#35 panel, #51 workflow). `ordered_signing` is forced off server-side unless there are two signatories.
+
+The editor is Tiptap (`@tiptap/react`) — see the SSR note above. The "Insert variable" picker is the shared cmdk `Command` palette listing `DocumentVar`s.
 
 ---
 

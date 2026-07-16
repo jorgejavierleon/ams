@@ -166,3 +166,68 @@
 .leaves-calendar .fc .fc-event {
     cursor: pointer;
 }
+
+/* Tiptap rich-editor content. The editor is headless, so the document body's
+   block elements are styled here to read like formatted prose in both themes. */
+.tiptap:focus {
+    outline: none;
+}
+
+.tiptap p {
+    margin: 0.5rem 0;
+}
+
+.tiptap h1,
+.tiptap h2,
+.tiptap h3 {
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 1rem 0 0.5rem;
+}
+
+.tiptap h1 {
+    font-size: 1.5rem;
+}
+
+.tiptap h2 {
+    font-size: 1.25rem;
+}
+
+.tiptap h3 {
+    font-size: 1.125rem;
+}
+
+.tiptap ul,
+.tiptap ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.tiptap ul {
+    list-style: disc;
+}
+
+.tiptap ol {
+    list-style: decimal;
+}
+
+.tiptap blockquote {
+    border-left: 3px solid var(--border);
+    padding-left: 1rem;
+    color: var(--muted-foreground);
+    margin: 0.5rem 0;
+}
+
+.tiptap a {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+/* Placeholder shown when the editor is empty. */
+.tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--muted-foreground);
+    float: left;
+    height: 0;
+    pointer-events: none;
+}
