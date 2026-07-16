@@ -7,6 +7,7 @@ use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Models\Company;
 use App\Models\Document;
+use App\Models\DocumentTemplate;
 use App\Models\DocumentVar;
 use App\Models\User;
 use App\Observers\DocumentObserver;
@@ -83,6 +84,7 @@ class DocumentController extends Controller
     {
         return Inertia::render('documents/create', [
             'options' => $this->formOptions(),
+            'templates' => $this->templateOptions(),
         ]);
     }
 
@@ -251,6 +253,23 @@ class DocumentController extends Controller
                 ])
                 ->all(),
         ];
+    }
+
+    /**
+     * Templates offered by the "Load Template" picker on the create form.
+     *
+     * @return array<int, array{id: int, title: string}>
+     */
+    private function templateOptions(): array
+    {
+        return DocumentTemplate::query()
+            ->orderBy('title')
+            ->get(['id', 'title'])
+            ->map(fn (DocumentTemplate $template) => [
+                'id' => $template->id,
+                'title' => $template->title,
+            ])
+            ->all();
     }
 
     /**

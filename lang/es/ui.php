@@ -20,6 +20,7 @@ return [
         'approvals' => 'Aprobaciones',
         'documents' => 'Documentos',
         'documents_list' => 'Documentos',
+        'document_templates' => 'Plantillas',
         'settings' => 'Configuración',
         'dashboard' => 'Panel',
         'roles' => 'Roles',
@@ -1463,6 +1464,10 @@ return [
             'legal_rep_signatories_hint' => 'Cuántos representantes legales deben firmar.',
             'ordered_signing' => 'Firma ordenada',
             'ordered_signing_hint' => 'Exigir que los representantes legales firmen en orden.',
+            'load_template' => 'Cargar plantilla',
+            'load_template_hint' => 'Rellena el cuerpo desde una plantilla guardada.',
+            'template_search' => 'Buscar plantillas...',
+            'template_empty' => 'No se encontraron plantillas.',
         ],
 
         'editor' => [
@@ -1524,6 +1529,67 @@ return [
             'title' => 'Publicar documento',
             'description' => 'Al publicar se resuelven las variables del documento y se registra la fecha de publicación. ¿Continuar?',
             'confirm' => 'Publicar',
+        ],
+    ],
+
+    'document_templates' => [
+        'title' => 'Plantillas de documentos',
+        'description' => 'Cuerpos de documento reutilizables que puedes cargar en nuevos documentos',
+        'new' => 'Nueva plantilla',
+        'search_placeholder' => 'Buscar por título...',
+        'empty' => 'No se encontraron plantillas.',
+
+        'columns' => [
+            'title' => 'Título',
+            'type' => 'Tipo',
+            'variables' => 'Variables',
+            'updated_at' => 'Actualizada',
+            'state' => 'Estado',
+        ],
+
+        'state' => [
+            'active' => 'Activa',
+            'deleted' => 'Eliminada',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+            'restore' => 'Restaurar',
+        ],
+
+        'create' => [
+            'title' => 'Nueva plantilla',
+            'description' => 'Redacta una plantilla de documento reutilizable',
+            'submit' => 'Crear plantilla',
+        ],
+
+        'edit' => [
+            'title' => 'Editar plantilla',
+            'description' => 'Actualiza los datos de la plantilla',
+            'submit' => 'Guardar cambios',
+        ],
+
+        'form' => [
+            'title' => 'Título',
+            'type' => 'Tipo de documento',
+            'type_placeholder' => 'Selecciona un tipo',
+            'body' => 'Cuerpo',
+            'body_hint' => 'Haz clic en una variable para insertar su marcador en el cursor.',
+            'body_placeholder' => 'Redacta la plantilla…',
+        ],
+
+        'flash' => [
+            'created' => 'Plantilla creada.',
+            'updated' => 'Plantilla actualizada.',
+            'deleted' => 'Plantilla eliminada.',
+            'restored' => 'Plantilla restaurada.',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar plantilla',
+            'description' => '¿Seguro que deseas eliminar ":title"? Podrás restaurarla más tarde.',
+            'confirm' => 'Eliminar',
         ],
     ],
 

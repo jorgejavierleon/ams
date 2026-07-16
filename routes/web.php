@@ -4,6 +4,7 @@ use App\Http\Controllers\CommuneController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DocumentTemplateController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\IncidentController as DtIncidentController;
 use App\Http\Controllers\Dt\LoginController;
@@ -101,6 +102,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('documents/{document}/publish', [DocumentController::class, 'publish'])
         ->name('documents.publish');
     Route::resource('documents', DocumentController::class);
+
+    Route::get('document-templates/{documentTemplate}/body', [DocumentTemplateController::class, 'body'])
+        ->name('document-templates.body');
+    Route::patch('document-templates/{documentTemplate}/restore', [DocumentTemplateController::class, 'restore'])
+        ->name('document-templates.restore');
+    Route::resource('document-templates', DocumentTemplateController::class)
+        ->except(['show']);
 
     Route::resource('leaves', LeaveController::class)
         ->only(['create', 'store', 'destroy'])
