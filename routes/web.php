@@ -101,6 +101,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::post('documents/{document}/publish', [DocumentController::class, 'publish'])
         ->name('documents.publish');
+    Route::get('documents/{document}/download', [DocumentController::class, 'download'])
+        ->name('documents.download');
     Route::resource('documents', DocumentController::class);
 
     Route::get('document-templates/{documentTemplate}/body', [DocumentTemplateController::class, 'body'])

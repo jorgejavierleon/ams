@@ -162,9 +162,13 @@ test('publishing a document resolves its body variables and stamps the publish d
     $admin = documentAdmin();
     $employee = documentEmployee($admin, ['name' => 'Juan Pérez']);
 
+    // A certificate is informational, so publishing it does not spawn
+    // signatures — it stays "published" (see DocumentPublishDownloadTest for
+    // the signable-document lifecycle).
     $document = Document::factory()->create([
         'organization_id' => $admin->organization_id,
         'user_id' => $employee->id,
+        'type' => DocumentType::Certificates,
         'body' => '<p>Yo, {{employee_name}}, acepto las condiciones.</p>',
         'status' => DocumentStatus::Draft,
         'published_at' => null,

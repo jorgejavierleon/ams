@@ -43,6 +43,14 @@ return [
         'body' => 'Your leave request has been rejected. Please contact your supervisor if you have questions.',
     ],
 
+    'document_signature_requested' => [
+        'subject' => 'A document is awaiting your signature',
+        'heading' => 'Signature requested',
+        'body' => 'A document has been published and requires your signature. Please review and sign it.',
+        'document' => 'Document',
+        'type' => 'Type',
+    ],
+
     'mark_modification_requested' => [
         'subject' => 'Attendance mark correction awaiting your review',
         'heading' => 'Mark correction requested',

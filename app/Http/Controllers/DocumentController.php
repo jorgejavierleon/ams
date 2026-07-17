@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Documents\DownloadDocument;
+use App\Actions\Documents\PublishDocument;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
@@ -10,13 +12,13 @@ use App\Models\Document;
 use App\Models\DocumentTemplate;
 use App\Models\DocumentVar;
 use App\Models\User;
-use App\Observers\DocumentObserver;
 use App\Services\Documents\DocumentVariableResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class DocumentController extends Controller
 {
@@ -170,19 +172,26 @@ class DocumentController extends Controller
     }
 
     /**
-     * Publish a draft document. The status transition drives the
-     * {@see DocumentObserver}, which stamps `published_at` and
-     * freezes the body by resolving its placeholders.
+     * Publish a draft document. Delegates to {@see PublishDocument}, which
+     * freezes the body, stamps `published_at`, and creates the signature
+     * records — notifying the signatories.
      */
-    public function publish(Document $document): RedirectResponse
+    public function publish(Document $document, PublishDocument $publishDocument): RedirectResponse
     {
-        abort_unless($document->status === DocumentStatus::Draft, 403);
-
-        $document->update(['status' => DocumentStatus::Published]);
+        $publishDocument->handle($document);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.documents.flash.published')]);
 
         return back();
+    }
+
+    /**
+     * Stream the document as a PDF. Available for documents in any status via
+     * {@see DownloadDocument}.
+     */
+    public function download(Document $document, DownloadDocument $downloadDocument): SymfonyResponse
+    {
+        return $downloadDocument->handle($document);
     }
 
     /**

@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, FileClock, PenLine, Send } from 'lucide-react';
+import { ArrowLeft, Download, FileClock, PenLine, Send } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
@@ -13,7 +13,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import { edit, index, publish } from '@/routes/documents';
+import { download, edit, index, publish } from '@/routes/documents';
 
 type StatusBadge = {
     value: string;
@@ -78,6 +78,12 @@ export default function DocumentShow({ document }: Props) {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <Button variant="outline" asChild>
+                            <a href={download(document.id).url}>
+                                <Download className="size-4" />
+                                {t('ui.documents.actions.download')}
+                            </a>
+                        </Button>
                         <Button variant="outline" asChild>
                             <Link href={edit(document.id)}>
                                 <PenLine className="size-4" />
