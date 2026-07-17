@@ -1517,7 +1517,29 @@ return [
             'ordered_signing' => 'Firma ordenada',
             'signatures' => 'Firmas',
             'activity' => 'Actividad',
-            'activity_soon' => 'La línea de tiempo de actividad estará disponible pronto.',
+        ],
+
+        'activity' => [
+            'empty' => 'No hay actividad registrada',
+            'status_change' => ':from → :to',
+            'events' => [
+                'published' => [
+                    'title' => 'Documento publicado',
+                    'description' => 'El documento ha sido publicado con éxito.',
+                ],
+                'signature_requested' => [
+                    'title' => 'Firma solicitada',
+                    'description' => 'Se solicitó la firma a :name.',
+                ],
+                'signed' => [
+                    'title' => 'Documento firmado',
+                    'description' => 'El documento ha sido firmado.',
+                ],
+                'signature_rejected' => [
+                    'title' => 'Firma rechazada',
+                    'description' => 'La firma del documento ha sido rechazada.',
+                ],
+            ],
         ],
 
         'signatures' => [

@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Deferred, Head, Link, router } from '@inertiajs/react';
 import {
     ArrowLeft,
     Download,
@@ -9,10 +9,13 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import { ActivityTimeline } from '@/components/activity-timeline';
+import type { ActivityEntry } from '@/components/activity-timeline';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DocumentSignaturesPanel } from '@/components/document-signatures-panel';
 import type { DocumentSignature } from '@/components/document-signatures-panel';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from '@/hooks/use-translations';
 import { toneChip } from '@/lib/status-tone';
 import { cn } from '@/lib/utils';
@@ -40,10 +43,14 @@ type Props = {
         can_publish: boolean;
     };
     signatures: DocumentSignature[];
-    activities: unknown[];
+    activities?: ActivityEntry[];
 };
 
-export default function DocumentShow({ document, signatures }: Props) {
+export default function DocumentShow({
+    document,
+    signatures,
+    activities,
+}: Props) {
     const { t } = useTranslations();
     const [publishing, setPublishing] = useState(false);
 
@@ -231,14 +238,18 @@ export default function DocumentShow({ document, signatures }: Props) {
                             <DocumentSignaturesPanel signatures={signatures} />
                         </Section>
 
-                        {/* Activity timeline — built by #36. */}
                         <Section
                             title={t('ui.documents.show.activity')}
                             icon={<FileClock className="size-4" />}
                         >
-                            <p className="py-8 text-center text-sm text-muted-foreground">
-                                {t('ui.documents.show.activity_soon')}
-                            </p>
+                            <Deferred
+                                data="activities"
+                                fallback={<ActivityTimelineSkeleton />}
+                            >
+                                <ActivityTimeline
+                                    activities={activities ?? []}
+                                />
+                            </Deferred>
                         </Section>
                     </div>
                 </div>
@@ -325,6 +336,23 @@ function StatTile({
             {sub && (
                 <div className="mt-1 text-xs text-muted-foreground">{sub}</div>
             )}
+        </div>
+    );
+}
+
+/** Pulsing placeholder shown while the deferred activity prop loads. */
+function ActivityTimelineSkeleton() {
+    return (
+        <div className="space-y-4">
+            {[0, 1, 2].map((row) => (
+                <div key={row} className="flex gap-3">
+                    <Skeleton className="size-7 shrink-0 rounded-full" />
+                    <div className="flex-1 space-y-2 py-0.5">
+                        <Skeleton className="h-3.5 w-2/3" />
+                        <Skeleton className="h-3 w-1/2" />
+                    </div>
+                </div>
+            ))}
         </div>
     );
 }

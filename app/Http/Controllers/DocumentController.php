@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Activitylog\Models\Activity;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class DocumentController extends Controller
@@ -149,10 +150,65 @@ class DocumentController extends Controller
                     'can_resend' => $signature->status === DocumentSignatureStatus::Pending,
                 ])
                 ->all(),
-            // Activity timeline (#36) is wired up by its own ticket; the section
-            // renders as a placeholder.
-            'activities' => [],
+            // The audit timeline is deferred so it never blocks the initial
+            // render; the panel shows a skeleton until the prop resolves.
+            'activities' => Inertia::defer(fn () => $this->activities($document)),
         ]);
+    }
+
+    /**
+     * The document's audit timeline: every logged activity in reverse
+     * chronological order, resolved for display (localized title, actor name
+     * and any status transition).
+     *
+     * @return array<int, array{
+     *     id: int,
+     *     event: string|null,
+     *     title: string,
+     *     description: string|null,
+     *     causer: string|null,
+     *     status_change: array{from: string, to: string}|null,
+     *     created_at: string,
+     * }>
+     */
+    private function activities(Document $document): array
+    {
+        return Activity::forSubject($document)
+            ->with('causer:id,name')
+            ->latest()
+            ->latest('id')
+            ->get()
+            ->map(fn (Activity $activity) => [
+                'id' => $activity->id,
+                'event' => $activity->event,
+                'title' => __("ui.documents.activity.events.{$activity->event}.title"),
+                'description' => $activity->description,
+                'causer' => $activity->causer?->name,
+                'status_change' => $this->activityStatusChange($activity),
+                'created_at' => $activity->created_at?->format('Y-m-d H:i') ?? '',
+            ])
+            ->all();
+    }
+
+    /**
+     * Extract the before/after status labels stored on a publish activity, if
+     * any, resolving the enum values to their human labels.
+     *
+     * @return array{from: string, to: string}|null
+     */
+    private function activityStatusChange(Activity $activity): ?array
+    {
+        $from = data_get($activity->properties, 'old.status');
+        $to = data_get($activity->properties, 'attributes.status');
+
+        if ($from === null || $to === null) {
+            return null;
+        }
+
+        return [
+            'from' => DocumentStatus::tryFrom($from)?->label() ?? $from,
+            'to' => DocumentStatus::tryFrom($to)?->label() ?? $to,
+        ];
     }
 
     public function edit(Document $document): Response
