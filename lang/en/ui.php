@@ -1517,7 +1517,29 @@ return [
             'ordered_signing' => 'Ordered signing',
             'signatures' => 'Signatures',
             'activity' => 'Activity',
-            'activity_soon' => 'The activity timeline is coming soon.',
+        ],
+
+        'activity' => [
+            'empty' => 'No activity recorded',
+            'status_change' => ':from → :to',
+            'events' => [
+                'published' => [
+                    'title' => 'Document published',
+                    'description' => 'The document was published successfully.',
+                ],
+                'signature_requested' => [
+                    'title' => 'Signature requested',
+                    'description' => 'A signature was requested from :name.',
+                ],
+                'signed' => [
+                    'title' => 'Document signed',
+                    'description' => 'The document was signed.',
+                ],
+                'signature_rejected' => [
+                    'title' => 'Signature rejected',
+                    'description' => 'The document signature was rejected.',
+                ],
+            ],
         ],
 
         'signatures' => [

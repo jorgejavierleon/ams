@@ -8,6 +8,7 @@ use App\Enums\DocumentStatus;
 use App\Models\Document;
 use App\Models\User;
 use App\Notifications\DocumentSignatureRequested;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Creates the pending signature records for a freshly published document and
@@ -46,6 +47,16 @@ class CreateDocumentSignatures
             );
 
             $signature->user->notify(new DocumentSignatureRequested($document));
+
+            if ($signature->wasRecentlyCreated) {
+                activity()
+                    ->causedBy(Auth::user())
+                    ->performedOn($document)
+                    ->event('signature_requested')
+                    ->log(__('ui.documents.activity.events.signature_requested.description', [
+                        'name' => $signature->user->name,
+                    ]));
+            }
         }
 
         $document->update(['status' => DocumentStatus::PendingSignature]);
