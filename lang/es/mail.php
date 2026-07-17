@@ -43,6 +43,14 @@ return [
         'body' => 'Tu solicitud de permiso ha sido rechazada. Contacta a tu supervisor si tienes dudas.',
     ],
 
+    'document_signature_requested' => [
+        'subject' => 'Un documento espera tu firma',
+        'heading' => 'Firma solicitada',
+        'body' => 'Se ha publicado un documento que requiere tu firma. Por favor revísalo y fírmalo.',
+        'document' => 'Documento',
+        'type' => 'Tipo',
+    ],
+
     'mark_modification_requested' => [
         'subject' => 'Corrección de marca pendiente de tu revisión',
         'heading' => 'Corrección de marca solicitada',

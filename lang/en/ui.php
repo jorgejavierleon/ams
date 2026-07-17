@@ -1416,6 +1416,7 @@ return [
             'edit' => 'Edit',
             'delete' => 'Delete',
             'publish' => 'Publish',
+            'download' => 'Download PDF',
         ],
 
         'statuses' => [
