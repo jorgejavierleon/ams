@@ -4,6 +4,7 @@ use App\Http\Controllers\CommuneController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DocumentSignatureController;
 use App\Http\Controllers\DocumentTemplateController;
 use App\Http\Controllers\Dt\DocumentController as DtDocumentController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
@@ -104,6 +105,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('documents.publish');
     Route::get('documents/{document}/download', [DocumentController::class, 'download'])
         ->name('documents.download');
+    Route::post('document-signatures/{documentSignature}/resend', [DocumentSignatureController::class, 'resend'])
+        ->name('document-signatures.resend');
     Route::resource('documents', DocumentController::class);
 
     Route::get('document-templates/{documentTemplate}/body', [DocumentTemplateController::class, 'body'])

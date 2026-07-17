@@ -1507,6 +1507,7 @@ return [
 
         'show' => [
             'back' => 'Back to documents',
+            'eyebrow' => 'Document',
             'body' => 'Document body',
             'body_hint' => 'Preview with variables resolved for this employee.',
             'body_empty' => 'This document has no body yet.',
@@ -1515,7 +1516,6 @@ return [
             'legal_rep_signatories' => 'Legal rep signatories',
             'ordered_signing' => 'Ordered signing',
             'signatures' => 'Signatures',
-            'signatures_soon' => 'The signature status panel is coming soon.',
             'activity' => 'Activity',
             'activity_soon' => 'The activity timeline is coming soon.',
         ],
@@ -1530,6 +1530,14 @@ return [
                 'employee' => 'Employee',
                 'legal_rep' => 'Legal representative',
                 'supervisor' => 'Supervisor',
+            ],
+            'empty' => 'This document has no signatures yet. They are created when it is published.',
+            'progress' => 'signed',
+            'signed_at' => 'Signed on :date',
+            'resend' => [
+                'action' => 'Resend',
+                'sent' => 'Signature request resent.',
+                'not_pending' => 'Only pending signatures can be resent.',
             ],
         ],
 

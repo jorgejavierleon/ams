@@ -27,4 +27,17 @@ enum DocumentSignatureStatus: string
             self::Pending => 'secondary',
         };
     }
+
+    /**
+     * A shared, semantic tone matching {@see DocumentStatus::badge()} so the
+     * signature chips and timeline dots share the document status palette.
+     */
+    public function badge(): string
+    {
+        return match ($this) {
+            self::Signed => 'success',
+            self::Rejected => 'destructive',
+            self::Pending => 'warning',
+        };
+    }
 }

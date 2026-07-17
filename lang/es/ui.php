@@ -1507,6 +1507,7 @@ return [
 
         'show' => [
             'back' => 'Volver a documentos',
+            'eyebrow' => 'Documento',
             'body' => 'Cuerpo del documento',
             'body_hint' => 'Vista previa con las variables resueltas para este empleado.',
             'body_empty' => 'Este documento aún no tiene cuerpo.',
@@ -1515,7 +1516,6 @@ return [
             'legal_rep_signatories' => 'Firmantes representantes legales',
             'ordered_signing' => 'Firma ordenada',
             'signatures' => 'Firmas',
-            'signatures_soon' => 'El panel de estado de firmas estará disponible pronto.',
             'activity' => 'Actividad',
             'activity_soon' => 'La línea de tiempo de actividad estará disponible pronto.',
         ],
@@ -1530,6 +1530,14 @@ return [
                 'employee' => 'Empleado',
                 'legal_rep' => 'Representante legal',
                 'supervisor' => 'Supervisor',
+            ],
+            'empty' => 'Este documento aún no tiene firmas. Se generan al publicarlo.',
+            'progress' => 'firmadas',
+            'signed_at' => 'Firmado el :date',
+            'resend' => [
+                'action' => 'Reenviar',
+                'sent' => 'Solicitud de firma reenviada.',
+                'not_pending' => 'Solo se pueden reenviar firmas pendientes.',
             ],
         ],
 

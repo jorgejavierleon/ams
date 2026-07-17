@@ -33,6 +33,20 @@ enum DocumentStatus: string
     }
 
     /**
+     * A shared, semantic tone for the status so the tinted status chips across
+     * the document views resolve their colours from a single place.
+     */
+    public function badge(): string
+    {
+        return match ($this) {
+            self::Published, self::Signed => 'success',
+            self::PendingSignature => 'warning',
+            self::Rejected => 'destructive',
+            self::Draft, self::Archived => 'neutral',
+        };
+    }
+
+    /**
      * All statuses as value/label pairs for select inputs.
      *
      * @return array<int, array{value: string, label: string}>

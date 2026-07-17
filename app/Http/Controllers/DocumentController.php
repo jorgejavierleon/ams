@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Actions\Documents\DownloadDocument;
 use App\Actions\Documents\PublishDocument;
 use App\Concerns\ResolvesTableSort;
+use App\Enums\DocumentSignatureStatus;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Models\Company;
 use App\Models\Document;
+use App\Models\DocumentSignature;
 use App\Models\DocumentTemplate;
 use App\Models\DocumentVar;
 use App\Models\User;
@@ -103,7 +105,7 @@ class DocumentController extends Controller
 
     public function show(Document $document, DocumentVariableResolver $resolver): Response
     {
-        $document->load('user:id,name');
+        $document->load(['user:id,name', 'signatures.user:id,name']);
 
         return Inertia::render('documents/show', [
             'document' => [
@@ -118,6 +120,7 @@ class DocumentController extends Controller
                     'value' => $document->status->value,
                     'label' => $document->status->label(),
                     'variant' => $document->status->badgeVariant(),
+                    'tone' => $document->status->badge(),
                 ],
                 'legal_rep_signatories' => $document->legal_rep_signatories,
                 'ordered_signing' => $document->ordered_signing,
@@ -128,9 +131,26 @@ class DocumentController extends Controller
                 'signed_at' => $document->signed_at?->format('Y-m-d'),
                 'can_publish' => $document->status === DocumentStatus::Draft,
             ],
-            // Signature status panel (#35) and activity timeline (#36) are
-            // wired up by their own tickets; the sections render as placeholders.
-            'signatures' => [],
+            'signatures' => $document->signatures
+                ->sortBy(fn (DocumentSignature $signature) => [$signature->order ?? PHP_INT_MAX, $signature->id])
+                ->values()
+                ->map(fn (DocumentSignature $signature) => [
+                    'id' => $signature->id,
+                    'name' => $signature->user?->name,
+                    'type' => $signature->type->label(),
+                    'status' => [
+                        'value' => $signature->status->value,
+                        'label' => $signature->status->label(),
+                        'variant' => $signature->status->badgeVariant(),
+                        'tone' => $signature->status->badge(),
+                    ],
+                    'order' => $signature->order,
+                    'signed_at' => $signature->signed_at?->format('Y-m-d'),
+                    'can_resend' => $signature->status === DocumentSignatureStatus::Pending,
+                ])
+                ->all(),
+            // Activity timeline (#36) is wired up by its own ticket; the section
+            // renders as a placeholder.
             'activities' => [],
         ]);
     }
