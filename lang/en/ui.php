@@ -1329,6 +1329,7 @@ return [
             'dashboard' => 'Dashboard',
             'validate_mark' => 'Validate mark',
             'incidents' => 'Incidents',
+            'documents' => 'Documents',
             'select_organization' => 'Change employer',
         ],
         'organization' => [
@@ -1384,6 +1385,25 @@ return [
             ],
             'ongoing' => 'Ongoing',
             'empty' => 'No incidents were recorded for this employer.',
+        ],
+        'documents' => [
+            'title' => 'Documents',
+            'description' => 'Employment documents recorded for the audited employer.',
+            'columns' => [
+                'employee' => 'Employee',
+                'type' => 'Type',
+                'status' => 'Status',
+                'published_at' => 'Published',
+                'signed_at' => 'Signed',
+            ],
+            'empty' => 'No documents were recorded for this employer.',
+            'show' => [
+                'back' => 'Back to documents',
+                'details' => 'Details',
+                'body' => 'Content',
+                'body_empty' => 'This document has no content yet.',
+                'download' => 'Download PDF',
+            ],
         ],
     ],
 

@@ -1329,6 +1329,7 @@ return [
             'dashboard' => 'Inicio',
             'validate_mark' => 'Validar marca',
             'incidents' => 'Incidentes',
+            'documents' => 'Documentos',
             'select_organization' => 'Cambiar empleador',
         ],
         'organization' => [
@@ -1384,6 +1385,25 @@ return [
             ],
             'ongoing' => 'En curso',
             'empty' => 'No se registraron incidentes para este empleador.',
+        ],
+        'documents' => [
+            'title' => 'Documentos',
+            'description' => 'Documentos laborales registrados para el empleador fiscalizado.',
+            'columns' => [
+                'employee' => 'Empleado',
+                'type' => 'Tipo',
+                'status' => 'Estado',
+                'published_at' => 'Publicado',
+                'signed_at' => 'Firmado',
+            ],
+            'empty' => 'No se registraron documentos para este empleador.',
+            'show' => [
+                'back' => 'Volver a documentos',
+                'details' => 'Detalles',
+                'body' => 'Contenido',
+                'body_empty' => 'Este documento aún no tiene contenido.',
+                'download' => 'Descargar PDF',
+            ],
         ],
     ],
 
