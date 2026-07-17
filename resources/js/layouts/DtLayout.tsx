@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Building2,
     Fingerprint,
+    FileText,
     LayoutGrid,
     LogOut,
     TriangleAlert,
@@ -25,6 +26,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { dashboard, logout } from '@/routes/dt';
+import { index as documents } from '@/routes/dt/documents';
 import { index as incidents } from '@/routes/dt/incidents';
 import { select as selectOrganization } from '@/routes/dt/organization';
 import type { AppLayoutProps, NavItem } from '@/types';
@@ -50,6 +52,11 @@ export default function DtLayout({ children }: AppLayoutProps) {
             title: t('ui.dt.nav.incidents'),
             href: incidents(),
             icon: TriangleAlert,
+        },
+        {
+            title: t('ui.dt.nav.documents'),
+            href: documents(),
+            icon: FileText,
         },
         {
             title: t('ui.dt.nav.select_organization'),

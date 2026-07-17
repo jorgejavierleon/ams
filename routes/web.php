@@ -5,6 +5,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentTemplateController;
+use App\Http\Controllers\Dt\DocumentController as DtDocumentController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
 use App\Http\Controllers\Dt\IncidentController as DtIncidentController;
 use App\Http\Controllers\Dt\LoginController;
@@ -213,6 +214,12 @@ Route::prefix('dt')->name('dt.')->group(function () {
 
                 // Read-only technical-incidents list for the audited employer.
                 Route::get('incidents', [DtIncidentController::class, 'index'])->name('incidents.index');
+
+                // Read-only employment-documents list for the audited employer,
+                // with a per-document PDF preview download (Resolución 38).
+                Route::get('documents', [DtDocumentController::class, 'index'])->name('documents.index');
+                Route::get('documents/{document}/download', [DtDocumentController::class, 'download'])->name('documents.download');
+                Route::get('documents/{document}', [DtDocumentController::class, 'show'])->name('documents.show');
             });
         });
     });
