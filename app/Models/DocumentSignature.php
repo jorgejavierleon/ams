@@ -25,10 +25,29 @@ use Illuminate\Support\Carbon;
  * @property DocumentSignatureStatus $status
  * @property int|null $order
  * @property Carbon|null $signed_at
+ * @property string|null $verification_code
+ * @property Carbon|null $verification_code_expires_at
+ * @property string|null $signed_ip
+ * @property string|null $signed_user_agent
+ * @property string|null $signed_content_hash
+ * @property string|null $rejection_reason
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['document_id', 'user_id', 'type', 'status', 'order', 'signed_at'])]
+#[Fillable([
+    'document_id',
+    'user_id',
+    'type',
+    'status',
+    'order',
+    'signed_at',
+    'verification_code',
+    'verification_code_expires_at',
+    'signed_ip',
+    'signed_user_agent',
+    'signed_content_hash',
+    'rejection_reason',
+])]
 class DocumentSignature extends Model
 {
     /** @use HasFactory<DocumentSignatureFactory> */
@@ -40,7 +59,27 @@ class DocumentSignature extends Model
             'status' => DocumentSignatureStatus::class,
             'type' => DocumentSignatureType::class,
             'signed_at' => 'datetime',
+            'verification_code_expires_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Whether the signature is still awaiting its signatory's action.
+     */
+    public function isPending(): bool
+    {
+        return $this->status === DocumentSignatureStatus::Pending;
+    }
+
+    /**
+     * Whether the stored verification code matches and is still within its
+     * validity window.
+     */
+    public function verificationCodeMatches(string $code): bool
+    {
+        return $this->verification_code !== null
+            && $this->verification_code_expires_at?->isFuture() === true
+            && hash_equals($this->verification_code, $code);
     }
 
     /**

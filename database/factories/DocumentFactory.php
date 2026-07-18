@@ -49,4 +49,28 @@ class DocumentFactory extends Factory
             'published_at' => now(),
         ]);
     }
+
+    /**
+     * A signable (contract) document already out for signature.
+     */
+    public function pendingSignature(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'type' => DocumentType::Contracts,
+            'status' => DocumentStatus::PendingSignature,
+            'published_at' => now(),
+        ]);
+    }
+
+    /**
+     * A draft of a signable type, ready to be published and generate
+     * signatures.
+     */
+    public function signable(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'type' => DocumentType::Contracts,
+            'status' => DocumentStatus::Draft,
+        ]);
+    }
 }

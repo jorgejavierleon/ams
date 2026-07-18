@@ -37,6 +37,7 @@ import {
     calendar as leavesCalendar,
     index as leavesIndex,
 } from '@/routes/leaves';
+import { index as myDocumentsIndex } from '@/routes/my/documents';
 import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 import { index as positionsIndex } from '@/routes/positions';
@@ -56,6 +57,7 @@ export function AppSidebar() {
     // Supervisors are employees who may also review their team's leaves.
     const canReviewTeamLeaves = auth.permissions.includes('ViewTeam:Leave');
     const canViewOwnWorkdays = auth.permissions.includes('ViewOwn:Workday');
+    const canViewOwnDocuments = auth.permissions.includes('ViewOwn:Document');
 
     const employeeNavGroups: Array<{ label: string; items: NavItem[] }> = [
         {
@@ -81,6 +83,16 @@ export function AppSidebar() {
                     href: myLeavesIndex(),
                     icon: Sun,
                 },
+                ...(canViewOwnDocuments
+                    ? [
+                          {
+                              title: t('ui.nav.my_documents'),
+                              href: myDocumentsIndex(),
+                              icon: FileText,
+                              badge: auth.pendingSignaturesCount,
+                          },
+                      ]
+                    : []),
                 ...(canReviewTeamLeaves
                     ? [
                           {

@@ -140,6 +140,32 @@ test('admin can update a document', function () {
         ->type->toBe(DocumentType::Annexes);
 });
 
+test('a non-draft document cannot be edited or updated', function () {
+    $admin = documentAdmin();
+    $employee = documentEmployee($admin);
+
+    $document = Document::factory()->published()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $employee->id,
+        'title' => 'Frozen title',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('documents.edit', $document))
+        ->assertForbidden();
+
+    $this->actingAs($admin)
+        ->patch(route('documents.update', $document), [
+            'title' => 'Tampered title',
+            'user_id' => $employee->id,
+            'legal_rep_signatories' => '0',
+            'ordered_signing' => false,
+        ])
+        ->assertForbidden();
+
+    expect($document->refresh()->title)->toBe('Frozen title');
+});
+
 // --- Delete ---
 
 test('admin can delete a document', function () {
@@ -154,6 +180,20 @@ test('admin can delete a document', function () {
         ->assertRedirect(route('documents.index'));
 
     $this->assertDatabaseMissing('documents', ['id' => $document->id]);
+});
+
+test('a non-draft document cannot be deleted', function () {
+    $admin = documentAdmin();
+    $document = Document::factory()->published()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => documentEmployee($admin)->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('documents.destroy', $document))
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('documents', ['id' => $document->id]);
 });
 
 // --- Publish + variable rendering ---

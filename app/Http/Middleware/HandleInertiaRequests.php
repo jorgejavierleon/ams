@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\DocumentSignatureStatus;
 use App\Enums\MarkModificationStatus;
+use App\Models\DocumentSignature;
 use App\Models\MarkModification;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -48,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? collect(),
                 'pendingModificationsCount' => fn () => $this->pendingModificationsCount($request),
+                'pendingSignaturesCount' => fn () => $this->pendingSignaturesCount($request),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
@@ -78,6 +81,25 @@ class HandleInertiaRequests extends Middleware
         return MarkModification::query()
             ->where('user_id', $user->id)
             ->where('status', MarkModificationStatus::Pending)
+            ->count();
+    }
+
+    /**
+     * How many documents are still awaiting the authenticated user's signature,
+     * for the "Mis documentos" nav badge. Zero for anyone without the signing
+     * permission, so the query stays signatory-only.
+     */
+    private function pendingSignaturesCount(Request $request): int
+    {
+        $user = $request->user();
+
+        if ($user === null || ! $user->getAllPermissions()->pluck('name')->contains('SignOwn:Document')) {
+            return 0;
+        }
+
+        return DocumentSignature::query()
+            ->where('user_id', $user->id)
+            ->where('status', DocumentSignatureStatus::Pending)
             ->count();
     }
 

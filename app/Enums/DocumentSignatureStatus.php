@@ -7,6 +7,7 @@ enum DocumentSignatureStatus: string
     case Pending = 'pending';
     case Signed = 'signed';
     case Rejected = 'rejected';
+    case Cancelled = 'cancelled';
 
     /**
      * Human-readable, translated label for display in the UI.
@@ -25,6 +26,7 @@ enum DocumentSignatureStatus: string
             self::Signed => 'default',
             self::Rejected => 'destructive',
             self::Pending => 'secondary',
+            self::Cancelled => 'outline',
         };
     }
 
@@ -38,6 +40,7 @@ enum DocumentSignatureStatus: string
             self::Signed => 'success',
             self::Rejected => 'destructive',
             self::Pending => 'warning',
+            self::Cancelled => 'neutral',
         };
     }
 }

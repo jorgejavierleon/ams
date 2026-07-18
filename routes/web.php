@@ -19,6 +19,7 @@ use App\Http\Controllers\LeaveCalendarController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MarkModificationReviewController;
+use App\Http\Controllers\My\DocumentController as MyDocumentController;
 use App\Http\Controllers\My\LeaveController as MyLeaveController;
 use App\Http\Controllers\My\MarkController as MyMarkController;
 use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
@@ -178,6 +179,25 @@ Route::middleware(['auth', 'verified'])->prefix('my')->name('my.')->group(functi
         ->scopeBindings()
         ->middleware('permission:ReviewOwn:MarkModification')
         ->name('workdays.modifications.decline');
+
+    Route::get('documents', [MyDocumentController::class, 'index'])
+        ->middleware('permission:ViewOwn:Document')
+        ->name('documents.index');
+    Route::get('documents/{document}', [MyDocumentController::class, 'show'])
+        ->middleware('permission:ViewOwn:Document')
+        ->name('documents.show');
+    Route::get('documents/{document}/download', [MyDocumentController::class, 'download'])
+        ->middleware('permission:ViewOwn:Document')
+        ->name('documents.download');
+    Route::post('documents/{document}/send-code', [MyDocumentController::class, 'sendCode'])
+        ->middleware('permission:SignOwn:Document')
+        ->name('documents.send-code');
+    Route::post('documents/{document}/sign', [MyDocumentController::class, 'sign'])
+        ->middleware('permission:SignOwn:Document')
+        ->name('documents.sign');
+    Route::post('documents/{document}/reject', [MyDocumentController::class, 'reject'])
+        ->middleware('permission:SignOwn:Document')
+        ->name('documents.reject');
 });
 
 // DT panel routes

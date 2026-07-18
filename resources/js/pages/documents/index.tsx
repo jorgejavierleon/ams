@@ -189,23 +189,24 @@ export default function DocumentsIndex({
                     cellClassName: 'text-right',
                 },
                 header: () => null,
-                cell: ({ row }) => (
-                    <div className="flex justify-end gap-2">
-                        <Link
-                            href={edit(row.original.id)}
-                            className="text-sm text-primary underline-offset-4 hover:underline"
-                        >
-                            {t('ui.documents.actions.edit')}
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={() => setDeleteTarget(row.original)}
-                            className="text-sm text-destructive underline-offset-4 hover:underline"
-                        >
-                            {t('ui.documents.actions.delete')}
-                        </button>
-                    </div>
-                ),
+                cell: ({ row }) =>
+                    row.original.status.value === 'draft' ? (
+                        <div className="flex justify-end gap-2">
+                            <Link
+                                href={edit(row.original.id)}
+                                className="text-sm text-primary underline-offset-4 hover:underline"
+                            >
+                                {t('ui.documents.actions.edit')}
+                            </Link>
+                            <button
+                                type="button"
+                                onClick={() => setDeleteTarget(row.original)}
+                                className="text-sm text-destructive underline-offset-4 hover:underline"
+                            >
+                                {t('ui.documents.actions.delete')}
+                            </button>
+                        </div>
+                    ) : null,
             },
         ],
         [t],
