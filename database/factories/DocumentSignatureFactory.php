@@ -33,4 +33,37 @@ class DocumentSignatureFactory extends Factory
             'signed_at' => null,
         ];
     }
+
+    /**
+     * A pending signature carrying a live verification code, ready to be signed.
+     */
+    public function withCode(string $code = '123456'): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'status' => DocumentSignatureStatus::Pending,
+            'verification_code' => $code,
+            'verification_code_expires_at' => now()->addMinutes(15),
+        ]);
+    }
+
+    /**
+     * An already-signed signature with its FES evidence recorded.
+     */
+    public function signed(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'status' => DocumentSignatureStatus::Signed,
+            'signed_at' => now(),
+            'signed_ip' => fake()->ipv4(),
+            'signed_user_agent' => fake()->userAgent(),
+            'signed_content_hash' => hash('sha256', 'signed'),
+        ]);
+    }
+
+    public function rejected(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'status' => DocumentSignatureStatus::Rejected,
+        ]);
+    }
 }

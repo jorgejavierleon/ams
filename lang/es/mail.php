@@ -51,6 +51,21 @@ return [
         'type' => 'Tipo',
     ],
 
+    'document_signature_verification_code' => [
+        'subject' => 'Tu código de firma electrónica',
+        'heading' => 'Código de verificación',
+        'body' => 'Usa el siguiente código para firmar electrónicamente el documento. No lo compartas con nadie.',
+        'document' => 'Documento',
+        'expiry' => 'El código vence en 15 minutos.',
+    ],
+
+    'document_fully_signed' => [
+        'subject' => 'Documento firmado por todas las partes',
+        'heading' => 'Documento firmado',
+        'body' => 'Todas las partes han firmado el documento. Ya puedes descargar la copia firmada desde tus documentos.',
+        'document' => 'Documento',
+    ],
+
     'mark_modification_requested' => [
         'subject' => 'Corrección de marca pendiente de tu revisión',
         'heading' => 'Corrección de marca solicitada',

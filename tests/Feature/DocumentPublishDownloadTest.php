@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\DocumentSignatureRequested;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -182,4 +183,28 @@ test('a published document can be downloaded as a pdf', function () {
         ->get(route('documents.download', $document))
         ->assertOk()
         ->assertHeader('content-type', 'application/pdf');
+});
+
+test('a signed document downloads the stored signed pdf, not a fresh render', function () {
+    Storage::fake('public');
+
+    $admin = publishAdmin();
+    $document = Document::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => publishEmployee($admin)->id,
+        'status' => DocumentStatus::Signed,
+    ]);
+
+    $document->addMediaFromString('SIGNED-PDF-EVIDENCE-BYTES')
+        ->usingFileName('signed.pdf')
+        ->toMediaCollection(Document::SIGNED_MEDIA_COLLECTION);
+
+    $media = $document->getFirstMedia(Document::SIGNED_MEDIA_COLLECTION);
+
+    $response = $this->actingAs($admin)->get(route('documents.download', $document));
+
+    $response->assertOk();
+    // The download streams the stored signed artifact itself rather than
+    // re-rendering the body, so the signature evidence block is included.
+    expect($response->baseResponse->getFile()->getPathname())->toBe($media->getPath());
 });

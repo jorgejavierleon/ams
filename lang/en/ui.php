@@ -35,6 +35,7 @@ return [
         'leaves_calendar' => 'Leaves calendar',
         'my_leaves' => 'My leaves',
         'my_workdays' => 'My workdays',
+        'my_documents' => 'My documents',
         'team_leaves' => 'Team leaves',
     ],
 
@@ -1531,15 +1532,27 @@ return [
                     'title' => 'Signature requested',
                     'description' => 'A signature was requested from :name.',
                 ],
+                'signature_signed' => [
+                    'title' => 'Signature recorded',
+                    'description' => ':name signed the document.',
+                ],
                 'signed' => [
                     'title' => 'Document signed',
-                    'description' => 'The document was signed.',
+                    'description' => 'The document was signed by all parties.',
                 ],
                 'signature_rejected' => [
                     'title' => 'Signature rejected',
-                    'description' => 'The document signature was rejected.',
+                    'description' => ':name rejected the document signature.',
                 ],
             ],
+        ],
+
+        'pdf' => [
+            'signatures_heading' => 'Simple electronic signatures',
+            'rut' => 'RUT',
+            'email' => 'Email',
+            'signed_at' => 'Date and time',
+            'hash' => 'Verification code',
         ],
 
         'signatures' => [
@@ -1547,6 +1560,7 @@ return [
                 'pending' => 'Pending',
                 'signed' => 'Signed',
                 'rejected' => 'Rejected',
+                'cancelled' => 'Cancelled',
             ],
             'types' => [
                 'employee' => 'Employee',
@@ -1560,6 +1574,48 @@ return [
                 'action' => 'Resend',
                 'sent' => 'Signature request resent.',
                 'not_pending' => 'Only pending signatures can be resent.',
+            ],
+            'sign' => [
+                'code_sent' => 'We sent a verification code to your personal email.',
+                'not_your_turn' => 'It is not your turn to sign this document yet.',
+                'invalid_code' => 'The code is invalid or has expired.',
+                'signed' => 'Document signed successfully.',
+                'rejected' => 'You have rejected the document.',
+            ],
+        ],
+
+        'my' => [
+            'title' => 'My documents',
+            'description' => 'Documents published to you and their signature status.',
+            'empty' => 'You have no published documents.',
+            'awaiting_you' => 'Awaiting your signature',
+            'view' => 'View',
+            'columns' => [
+                'title' => 'Document',
+                'type' => 'Type',
+                'status' => 'Status',
+                'my_signature' => 'My signature',
+                'published_at' => 'Published',
+            ],
+            'show' => [
+                'back' => 'Back to my documents',
+                'eyebrow' => 'Document',
+                'body' => 'Document content',
+                'download_signed' => 'Download signed copy',
+                'sign_panel' => 'Electronic signature',
+                'request_code' => 'Request code',
+                'resend_code' => 'Resend code',
+                'code_label' => 'Verification code',
+                'code_hint' => 'Enter the 6-digit code we sent to your personal email.',
+                'sign' => 'Sign document',
+                'reject' => 'Reject',
+                'reject_reason' => 'Rejection reason (optional)',
+                'reject_confirm_title' => 'Reject document',
+                'reject_confirm_description' => 'Rejecting means the document can no longer be signed by any party. Continue?',
+                'already_signed' => 'You have already signed this document.',
+                'already_rejected' => 'You rejected this document.',
+                'waiting_others' => 'Waiting for the other parties to sign.',
+                'not_your_turn' => 'You will be able to sign when it is your turn.',
             ],
         ],
 

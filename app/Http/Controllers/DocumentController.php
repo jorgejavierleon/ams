@@ -131,6 +131,7 @@ class DocumentController extends Controller
                 'published_at' => $document->published_at?->format('Y-m-d'),
                 'signed_at' => $document->signed_at?->format('Y-m-d'),
                 'can_publish' => $document->status === DocumentStatus::Draft,
+                'can_edit' => $document->status === DocumentStatus::Draft,
             ],
             'signatures' => $document->signatures
                 ->sortBy(fn (DocumentSignature $signature) => [$signature->order ?? PHP_INT_MAX, $signature->id])
@@ -213,6 +214,8 @@ class DocumentController extends Controller
 
     public function edit(Document $document): Response
     {
+        $this->abortUnlessDraft($document);
+
         return Inertia::render('documents/edit', [
             'document' => [
                 'id' => $document->id,
@@ -229,6 +232,8 @@ class DocumentController extends Controller
 
     public function update(Request $request, Document $document): RedirectResponse
     {
+        $this->abortUnlessDraft($document);
+
         $data = $this->validateDocument($request);
 
         $document->update($data);
@@ -240,11 +245,25 @@ class DocumentController extends Controller
 
     public function destroy(Document $document): RedirectResponse
     {
+        $this->abortUnlessDraft($document);
+
         $document->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.documents.flash.deleted')]);
 
         return to_route('documents.index');
+    }
+
+    /**
+     * A document is only mutable while it is a draft. Once published its body is
+     * frozen and signatures are collected against that exact content, so editing
+     * or deleting it in place would silently change (or erase) what signatories
+     * were asked to sign. Correcting a published document is a void-and-reissue
+     * flow, not an edit.
+     */
+    private function abortUnlessDraft(Document $document): void
+    {
+        abort_unless($document->status === DocumentStatus::Draft, 403);
     }
 
     /**

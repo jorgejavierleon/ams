@@ -23,6 +23,8 @@ class RoleSeeder extends Seeder
         'ViewOwn:Mark',
         'ViewOwn:Workday',
         'ReviewOwn:MarkModification',
+        'ViewOwn:Document',
+        'SignOwn:Document',
     ];
 
     /**

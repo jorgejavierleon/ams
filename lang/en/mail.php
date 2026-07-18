@@ -51,6 +51,21 @@ return [
         'type' => 'Type',
     ],
 
+    'document_signature_verification_code' => [
+        'subject' => 'Your electronic signature code',
+        'heading' => 'Verification code',
+        'body' => 'Use the following code to electronically sign the document. Do not share it with anyone.',
+        'document' => 'Document',
+        'expiry' => 'The code expires in 15 minutes.',
+    ],
+
+    'document_fully_signed' => [
+        'subject' => 'Document signed by all parties',
+        'heading' => 'Document signed',
+        'body' => 'All parties have signed the document. You can now download the signed copy from your documents.',
+        'document' => 'Document',
+    ],
+
     'mark_modification_requested' => [
         'subject' => 'Attendance mark correction awaiting your review',
         'heading' => 'Mark correction requested',

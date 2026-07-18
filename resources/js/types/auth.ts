@@ -13,6 +13,7 @@ export type Auth = {
     user: User;
     permissions: string[];
     pendingModificationsCount: number;
+    pendingSignaturesCount: number;
 };
 
 /* @chisel-passkeys */

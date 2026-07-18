@@ -39,6 +39,28 @@ class UserSeeder extends Seeder
                 ->forCompany($company)
                 ->create(['name' => $name]));
 
+        // Two legal representatives for the demo company. They are flagged
+        // `is_legal_rep` so they are picked up as document co-signatories (the
+        // `{{legal_rep_name}}` template variable resolves to the first of them),
+        // and carry the `employee` role so they hold the self-service document
+        // permissions needed to actually sign from the "Mis documentos" panel.
+        collect([
+            ['name' => 'Representante Legal Uno', 'first' => 'Representante', 'last' => 'Legal Uno', 'email' => 'legal-rep-1@example.com', 'personal_email' => 'legal-rep-1.personal@example.com', 'rut' => '9801359-8'],
+            ['name' => 'Representante Legal Dos', 'first' => 'Representante', 'last' => 'Legal Dos', 'email' => 'legal-rep-2@example.com', 'personal_email' => 'legal-rep-2.personal@example.com', 'rut' => '10749051-5'],
+        ])->each(fn (array $legalRep) => User::factory()->employee()->create([
+            'name' => $legalRep['name'],
+            'first_name' => $legalRep['first'],
+            'last_name' => $legalRep['last'],
+            'email' => $legalRep['email'],
+            'personal_email' => $legalRep['personal_email'],
+            'password' => 'admin',
+            'organization_id' => $organization->id,
+            'company_id' => $company->id,
+            'premise_id' => $premises->first()->id,
+            'rut' => $legalRep['rut'],
+            'is_legal_rep' => true,
+        ]));
+
         // A stable demo supervisor: an employee who also carries the
         // `supervisor` role, so they can review and approve/reject the leaves of
         // their own team. The team is wired up via `supervisor_id` below.

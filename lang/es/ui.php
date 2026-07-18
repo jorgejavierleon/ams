@@ -35,6 +35,7 @@ return [
         'leaves_calendar' => 'Calendario de permisos',
         'my_leaves' => 'Mis permisos',
         'my_workdays' => 'Mis jornadas',
+        'my_documents' => 'Mis documentos',
         'team_leaves' => 'Permisos del equipo',
     ],
 
@@ -1531,15 +1532,27 @@ return [
                     'title' => 'Firma solicitada',
                     'description' => 'Se solicitó la firma a :name.',
                 ],
+                'signature_signed' => [
+                    'title' => 'Firma registrada',
+                    'description' => ':name firmó el documento.',
+                ],
                 'signed' => [
                     'title' => 'Documento firmado',
-                    'description' => 'El documento ha sido firmado.',
+                    'description' => 'El documento ha sido firmado por todas las partes.',
                 ],
                 'signature_rejected' => [
                     'title' => 'Firma rechazada',
-                    'description' => 'La firma del documento ha sido rechazada.',
+                    'description' => ':name rechazó la firma del documento.',
                 ],
             ],
+        ],
+
+        'pdf' => [
+            'signatures_heading' => 'Firmas electrónicas simples',
+            'rut' => 'RUT',
+            'email' => 'Correo',
+            'signed_at' => 'Fecha y hora',
+            'hash' => 'Código de verificación',
         ],
 
         'signatures' => [
@@ -1547,6 +1560,7 @@ return [
                 'pending' => 'Pendiente',
                 'signed' => 'Firmado',
                 'rejected' => 'Rechazado',
+                'cancelled' => 'Cancelado',
             ],
             'types' => [
                 'employee' => 'Empleado',
@@ -1560,6 +1574,48 @@ return [
                 'action' => 'Reenviar',
                 'sent' => 'Solicitud de firma reenviada.',
                 'not_pending' => 'Solo se pueden reenviar firmas pendientes.',
+            ],
+            'sign' => [
+                'code_sent' => 'Te enviamos un código de verificación a tu correo personal.',
+                'not_your_turn' => 'Aún no es tu turno de firmar este documento.',
+                'invalid_code' => 'El código es inválido o ha expirado.',
+                'signed' => 'Documento firmado con éxito.',
+                'rejected' => 'Has rechazado el documento.',
+            ],
+        ],
+
+        'my' => [
+            'title' => 'Mis documentos',
+            'description' => 'Documentos publicados para ti y su estado de firma.',
+            'empty' => 'No tienes documentos publicados.',
+            'awaiting_you' => 'Requiere tu firma',
+            'view' => 'Ver',
+            'columns' => [
+                'title' => 'Documento',
+                'type' => 'Tipo',
+                'status' => 'Estado',
+                'my_signature' => 'Mi firma',
+                'published_at' => 'Publicado',
+            ],
+            'show' => [
+                'back' => 'Volver a mis documentos',
+                'eyebrow' => 'Documento',
+                'body' => 'Contenido del documento',
+                'download_signed' => 'Descargar copia firmada',
+                'sign_panel' => 'Firma electrónica',
+                'request_code' => 'Solicitar código',
+                'resend_code' => 'Reenviar código',
+                'code_label' => 'Código de verificación',
+                'code_hint' => 'Ingresa el código de 6 dígitos que enviamos a tu correo personal.',
+                'sign' => 'Firmar documento',
+                'reject' => 'Rechazar',
+                'reject_reason' => 'Motivo del rechazo (opcional)',
+                'reject_confirm_title' => 'Rechazar documento',
+                'reject_confirm_description' => 'Al rechazar, el documento no podrá ser firmado por ninguna de las partes. ¿Continuar?',
+                'already_signed' => 'Ya firmaste este documento.',
+                'already_rejected' => 'Rechazaste este documento.',
+                'waiting_others' => 'Esperando la firma de las demás partes.',
+                'not_your_turn' => 'Podrás firmar cuando sea tu turno.',
             ],
         ],
 

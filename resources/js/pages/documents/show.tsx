@@ -41,6 +41,7 @@ type Props = {
         published_at: string | null;
         signed_at: string | null;
         can_publish: boolean;
+        can_edit: boolean;
     };
     signatures: DocumentSignature[];
     activities?: ActivityEntry[];
@@ -124,12 +125,14 @@ export default function DocumentShow({
                                     {t('ui.documents.actions.download')}
                                 </a>
                             </Button>
-                            <Button variant="outline" size="sm" asChild>
-                                <Link href={edit(document.id)}>
-                                    <PenLine className="size-4" />
-                                    {t('ui.documents.actions.edit')}
-                                </Link>
-                            </Button>
+                            {document.can_edit && (
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={edit(document.id)}>
+                                        <PenLine className="size-4" />
+                                        {t('ui.documents.actions.edit')}
+                                    </Link>
+                                </Button>
+                            )}
                             {document.can_publish && (
                                 <Button
                                     size="sm"
