@@ -9,6 +9,7 @@ enum DocumentStatus: string
     case PendingSignature = 'pending_signature';
     case Signed = 'signed';
     case Rejected = 'rejected';
+    case Voided = 'voided';
     case Archived = 'archived';
 
     /**
@@ -26,7 +27,7 @@ enum DocumentStatus: string
     {
         return match ($this) {
             self::Published, self::Signed => 'default',
-            self::Rejected => 'destructive',
+            self::Rejected, self::Voided => 'destructive',
             self::Archived => 'outline',
             self::Draft, self::PendingSignature => 'secondary',
         };
@@ -41,9 +42,30 @@ enum DocumentStatus: string
         return match ($this) {
             self::Published, self::Signed => 'success',
             self::PendingSignature => 'warning',
-            self::Rejected => 'destructive',
+            self::Rejected, self::Voided => 'destructive',
             self::Draft, self::Archived => 'neutral',
         };
+    }
+
+    /**
+     * Whether an admin may void (withdraw) a document in this status. A document
+     * is voidable only while it is "live" — published or out for signature.
+     * Draft documents are edited or deleted instead, and Signed / Rejected /
+     * already-Voided documents are terminal.
+     */
+    public function canBeVoided(): bool
+    {
+        return in_array($this, [self::Published, self::PendingSignature], true);
+    }
+
+    /**
+     * Whether an admin may duplicate a document in this status into a fresh
+     * draft to re-issue a corrected version. Offered for the terminal states
+     * an admin would want to correct: voided, rejected, or signed.
+     */
+    public function canBeDuplicated(): bool
+    {
+        return in_array($this, [self::Voided, self::Rejected, self::Signed], true);
     }
 
     /**

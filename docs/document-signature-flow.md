@@ -47,13 +47,17 @@ stateDiagram-v2
     Draft --> PendingSignature: publish (signable types)
     PendingSignature --> Signed: all signatories sign
     PendingSignature --> Rejected: any signatory rejects
+    PendingSignature --> Voided: admin voids
+    Published --> Voided: admin voids
     Signed --> [*]
     Rejected --> [*]
+    Voided --> [*]
     Published --> [*]
 ```
 
-A document's `status` moves in one direction. Once it reaches **Signed** or
-**Rejected** it is terminal.
+A document's `status` moves in one direction. Once it reaches **Signed**,
+**Rejected** or **Voided** it is terminal. An admin can **void** a live document
+(Published or Pending signature) to withdraw it — see *Correcting a mistake*.
 
 ---
 
@@ -145,7 +149,7 @@ Resolución 38 (Art. 8 / 14b):
 | **Pending** | Awaiting this signatory's action. |
 | **Signed** | Signed, with evidence recorded. |
 | **Rejected** | This signatory declined — kills the whole document. |
-| **Cancelled** | Was pending when another signatory rejected; can no longer be signed. |
+| **Cancelled** | Was pending when the document died (another signatory rejected, or an admin voided it); can no longer be signed. |
 
 ---
 
@@ -175,10 +179,27 @@ disappear once it is published, and the routes reject the attempt (403). So:
   document, a rectifying replacement that supersedes it). The erroneous document
   stays in the record as an immutable audit trail.
 
-> The **void / cancel** action and a **"duplicate as draft"** shortcut that make
-> re-issuing a one-click flow are a planned follow-up. Until then, an admin
-> re-creates the corrected document manually; the erroneous one is left in place
-> (it cannot be signed once voided) rather than deleted.
+### Void and re-issue
+
+Two admin actions on the document detail page make this a two-click flow:
+
+- **Anular documento** (void) — available while a document is **Published** or
+  **Pending signature**. Voiding **cancels every outstanding pending signature**
+  (they can no longer be signed), moves the document to the terminal **Voided**
+  (*Anulado*) status, and logs the action to the audit timeline. The voided
+  document is read-only and clearly badged. Signed and Rejected documents are
+  terminal and cannot be voided.
+- **Duplicar como borrador** (duplicate) — available on a **Voided**, **Rejected**
+  or **Signed** document. It creates a fresh **Draft** copy carrying over the
+  title (suffixed *"(copia)"*), type, employee, body and signature configuration,
+  with no signatures and no publish/sign dates, and drops the admin on its edit
+  form to make the correction and publish normally.
+
+> **Why a dedicated `Voided` status** (rather than reusing `Archived`): voiding is
+> a deliberate, badge-worthy act that reads distinctly from a document merely
+> filed away, and keeping it separate keeps reporting on withdrawn documents
+> unambiguous. The re-issued draft is an independent document; the two are linked
+> only through the audit trail, not by a foreign key.
 
 ---
 

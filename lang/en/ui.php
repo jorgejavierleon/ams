@@ -1438,6 +1438,8 @@ return [
             'delete' => 'Delete',
             'publish' => 'Publish',
             'download' => 'Download PDF',
+            'void' => 'Void document',
+            'duplicate' => 'Duplicate as draft',
         ],
 
         'statuses' => [
@@ -1446,6 +1448,7 @@ return [
             'pending_signature' => 'Pending signature',
             'signed' => 'Signed',
             'rejected' => 'Rejected',
+            'voided' => 'Voided',
             'archived' => 'Archived',
         ],
 
@@ -1544,6 +1547,10 @@ return [
                     'title' => 'Signature rejected',
                     'description' => ':name rejected the document signature.',
                 ],
+                'voided' => [
+                    'title' => 'Document voided',
+                    'description' => 'The document was voided and can no longer be signed.',
+                ],
             ],
         ],
 
@@ -1624,6 +1631,12 @@ return [
             'updated' => 'Document updated.',
             'deleted' => 'Document deleted.',
             'published' => 'Document published.',
+            'voided' => 'Document voided.',
+            'duplicated' => 'Draft copy created. Make your corrections and publish.',
+        ],
+
+        'duplicate' => [
+            'title_suffix' => ':title (copy)',
         ],
 
         'delete_dialog' => [
@@ -1636,6 +1649,12 @@ return [
             'title' => 'Publish document',
             'description' => 'Publishing resolves the document variables and stamps the publish date. Continue?',
             'confirm' => 'Publish',
+        ],
+
+        'void_dialog' => [
+            'title' => 'Void document',
+            'description' => 'Voiding withdraws the document and cancels any pending signatures — it can no longer be signed. The document stays in the record for audit. To correct it, duplicate it as a draft afterwards. Continue?',
+            'confirm' => 'Void document',
         ],
     ],
 

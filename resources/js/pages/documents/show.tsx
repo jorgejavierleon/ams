@@ -1,6 +1,8 @@
 import { Deferred, Head, Link, router } from '@inertiajs/react';
 import {
     ArrowLeft,
+    Ban,
+    Copy,
     Download,
     FileClock,
     FileText,
@@ -19,7 +21,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from '@/hooks/use-translations';
 import { toneChip } from '@/lib/status-tone';
 import { cn } from '@/lib/utils';
-import { download, edit, index, publish } from '@/routes/documents';
+import {
+    download,
+    duplicate,
+    edit,
+    index,
+    publish,
+    voidMethod,
+} from '@/routes/documents';
 
 type StatusChip = {
     value: string;
@@ -42,6 +51,8 @@ type Props = {
         signed_at: string | null;
         can_publish: boolean;
         can_edit: boolean;
+        can_void: boolean;
+        can_duplicate: boolean;
     };
     signatures: DocumentSignature[];
     activities?: ActivityEntry[];
@@ -54,6 +65,7 @@ export default function DocumentShow({
 }: Props) {
     const { t } = useTranslations();
     const [publishing, setPublishing] = useState(false);
+    const [voiding, setVoiding] = useState(false);
 
     function confirmPublish() {
         router.post(
@@ -64,6 +76,21 @@ export default function DocumentShow({
                 onFinish: () => setPublishing(false),
             },
         );
+    }
+
+    function confirmVoid() {
+        router.post(
+            voidMethod(document.id).url,
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setVoiding(false),
+            },
+        );
+    }
+
+    function duplicateDocument() {
+        router.post(duplicate(document.id).url, {}, { preserveScroll: true });
     }
 
     const signedCount = signatures.filter(
@@ -140,6 +167,22 @@ export default function DocumentShow({
                                 >
                                     <Send className="size-4" />
                                     {t('ui.documents.actions.publish')}
+                                </Button>
+                            )}
+                            {document.can_duplicate && (
+                                <Button size="sm" onClick={duplicateDocument}>
+                                    <Copy className="size-4" />
+                                    {t('ui.documents.actions.duplicate')}
+                                </Button>
+                            )}
+                            {document.can_void && (
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => setVoiding(true)}
+                                >
+                                    <Ban className="size-4" />
+                                    {t('ui.documents.actions.void')}
                                 </Button>
                             )}
                         </div>
@@ -266,6 +309,16 @@ export default function DocumentShow({
                 confirmLabel={t('ui.documents.publish_dialog.confirm')}
                 variant="default"
                 onConfirm={confirmPublish}
+            />
+
+            <ConfirmDialog
+                open={voiding}
+                onOpenChange={setVoiding}
+                title={t('ui.documents.void_dialog.title')}
+                description={t('ui.documents.void_dialog.description')}
+                confirmLabel={t('ui.documents.void_dialog.confirm')}
+                variant="destructive"
+                onConfirm={confirmVoid}
             />
         </>
     );
