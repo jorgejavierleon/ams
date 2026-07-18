@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Documents\DownloadDocument;
+use App\Actions\Documents\DuplicateDocument;
 use App\Actions\Documents\PublishDocument;
+use App\Actions\Documents\VoidDocument;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\DocumentSignatureStatus;
 use App\Enums\DocumentStatus;
@@ -132,6 +134,8 @@ class DocumentController extends Controller
                 'signed_at' => $document->signed_at?->format('Y-m-d'),
                 'can_publish' => $document->status === DocumentStatus::Draft,
                 'can_edit' => $document->status === DocumentStatus::Draft,
+                'can_void' => $document->status->canBeVoided(),
+                'can_duplicate' => $document->status->canBeDuplicated(),
             ],
             'signatures' => $document->signatures
                 ->sortBy(fn (DocumentSignature $signature) => [$signature->order ?? PHP_INT_MAX, $signature->id])
@@ -278,6 +282,35 @@ class DocumentController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.documents.flash.published')]);
 
         return back();
+    }
+
+    /**
+     * Void (withdraw) a published document. Delegates to {@see VoidDocument},
+     * which cancels every outstanding signature and moves the document to the
+     * terminal "voided" status. The correction is then re-issued via
+     * {@see self::duplicate()}.
+     */
+    public function void(Document $document, VoidDocument $voidDocument): RedirectResponse
+    {
+        $voidDocument->handle($document);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.documents.flash.voided')]);
+
+        return back();
+    }
+
+    /**
+     * Duplicate a voided, rejected or signed document into a fresh draft and
+     * send the admin to its edit form to make the correction. Delegates to
+     * {@see DuplicateDocument}.
+     */
+    public function duplicate(Document $document, DuplicateDocument $duplicateDocument): RedirectResponse
+    {
+        $copy = $duplicateDocument->handle($document);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.documents.flash.duplicated')]);
+
+        return to_route('documents.edit', $copy);
     }
 
     /**

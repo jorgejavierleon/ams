@@ -104,6 +104,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::post('documents/{document}/publish', [DocumentController::class, 'publish'])
         ->name('documents.publish');
+    Route::post('documents/{document}/void', [DocumentController::class, 'void'])
+        ->name('documents.void');
+    Route::post('documents/{document}/duplicate', [DocumentController::class, 'duplicate'])
+        ->name('documents.duplicate');
     Route::get('documents/{document}/download', [DocumentController::class, 'download'])
         ->name('documents.download');
     Route::post('document-signatures/{documentSignature}/resend', [DocumentSignatureController::class, 'resend'])

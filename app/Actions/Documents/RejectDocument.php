@@ -17,6 +17,10 @@ use Illuminate\Support\Facades\DB;
  */
 class RejectDocument
 {
+    public function __construct(
+        private CancelPendingSignatures $cancelPendingSignatures,
+    ) {}
+
     public function handle(Document $document, User $signer, string $ip, ?string $userAgent, ?string $reason = null): void
     {
         $signature = $document->signatures()
@@ -38,15 +42,8 @@ class RejectDocument
 
             // Any other outstanding signatures can no longer be collected once
             // the document is dead, so they are cancelled rather than left
-            // pending.
-            $document->signatures()
-                ->where('id', '!=', $signature->id)
-                ->where('status', DocumentSignatureStatus::Pending)
-                ->update([
-                    'status' => DocumentSignatureStatus::Cancelled,
-                    'verification_code' => null,
-                    'verification_code_expires_at' => null,
-                ]);
+            // pending. The rejecter's own signature is already terminal above.
+            $this->cancelPendingSignatures->handle($document);
 
             $document->update(['status' => DocumentStatus::Rejected]);
 

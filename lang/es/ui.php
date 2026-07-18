@@ -1438,6 +1438,8 @@ return [
             'delete' => 'Eliminar',
             'publish' => 'Publicar',
             'download' => 'Descargar PDF',
+            'void' => 'Anular documento',
+            'duplicate' => 'Duplicar como borrador',
         ],
 
         'statuses' => [
@@ -1446,6 +1448,7 @@ return [
             'pending_signature' => 'Pendiente de firma',
             'signed' => 'Firmado',
             'rejected' => 'Rechazado',
+            'voided' => 'Anulado',
             'archived' => 'Archivado',
         ],
 
@@ -1544,6 +1547,10 @@ return [
                     'title' => 'Firma rechazada',
                     'description' => ':name rechazó la firma del documento.',
                 ],
+                'voided' => [
+                    'title' => 'Documento anulado',
+                    'description' => 'El documento fue anulado y ya no puede firmarse.',
+                ],
             ],
         ],
 
@@ -1624,6 +1631,12 @@ return [
             'updated' => 'Documento actualizado.',
             'deleted' => 'Documento eliminado.',
             'published' => 'Documento publicado.',
+            'voided' => 'Documento anulado.',
+            'duplicated' => 'Copia en borrador creada. Realiza las correcciones y publícala.',
+        ],
+
+        'duplicate' => [
+            'title_suffix' => ':title (copia)',
         ],
 
         'delete_dialog' => [
@@ -1636,6 +1649,12 @@ return [
             'title' => 'Publicar documento',
             'description' => 'Al publicar se resuelven las variables del documento y se registra la fecha de publicación. ¿Continuar?',
             'confirm' => 'Publicar',
+        ],
+
+        'void_dialog' => [
+            'title' => 'Anular documento',
+            'description' => 'Al anular se retira el documento y se cancelan las firmas pendientes — ya no podrá firmarse. El documento permanece en el registro para auditoría. Para corregirlo, duplícalo como borrador. ¿Continuar?',
+            'confirm' => 'Anular documento',
         ],
     ],
 
