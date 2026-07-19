@@ -24,6 +24,7 @@ return [
         'settings' => 'Configuración',
         'dashboard' => 'Panel',
         'roles' => 'Roles',
+        'organization_settings' => 'Configuración general',
         'positions' => 'Cargos',
         'companies' => 'Empresas',
         'premises' => 'Sucursales',
@@ -293,6 +294,48 @@ return [
             'created' => 'Variable de documento creada.',
             'updated' => 'Variable de documento actualizada.',
             'deleted' => 'Variable de documento eliminada.',
+        ],
+    ],
+
+    'organization_settings' => [
+        'title' => 'Configuración general',
+        'description' => 'Configure las notificaciones y los valores por defecto de documentos de su organización',
+        'sections' => [
+            'notifications' => 'Notificaciones',
+            'documents' => 'Documentos',
+        ],
+        'fields' => [
+            'employee_missing_in_notification' => [
+                'label' => 'Entrada faltante (trabajador)',
+                'hint' => 'Enviar un correo al trabajador cuando falte su marca de entrada del día.',
+            ],
+            'employee_missing_out_notification' => [
+                'label' => 'Salida faltante (trabajador)',
+                'hint' => 'Enviar un correo al trabajador cuando falte su marca de salida del día.',
+            ],
+            'employer_missing_in_notification' => [
+                'label' => 'Entrada faltante (empleador)',
+                'hint' => 'Notificar a la organización cuando un trabajador no tenga marca de entrada del día.',
+            ],
+            'employer_missing_out_notification' => [
+                'label' => 'Salida faltante (empleador)',
+                'hint' => 'Notificar a la organización cuando un trabajador no tenga marca de salida del día.',
+            ],
+            'leave_approval_notification' => [
+                'label' => 'Aprobación de permiso',
+                'hint' => 'Enviar un correo al trabajador cuando se apruebe su solicitud de permiso.',
+            ],
+            'documents_signature_enabled' => [
+                'label' => 'Habilitar firma de documentos',
+                'hint' => 'Permitir enviar contratos, anexos y pactos a firma electrónica.',
+            ],
+            'documents_require_ordered_signing' => [
+                'label' => 'Exigir firma ordenada por defecto',
+                'hint' => 'Los nuevos documentos firmables usan firma secuencial (ordenada) por defecto.',
+            ],
+        ],
+        'flash' => [
+            'updated' => 'Configuración guardada.',
         ],
     ],
 

@@ -24,6 +24,7 @@ return [
         'settings' => 'Settings',
         'dashboard' => 'Dashboard',
         'roles' => 'Roles',
+        'organization_settings' => 'General settings',
         'positions' => 'Positions',
         'companies' => 'Companies',
         'premises' => 'Premises',
@@ -293,6 +294,48 @@ return [
             'created' => 'Document variable created.',
             'updated' => 'Document variable updated.',
             'deleted' => 'Document variable deleted.',
+        ],
+    ],
+
+    'organization_settings' => [
+        'title' => 'General settings',
+        'description' => 'Configure notifications and document defaults for your organization',
+        'sections' => [
+            'notifications' => 'Notifications',
+            'documents' => 'Documents',
+        ],
+        'fields' => [
+            'employee_missing_in_notification' => [
+                'label' => 'Missing clock-in (employee)',
+                'hint' => 'Email the employee when their clock-in for the day is missing.',
+            ],
+            'employee_missing_out_notification' => [
+                'label' => 'Missing clock-out (employee)',
+                'hint' => 'Email the employee when their clock-out for the day is missing.',
+            ],
+            'employer_missing_in_notification' => [
+                'label' => 'Missing clock-in (employer)',
+                'hint' => 'Notify the organization when an employee has no clock-in for the day.',
+            ],
+            'employer_missing_out_notification' => [
+                'label' => 'Missing clock-out (employer)',
+                'hint' => 'Notify the organization when an employee has no clock-out for the day.',
+            ],
+            'leave_approval_notification' => [
+                'label' => 'Leave approval',
+                'hint' => 'Email the employee when their leave request is approved.',
+            ],
+            'documents_signature_enabled' => [
+                'label' => 'Enable document signing',
+                'hint' => 'Allow contracts, annexes and pacts to be sent for electronic signature.',
+            ],
+            'documents_require_ordered_signing' => [
+                'label' => 'Require ordered signing by default',
+                'hint' => 'New signable documents default to sequential (ordered) signing.',
+            ],
+        ],
+        'flash' => [
+            'updated' => 'Settings saved.',
         ],
     ],
 

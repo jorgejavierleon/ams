@@ -11,6 +11,7 @@ import {
     LayoutTemplate,
     MapPin,
     ShieldCheck,
+    SlidersHorizontal,
     Sun,
     Users,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ import {
 import { index as myDocumentsIndex } from '@/routes/my/documents';
 import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
+import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
@@ -199,6 +201,11 @@ export function AppSidebar() {
                     title: t('ui.nav.roles'),
                     href: rolesIndex(),
                     icon: ShieldCheck,
+                },
+                {
+                    title: t('ui.nav.organization_settings'),
+                    href: organizationSettingsEdit(),
+                    icon: SlidersHorizontal,
                 },
             ],
         },

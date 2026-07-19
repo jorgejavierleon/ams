@@ -154,6 +154,17 @@ The editor is Tiptap (`@tiptap/react`) — see the SSR note above. The "Insert v
 
 ---
 
+## Organization settings
+
+Per-organization configuration (notification toggles, document defaults) lives in a single `Setting` row per organization (`BelongsToOrganization`, one-per-org enforced by a unique `organization_id`). Invariants:
+
+- **Read through `App\Services\OrganizationSettings`, never query `Setting` directly.** `->current()` returns the org's row as a live model (creating it with the model's `$attributes` defaults on first access) for read+write; `->get($key, $default)` is the cached hot path for scalar reads. The cache stores a **plain attributes array, never the Eloquent model** — a serialized model round-trips to `__PHP_Incomplete_Class` in a real cache store, so caching the model directly 500s on the next request.
+- **Writes must go through Eloquent so the cache stays fresh.** `SettingObserver::saved` invalidates the cached array on every create/update. A raw `DB::table('settings')->update(...)` bypasses the observer and leaves stale reads — don't do it. The `SettingController@update` saves via `$setting->update()` for this reason.
+- **Route naming: `/organization-settings` (admin-only) is distinct from the starter-kit `/settings/*`**, which are the *personal* user pages (profile, security, appearance). Org settings sit in the `role:admin` group and appear under the sidebar "Settings" group; they deliberately do not reuse `/settings` to avoid clobbering the personal-settings redirect.
+- **Some toggles are stored but not yet consumed.** `leave_approval_notification` and `documents_require_ordered_signing` persist a preference that their respective features do not read yet; wiring them into the leave-approval mail and the document create-form default is a follow-up.
+
+---
+
 ## Old App Reference
 
 When implementing a feature, always check `../ams-filament` first:
