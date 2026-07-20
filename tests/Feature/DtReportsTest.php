@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\LeaveType;
+use App\Enums\MarkType;
+use App\Enums\ShiftType;
 use App\Events\WorkdaysRecalculationNeeded;
 use App\Models\Leave;
 use App\Models\Mark;
@@ -141,7 +143,6 @@ test('each report route renders the filter page pre-selected on its type', funct
             ->where('reportType', $reportType)
         );
 })->with([
-    'daily' => ['dt.reports.daily', 'daily'],
     'shift changes' => ['dt.reports.shift-changes', 'shift-changes'],
     'sundays' => ['dt.reports.sundays', 'sundays'],
     'incidents' => ['dt.reports.incidents', 'incidents'],
@@ -281,6 +282,156 @@ test('a filter matching no workers returns an empty report', function () {
     $this->actingAs($inspector, 'dt')
         ->withSession(['dt_organization_id' => $organization->id])
         ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'positions' => [$emptyPosition->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('report', 0));
+});
+
+test('the daily report grid computes shortfall, overtime and signed weekly totals', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create(['name' => 'Ana']);
+
+    // Auto-seeded days: Mon–Fri 08:00–17:00 (lunch 12:00–13:00, 8h), Sat/Sun free.
+    $shift = Shift::factory()->for($organization)->create();
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $shift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+
+    // Monday 2026-03-02: in 15 min late, out 30 min after the ordinary journey.
+    Mark::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'type' => MarkType::In,
+        'date_time' => '2026-03-02 08:15:00',
+    ]);
+    Mark::factory()->for($organization)->out()->create([
+        'user_id' => $employee->id,
+        'date_time' => '2026-03-02 17:30:00',
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.daily', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('dt/reports/daily')
+            ->where('reportType', 'daily')
+            ->has('report', 1)
+            ->where('report.0.employee', fn (string $value) => str_contains($value, 'Ana'))
+            ->where('report.0.hasFlexibleBand', false)
+            ->where('report.0.exceptionalCycle', null)
+            // The requested Monday expands to a full ISO week (Mon–Sun).
+            ->has('report.0.weeks', 1)
+            ->has('report.0.weeks.0.days', 7)
+            ->where('report.0.weeks.0.days.0.date', '02/03/26')
+            ->where('report.0.weeks.0.days.0.journey.start', '08:00:00')
+            ->where('report.0.weeks.0.days.0.journey.end', '17:00:00')
+            ->where('report.0.weeks.0.days.0.journeyMarks.in', '08:15:00')
+            ->where('report.0.weeks.0.days.0.journeyMarks.out', '17:30:00')
+            ->where('report.0.weeks.0.days.0.lunch.start', '12:00:00')
+            ->where('report.0.weeks.0.days.0.lunchMarks', null)
+            ->where('report.0.weeks.0.days.0.undertime', '-00:15:00')
+            ->where('report.0.weeks.0.days.0.overtime', '+00:30:00')
+            // Saturday is a free day: no journey, zeroed shortfall/overtime.
+            ->where('report.0.weeks.0.days.5.journey', null)
+            ->where('report.0.weeks.0.days.5.undertime', '00:00:00')
+            // Weekly totals: 5 working days × 8h pacted journey.
+            ->where('report.0.weeks.0.totals.journey', '+40:00:00')
+            ->where('report.0.weeks.0.totals.overtime', '+00:30:00')
+        );
+});
+
+test('an approved leave zeroes the day shortfall and shows the leave observation', function () {
+    Mail::fake();
+    Event::fake([WorkdaysRecalculationNeeded::class]);
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create();
+
+    $shift = Shift::factory()->for($organization)->create();
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $shift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+
+    Leave::factory()->for($organization)->approved()->create([
+        'user_id' => $employee->id,
+        'type' => LeaveType::Vacation,
+        'start_date' => '2026-03-02',
+        'end_date' => '2026-03-02',
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.daily', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('report.0.weeks.0.days.0.observation.kind', 'leave')
+            ->where('report.0.weeks.0.days.0.observation.type', 'vacation_lead')
+            ->where('report.0.weeks.0.days.0.undertime', '00:00:00')
+            ->where('report.0.weeks.0.days.0.overtime', '00:00:00')
+        );
+});
+
+test('an exceptional shift adds the distribution cycle to the worker block', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create();
+
+    $shift = Shift::factory()->for($organization)->create([
+        'type' => ShiftType::Exceptional,
+        'description' => 'Ciclo 4x4',
+    ]);
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $shift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.daily', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('report.0.exceptionalCycle', 'Ciclo 4x4')
+        );
+});
+
+test('the daily report is empty when the filter matches no workers', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    $emptyPosition = Position::factory()->for($organization)->create();
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.daily', [
             'start' => '2026-03-02',
             'end' => '2026-03-02',
             'positions' => [$emptyPosition->id],
