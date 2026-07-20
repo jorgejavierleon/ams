@@ -1,10 +1,18 @@
 <?php
 
+use App\Enums\LeaveType;
+use App\Events\WorkdaysRecalculationNeeded;
+use App\Models\Leave;
+use App\Models\Mark;
 use App\Models\Organization;
 use App\Models\Position;
 use App\Models\Premise;
+use App\Models\Shift;
+use App\Models\ShiftAssignment;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
 
 uses()->group('dt');
 
@@ -133,9 +141,150 @@ test('each report route renders the filter page pre-selected on its type', funct
             ->where('reportType', $reportType)
         );
 })->with([
-    'attendance' => ['dt.reports.attendance', 'attendance'],
     'daily' => ['dt.reports.daily', 'daily'],
     'shift changes' => ['dt.reports.shift-changes', 'shift-changes'],
     'sundays' => ['dt.reports.sundays', 'sundays'],
     'incidents' => ['dt.reports.incidents', 'incidents'],
 ]);
+
+test('the attendance report builds a per-worker daily grid marking attendance', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create(['name' => 'Ana']);
+
+    Mark::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'date_time' => '2026-03-03 08:00:00',
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-04',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('dt/reports/attendance')
+            ->where('reportType', 'attendance')
+            ->has('report', 1)
+            ->where('report.0.employee', fn (string $value) => str_contains($value, 'Ana'))
+            ->has('report.0.rows', 3)
+            ->where('report.0.rows.0.date', '02/03/26')
+            ->where('report.0.rows.0.attendance', false)
+            ->where('report.0.rows.0.absence', 'unjustified')
+            ->where('report.0.rows.1.date', '03/03/26')
+            ->where('report.0.rows.1.attendance', true)
+            ->where('report.0.rows.1.absence', null)
+            ->where('report.0.rows.2.attendance', false)
+        );
+});
+
+test('an approved leave marks the day justified with the leave type as observation', function () {
+    Mail::fake();
+    Event::fake([WorkdaysRecalculationNeeded::class]);
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create();
+
+    Leave::factory()->for($organization)->approved()->create([
+        'user_id' => $employee->id,
+        'type' => LeaveType::Vacation,
+        'start_date' => '2026-03-02',
+        'end_date' => '2026-03-02',
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('report.0.rows.0.attendance', false)
+            ->where('report.0.rows.0.absence', 'justified')
+            ->where('report.0.rows.0.observation.kind', 'leave')
+            ->where('report.0.rows.0.observation.type', 'vacation_lead')
+        );
+});
+
+test('a free shift day is justified and shown as a day off', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create();
+
+    // The shift factory seeds one day per weekday; mark the report day's as free.
+    $shift = Shift::factory()->for($organization)->create();
+    $shift->days()
+        ->where('weekday', Carbon::parse('2026-03-02')->dayOfWeekIso - 1)
+        ->update(['is_free' => true]);
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $shift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('report.0.rows.0.absence', 'justified')
+            ->where('report.0.rows.0.observation.kind', 'free')
+        );
+});
+
+test('the report covers only the selected worker of the audit organization', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $other = Organization::factory()->create();
+
+    $wanted = User::factory()->for($organization)->employee()->create(['name' => 'Wanted']);
+    User::factory()->for($organization)->employee()->create(['name' => 'Ignored']);
+    User::factory()->for($other)->employee()->create();
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'employees' => [$wanted->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('report', 1)
+            ->where('report.0.employee', fn (string $value) => str_contains($value, 'Wanted'))
+        );
+});
+
+test('a filter matching no workers returns an empty report', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    $emptyPosition = Position::factory()->for($organization)->create();
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'positions' => [$emptyPosition->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('report', 0));
+});

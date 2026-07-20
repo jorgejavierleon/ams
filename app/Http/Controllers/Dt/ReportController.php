@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
+use App\Services\Reports\AttendanceReportService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -41,11 +42,25 @@ class ReportController extends Controller
     }
 
     /**
-     * Attendance report (table implemented in #39).
+     * Attendance report (Resolución 38, Art. 27 a): a day-by-day attendance grid
+     * per selected worker — Fecha / Asistencia / Ausencia / Observaciones — with
+     * the employer, worker and place-of-service header the article requires.
      */
-    public function attendance(Request $request): Response
+    public function attendance(Request $request, AttendanceReportService $service): Response
     {
-        return $this->renderFilter($request, 'attendance');
+        $organizationId = (int) $request->session()->get('dt_organization_id');
+        $filters = $this->currentFilters($request);
+
+        return Inertia::render('dt/reports/attendance', [
+            'reportType' => 'attendance',
+            'options' => $this->optionsFor($organizationId),
+            'filters' => $filters,
+            'report' => $service->build(
+                Carbon::parse($filters['start']),
+                Carbon::parse($filters['end']),
+                $this->resolveWorkerIds($filters, $organizationId),
+            ),
+        ]);
     }
 
     /**
@@ -90,13 +105,63 @@ class ReportController extends Controller
 
         return Inertia::render('dt/reports/index', [
             'reportType' => $reportType,
-            'options' => [
-                'employees' => $this->employeeOptions($organizationId),
-                'positions' => $this->options(Position::query()->orderBy('name')->get()),
-                'premises' => $this->options(Premise::query()->orderBy('name')->get()),
-            ],
+            'options' => $this->optionsFor($organizationId),
             'filters' => $this->currentFilters($request),
         ]);
+    }
+
+    /**
+     * Build the shared filter option lists for the audit organization.
+     *
+     * @return array{
+     *     employees: list<array{value: string, label: string}>,
+     *     positions: list<array{value: string, label: string}>,
+     *     premises: list<array{value: string, label: string}>,
+     * }
+     */
+    private function optionsFor(int $organizationId): array
+    {
+        return [
+            'employees' => $this->employeeOptions($organizationId),
+            'positions' => $this->options(Position::query()->orderBy('name')->get()),
+            'premises' => $this->options(Premise::query()->orderBy('name')->get()),
+        ];
+    }
+
+    /**
+     * Resolve the workers a report covers: the explicitly selected employees
+     * (validated against the audit organization), or — when none are picked —
+     * every employee of the organization, narrowed by the position and premise
+     * filters. {@see User} carries no organization global scope, so it is
+     * constrained here.
+     *
+     * @param  array{
+     *     type: string|null,
+     *     start: string,
+     *     end: string,
+     *     employees: list<int>,
+     *     positions: list<int>,
+     *     premises: list<int>,
+     * }  $filters
+     * @return list<int>
+     */
+    private function resolveWorkerIds(array $filters, int $organizationId): array
+    {
+        if ($filters['employees'] !== []) {
+            return User::query()
+                ->where('organization_id', $organizationId)
+                ->whereIn('id', $filters['employees'])
+                ->pluck('id')
+                ->all();
+        }
+
+        return User::query()
+            ->where('organization_id', $organizationId)
+            ->employees()
+            ->when($filters['positions'], fn ($query, array $ids) => $query->whereIn('position_id', $ids))
+            ->when($filters['premises'], fn ($query, array $ids) => $query->whereIn('premise_id', $ids))
+            ->pluck('id')
+            ->all();
     }
 
     /**
