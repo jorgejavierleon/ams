@@ -1519,6 +1519,35 @@ return [
                 'no_results' => 'Sin resultados.',
                 'generate' => 'Generar reporte',
             ],
+            'attendance' => [
+                'title' => 'Reporte de asistencia',
+                'description' => 'Asistencia diaria de cada trabajador en el período seleccionado (Resolución 38, Art. 27 a).',
+                'no_workers' => 'No hay trabajadores que coincidan con la selección',
+                'yes' => 'Sí',
+                'no' => 'No',
+                'justified' => 'Justificada',
+                'unjustified' => 'Injustificada',
+                'header' => [
+                    'employer' => 'Empleador',
+                    'employee' => 'Trabajador',
+                    'premise' => 'Lugar de prestación',
+                ],
+                'columns' => [
+                    'date' => 'Fecha',
+                    'attendance' => 'Asistencia',
+                    'absence' => 'Ausencia',
+                    'observations' => 'Observaciones',
+                ],
+                'observations' => [
+                    'free' => 'Libre',
+                    'holiday' => 'Feriado',
+                ],
+                'export' => [
+                    'excel' => 'Excel',
+                    'pdf' => 'PDF',
+                    'word' => 'Word',
+                ],
+            ],
         ],
     ],
 

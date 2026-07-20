@@ -1519,6 +1519,35 @@ return [
                 'no_results' => 'No results.',
                 'generate' => 'Generate report',
             ],
+            'attendance' => [
+                'title' => 'Attendance report',
+                'description' => 'Daily attendance for each worker over the selected range (Resolución 38, Art. 27 a).',
+                'no_workers' => 'No hay trabajadores que coincidan con la selección',
+                'yes' => 'Yes',
+                'no' => 'No',
+                'justified' => 'Justified',
+                'unjustified' => 'Unjustified',
+                'header' => [
+                    'employer' => 'Employer',
+                    'employee' => 'Worker',
+                    'premise' => 'Place of service',
+                ],
+                'columns' => [
+                    'date' => 'Date',
+                    'attendance' => 'Attendance',
+                    'absence' => 'Absence',
+                    'observations' => 'Observations',
+                ],
+                'observations' => [
+                    'free' => 'Day off',
+                    'holiday' => 'Holiday',
+                ],
+                'export' => [
+                    'excel' => 'Excel',
+                    'pdf' => 'PDF',
+                    'word' => 'Word',
+                ],
+            ],
         ],
     ],
 
