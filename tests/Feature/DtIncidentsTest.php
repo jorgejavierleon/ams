@@ -6,8 +6,8 @@ use App\Models\User;
 
 uses()->group('dt');
 
-test('guests cannot access the incidents list', function () {
-    $this->get(route('dt.incidents.index'))
+test('guests cannot access the incidents report', function () {
+    $this->get(route('dt.reports.incidents'))
         ->assertRedirect(route('dt.login'));
 });
 
@@ -15,30 +15,37 @@ test('dt users without a selected organization are redirected to the selector', 
     $inspector = User::factory()->dtUser()->create();
 
     $this->actingAs($inspector, 'dt')
-        ->get(route('dt.incidents.index'))
+        ->get(route('dt.reports.incidents'))
         ->assertRedirect(route('dt.organization.select'));
 });
 
-test('the incidents list renders scoped to the audit session organization', function () {
+test('the incidents report renders scoped to the audit session organization', function () {
     $inspector = User::factory()->dtUser()->create();
     $audited = Organization::factory()->create();
     $other = Organization::factory()->create();
 
-    Incident::factory()->for($audited)->create(['description' => 'Audited outage']);
-    Incident::factory()->for($other)->create(['description' => 'Other outage']);
+    Incident::factory()->for($audited)->create([
+        'start_time' => '2026-03-10 08:00:00',
+        'description' => 'Audited outage',
+    ]);
+    Incident::factory()->for($other)->create([
+        'start_time' => '2026-03-10 08:00:00',
+        'description' => 'Other outage',
+    ]);
 
     $this->actingAs($inspector, 'dt')
         ->withSession(['dt_organization_id' => $audited->id])
-        ->get(route('dt.incidents.index'))
+        ->get(route('dt.reports.incidents', ['start' => '2026-03-01', 'end' => '2026-03-31']))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('dt/incidents/index')
-            ->has('incidents.data', 1)
-            ->where('incidents.data.0.description', 'Audited outage'),
+            ->component('dt/reports/incidents')
+            ->where('reportType', 'incidents')
+            ->has('report', 1)
+            ->where('report.0.description', 'Audited outage')
         );
 });
 
-test('the incidents list exposes a computed duration', function () {
+test('the incidents report exposes a computed duration', function () {
     app()->setLocale('es');
 
     $inspector = User::factory()->dtUser()->create();
@@ -51,28 +58,64 @@ test('the incidents list exposes a computed duration', function () {
 
     $this->actingAs($inspector, 'dt')
         ->withSession(['dt_organization_id' => $organization->id])
-        ->get(route('dt.incidents.index'))
+        ->get(route('dt.reports.incidents', ['start' => '2026-03-01', 'end' => '2026-03-31']))
         ->assertInertia(fn ($page) => $page
-            ->where('incidents.data.0.duration', '45 minutos'),
+            ->where('report.0.start_time', '2026-03-01 08:00')
+            ->where('report.0.end_time', '2026-03-01 08:45')
+            ->where('report.0.duration', '45 minutos')
         );
 });
 
-test('the date range filter narrows the incidents to the requested window', function () {
+test('an open incident has no end time or duration', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    Incident::factory()->for($organization)->create([
+        'start_time' => '2026-03-01 08:00:00',
+        'end_time' => null,
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.incidents', ['start' => '2026-03-01', 'end' => '2026-03-31']))
+        ->assertInertia(fn ($page) => $page
+            ->where('report.0.end_time', null)
+            ->where('report.0.duration', null)
+        );
+});
+
+test('the date range narrows the incidents report to the requested window', function () {
     $inspector = User::factory()->dtUser()->create();
     $organization = Organization::factory()->create();
 
     Incident::factory()->for($organization)->create(['start_time' => '2026-01-10 09:00:00']);
-    $inRange = Incident::factory()->for($organization)->create(['start_time' => '2026-02-15 09:00:00']);
+    Incident::factory()->for($organization)->create([
+        'start_time' => '2026-02-15 09:00:00',
+        'description' => 'February outage',
+    ]);
     Incident::factory()->for($organization)->create(['start_time' => '2026-03-20 09:00:00']);
 
     $this->actingAs($inspector, 'dt')
         ->withSession(['dt_organization_id' => $organization->id])
-        ->get(route('dt.incidents.index', ['from' => '2026-02-01', 'to' => '2026-02-28']))
+        ->get(route('dt.reports.incidents', ['start' => '2026-02-01', 'end' => '2026-02-28']))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('filters.from', '2026-02-01')
-            ->where('filters.to', '2026-02-28')
-            ->has('incidents.data', 1)
-            ->where('incidents.data.0.id', $inRange->id),
+            ->where('filters.start', '2026-02-01')
+            ->where('filters.end', '2026-02-28')
+            ->has('report', 1)
+            ->where('report.0.description', 'February outage')
         );
+});
+
+test('the incidents report is empty when no incidents fall in the range', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    Incident::factory()->for($organization)->create(['start_time' => '2026-01-10 09:00:00']);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.incidents', ['start' => '2026-02-01', 'end' => '2026-02-28']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('report', 0));
 });

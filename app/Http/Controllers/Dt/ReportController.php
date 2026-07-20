@@ -8,6 +8,7 @@ use App\Models\Premise;
 use App\Models\User;
 use App\Services\Reports\AttendanceReportService;
 use App\Services\Reports\DailyReportService;
+use App\Services\Reports\IncidentsReportService;
 use App\Services\Reports\ShiftChangesReportService;
 use App\Services\Reports\SundaysReportService;
 use Illuminate\Database\Eloquent\Collection;
@@ -138,11 +139,24 @@ class ReportController extends Controller
     }
 
     /**
-     * Incidents report (table implemented in #43).
+     * Technical incidents report (Resolución 38, Art. 27 f): the audited
+     * employer's log of attendance-system outages — start, end, duration and
+     * description — narrowed to the selected date range. It is a per-employer
+     * log, so (per Art. 24 d) it takes no worker filter.
      */
-    public function incidents(Request $request): Response
+    public function incidents(Request $request, IncidentsReportService $service): Response
     {
-        return $this->renderFilter($request, 'incidents');
+        $filters = $this->currentFilters($request);
+
+        return Inertia::render('dt/reports/incidents', [
+            'reportType' => 'incidents',
+            'options' => $this->optionsFor((int) $request->session()->get('dt_organization_id')),
+            'filters' => $filters,
+            'report' => $service->build(
+                Carbon::parse($filters['start']),
+                Carbon::parse($filters['end']),
+            ),
+        ]);
     }
 
     /**

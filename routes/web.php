@@ -8,7 +8,6 @@ use App\Http\Controllers\DocumentSignatureController;
 use App\Http\Controllers\DocumentTemplateController;
 use App\Http\Controllers\Dt\DocumentController as DtDocumentController;
 use App\Http\Controllers\Dt\ForgotPasswordController;
-use App\Http\Controllers\Dt\IncidentController as DtIncidentController;
 use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\MarkValidationController;
 use App\Http\Controllers\Dt\OrganizationController as DtOrganizationController;
@@ -244,9 +243,6 @@ Route::prefix('dt')->name('dt.')->group(function () {
             // Organization-scoped views require an active audit session.
             Route::middleware('dt_organization_selected')->group(function () {
                 Route::inertia('dashboard', 'dt/dashboard')->name('dashboard');
-
-                // Read-only technical-incidents list for the audited employer.
-                Route::get('incidents', [DtIncidentController::class, 'index'])->name('incidents.index');
 
                 // Read-only employment-documents list for the audited employer,
                 // with a per-document PDF preview download (Resolución 38).

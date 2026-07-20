@@ -131,22 +131,6 @@ test('the filter state is parsed from the query string', function () {
         );
 });
 
-test('each report route renders the filter page pre-selected on its type', function (string $routeName, string $reportType) {
-    $inspector = User::factory()->dtUser()->create();
-    $organization = Organization::factory()->create();
-
-    $this->actingAs($inspector, 'dt')
-        ->withSession(['dt_organization_id' => $organization->id])
-        ->get(route($routeName))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('dt/reports/index')
-            ->where('reportType', $reportType)
-        );
-})->with([
-    'incidents' => ['dt.reports.incidents', 'incidents'],
-]);
-
 test('the attendance report builds a per-worker daily grid marking attendance', function () {
     Mail::fake();
 

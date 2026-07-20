@@ -6,7 +6,6 @@ import {
     FileText,
     LayoutGrid,
     LogOut,
-    TriangleAlert,
 } from 'lucide-react';
 import MarkValidationController from '@/actions/App/Http/Controllers/Dt/MarkValidationController';
 import { AppContent } from '@/components/app-content';
@@ -28,7 +27,6 @@ import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { dashboard, logout } from '@/routes/dt';
 import { index as documents } from '@/routes/dt/documents';
-import { index as incidents } from '@/routes/dt/incidents';
 import { select as selectOrganization } from '@/routes/dt/organization';
 import { index as reports } from '@/routes/dt/reports';
 import type { AppLayoutProps, NavItem } from '@/types';
@@ -49,11 +47,6 @@ export default function DtLayout({ children }: AppLayoutProps) {
             title: t('ui.dt.nav.validate_mark'),
             href: MarkValidationController.create(),
             icon: Fingerprint,
-        },
-        {
-            title: t('ui.dt.nav.incidents'),
-            href: incidents(),
-            icon: TriangleAlert,
         },
         {
             title: t('ui.dt.nav.documents'),
