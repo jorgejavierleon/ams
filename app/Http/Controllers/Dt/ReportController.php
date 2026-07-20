@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Reports\AttendanceReportService;
 use App\Services\Reports\DailyReportService;
 use App\Services\Reports\ShiftChangesReportService;
+use App\Services\Reports\SundaysReportService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -112,11 +113,28 @@ class ReportController extends Controller
     }
 
     /**
-     * Sundays/holidays report (table implemented in #42).
+     * Sundays/holidays report (Resolución 38, Art. 27 c): per worker, every
+     * Sunday and public holiday in the range on which the worker worked or was
+     * rostered — with the retail additional-Sunday flag, "Asistencia",
+     * "Ausencia" and "Observaciones" columns, per-month subtotals of days
+     * worked and a final total — or the fixed-journey legend for workers whose
+     * journey never falls on such days.
      */
-    public function sundays(Request $request): Response
+    public function sundays(Request $request, SundaysReportService $service): Response
     {
-        return $this->renderFilter($request, 'sundays');
+        $organizationId = (int) $request->session()->get('dt_organization_id');
+        $filters = $this->currentFilters($request);
+
+        return Inertia::render('dt/reports/sundays', [
+            'reportType' => 'sundays',
+            'options' => $this->optionsFor($organizationId),
+            'filters' => $filters,
+            'report' => $service->build(
+                Carbon::parse($filters['start']),
+                Carbon::parse($filters['end']),
+                $this->resolveWorkerIds($filters, $organizationId),
+            ),
+        ]);
     }
 
     /**
