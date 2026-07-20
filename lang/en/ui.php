@@ -1578,6 +1578,38 @@ return [
                     'word' => 'Word',
                 ],
             ],
+            'shift-changes' => [
+                'title' => 'Shift changes report',
+                'description' => 'Shift modifications and alterations for each worker over the selected range (Resolución 38, Art. 27 d).',
+                'no_workers' => 'No hay trabajadores que coincidan con la selección',
+                'no_changes' => 'Sin cambios o modificaciones en el periodo consultado',
+                'fixed_journey' => 'This worker is on a fixed, permanent journey and therefore has no shift changes to report.',
+                'header' => [
+                    'employer' => 'Employer',
+                    'employee' => 'Worker',
+                    'premise' => 'Place of service',
+                ],
+                'columns' => [
+                    'old_start_date' => 'Shift assignment date',
+                    'old_shift' => 'Assigned shift',
+                    'old_extension' => 'Shift extension',
+                    'notification_date' => 'New shift assignment date',
+                    'new_start_date' => 'Shift start',
+                    'new_shift' => 'New assigned shift',
+                    'new_extension' => 'New shift extension',
+                    'requested_by' => 'Requested by',
+                    'observations' => 'Observations',
+                ],
+                'requested_by' => [
+                    'employee' => 'Trabajador',
+                    'employer' => 'Empleador',
+                ],
+                'export' => [
+                    'excel' => 'Excel',
+                    'pdf' => 'PDF',
+                    'word' => 'Word',
+                ],
+            ],
         ],
     ],
 
