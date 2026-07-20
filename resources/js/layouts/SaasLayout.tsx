@@ -12,6 +12,7 @@ import {
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
 import { useTranslations } from '@/hooks/use-translations';
+import * as auditLog from '@/routes/saas/audit-log';
 import * as documentVariables from '@/routes/saas/document-variables';
 import * as holidays from '@/routes/saas/holidays';
 import * as organizations from '@/routes/saas/organizations';
@@ -53,6 +54,12 @@ export default function SaasLayout({ children }: AppLayoutProps) {
                             className="text-sm font-medium text-muted-foreground hover:text-foreground"
                         >
                             {t('ui.saas_holidays.nav')}
+                        </Link>
+                        <Link
+                            href={auditLog.index()}
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                        >
+                            {t('ui.saas_audit_log.nav')}
                         </Link>
                     </div>
                     {auth.user && (

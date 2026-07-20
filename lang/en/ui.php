@@ -436,6 +436,46 @@ return [
         ],
     ],
 
+    'saas_audit_log' => [
+        'nav' => 'Audit log',
+        'title' => 'Audit log',
+        'description' => 'Read-only activity trail across every organization',
+        'empty' => 'No activity recorded for these filters.',
+
+        'columns' => [
+            'timestamp' => 'Timestamp',
+            'causer' => 'Causer',
+            'event' => 'Event',
+            'subject' => 'Subject',
+            'description' => 'Description',
+            'changes' => 'Changes',
+        ],
+
+        'filters' => [
+            'search_placeholder' => 'Search description...',
+            'date_from' => 'From',
+            'date_to' => 'To',
+            'causer' => 'Causer',
+            'all_causers' => 'All causers',
+            'search_causers' => 'Search causer...',
+            'no_causers' => 'No causers found.',
+            'organization' => 'Organization',
+            'all_organizations' => 'All organizations',
+            'search_organizations' => 'Search organization...',
+            'no_organizations' => 'No organizations found.',
+            'clear' => 'Clear filters',
+        ],
+
+        'system' => 'System',
+        'view_changes' => 'View',
+        'no_changes' => 'No recorded changes.',
+
+        'changes_dialog' => [
+            'title' => 'Recorded changes',
+            'description' => 'Properties captured for this activity entry.',
+        ],
+    ],
+
     'positions' => [
         'title' => 'Positions',
         'description' => 'Job titles used to group employees',
