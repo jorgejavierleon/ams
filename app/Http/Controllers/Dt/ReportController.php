@@ -7,6 +7,7 @@ use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
 use App\Services\Reports\AttendanceReportService;
+use App\Services\Reports\DailyReportService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -64,11 +65,26 @@ class ReportController extends Controller
     }
 
     /**
-     * Daily workday report (table implemented in #40).
+     * Daily workday report (Resolución 38, Art. 27 b): a per-worker, week-by-week
+     * grid of the pacted ordinary journey and lunch against the day's marks, with
+     * the shortfall ("Tiempo faltante"), overtime ("Tiempo extra") and a signed
+     * weekly totals line — plus the employer/worker/place-of-service header.
      */
-    public function daily(Request $request): Response
+    public function daily(Request $request, DailyReportService $service): Response
     {
-        return $this->renderFilter($request, 'daily');
+        $organizationId = (int) $request->session()->get('dt_organization_id');
+        $filters = $this->currentFilters($request);
+
+        return Inertia::render('dt/reports/daily', [
+            'reportType' => 'daily',
+            'options' => $this->optionsFor($organizationId),
+            'filters' => $filters,
+            'report' => $service->build(
+                Carbon::parse($filters['start']),
+                Carbon::parse($filters['end']),
+                $this->resolveWorkerIds($filters, $organizationId),
+            ),
+        ]);
     }
 
     /**
