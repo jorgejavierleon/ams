@@ -148,6 +148,11 @@ export function FilterForm({ options, filters, reportType }: Props) {
                     />
                 </FormField>
 
+                {/* The technical incidents report (Art. 27 f) is a per-employer
+                    log; Art. 24 d) excludes it from the worker-search screen, so
+                    only the date range applies to it. */}
+                {data.type !== 'incidents' && (
+                    <>
                 <FormField
                     label={t('ui.dt.reports.filters.employees')}
                     htmlFor="report-employees"
@@ -213,6 +218,8 @@ export function FilterForm({ options, filters, reportType }: Props) {
                         }
                     />
                 </FormField>
+                    </>
+                )}
             </div>
 
             <div className="flex justify-end">

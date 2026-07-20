@@ -1412,7 +1412,6 @@ return [
         'nav' => [
             'dashboard' => 'Inicio',
             'validate_mark' => 'Validar marca',
-            'incidents' => 'Incidentes',
             'documents' => 'Documentos',
             'reports' => 'Reportes',
             'select_organization' => 'Cambiar empleador',
@@ -1454,22 +1453,6 @@ return [
                 'checksum_value' => 'Checksum',
                 'not_available' => 'No disponible',
             ],
-        ],
-        'incidents' => [
-            'title' => 'Incidentes técnicos',
-            'description' => 'Interrupciones del sistema electrónico de asistencia registradas para el empleador fiscalizado.',
-            'columns' => [
-                'start_time' => 'Inicio',
-                'end_time' => 'Término',
-                'duration' => 'Duración',
-                'description' => 'Descripción',
-            ],
-            'filters' => [
-                'from' => 'Fecha desde',
-                'to' => 'Fecha hasta',
-            ],
-            'ongoing' => 'En curso',
-            'empty' => 'No se registraron incidentes para este empleador.',
         ],
         'documents' => [
             'title' => 'Documentos',
@@ -1631,6 +1614,23 @@ return [
                     'attendance' => 'Asistencia',
                     'absence' => 'Ausencia',
                     'observations' => 'Observaciones',
+                ],
+                'export' => [
+                    'excel' => 'Excel',
+                    'pdf' => 'PDF',
+                    'word' => 'Word',
+                ],
+            ],
+            'incidents' => [
+                'title' => 'Reporte de incidentes técnicos',
+                'description' => 'Incidentes que provocaron el cese operacional total o parcial del sistema electrónico de asistencia, en el período seleccionado (Resolución 38, Art. 27 f).',
+                'ongoing' => 'En curso',
+                'empty' => 'No se registraron incidentes técnicos en el período seleccionado.',
+                'columns' => [
+                    'start_time' => 'Fecha/hora inicio',
+                    'end_time' => 'Fecha/hora término',
+                    'duration' => 'Duración',
+                    'description' => 'Descripción del incidente',
                 ],
                 'export' => [
                     'excel' => 'Excel',

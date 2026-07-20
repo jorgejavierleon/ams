@@ -1412,7 +1412,6 @@ return [
         'nav' => [
             'dashboard' => 'Dashboard',
             'validate_mark' => 'Validate mark',
-            'incidents' => 'Incidents',
             'documents' => 'Documents',
             'reports' => 'Reports',
             'select_organization' => 'Change employer',
@@ -1454,22 +1453,6 @@ return [
                 'checksum_value' => 'Checksum',
                 'not_available' => 'Not available',
             ],
-        ],
-        'incidents' => [
-            'title' => 'Technical incidents',
-            'description' => 'Outages of the electronic attendance system recorded for the audited employer.',
-            'columns' => [
-                'start_time' => 'Start',
-                'end_time' => 'End',
-                'duration' => 'Duration',
-                'description' => 'Description',
-            ],
-            'filters' => [
-                'from' => 'From date',
-                'to' => 'To date',
-            ],
-            'ongoing' => 'Ongoing',
-            'empty' => 'No incidents were recorded for this employer.',
         ],
         'documents' => [
             'title' => 'Documents',
@@ -1631,6 +1614,23 @@ return [
                     'attendance' => 'Attendance',
                     'absence' => 'Absence',
                     'observations' => 'Observations',
+                ],
+                'export' => [
+                    'excel' => 'Excel',
+                    'pdf' => 'PDF',
+                    'word' => 'Word',
+                ],
+            ],
+            'incidents' => [
+                'title' => 'Technical incidents report',
+                'description' => 'Incidents that caused a total or partial operational shutdown of the electronic attendance system in the selected period (Resolución 38, Art. 27 f).',
+                'ongoing' => 'Ongoing',
+                'empty' => 'No technical incidents were recorded in the selected period.',
+                'columns' => [
+                    'start_time' => 'Start date/time',
+                    'end_time' => 'End date/time',
+                    'duration' => 'Duration',
+                    'description' => 'Incident description',
                 ],
                 'export' => [
                     'excel' => 'Excel',
