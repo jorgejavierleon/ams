@@ -4,6 +4,7 @@ use App\Enums\LeaveType;
 use App\Enums\MarkType;
 use App\Enums\ShiftType;
 use App\Events\WorkdaysRecalculationNeeded;
+use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\Mark;
 use App\Models\Organization;
@@ -143,7 +144,6 @@ test('each report route renders the filter page pre-selected on its type', funct
             ->where('reportType', $reportType)
         );
 })->with([
-    'sundays' => ['dt.reports.sundays', 'sundays'],
     'incidents' => ['dt.reports.incidents', 'incidents'],
 ]);
 
@@ -578,6 +578,150 @@ test('the shift changes report is empty when the filter matches no workers', fun
         ->get(route('dt.reports.shift-changes', [
             'start' => '2026-05-01',
             'end' => '2026-05-31',
+            'positions' => [$emptyPosition->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('report', 0));
+});
+
+test('the sundays report lists worked Sundays and holidays with monthly and total subtotals', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create(['name' => 'Ana']);
+
+    // 2026-03-06 is a Friday holiday, 2026-03-08 is a Sunday — both worked.
+    Holiday::factory()->create(['date' => '2026-03-06', 'name' => 'Día de Prueba']);
+    Mark::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'date_time' => '2026-03-06 09:00:00',
+    ]);
+    Mark::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'date_time' => '2026-03-08 09:00:00',
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.sundays', [
+            'start' => '2026-03-01',
+            'end' => '2026-03-31',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('dt/reports/sundays')
+            ->where('reportType', 'sundays')
+            ->has('report', 1)
+            ->where('report.0.employee', fn (string $value) => str_contains($value, 'Ana'))
+            ->where('report.0.additionalSundays', false)
+            ->where('report.0.emptyReason', null)
+            ->where('report.0.total', 2)
+            ->has('report.0.months', 1)
+            ->where('report.0.months.0.worked', 2)
+            ->has('report.0.months.0.rows', 2)
+            // Rows are chronological: the Friday holiday, then the Sunday.
+            ->where('report.0.months.0.rows.0.date', '06/03/26')
+            ->where('report.0.months.0.rows.0.dayType', 'holiday')
+            ->where('report.0.months.0.rows.0.holiday', 'Día de Prueba')
+            ->where('report.0.months.0.rows.0.attendance', true)
+            ->where('report.0.months.0.rows.0.absence', null)
+            ->where('report.0.months.0.rows.1.date', '08/03/26')
+            ->where('report.0.months.0.rows.1.dayType', 'sunday')
+            ->where('report.0.months.0.rows.1.attendance', true)
+        );
+});
+
+test('a worker rostered on a Sunday who did not attend is marked justified by leave', function () {
+    Mail::fake();
+    Event::fake([WorkdaysRecalculationNeeded::class]);
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create([
+        'has_additional_sundays' => true,
+    ]);
+
+    // Roster the worker on Sundays (weekday 6) and cover the day with leave.
+    $shift = Shift::factory()->for($organization)->create();
+    $shift->days()->where('weekday', 6)->update(['is_free' => false]);
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $shift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+    Leave::factory()->for($organization)->approved()->create([
+        'user_id' => $employee->id,
+        'type' => LeaveType::Vacation,
+        'start_date' => '2026-03-08',
+        'end_date' => '2026-03-08',
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.sundays', [
+            'start' => '2026-03-08',
+            'end' => '2026-03-08',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('report.0.additionalSundays', true)
+            ->where('report.0.emptyReason', null)
+            ->where('report.0.total', 0)
+            ->has('report.0.months.0.rows', 1)
+            ->where('report.0.months.0.rows.0.attendance', false)
+            ->where('report.0.months.0.rows.0.absence', 'justified')
+            ->where('report.0.months.0.rows.0.observation.kind', 'leave')
+            ->where('report.0.months.0.rows.0.observation.type', 'vacation_lead')
+        );
+});
+
+test('a Monday-to-Friday worker gets the fixed-journey legend', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create();
+
+    // Default shift: Mon–Fri working, Sat/Sun free. No Sunday/holiday marks.
+    $shift = Shift::factory()->for($organization)->create();
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $shift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.sundays', [
+            'start' => '2026-03-01',
+            'end' => '2026-03-31',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('report', 1)
+            ->has('report.0.months', 0)
+            ->where('report.0.total', 0)
+            ->where('report.0.emptyReason', 'no-sundays')
+        );
+});
+
+test('the sundays report is empty when the filter matches no workers', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    $emptyPosition = Position::factory()->for($organization)->create();
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.sundays', [
+            'start' => '2026-03-01',
+            'end' => '2026-03-31',
             'positions' => [$emptyPosition->id],
         ]))
         ->assertOk()
