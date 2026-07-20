@@ -13,6 +13,7 @@ use App\Http\Controllers\Dt\LoginController;
 use App\Http\Controllers\Dt\MarkValidationController;
 use App\Http\Controllers\Dt\OrganizationController as DtOrganizationController;
 use App\Http\Controllers\Dt\PasswordChangeController;
+use App\Http\Controllers\Dt\ReportController as DtReportController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveCalendarController;
@@ -252,6 +253,18 @@ Route::prefix('dt')->name('dt.')->group(function () {
                 Route::get('documents', [DtDocumentController::class, 'index'])->name('documents.index');
                 Route::get('documents/{document}/download', [DtDocumentController::class, 'download'])->name('documents.download');
                 Route::get('documents/{document}', [DtDocumentController::class, 'show'])->name('documents.show');
+
+                // Compliance reports (Resolución 38). The section landing page
+                // hosts the shared filter UI; each report type has its own route
+                // that pre-selects the filter and renders its table (#39–#43).
+                Route::prefix('reports')->name('reports.')->group(function () {
+                    Route::get('/', [DtReportController::class, 'index'])->name('index');
+                    Route::get('attendance', [DtReportController::class, 'attendance'])->name('attendance');
+                    Route::get('daily', [DtReportController::class, 'daily'])->name('daily');
+                    Route::get('shift-changes', [DtReportController::class, 'shiftChanges'])->name('shift-changes');
+                    Route::get('sundays', [DtReportController::class, 'sundays'])->name('sundays');
+                    Route::get('incidents', [DtReportController::class, 'incidents'])->name('incidents');
+                });
             });
         });
     });

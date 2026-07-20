@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     Building2,
+    FileBarChart,
     Fingerprint,
     FileText,
     LayoutGrid,
@@ -29,6 +30,7 @@ import { dashboard, logout } from '@/routes/dt';
 import { index as documents } from '@/routes/dt/documents';
 import { index as incidents } from '@/routes/dt/incidents';
 import { select as selectOrganization } from '@/routes/dt/organization';
+import { index as reports } from '@/routes/dt/reports';
 import type { AppLayoutProps, NavItem } from '@/types';
 
 export default function DtLayout({ children }: AppLayoutProps) {
@@ -57,6 +59,11 @@ export default function DtLayout({ children }: AppLayoutProps) {
             title: t('ui.dt.nav.documents'),
             href: documents(),
             icon: FileText,
+        },
+        {
+            title: t('ui.dt.nav.reports'),
+            href: reports(),
+            icon: FileBarChart,
         },
         {
             title: t('ui.dt.nav.select_organization'),
