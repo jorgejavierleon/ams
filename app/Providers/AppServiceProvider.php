@@ -53,6 +53,19 @@ class AppServiceProvider extends ServiceProvider
     protected function configureMiddleware(): void
     {
         RedirectIfAuthenticated::redirectUsing(function (Request $request): string {
+            // The guest middleware does not tell us which guard triggered the
+            // redirect, and the dt/saas/web guards can hold separate logins in
+            // the same session at once. Prefer the panel matching the request
+            // path so, e.g., visiting /dt/login while authenticated on dt lands
+            // on the dt dashboard instead of bouncing to another panel.
+            if ($request->is('dt', 'dt/*') && Auth::guard('dt')->check()) {
+                return route('dt.dashboard');
+            }
+
+            if ($request->is('saas', 'saas/*') && Auth::guard('saas')->check()) {
+                return route('saas.dashboard');
+            }
+
             if (Auth::guard('saas')->check()) {
                 return route('saas.dashboard');
             }
