@@ -436,6 +436,46 @@ return [
         ],
     ],
 
+    'saas_audit_log' => [
+        'nav' => 'Registro de auditoría',
+        'title' => 'Registro de auditoría',
+        'description' => 'Historial de actividad de solo lectura en todas las organizaciones',
+        'empty' => 'No hay actividad registrada para estos filtros.',
+
+        'columns' => [
+            'timestamp' => 'Fecha y hora',
+            'causer' => 'Responsable',
+            'event' => 'Evento',
+            'subject' => 'Sujeto',
+            'description' => 'Descripción',
+            'changes' => 'Cambios',
+        ],
+
+        'filters' => [
+            'search_placeholder' => 'Buscar descripción...',
+            'date_from' => 'Desde',
+            'date_to' => 'Hasta',
+            'causer' => 'Responsable',
+            'all_causers' => 'Todos los responsables',
+            'search_causers' => 'Buscar responsable...',
+            'no_causers' => 'No se encontraron responsables.',
+            'organization' => 'Organización',
+            'all_organizations' => 'Todas las organizaciones',
+            'search_organizations' => 'Buscar organización...',
+            'no_organizations' => 'No se encontraron organizaciones.',
+            'clear' => 'Limpiar filtros',
+        ],
+
+        'system' => 'Sistema',
+        'view_changes' => 'Ver',
+        'no_changes' => 'Sin cambios registrados.',
+
+        'changes_dialog' => [
+            'title' => 'Cambios registrados',
+            'description' => 'Propiedades capturadas para esta entrada de actividad.',
+        ],
+    ],
+
     'positions' => [
         'title' => 'Cargos',
         'description' => 'Cargos utilizados para agrupar a los empleados',

@@ -26,6 +26,7 @@ use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\Saas\AuditLogController;
 use App\Http\Controllers\Saas\DocumentVarController;
 use App\Http\Controllers\Saas\HolidayController as SaasHolidayController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
@@ -278,6 +279,8 @@ Route::prefix('saas')->name('saas.')->group(function () {
 
             Route::get('holidays', [SaasHolidayController::class, 'index'])->name('holidays.index');
             Route::post('holidays/sync', [SaasHolidayController::class, 'sync'])->name('holidays.sync');
+
+            Route::get('audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
         });
     });
 });
