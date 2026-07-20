@@ -8,6 +8,7 @@ use App\Models\Premise;
 use App\Models\User;
 use App\Services\Reports\AttendanceReportService;
 use App\Services\Reports\DailyReportService;
+use App\Services\Reports\ShiftChangesReportService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -88,11 +89,26 @@ class ReportController extends Controller
     }
 
     /**
-     * Shift changes report (table implemented in #41).
+     * Shift changes report (Resolución 38, Art. 27 d): per worker, every shift
+     * change taking effect in the range — previous and new shift with their
+     * detail, extension and dates, who requested it — or the legend justifying
+     * the absence of changes for workers on a fixed permanent journey.
      */
-    public function shiftChanges(Request $request): Response
+    public function shiftChanges(Request $request, ShiftChangesReportService $service): Response
     {
-        return $this->renderFilter($request, 'shift-changes');
+        $organizationId = (int) $request->session()->get('dt_organization_id');
+        $filters = $this->currentFilters($request);
+
+        return Inertia::render('dt/reports/shift-changes', [
+            'reportType' => 'shift-changes',
+            'options' => $this->optionsFor($organizationId),
+            'filters' => $filters,
+            'report' => $service->build(
+                Carbon::parse($filters['start']),
+                Carbon::parse($filters['end']),
+                $this->resolveWorkerIds($filters, $organizationId),
+            ),
+        ]);
     }
 
     /**

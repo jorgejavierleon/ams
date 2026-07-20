@@ -1578,6 +1578,38 @@ return [
                     'word' => 'Word',
                 ],
             ],
+            'shift-changes' => [
+                'title' => 'Reporte de modificaciones de turnos',
+                'description' => 'Modificaciones y alteraciones de turnos de cada trabajador en el período seleccionado (Resolución 38, Art. 27 d).',
+                'no_workers' => 'No hay trabajadores que coincidan con la selección',
+                'no_changes' => 'Sin cambios o modificaciones en el periodo consultado',
+                'fixed_journey' => 'La jornada de este trabajador es fija y permanente, por lo que no registra modificaciones de turno.',
+                'header' => [
+                    'employer' => 'Empleador',
+                    'employee' => 'Trabajador',
+                    'premise' => 'Lugar de prestación',
+                ],
+                'columns' => [
+                    'old_start_date' => 'Fecha asignación turno',
+                    'old_shift' => 'Turno asignado',
+                    'old_extension' => 'Extensión del turno',
+                    'notification_date' => 'Fecha asignación nuevo turno',
+                    'new_start_date' => 'Inicio de turno',
+                    'new_shift' => 'Nuevo turno asignado',
+                    'new_extension' => 'Extensión del nuevo turno',
+                    'requested_by' => 'Solicitado por',
+                    'observations' => 'Observaciones',
+                ],
+                'requested_by' => [
+                    'employee' => 'Trabajador',
+                    'employer' => 'Empleador',
+                ],
+                'export' => [
+                    'excel' => 'Excel',
+                    'pdf' => 'PDF',
+                    'word' => 'Word',
+                ],
+            ],
         ],
     ],
 

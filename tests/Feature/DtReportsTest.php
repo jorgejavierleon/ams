@@ -143,7 +143,6 @@ test('each report route renders the filter page pre-selected on its type', funct
             ->where('reportType', $reportType)
         );
 })->with([
-    'shift changes' => ['dt.reports.shift-changes', 'shift-changes'],
     'sundays' => ['dt.reports.sundays', 'sundays'],
     'incidents' => ['dt.reports.incidents', 'incidents'],
 ]);
@@ -434,6 +433,151 @@ test('the daily report is empty when the filter matches no workers', function ()
         ->get(route('dt.reports.daily', [
             'start' => '2026-03-02',
             'end' => '2026-03-02',
+            'positions' => [$emptyPosition->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('report', 0));
+});
+
+test('the shift changes report lists each change with its previous and new shift', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create(['name' => 'Ana']);
+
+    $firstShift = Shift::factory()->for($organization)->create([
+        'type' => ShiftType::Fixed,
+        'description' => 'de 08:00 a 17:00',
+    ]);
+    $secondShift = Shift::factory()->for($organization)->create([
+        'type' => ShiftType::Rotational,
+        'description' => 'de 09:00 a 18:00',
+    ]);
+
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $firstShift->id,
+        'notification_date' => '2026-05-18',
+        'start_date' => '2026-05-20',
+        'end_date' => '2026-05-26',
+        'requested_by_employee' => false,
+    ]);
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $secondShift->id,
+        'notification_date' => '2026-05-19',
+        'start_date' => '2026-05-27',
+        'end_date' => null,
+        'requested_by_employee' => true,
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.shift-changes', [
+            'start' => '2026-05-01',
+            'end' => '2026-06-30',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('dt/reports/shift-changes')
+            ->where('reportType', 'shift-changes')
+            ->has('report', 1)
+            ->where('report.0.employee', fn (string $value) => str_contains($value, 'Ana'))
+            ->where('report.0.emptyReason', null)
+            ->has('report.0.rows', 2)
+            // First change: no previous shift (Art. 27 d.2–d.4 absent).
+            ->where('report.0.rows.0.oldStartDate', null)
+            ->where('report.0.rows.0.oldShift', null)
+            ->where('report.0.rows.0.oldExtension', null)
+            ->where('report.0.rows.0.notificationDate', '18/05/26')
+            ->where('report.0.rows.0.newStartDate', '20/05/26')
+            ->where('report.0.rows.0.newShift', 'de 08:00 a 17:00')
+            ->where('report.0.rows.0.newExtension', 'fixed')
+            ->where('report.0.rows.0.requestedBy', 'employer')
+            // Second change: previous shift carried from the first row.
+            ->where('report.0.rows.1.oldStartDate', '20/05/26')
+            ->where('report.0.rows.1.oldShift', 'de 08:00 a 17:00')
+            ->where('report.0.rows.1.oldExtension', 'fixed')
+            ->where('report.0.rows.1.notificationDate', '19/05/26')
+            ->where('report.0.rows.1.newStartDate', '27/05/26')
+            ->where('report.0.rows.1.newShift', 'de 09:00 a 18:00')
+            ->where('report.0.rows.1.newExtension', 'rotational')
+            ->where('report.0.rows.1.requestedBy', 'employee')
+        );
+});
+
+test('a worker on a fixed permanent journey with no change gets the fixed-journey legend', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create();
+
+    $shift = Shift::factory()->for($organization)->create(['type' => ShiftType::Fixed]);
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $shift->id,
+        'start_date' => '2020-01-01',
+        'end_date' => null,
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.shift-changes', [
+            'start' => '2026-05-01',
+            'end' => '2026-05-31',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('report', 1)
+            ->has('report.0.rows', 0)
+            ->where('report.0.emptyReason', 'fixed-journey')
+        );
+});
+
+test('a shift worker with no change in the range gets the no-changes legend', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->for($organization)->employee()->create();
+
+    $shift = Shift::factory()->for($organization)->create(['type' => ShiftType::Rotational]);
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $employee->id,
+        'shift_id' => $shift->id,
+        'start_date' => '2020-01-01',
+        'end_date' => null,
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.shift-changes', [
+            'start' => '2026-05-01',
+            'end' => '2026-05-31',
+            'employees' => [$employee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('report.0.rows', 0)
+            ->where('report.0.emptyReason', 'no-changes')
+        );
+});
+
+test('the shift changes report is empty when the filter matches no workers', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    $emptyPosition = Position::factory()->for($organization)->create();
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.shift-changes', [
+            'start' => '2026-05-01',
+            'end' => '2026-05-31',
             'positions' => [$emptyPosition->id],
         ]))
         ->assertOk()
