@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Dt;
 
 use App\Http\Controllers\Controller;
+use App\Models\Organization;
 use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
 use App\Services\Reports\AttendanceReportService;
 use App\Services\Reports\DailyReportService;
+use App\Services\Reports\DtReportExporter;
 use App\Services\Reports\IncidentsReportService;
 use App\Services\Reports\ShiftChangesReportService;
 use App\Services\Reports\SundaysReportService;
@@ -16,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
  * Entry point for the Labor Department (DT) reports section.
@@ -157,6 +160,34 @@ class ReportController extends Controller
                 Carbon::parse($filters['end']),
             ),
         ]);
+    }
+
+    /**
+     * Stream any report as an Excel, PDF or Word download (Resolución 38,
+     * Art. 28 b). The report type comes from the route and the format from the
+     * `format` query param; the same filter and worker-resolution logic that
+     * drives the on-screen tables selects the rows, so the download matches the
+     * screen (Art. 28 a). The incidents log is per-employer (Art. 24 d) and takes
+     * no worker filter.
+     */
+    public function export(Request $request, DtReportExporter $exporter, string $type): HttpResponse
+    {
+        $format = $request->string('format')->toString();
+
+        abort_unless(in_array($type, self::REPORT_TYPES, true), 404);
+        abort_unless(in_array($format, DtReportExporter::FORMATS, true), 404);
+
+        $organizationId = (int) $request->session()->get('dt_organization_id');
+        $filters = $this->currentFilters($request);
+
+        return $exporter->download(
+            $type,
+            $format,
+            Carbon::parse($filters['start']),
+            Carbon::parse($filters['end']),
+            $type === 'incidents' ? [] : $this->resolveWorkerIds($filters, $organizationId),
+            Organization::findOrFail($organizationId),
+        );
     }
 
     /**
