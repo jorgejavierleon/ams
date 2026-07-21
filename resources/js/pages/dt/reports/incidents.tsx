@@ -1,7 +1,6 @@
 import { Head } from '@inertiajs/react';
-import { FileSpreadsheet, FileText, FileType, TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
     Table,
@@ -12,6 +11,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useTranslations } from '@/hooks/use-translations';
+import { ExportButtons } from './export-buttons';
 import { FilterForm } from './filter-form';
 import type { ReportFilters, ReportOptions } from './types';
 
@@ -63,38 +63,10 @@ export default function IncidentsReport({ options, filters, report }: Props) {
                     </Card>
                 ) : (
                     <div className="space-y-6">
-                        {/* Export handlers are wired up in #44; the buttons are
-                            present but inert until then. Art. 28 b) requires
-                            Excel, PDF and Word. */}
-                        <div className="flex items-center justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled
-                            >
-                                <FileSpreadsheet className="size-4" />
-                                {t('ui.dt.reports.incidents.export.excel')}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled
-                            >
-                                <FileText className="size-4" />
-                                {t('ui.dt.reports.incidents.export.pdf')}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled
-                            >
-                                <FileType className="size-4" />
-                                {t('ui.dt.reports.incidents.export.word')}
-                            </Button>
-                        </div>
+                        <ExportButtons
+                            reportType="incidents"
+                            filters={filters}
+                        />
 
                         <Card>
                             <CardContent>

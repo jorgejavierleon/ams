@@ -260,6 +260,10 @@ Route::prefix('dt')->name('dt.')->group(function () {
                     Route::get('shift-changes', [DtReportController::class, 'shiftChanges'])->name('shift-changes');
                     Route::get('sundays', [DtReportController::class, 'sundays'])->name('sundays');
                     Route::get('incidents', [DtReportController::class, 'incidents'])->name('incidents');
+
+                    // Excel / PDF / Word download for any report (Resolución 38,
+                    // Art. 28 b), streamed directly rather than via Inertia.
+                    Route::get('{type}/export', [DtReportController::class, 'export'])->name('export');
                 });
             });
         });
