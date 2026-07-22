@@ -17,7 +17,39 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-export type MultiComboboxOption = { value: string; label: string };
+/** Lower-case and strip diacritics so search is case- and accent-insensitive. */
+const fold = (text: string): string =>
+    text
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase();
+
+/**
+ * Contiguous substring match across an item's label and keywords. Replaces
+ * cmdk's default fuzzy scorer, which matches scattered subsequences — so a
+ * typed RUT like `229018213` would wrongly surface an unrelated worker whose
+ * digits merely contain that subsequence.
+ */
+const substringFilter = (
+    value: string,
+    search: string,
+    keywords?: string[],
+): number => {
+    const haystack = fold([value, ...(keywords ?? [])].join(' '));
+
+    return haystack.includes(fold(search)) ? 1 : 0;
+};
+
+export type MultiComboboxOption = {
+    value: string;
+    label: string;
+    /**
+     * Extra text the search should match beyond the visible label — e.g. a
+     * worker's RUT in forms the label doesn't display. Fed to cmdk's per-item
+     * `keywords` so typing any of them surfaces the option.
+     */
+    keywords?: string[];
+};
 
 type Props = {
     options: MultiComboboxOption[];
@@ -102,7 +134,7 @@ export function MultiCombobox({
                     className="w-(--radix-popover-trigger-width) p-0"
                     align="start"
                 >
-                    <Command>
+                    <Command filter={substringFilter}>
                         <CommandInput placeholder={searchPlaceholder} />
                         <CommandList>
                             <CommandEmpty>{emptyLabel}</CommandEmpty>
@@ -111,6 +143,7 @@ export function MultiCombobox({
                                     <CommandItem
                                         key={option.value}
                                         value={option.label}
+                                        keywords={option.keywords}
                                         onSelect={() => toggle(option.value)}
                                     >
                                         <Check
