@@ -3,8 +3,8 @@ import type { MultiComboboxOption } from '@/components/multi-combobox';
 export type ReportType =
     | 'attendance'
     | 'daily'
-    | 'shift-changes'
     | 'sundays'
+    | 'shift-changes'
     | 'incidents';
 
 export type ReportOptions = {

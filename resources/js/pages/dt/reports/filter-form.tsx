@@ -30,8 +30,8 @@ import type { ReportFilters, ReportOptions, ReportType } from './types';
 const REPORT_ROUTES = {
     attendance,
     daily,
-    'shift-changes': shiftChanges,
     sundays,
+    'shift-changes': shiftChanges,
     incidents,
 } as const;
 
