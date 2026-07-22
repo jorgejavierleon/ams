@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Dt;
 
+use App\Enums\ShiftType;
 use App\Http\Controllers\Controller;
+use App\Models\Mark;
 use App\Models\Organization;
 use App\Models\Position;
 use App\Models\Premise;
+use App\Models\Shift;
 use App\Models\User;
 use App\Services\Reports\AttendanceReportService;
 use App\Services\Reports\DailyReportService;
@@ -212,6 +215,8 @@ class ReportController extends Controller
      *     employees: list<array{value: string, label: string}>,
      *     positions: list<array{value: string, label: string}>,
      *     premises: list<array{value: string, label: string}>,
+     *     shifts: list<array{value: string, label: string}>,
+     *     journals: list<array{value: string, label: string}>,
      * }
      */
     private function optionsFor(int $organizationId): array
@@ -220,7 +225,30 @@ class ReportController extends Controller
             'employees' => $this->employeeOptions($organizationId),
             'positions' => $this->options(Position::query()->orderBy('name')->get()),
             'premises' => $this->options(Premise::query()->orderBy('name')->get()),
+            'shifts' => $this->shiftOptions(),
+            'journals' => ShiftType::options(),
         ];
+    }
+
+    /**
+     * Build the shift ("Turnos") select options for the audit organization,
+     * labelled by schedule extension rather than name (Resolución 38,
+     * Art. 25.1.f). {@see Shift} is organization-scoped, so it is already
+     * constrained to the audit session organization.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    private function shiftOptions(): array
+    {
+        return Shift::query()
+            ->with('days')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Shift $shift): array => [
+                'value' => (string) $shift->id,
+                'label' => $shift->extensionLabel(),
+            ])
+            ->all();
     }
 
     /**
@@ -237,24 +265,74 @@ class ReportController extends Controller
      *     employees: list<int>,
      *     positions: list<int>,
      *     premises: list<int>,
+     *     journals: list<string>,
+     *     shifts: list<int>,
+     *     checksum: string|null,
      * }  $filters
      * @return list<int>
      */
     private function resolveWorkerIds(array $filters, int $organizationId): array
     {
+        // A checksum pins the report to the single worker who owns the matching
+        // mark (Resolución 38, Art. 25.1.j); it overrides the broader filters.
+        if ($filters['checksum'] !== null) {
+            return $this->workerIdsForChecksum($filters['checksum'], $organizationId);
+        }
+
+        $query = User::query()->where('organization_id', $organizationId);
+
         if ($filters['employees'] !== []) {
-            return User::query()
-                ->where('organization_id', $organizationId)
-                ->whereIn('id', $filters['employees'])
-                ->pluck('id')
-                ->all();
+            $query->whereIn('id', $filters['employees']);
+        } else {
+            $query->employees()
+                ->when($filters['positions'], fn ($query, array $ids) => $query->whereIn('position_id', $ids))
+                ->when($filters['premises'], fn ($query, array $ids) => $query->whereIn('premise_id', $ids));
+        }
+
+        // Jornada (Art. 25.1.e) and Turnos (Art. 25.1.f): keep only workers with
+        // a shift assignment overlapping the report range whose shift matches the
+        // chosen types / shifts. Both narrow simultaneously (Art. 25.2).
+        $start = Carbon::parse($filters['start']);
+        $end = Carbon::parse($filters['end']);
+
+        $overlapsRange = fn ($assignment) => $assignment
+            ->whereDate('start_date', '<=', $end)
+            ->where(fn ($range) => $range
+                ->whereNull('end_date')
+                ->orWhereDate('end_date', '>=', $start));
+
+        if ($filters['journals'] !== []) {
+            $query->whereHas('shiftAssignments', fn ($assignment) => $overlapsRange($assignment)
+                ->whereHas('shift', fn ($shift) => $shift->whereIn('type', $filters['journals'])));
+        }
+
+        if ($filters['shifts'] !== []) {
+            $query->whereHas('shiftAssignments', fn ($assignment) => $overlapsRange($assignment)
+                ->whereIn('shift_id', $filters['shifts']));
+        }
+
+        return $query->pluck('id')->all();
+    }
+
+    /**
+     * Resolve the worker owning the mark carrying the given checksum, constrained
+     * to the audit organization. Returns an empty list when no mark matches.
+     *
+     * @return list<int>
+     */
+    private function workerIdsForChecksum(string $checksum, int $organizationId): array
+    {
+        $userId = Mark::query()
+            ->where('checksum', $checksum)
+            ->value('user_id');
+
+        if ($userId === null) {
+            return [];
         }
 
         return User::query()
             ->where('organization_id', $organizationId)
-            ->employees()
-            ->when($filters['positions'], fn ($query, array $ids) => $query->whereIn('position_id', $ids))
-            ->when($filters['premises'], fn ($query, array $ids) => $query->whereIn('premise_id', $ids))
+            ->whereKey($userId)
             ->pluck('id')
             ->all();
     }
@@ -310,6 +388,9 @@ class ReportController extends Controller
      *     employees: list<int>,
      *     positions: list<int>,
      *     premises: list<int>,
+     *     journals: list<string>,
+     *     shifts: list<int>,
+     *     checksum: string|null,
      * }
      */
     private function currentFilters(Request $request): array
@@ -324,7 +405,28 @@ class ReportController extends Controller
             'employees' => $this->intIds($request->input('employees', [])),
             'positions' => $this->intIds($request->input('positions', [])),
             'premises' => $this->intIds($request->input('premises', [])),
+            'journals' => $this->journalValues($request->input('journals', [])),
+            'shifts' => $this->intIds($request->input('shifts', [])),
+            'checksum' => $request->string('checksum')->trim()->toString() ?: null,
         ];
+    }
+
+    /**
+     * Normalise the jornada filter into a list of valid {@see ShiftType} values,
+     * discarding anything that is not a real shift type.
+     *
+     * @return list<string>
+     */
+    private function journalValues(mixed $value): array
+    {
+        $valid = array_map(fn (ShiftType $type): string => $type->value, ShiftType::cases());
+
+        return collect((array) $value)
+            ->map(fn ($type): string => (string) $type)
+            ->filter(fn (string $type): bool => in_array($type, $valid, true))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
