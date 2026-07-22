@@ -112,4 +112,51 @@ class Shift extends Model
     {
         return $this->belongsToMany(User::class, 'shift_assignments', 'shift_id', 'user_id');
     }
+
+    /**
+     * A schedule-based label for the shift — e.g. "Lunes a Jueves 10:00–18:00" —
+     * derived from its working (non-free) days. DT report filters identify a
+     * shift by this extension rather than an employer-facing name, as
+     * Resolución 38, Art. 25.1.f) requires. Falls back to the shift name when the
+     * shift has no working days loaded.
+     */
+    public function extensionLabel(): string
+    {
+        $weekdayNumbers = $this->days
+            ->where('is_free', false)
+            ->pluck('weekday')
+            ->filter(fn (?int $weekday): bool => $weekday !== null)
+            ->map(fn (?int $weekday): int => (int) $weekday)
+            ->sort()
+            ->values();
+
+        $first = $this->days
+            ->where('is_free', false)
+            ->whereNotNull('weekday')
+            ->sortBy('weekday')
+            ->first();
+
+        if ($weekdayNumbers->isEmpty() || $first === null) {
+            return $this->name;
+        }
+
+        /** @var array<int, string> $weekdays */
+        $weekdays = (array) __('ui.shifts.weekdays');
+        $from = $weekdayNumbers->first();
+        $to = $weekdayNumbers->last();
+
+        $range = $from === $to
+            ? ($weekdays[$from] ?? '')
+            : __('ui.shifts.weekday_range', [
+                'from' => $weekdays[$from] ?? '',
+                'to' => $weekdays[$to] ?? '',
+            ]);
+
+        return sprintf(
+            '%s %s–%s',
+            $range,
+            $first->start_time->format('H:i'),
+            $first->end_time->format('H:i'),
+        );
+    }
 }

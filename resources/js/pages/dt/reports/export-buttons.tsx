@@ -38,6 +38,9 @@ export function ExportButtons({ reportType, filters }: Props) {
                 employees: filters.employees,
                 positions: filters.positions,
                 premises: filters.premises,
+                journals: filters.journals,
+                shifts: filters.shifts,
+                checksum: filters.checksum ?? undefined,
             },
         }).url;
 

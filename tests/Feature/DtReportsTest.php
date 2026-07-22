@@ -711,3 +711,193 @@ test('the sundays report is empty when the filter matches no workers', function 
         ->assertOk()
         ->assertInertia(fn ($page) => $page->has('report', 0));
 });
+
+test('the filter options expose the shift types and shifts labelled by extension', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    // The observer seeds Mon–Fri working (08:00–17:00), Sat/Sun free.
+    Shift::factory()->for($organization)->create(['name' => 'Turno mañana']);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('options.journals', count(ShiftType::cases()))
+            ->where('options.journals.0.value', ShiftType::Fixed->value)
+            ->has('options.shifts', 1)
+            ->where('options.shifts.0.label', 'Lunes a Viernes 08:00–17:00')
+        );
+});
+
+test('the shifts options are scoped to the audit session organization', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $audited = Organization::factory()->create();
+    $other = Organization::factory()->create();
+
+    $auditedShift = Shift::factory()->for($audited)->create();
+    Shift::factory()->for($other)->create();
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $audited->id])
+        ->get(route('dt.reports.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('options.shifts', 1)
+            ->where('options.shifts.0.value', (string) $auditedShift->id)
+        );
+});
+
+test('the jornada filter narrows the report to workers on a matching shift type', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    $fixedWorker = User::factory()->for($organization)->employee()->create(['name' => 'Fija']);
+    $rotationalWorker = User::factory()->for($organization)->employee()->create(['name' => 'Rotativa']);
+
+    $fixedShift = Shift::factory()->for($organization)->create(['type' => ShiftType::Fixed]);
+    $rotationalShift = Shift::factory()->for($organization)->create(['type' => ShiftType::Rotational]);
+
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $fixedWorker->id,
+        'shift_id' => $fixedShift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $rotationalWorker->id,
+        'shift_id' => $rotationalShift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'journals' => [ShiftType::Rotational->value],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('report', 1)
+            ->where('report.0.employee', fn (string $value) => str_contains($value, 'Rotativa'))
+        );
+});
+
+test('the turnos filter narrows the report to workers assigned to a matching shift', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    $morningWorker = User::factory()->for($organization)->employee()->create(['name' => 'Mañana']);
+    $eveningWorker = User::factory()->for($organization)->employee()->create(['name' => 'Tarde']);
+
+    $morningShift = Shift::factory()->for($organization)->create();
+    $eveningShift = Shift::factory()->for($organization)->create();
+
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $morningWorker->id,
+        'shift_id' => $morningShift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $eveningWorker->id,
+        'shift_id' => $eveningShift->id,
+        'start_date' => '2026-01-01',
+        'end_date' => null,
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'shifts' => [$eveningShift->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('report', 1)
+            ->where('report.0.employee', fn (string $value) => str_contains($value, 'Tarde'))
+        );
+});
+
+test('a shift assignment ended before the range does not match the turnos filter', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    $worker = User::factory()->for($organization)->employee()->create();
+    $shift = Shift::factory()->for($organization)->create();
+
+    // Assignment ended in 2025, before the March 2026 report range.
+    ShiftAssignment::factory()->for($organization)->create([
+        'user_id' => $worker->id,
+        'shift_id' => $shift->id,
+        'start_date' => '2025-01-01',
+        'end_date' => '2025-12-31',
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-01',
+            'end' => '2026-03-31',
+            'shifts' => [$shift->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('report', 0));
+});
+
+test('the checksum filter narrows the report to the worker owning the matching mark', function () {
+    Mail::fake();
+
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    $owner = User::factory()->for($organization)->employee()->create(['name' => 'Dueña']);
+    $other = User::factory()->for($organization)->employee()->create(['name' => 'Ajena']);
+
+    $mark = Mark::factory()->for($organization)->create([
+        'user_id' => $owner->id,
+        'date_time' => '2026-03-02 09:00:00',
+    ]);
+    Mark::factory()->for($organization)->create([
+        'user_id' => $other->id,
+        'date_time' => '2026-03-02 09:00:00',
+    ]);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'checksum' => $mark->checksum,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('report', 1)
+            ->where('report.0.employee', fn (string $value) => str_contains($value, 'Dueña'))
+        );
+});
+
+test('an unknown checksum returns an empty report', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+    User::factory()->for($organization)->employee()->create();
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.attendance', [
+            'start' => '2026-03-02',
+            'end' => '2026-03-02',
+            'checksum' => 'does-not-exist',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('report', 0));
+});

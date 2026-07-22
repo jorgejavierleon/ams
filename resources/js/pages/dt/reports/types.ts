@@ -11,6 +11,8 @@ export type ReportOptions = {
     employees: MultiComboboxOption[];
     positions: MultiComboboxOption[];
     premises: MultiComboboxOption[];
+    shifts: MultiComboboxOption[];
+    journals: MultiComboboxOption[];
 };
 
 export type ReportFilters = {
@@ -20,4 +22,7 @@ export type ReportFilters = {
     employees: number[];
     positions: number[];
     premises: number[];
+    journals: string[];
+    shifts: number[];
+    checksum: string | null;
 };

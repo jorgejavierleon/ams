@@ -746,6 +746,8 @@ return [
             'Domingo',
         ],
 
+        'weekday_range' => ':from a :to',
+
         'actions' => [
             'edit' => 'Editar',
             'delete' => 'Eliminar',
@@ -1498,6 +1500,21 @@ return [
                 'premises' => 'Sucursales',
                 'premises_all' => 'Todas las sucursales',
                 'premises_search' => 'Buscar sucursal',
+                'journals' => 'Jornadas',
+                'journals_all' => 'Todas las jornadas',
+                'journals_search' => 'Buscar tipo de jornada',
+                'shifts' => 'Turnos',
+                'shifts_all' => 'Todos los turnos',
+                'shifts_search' => 'Buscar turno',
+                'checksum' => 'Hash o checksum',
+                'checksum_placeholder' => 'Buscar marcación por su código Hash',
+                'periods' => [
+                    'label' => 'Periodo predeterminado',
+                    'week' => 'Última semana',
+                    'fortnight' => 'Quincena',
+                    'last_month' => 'Mes anterior',
+                    'last_12_months' => 'Últimos 12 meses',
+                ],
                 'selected' => ':count seleccionado(s)',
                 'no_results' => 'Sin resultados.',
                 'generate' => 'Generar reporte',

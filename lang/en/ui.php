@@ -746,6 +746,8 @@ return [
             'Sunday',
         ],
 
+        'weekday_range' => ':from to :to',
+
         'actions' => [
             'edit' => 'Edit',
             'delete' => 'Delete',
@@ -1498,6 +1500,21 @@ return [
                 'premises' => 'Premises',
                 'premises_all' => 'All premises',
                 'premises_search' => 'Search premise',
+                'journals' => 'Journeys',
+                'journals_all' => 'All journeys',
+                'journals_search' => 'Search journey type',
+                'shifts' => 'Shifts',
+                'shifts_all' => 'All shifts',
+                'shifts_search' => 'Search shift',
+                'checksum' => 'Hash or checksum',
+                'checksum_placeholder' => 'Look up a mark by its Hash code',
+                'periods' => [
+                    'label' => 'Preset period',
+                    'week' => 'Last week',
+                    'fortnight' => 'Fortnight',
+                    'last_month' => 'Last month',
+                    'last_12_months' => 'Last 12 months',
+                ],
                 'selected' => ':count selected',
                 'no_results' => 'No results.',
                 'generate' => 'Generate report',
