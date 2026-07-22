@@ -41,7 +41,7 @@ class ReportController extends Controller
      *
      * @var list<string>
      */
-    public const REPORT_TYPES = ['attendance', 'daily', 'shift-changes', 'sundays', 'incidents'];
+    public const REPORT_TYPES = ['attendance', 'daily', 'sundays', 'shift-changes', 'incidents'];
 
     /**
      * Render the filter UI as the reports section landing page.
