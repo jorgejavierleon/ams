@@ -42,7 +42,7 @@ test('a valid checksum returns the mark details', function () {
         ->post(route('dt.marks.validate.store'), ['checksum' => $mark->checksum])
         ->assertRedirect(route('dt.marks.validate'))
         ->assertSessionHas('mark', fn (array $flashed) => $flashed['employee_name'] === 'Juan Pérez'
-            && $flashed['employee_rut'] === '11111111-1'
+            && $flashed['employee_rut'] === '11.111.111-1'
             && $flashed['checksum'] === $mark->checksum,
         );
 });

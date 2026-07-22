@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Combobox } from '@/components/combobox';
 import { FormField } from '@/components/form-field';
+import RutInput from '@/components/rut-input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -201,10 +202,10 @@ export default function CompanyForm({
                         required
                         error={errors.rut}
                     >
-                        <Input
+                        <RutInput
                             id="rut"
                             value={data.rut}
-                            onChange={(e) => setData('rut', e.target.value)}
+                            onChange={(value) => setData('rut', value)}
                             placeholder={t('ui.companies.form.rut_placeholder')}
                         />
                     </FormField>
@@ -390,14 +391,14 @@ export default function CompanyForm({
                                     fieldErrors[`representatives.${index}.rut`]
                                 }
                             >
-                                <Input
+                                <RutInput
                                     id={`rep-${index}-rut`}
                                     value={representative.rut}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                         updateRepresentative(
                                             index,
                                             'rut',
-                                            e.target.value,
+                                            value,
                                         )
                                     }
                                 />

@@ -6,6 +6,7 @@ use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
 use App\Models\MarkModification;
 use App\Models\Workday;
+use App\Support\Rut;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -96,9 +97,9 @@ class WorkdayPresenter
                     ? $mark->shift_start_time->format('H:i').' - '.$mark->shift_end_time->format('H:i')
                     : null,
                 'employee_name' => $mark->employee_name,
-                'employee_rut' => $mark->employee_rut,
+                'employee_rut' => $mark->employee_rut === null ? null : Rut::format($mark->employee_rut),
                 'employer_name' => $mark->employer_name,
-                'employer_rut' => $mark->employer_rut,
+                'employer_rut' => $mark->employer_rut === null ? null : Rut::format($mark->employer_rut),
                 'premise_name' => $mark->premise_name,
                 'premise_address' => $mark->premise_address,
                 'coordinates' => $mark->lat && $mark->lng ? $mark->lat.', '.$mark->lng : null,

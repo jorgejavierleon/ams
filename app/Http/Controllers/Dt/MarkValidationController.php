@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dt;
 use App\Http\Controllers\Controller;
 use App\Models\Mark;
 use App\Models\Scopes\OrganizationScope;
+use App\Support\Rut;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -80,9 +81,9 @@ class MarkValidationController extends Controller
 
         return [
             'employee_name' => $mark->employee_name,
-            'employee_rut' => $mark->employee_rut,
+            'employee_rut' => $mark->employee_rut === null ? null : Rut::format($mark->employee_rut),
             'employer_name' => $mark->employer_name,
-            'employer_rut' => $mark->employer_rut,
+            'employer_rut' => $mark->employer_rut === null ? null : Rut::format($mark->employer_rut),
             'date_time' => $mark->date_time->format('d-m-Y H:i:s'),
             'type' => $mark->type->label(),
             'premise_name' => $mark->premise_name,

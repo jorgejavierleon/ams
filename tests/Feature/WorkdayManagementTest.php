@@ -481,6 +481,31 @@ test('the detail page renders the workday with its modification history', functi
             ->where('modifications.0.can_review', false));
 });
 
+test('the mark detail card shows the employee and employer rut with dots', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create([
+        'organization_id' => $organization->id,
+        'rut' => '11111111-1',
+    ]);
+
+    $mark = Mark::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'type' => MarkType::In,
+        'date_time' => Carbon::today()->setTime(8, 0),
+    ]);
+    $workday = makeWorkday($organization, $employee, [
+        'date' => Carbon::today(),
+        'mark_in_id' => $mark->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('workdays.show', $workday))
+        ->assertInertia(fn ($page) => $page
+            ->where('workday.mark_in.details.employee_rut', '11.111.111-1'));
+});
+
 test('the detail page marks the request reviewable for the assigned reviewer', function () {
     $admin = workdayAdmin();
     $organization = $admin->organization;

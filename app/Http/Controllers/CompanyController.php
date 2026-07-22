@@ -81,7 +81,7 @@ class CompanyController extends Controller
         return Inertia::render('companies/edit', [
             'company' => [
                 'id' => $company->id,
-                'rut' => $company->rut,
+                'rut' => $company->formatted_rut,
                 'social_reason' => $company->social_reason,
                 'business_line' => $company->business_line,
                 'email' => $company->email,
@@ -94,7 +94,7 @@ class CompanyController extends Controller
                 'is_active' => $company->is_active,
                 'representatives' => $company->representatives->map(fn (User $user) => [
                     'id' => $user->id,
-                    'rut' => $user->rut,
+                    'rut' => $user->formatted_rut,
                     'first_name' => $user->first_name,
                     'last_name' => $user->last_name,
                     'second_last_name' => $user->second_last_name,
