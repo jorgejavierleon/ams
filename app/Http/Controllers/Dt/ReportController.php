@@ -212,7 +212,7 @@ class ReportController extends Controller
      * Build the shared filter option lists for the audit organization.
      *
      * @return array{
-     *     employees: list<array{value: string, label: string}>,
+     *     employees: list<array{value: string, label: string, keywords: list<string>}>,
      *     positions: list<array{value: string, label: string}>,
      *     premises: list<array{value: string, label: string}>,
      *     shifts: list<array{value: string, label: string}>,
@@ -343,7 +343,12 @@ class ReportController extends Controller
      * {@see User} is not organization-scoped by a global scope, so it is
      * constrained here to the audit session organization.
      *
-     * @return list<array{value: string, label: string}>
+     * The label keeps the dotted RUT for display, but the search must also match
+     * the RUT "sin puntos y con guión" the inspector types (Resolución 38,
+     * Art. 25.1.a) — the canonical stored form (`12345678-5`) — plus the bare
+     * digits for convenience. Both go into `keywords` rather than the label.
+     *
+     * @return list<array{value: string, label: string, keywords: list<string>}>
      */
     private function employeeOptions(int $organizationId): array
     {
@@ -357,6 +362,9 @@ class ReportController extends Controller
                 'label' => $employee->formatted_rut === null
                     ? $employee->name
                     : "{$employee->name} ({$employee->formatted_rut})",
+                'keywords' => $employee->rut === null
+                    ? []
+                    : [$employee->rut, str_replace('-', '', $employee->rut)],
             ])
             ->all();
     }

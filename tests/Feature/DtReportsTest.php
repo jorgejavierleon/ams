@@ -91,6 +91,26 @@ test('legal representatives are excluded from the employee options', function ()
         );
 });
 
+test('employee options expose the RUT sin puntos y con guión as search keywords', function () {
+    $inspector = User::factory()->dtUser()->create();
+    $organization = Organization::factory()->create();
+
+    $employee = User::factory()->for($organization)->employee()->create(['rut' => '12.345.678-5']);
+
+    $this->actingAs($inspector, 'dt')
+        ->withSession(['dt_organization_id' => $organization->id])
+        ->get(route('dt.reports.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('options.employees', 1)
+            ->where('options.employees.0.value', (string) $employee->id)
+            // Label keeps the dotted display form (Art. 25.1.a display).
+            ->where('options.employees.0.label', "{$employee->name} (12.345.678-5)")
+            // Search matches the un-dotted form the inspector types, plus bare digits.
+            ->where('options.employees.0.keywords', ['12345678-5', '123456785'])
+        );
+});
+
 test('the date range defaults to the current month', function () {
     Carbon::setTestNow('2026-02-14 10:00:00');
 
