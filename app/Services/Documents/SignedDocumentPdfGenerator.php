@@ -34,7 +34,7 @@ class SignedDocumentPdfGenerator
             'body' => $this->resolver->resolve($document),
             'signatures' => $signatures->map(fn (DocumentSignature $signature): array => [
                 'name' => $signature->user?->name,
-                'rut' => $signature->user?->rut,
+                'rut' => $signature->user?->formatted_rut,
                 'email' => $signature->user?->personal_email,
                 'type' => $signature->type->label(),
                 'signed_at' => $signature->signed_at

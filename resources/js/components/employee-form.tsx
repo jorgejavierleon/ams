@@ -5,17 +5,14 @@ import {
     Settings as SettingsIcon,
     User as UserIcon,
 } from 'lucide-react';
-import { useState  } from 'react';
-import type {FormEvent} from 'react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import AlertError from '@/components/alert-error';
 import { Combobox } from '@/components/combobox';
 import type { ComboboxOption } from '@/components/combobox';
 import { FormField } from '@/components/form-field';
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-} from '@/components/ui/avatar';
+import RutInput from '@/components/rut-input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -241,10 +238,10 @@ export default function EmployeeForm({
                             required
                             error={fieldErrors.rut}
                         >
-                            <Input
+                            <RutInput
                                 id="rut"
                                 value={data.rut}
-                                onChange={(e) => setData('rut', e.target.value)}
+                                onChange={(value) => setData('rut', value)}
                             />
                         </FormField>
 
@@ -333,7 +330,9 @@ export default function EmployeeForm({
                                     setData('company_id', value)
                                 }
                                 placeholder={t('ui.employees.form.select')}
-                                searchPlaceholder={t('ui.employees.form.search')}
+                                searchPlaceholder={t(
+                                    'ui.employees.form.search',
+                                )}
                                 emptyLabel={t('ui.employees.form.no_results')}
                             />
                         </FormField>
@@ -351,7 +350,9 @@ export default function EmployeeForm({
                                     setData('premise_id', value)
                                 }
                                 placeholder={t('ui.employees.form.select')}
-                                searchPlaceholder={t('ui.employees.form.search')}
+                                searchPlaceholder={t(
+                                    'ui.employees.form.search',
+                                )}
                                 emptyLabel={t('ui.employees.form.no_results')}
                             />
                         </FormField>
@@ -369,7 +370,9 @@ export default function EmployeeForm({
                                     setData('position_id', value)
                                 }
                                 placeholder={t('ui.employees.form.select')}
-                                searchPlaceholder={t('ui.employees.form.search')}
+                                searchPlaceholder={t(
+                                    'ui.employees.form.search',
+                                )}
                                 emptyLabel={t('ui.employees.form.no_results')}
                             />
                         </FormField>
@@ -387,7 +390,9 @@ export default function EmployeeForm({
                                     setData('supervisor_id', value)
                                 }
                                 placeholder={t('ui.employees.form.select')}
-                                searchPlaceholder={t('ui.employees.form.search')}
+                                searchPlaceholder={t(
+                                    'ui.employees.form.search',
+                                )}
                                 emptyLabel={t('ui.employees.form.no_results')}
                             />
                         </FormField>
@@ -537,7 +542,9 @@ export default function EmployeeForm({
                         </FormField>
 
                         <FormField
-                            label={t('ui.employees.form.emergency_contact_name')}
+                            label={t(
+                                'ui.employees.form.emergency_contact_name',
+                            )}
                             htmlFor="emergency_contact_name"
                             error={fieldErrors.emergency_contact_name}
                         >
@@ -602,7 +609,9 @@ export default function EmployeeForm({
                                 value={data.timezone}
                                 onChange={(value) => setData('timezone', value)}
                                 placeholder={t('ui.employees.form.select')}
-                                searchPlaceholder={t('ui.employees.form.search')}
+                                searchPlaceholder={t(
+                                    'ui.employees.form.search',
+                                )}
                                 emptyLabel={t('ui.employees.form.no_results')}
                             />
                         </FormField>

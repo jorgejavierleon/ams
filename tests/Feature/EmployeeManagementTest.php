@@ -189,6 +189,31 @@ test('admin can create an employee', function () {
     expect($employee->rut)->not->toBeNull();
 });
 
+test('creating an employee rejects an invalid rut', function () {
+    $admin = employeeAdmin();
+
+    $this->actingAs($admin)
+        ->post(route('employees.store'), employeePayload($admin, [
+            'rut' => '12.345.678-9',
+        ]))
+        ->assertSessionHasErrors('rut');
+});
+
+test('creating an employee stores the rut without dots regardless of input formatting', function () {
+    $admin = employeeAdmin();
+
+    $this->actingAs($admin)
+        ->post(route('employees.store'), employeePayload($admin, [
+            'rut' => '12.345.678-5',
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'ana@example.com',
+        'rut' => '12345678-5',
+    ]);
+});
+
 test('creating an employee requires the mandatory fields', function () {
     $admin = employeeAdmin();
 
