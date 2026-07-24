@@ -194,7 +194,7 @@ class ShiftSeeder extends Seeder
 
         // total_week_hours is a derived, non-fillable column normally rolled up
         // by the ShiftDayObserver; set it directly since events are muted.
-        $shift->total_week_hours = $shift->days()->sum('total_work_hours');
+        $shift->total_week_hours = (float) $shift->days()->sum('total_work_hours');
         $shift->save();
 
         return $shift;

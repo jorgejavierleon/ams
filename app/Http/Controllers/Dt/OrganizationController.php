@@ -75,11 +75,11 @@ class OrganizationController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $request->validate([
             'organization_id' => ['required', 'integer', 'exists:organizations,id'],
         ]);
 
-        $organization = Organization::query()->findOrFail($validated['organization_id']);
+        $organization = Organization::query()->findOrFail($request->integer('organization_id'));
 
         $request->session()->put('dt_organization_id', $organization->id);
         $request->session()->put('organization_name', $organization->name);

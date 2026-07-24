@@ -14,7 +14,9 @@ class LeaveObserver
      */
     public function creating(Leave $leave): void
     {
-        $leave->created_by = $leave->created_by ?? auth()->id();
+        if ($leave->getAttribute('created_by') === null && ($id = auth()->id()) !== null) {
+            $leave->created_by = (int) $id;
+        }
     }
 
     /**

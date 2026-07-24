@@ -353,7 +353,7 @@ class WorkdayController extends Controller
         return $query
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn ($model): array => ['value' => (string) $model->id, 'label' => $model->name])
+            ->map(fn ($model): array => ['value' => (string) $model->getKey(), 'label' => (string) $model->getAttribute('name')])
             ->all();
     }
 

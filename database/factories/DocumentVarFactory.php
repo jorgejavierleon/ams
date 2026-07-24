@@ -17,7 +17,7 @@ class DocumentVarFactory extends Factory
      */
     public function definition(): array
     {
-        $key = $this->faker->unique()->words(2, true);
+        $key = implode(' ', (array) $this->faker->unique()->words(2));
 
         return [
             'name' => ucfirst($key),

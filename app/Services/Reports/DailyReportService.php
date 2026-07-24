@@ -13,6 +13,7 @@ use App\Models\ShiftDay;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -42,27 +43,7 @@ class DailyReportService
      *     premise: string|null,
      *     hasFlexibleBand: bool,
      *     exceptionalCycle: string|null,
-     *     weeks: list<array{
-     *         days: list<array{
-     *             date: string,
-     *             journey: array{start: string, end: string}|null,
-     *             journeyMarks: array{in: string|null, out: string|null},
-     *             lunch: array{start: string, end: string}|null,
-     *             lunchMarks: null,
-     *             undertime: string,
-     *             overtime: string,
-     *             otherMarks: null,
-     *             observation: array{kind: string, name?: string, type?: string}|null,
-     *         }>,
-     *         totals: array{
-     *             journey: string,
-     *             journeyMarks: string,
-     *             lunch: string,
-     *             undertime: string,
-     *             overtime: string,
-     *             compensation: string,
-     *         },
-     *     }>,
+     *     weeks: list<array{days: list<array<string, mixed>>, totals: array<string, string>}>,
      * }>
      */
     public function build(Carbon $start, Carbon $end, array $userIds): array
@@ -86,20 +67,25 @@ class DailyReportService
         $assignments = $this->shiftAssignmentsByUser($userIds, $periodStart, $periodEnd);
         $holidays = $this->holidaysByDate($periodStart, $periodEnd);
 
-        $dates = CarbonPeriod::create($periodStart->copy()->startOfDay(), $periodEnd->copy()->startOfDay());
+        $dates = [];
 
-        return $users->map(function (User $user) use ($dates, $marks, $leaves, $assignments, $holidays): array {
+        foreach (CarbonPeriod::create($periodStart->copy()->startOfDay(), $periodEnd->copy()->startOfDay()) as $date) {
+            $dates[] = $date;
+        }
+
+        return array_values($users->map(function (User $user) use ($dates, $marks, $leaves, $assignments, $holidays): array {
             $userLeaves = $leaves->get($user->id, collect());
             $userAssignments = $assignments->get($user->id, collect());
-            $userMarks = $marks->get($user->id, collect());
+            $userMarks = $marks[$user->id] ?? [];
 
-            $weeks = collect($dates)
-                ->groupBy(fn (Carbon $date): string => $date->format('o-W'))
-                ->map(fn (Collection $weekDates): array => $this->buildWeek(
-                    $weekDates, $userMarks, $userLeaves, $userAssignments, $holidays,
-                ))
-                ->values()
-                ->all();
+            $weeks = array_values(
+                collect($dates)
+                    ->groupBy(fn (Carbon $date): string => $date->format('o-W'))
+                    ->map(fn (Collection $weekDates): array => $this->buildWeek(
+                        $weekDates, $userMarks, $userLeaves, $userAssignments, $holidays,
+                    ))
+                    ->all()
+            );
 
             return [
                 'employee' => $this->label($user->name, $user->formatted_rut ?? $user->rut),
@@ -111,14 +97,14 @@ class DailyReportService
                 'exceptionalCycle' => $this->exceptionalCycle($userAssignments),
                 'weeks' => $weeks,
             ];
-        })->all();
+        })->all());
     }
 
     /**
      * Build one week: a day row per date plus the signed totals line (b.12).
      *
      * @param  Collection<int, Carbon>  $weekDates
-     * @param  Collection<string, array{in: Carbon|null, out: Carbon|null}>  $userMarks
+     * @param  array<string, array{in: Carbon|null, out: Carbon|null}>  $userMarks
      * @param  Collection<int, Leave>  $userLeaves
      * @param  Collection<int, ShiftAssignment>  $userAssignments
      * @param  Collection<string, Holiday>  $holidays
@@ -126,7 +112,7 @@ class DailyReportService
      */
     private function buildWeek(
         Collection $weekDates,
-        Collection $userMarks,
+        array $userMarks,
         Collection $userLeaves,
         Collection $userAssignments,
         Collection $holidays,
@@ -149,7 +135,7 @@ class DailyReportService
             );
             $nonWorkingDay = ! $isWorkingDay || $holiday !== null || $leave !== null;
 
-            $dayMarks = $userMarks->get($key, ['in' => null, 'out' => null]);
+            $dayMarks = $userMarks[$key] ?? ['in' => null, 'out' => null];
             $inMark = $dayMarks['in'];
             $outMark = $dayMarks['out'];
 
@@ -309,7 +295,7 @@ class DailyReportService
             ->filter(fn ($shift): bool => $shift?->type === ShiftType::Exceptional)
             ->first();
 
-        return $shift?->description ?? $shift?->name;
+        return $shift->description ?? $shift?->name;
     }
 
     /**
@@ -397,26 +383,46 @@ class DailyReportService
      * Map user id to `Y-m-d` day => first IN / last OUT mark of that day.
      *
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<string, array{in: Carbon|null, out: Carbon|null}>>
+     * @return array<int|string, array<string, array{in: Carbon|null, out: Carbon|null}>>
      */
-    private function marksByUser(array $userIds, Carbon $start, Carbon $end): Collection
+    private function marksByUser(array $userIds, Carbon $start, Carbon $end): array
     {
-        return Mark::query()
+        $byUser = Mark::query()
             ->whereIn('user_id', $userIds)
             ->whereBetween('date_time', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->orderBy('date_time')
             ->get(['user_id', 'date_time', 'type'])
-            ->groupBy('user_id')
-            ->map(fn (Collection $marks): Collection => $marks
-                ->groupBy(fn (Mark $mark): string => $mark->date_time->format('Y-m-d'))
-                ->map(fn (Collection $dayMarks): array => [
-                    'in' => $dayMarks->where('type', MarkType::In)->min('date_time'),
-                    'out' => $dayMarks->where('type', MarkType::Out)->max('date_time'),
-                ]));
+            ->groupBy('user_id');
+
+        $result = [];
+
+        foreach ($byUser as $userId => $marks) {
+            $days = [];
+
+            foreach ($marks as $mark) {
+                $day = $mark->date_time->format('Y-m-d');
+
+                if (! isset($days[$day])) {
+                    $days[$day] = ['in' => null, 'out' => null];
+                }
+
+                // Marks are ordered ascending: keep the first IN and the last OUT.
+                if ($mark->type === MarkType::In && $days[$day]['in'] === null) {
+                    $days[$day]['in'] = $mark->date_time;
+                } elseif ($mark->type === MarkType::Out) {
+                    $days[$day]['out'] = $mark->date_time;
+                }
+            }
+
+            $result[$userId] = $days;
+        }
+
+        return $result;
     }
 
     /**
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<int, Leave>>
+     * @return Collection<int|string, EloquentCollection<int, Leave>>
      */
     private function approvedLeavesByUser(array $userIds, Carbon $start, Carbon $end): Collection
     {
@@ -431,7 +437,7 @@ class DailyReportService
 
     /**
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<int, ShiftAssignment>>
+     * @return Collection<int|string, EloquentCollection<int, ShiftAssignment>>
      */
     private function shiftAssignmentsByUser(array $userIds, Carbon $start, Carbon $end): Collection
     {

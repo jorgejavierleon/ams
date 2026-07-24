@@ -57,8 +57,8 @@ class WorkdayController extends Controller
             'workdays' => $workdays->map(fn (Workday $workday) => [
                 'id' => $workday->id,
                 'date' => $workday->date->format('Y-m-d'),
-                'date_label' => $workday->date->locale(app()->getLocale())->isoFormat('ddd D [de] MMM'),
-                'weekday' => $workday->date->locale(app()->getLocale())->isoFormat('dddd'),
+                'date_label' => $workday->date->isoFormat('ddd D [de] MMM'),
+                'weekday' => $workday->date->isoFormat('dddd'),
                 'status' => $workday->status?->value,
                 'status_label' => $workday->status?->label(),
                 'status_badge' => $workday->status?->badge(),
@@ -172,8 +172,7 @@ class WorkdayController extends Controller
         return [
             'id' => $modification->id,
             'workday_id' => $modification->workday_id,
-            'date_label' => $modification->workday?->date
-                ->locale(app()->getLocale())->isoFormat('dddd D [de] MMMM'),
+            'date_label' => $modification->workday?->date->isoFormat('dddd D [de] MMMM'),
             'mark_type' => $modification->mark_type?->value,
             'mark_type_label' => $modification->mark_type?->label(),
             'original_time' => ($modification->original_date_time ?? $modification->mark?->date_time)?->format('H:i'),

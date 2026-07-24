@@ -25,7 +25,12 @@ class PremiseFactory extends Factory
             'name' => fake()->company().' - '.fake()->city(),
             'code' => fake()->optional()->bothify('SUC-###'),
             'country' => 'Chile',
-            'region' => fake()->optional()->state(),
+            'region' => fake()->optional()->randomElement([
+                'Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo',
+                'Valparaíso', 'Metropolitana de Santiago', "Libertador General Bernardo O'Higgins",
+                'Maule', 'Ñuble', 'Biobío', 'La Araucanía', 'Los Ríos', 'Los Lagos',
+                'Aysén del General Carlos Ibáñez del Campo', 'Magallanes y de la Antártica Chilena',
+            ]),
             'commune' => fake()->optional()->city(),
             'address' => fake()->streetAddress(),
             // Chilean bounding box, kept within the stored column precision.

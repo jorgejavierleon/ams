@@ -4,9 +4,9 @@ namespace App\Models\Concerns;
 
 use App\Models\Organization;
 use App\Models\Scopes\OrganizationScope;
+use App\Support\CurrentOrganization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * Marks a model as owned by an organization (tenant).
@@ -36,19 +36,7 @@ trait BelongsToOrganization
      */
     public static function currentOrganizationId(): ?int
     {
-        $dtOrganizationId = session('dt_organization_id');
-
-        if ($dtOrganizationId !== null) {
-            return (int) $dtOrganizationId;
-        }
-
-        $sessionOrganizationId = session('organization_id');
-
-        if ($sessionOrganizationId !== null) {
-            return (int) $sessionOrganizationId;
-        }
-
-        return Auth::user()?->organization_id;
+        return CurrentOrganization::id();
     }
 
     /**

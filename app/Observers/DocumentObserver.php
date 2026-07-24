@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\DocumentStatus;
 use App\Models\Document;
 use App\Services\Documents\DocumentVariableResolver;
+use Illuminate\Support\Carbon;
 
 class DocumentObserver
 {
@@ -25,7 +26,7 @@ class DocumentObserver
         }
 
         if ($document->published_at === null) {
-            $document->published_at = now();
+            $document->published_at = Carbon::now();
         }
 
         $document->body = $this->resolver->resolve($document);

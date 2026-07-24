@@ -240,15 +240,17 @@ class ReportController extends Controller
      */
     private function shiftOptions(): array
     {
-        return Shift::query()
-            ->with('days')
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Shift $shift): array => [
-                'value' => (string) $shift->id,
-                'label' => $shift->extensionLabel(),
-            ])
-            ->all();
+        return array_values(
+            Shift::query()
+                ->with('days')
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Shift $shift): array => [
+                    'value' => (string) $shift->id,
+                    'label' => $shift->extensionLabel(),
+                ])
+                ->all()
+        );
     }
 
     /**
@@ -311,7 +313,7 @@ class ReportController extends Controller
                 ->whereIn('shift_id', $filters['shifts']));
         }
 
-        return $query->pluck('id')->all();
+        return array_values($query->pluck('id')->map(fn (mixed $id): int => (int) $id)->all());
     }
 
     /**
@@ -330,11 +332,14 @@ class ReportController extends Controller
             return [];
         }
 
-        return User::query()
-            ->where('organization_id', $organizationId)
-            ->whereKey($userId)
-            ->pluck('id')
-            ->all();
+        return array_values(
+            User::query()
+                ->where('organization_id', $organizationId)
+                ->whereKey($userId)
+                ->pluck('id')
+                ->map(fn (mixed $id): int => (int) $id)
+                ->all()
+        );
     }
 
     /**
@@ -352,37 +357,43 @@ class ReportController extends Controller
      */
     private function employeeOptions(int $organizationId): array
     {
-        return User::query()
-            ->where('organization_id', $organizationId)
-            ->employees()
-            ->orderBy('name')
-            ->get()
-            ->map(fn (User $employee): array => [
-                'value' => (string) $employee->id,
-                'label' => $employee->formatted_rut === null
-                    ? $employee->name
-                    : "{$employee->name} ({$employee->formatted_rut})",
-                'keywords' => $employee->rut === null
-                    ? []
-                    : [$employee->rut, str_replace('-', '', $employee->rut)],
-            ])
-            ->all();
+        return array_values(
+            User::query()
+                ->where('organization_id', $organizationId)
+                ->employees()
+                ->orderBy('name')
+                ->get()
+                ->map(fn (User $employee): array => [
+                    'value' => (string) $employee->id,
+                    'label' => $employee->formatted_rut === null
+                        ? $employee->name
+                        : "{$employee->name} ({$employee->formatted_rut})",
+                    'keywords' => $employee->rut === null
+                        ? []
+                        : [$employee->rut, str_replace('-', '', $employee->rut)],
+                ])
+                ->all()
+        );
     }
 
     /**
      * Map a name-bearing model collection to `{value, label}` select options.
      *
-     * @param  Collection<int, Position|Premise>  $models
+     * @template TModel of Position|Premise
+     *
+     * @param  Collection<int, TModel>  $models
      * @return list<array{value: string, label: string}>
      */
     private function options(Collection $models): array
     {
-        return $models
-            ->map(fn (Position|Premise $model): array => [
-                'value' => (string) $model->id,
-                'label' => $model->name,
-            ])
-            ->all();
+        return array_values(
+            $models
+                ->map(fn (Position|Premise $model): array => [
+                    'value' => (string) $model->id,
+                    'label' => $model->name,
+                ])
+                ->all()
+        );
     }
 
     /**
@@ -429,12 +440,13 @@ class ReportController extends Controller
     {
         $valid = array_map(fn (ShiftType $type): string => $type->value, ShiftType::cases());
 
-        return collect((array) $value)
-            ->map(fn ($type): string => (string) $type)
-            ->filter(fn (string $type): bool => in_array($type, $valid, true))
-            ->unique()
-            ->values()
-            ->all();
+        return array_values(
+            collect((array) $value)
+                ->map(fn ($type): string => (string) $type)
+                ->filter(fn (string $type): bool => in_array($type, $valid, true))
+                ->unique()
+                ->all()
+        );
     }
 
     /**
@@ -444,11 +456,12 @@ class ReportController extends Controller
      */
     private function intIds(mixed $value): array
     {
-        return collect((array) $value)
-            ->map(fn ($id): int => (int) $id)
-            ->filter(fn (int $id): bool => $id > 0)
-            ->unique()
-            ->values()
-            ->all();
+        return array_values(
+            collect((array) $value)
+                ->map(fn ($id): int => (int) $id)
+                ->filter(fn (int $id): bool => $id > 0)
+                ->unique()
+                ->all()
+        );
     }
 }

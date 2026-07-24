@@ -29,7 +29,7 @@ class WorkdayPresenter
         return [
             'id' => $workday->id,
             'date' => $workday->date->format('Y-m-d'),
-            'date_label' => $workday->date->locale(app()->getLocale())->isoFormat('dddd D [de] MMMM [de] YYYY'),
+            'date_label' => $workday->date->isoFormat('dddd D [de] MMMM [de] YYYY'),
             'employee' => [
                 'id' => $workday->user_id,
                 'name' => $workday->user?->name,

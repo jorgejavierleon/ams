@@ -135,9 +135,16 @@ class User extends Authenticatable implements HasMedia
         return $this->belongsToMany(Shift::class, 'shift_assignments', 'user_id', 'shift_id');
     }
 
+    /**
+     * @return Attribute<string|null, never>
+     */
     protected function avatar(): Attribute
     {
-        return Attribute::get(fn () => $this->getFirstMediaUrl('avatar') ?: null);
+        return Attribute::make(
+            get: fn (): ?string => $this->hasMedia('avatar')
+                ? $this->getFirstMediaUrl('avatar')
+                : null,
+        );
     }
 
     /**

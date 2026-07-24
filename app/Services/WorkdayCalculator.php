@@ -147,8 +147,8 @@ class WorkdayCalculator
                     ->orWhereNotNull('mark_out.date_time')
                     ->orWhereNotNull('shift_days.id');
             })
-            ->select([
-                DB::raw("'{$dateString}' as date"),
+            ->selectRaw('? as date', [$dateString])
+            ->addSelect([
                 'users.id as user_id',
                 'users.company_id as company_id',
                 'users.organization_id as organization_id',
@@ -206,7 +206,7 @@ class WorkdayCalculator
      * Derive the attendance status from the presence of marks, a shift and a
      * leave for the day.
      */
-    protected function getStatus(object $workday): ?string
+    protected function getStatus(\stdClass $workday): ?string
     {
         // An approved leave justifies the whole day.
         if ($workday->leave_id !== null) {
@@ -243,14 +243,15 @@ class WorkdayCalculator
      * Worked time (HH:MM:SS) between the in and out marks, excluding the
      * scheduled lunch break when one is defined.
      */
-    protected function calculateWorkedTime(object $workday): string
+    protected function calculateWorkedTime(\stdClass $workday): string
     {
-        if ($workday->mark_in_at === null || $workday->mark_out_at === null) {
+        $markIn = $this->toCarbon($workday->mark_in_at);
+        $markOut = $this->toCarbon($workday->mark_out_at);
+
+        if ($markIn === null || $markOut === null) {
             return '00:00:00';
         }
 
-        $markIn = $this->toCarbon($workday->mark_in_at);
-        $markOut = $this->toCarbon($workday->mark_out_at);
         $lunchStart = $this->toCarbon($workday->lunch_start_time ?? null);
         $lunchEnd = $this->toCarbon($workday->lunch_end_time ?? null);
 
@@ -263,12 +264,16 @@ class WorkdayCalculator
         return gmdate('H:i:s', (int) $seconds);
     }
 
-    private function toCarbon(string|Carbon|null $value): ?Carbon
+    private function toCarbon(mixed $value): ?Carbon
     {
         if ($value === null) {
             return null;
         }
 
-        return $value instanceof Carbon ? $value : Carbon::parse($value);
+        if ($value instanceof Carbon) {
+            return $value;
+        }
+
+        return is_string($value) ? Carbon::parse($value) : null;
     }
 }

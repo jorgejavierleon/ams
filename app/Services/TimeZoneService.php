@@ -28,6 +28,6 @@ class TimeZoneService
     {
         $user ??= Auth::user();
 
-        return $user?->timezone ?? $this->getAppTimezone();
+        return $user->timezone ?? $this->getAppTimezone();
     }
 }
