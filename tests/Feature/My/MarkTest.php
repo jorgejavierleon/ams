@@ -10,6 +10,7 @@ use App\Models\Shift;
 use App\Models\ShiftAssignment;
 use App\Models\ShiftDay;
 use App\Models\User;
+use App\Services\TimeZoneService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -142,6 +143,27 @@ test('a mark is stamped in the employee timezone', function () {
     $mark = app(MarkManager::class)->createMark(MarkType::In, $employee);
 
     expect($mark->date_time->format('H:i'))->toBe('19:30');
+});
+
+test('a user without a personal timezone falls back to Chilean local time', function () {
+    // The documented fallback (Resolución 38, Art. 10): with no personal timezone
+    // the display timezone must resolve to America/Santiago, never the raw UTC the
+    // datetimes are stored against.
+    $user = User::factory()->make(['timezone' => null]);
+
+    expect(app(TimeZoneService::class)->getUserTimezone($user))->toBe('America/Santiago');
+});
+
+test('a clocked mark reads in Chilean local time rather than UTC end to end', function () {
+    // Register the punch through the real HTTP flow at a fixed instant and assert
+    // the stored mark surfaces as the Santiago wall clock, not the UTC one.
+    $this->travelTo(Carbon::create(2026, 7, 13, 23, 30, 0, 'UTC'));
+
+    $employee = clockingEmployee(); // employee, default America/Santiago timezone
+
+    $this->actingAs($employee)->post(route('my.marks.store'), ['type' => 'in']);
+
+    expect(Mark::first()->date_time->format('d-m-Y H:i'))->toBe('13-07-2026 19:30');
 });
 
 test('registering a mark emails the employee a receipt', function () {
