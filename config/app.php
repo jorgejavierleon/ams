@@ -69,6 +69,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Datetimes are stored in UTC but must be displayed to users in Chilean
+    | local time (Resolución 38, Art. 10). This is the fallback display
+    | timezone used whenever a user has no personal timezone configured.
+    |
+    */
+
+    'timezone_display' => env('APP_TIMEZONE_DISPLAY', 'America/Santiago'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |
