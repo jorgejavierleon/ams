@@ -62,7 +62,7 @@ class DocumentController extends Controller
                 'id' => $document->id,
                 'title' => $document->title,
                 'type' => $document->type?->label(),
-                'employee' => $document->user?->name,
+                'employee' => $document->user->name,
                 'status' => [
                     'value' => $document->status->value,
                     'label' => $document->status->label(),
@@ -116,8 +116,8 @@ class DocumentController extends Controller
                 'title' => $document->title,
                 'type' => $document->type?->label(),
                 'employee' => [
-                    'id' => $document->user?->id,
-                    'name' => $document->user?->name,
+                    'id' => $document->user->id,
+                    'name' => $document->user->name,
                 ],
                 'status' => [
                     'value' => $document->status->value,
@@ -188,7 +188,7 @@ class DocumentController extends Controller
                 'event' => $activity->event,
                 'title' => __("ui.documents.activity.events.{$activity->event}.title"),
                 'description' => $activity->description,
-                'causer' => $activity->causer?->name,
+                'causer' => $activity->causer instanceof User ? $activity->causer->name : null,
                 'status_change' => $this->activityStatusChange($activity),
                 'created_at' => $activity->created_at?->format('Y-m-d H:i') ?? '',
             ])
@@ -224,7 +224,7 @@ class DocumentController extends Controller
             'document' => [
                 'id' => $document->id,
                 'title' => $document->title,
-                'type' => $document->type?->value ?? '',
+                'type' => $document->type->value ?? '',
                 'user_id' => (string) $document->user_id,
                 'body' => $document->body ?? '',
                 'legal_rep_signatories' => (string) $document->legal_rep_signatories,

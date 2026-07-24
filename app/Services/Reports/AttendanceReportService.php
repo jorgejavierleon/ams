@@ -10,6 +10,7 @@ use App\Models\ShiftAssignment;
 use App\Models\ShiftDay;
 use App\Models\User;
 use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -59,7 +60,7 @@ class AttendanceReportService
 
         $dates = CarbonPeriod::create($start->copy()->startOfDay(), $end->copy()->startOfDay());
 
-        return $users->map(function (User $user) use ($dates, $markDates, $leaves, $assignments, $holidays): array {
+        return array_values($users->map(function (User $user) use ($dates, $markDates, $leaves, $assignments, $holidays): array {
             $userLeaves = $leaves->get($user->id, collect());
             $userAssignments = $assignments->get($user->id, collect());
             $attendedDates = $markDates->get($user->id, collect());
@@ -93,12 +94,14 @@ class AttendanceReportService
                 'premise' => $user->premise?->name,
                 'rows' => $rows,
             ];
-        })->all();
+        })->all());
     }
 
     /**
      * The "Ausencia" column: null when the worker attended, otherwise justified
      * (approved leave, free shift day or holiday) or unjustified.
+     *
+     * @return 'justified'|'unjustified'|null
      */
     private function absence(bool $attended, ?Leave $leave, bool $isFree, ?Holiday $holiday): ?string
     {
@@ -163,7 +166,7 @@ class AttendanceReportService
      * Map user id to the set of `Y-m-d` days on which the worker has any mark.
      *
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<string, true>>
+     * @return Collection<int|string, Collection<string, bool>>
      */
     private function markDatesByUser(array $userIds, Carbon $start, Carbon $end): Collection
     {
@@ -172,14 +175,14 @@ class AttendanceReportService
             ->whereBetween('date_time', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
             ->get(['user_id', 'date_time'])
             ->groupBy('user_id')
-            ->map(fn (Collection $marks): Collection => $marks
+            ->map(fn (Collection $marks) => $marks
                 ->keyBy(fn (Mark $mark): string => $mark->date_time->format('Y-m-d'))
                 ->map(fn (): bool => true));
     }
 
     /**
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<int, Leave>>
+     * @return Collection<int|string, EloquentCollection<int, Leave>>
      */
     private function approvedLeavesByUser(array $userIds, Carbon $start, Carbon $end): Collection
     {
@@ -194,7 +197,7 @@ class AttendanceReportService
 
     /**
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<int, ShiftAssignment>>
+     * @return Collection<int|string, EloquentCollection<int, ShiftAssignment>>
      */
     private function shiftAssignmentsByUser(array $userIds, Carbon $start, Carbon $end): Collection
     {

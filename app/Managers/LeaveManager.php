@@ -68,7 +68,7 @@ class LeaveManager
     private function approveGeneralLeave(Leave $leave): void
     {
         $leave->status = LeaveStatus::Approved;
-        $leave->approved_by = auth()->id();
+        $leave->approved_by = $this->currentUserId();
         $leave->save();
     }
 
@@ -82,7 +82,7 @@ class LeaveManager
     private function approveVacation(Leave $leave): void
     {
         $leave->status = LeaveStatus::Approved;
-        $leave->approved_by = auth()->id();
+        $leave->approved_by = $this->currentUserId();
         $leave->save();
 
         $leave->user->vacation_days -= $leave->business_days_requested;
@@ -100,5 +100,15 @@ class LeaveManager
         $leave->status = LeaveStatus::Rejected;
         $leave->approved_by = null;
         $leave->save();
+    }
+
+    /**
+     * The authenticated user's integer id, or null when unauthenticated.
+     */
+    private function currentUserId(): ?int
+    {
+        $id = auth()->id();
+
+        return is_int($id) ? $id : null;
     }
 }

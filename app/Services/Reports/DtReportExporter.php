@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use PhpOffice\PhpSpreadsheet\Reader\Html as HtmlSpreadsheetReader;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx as XlsxWriter;
 use PhpOffice\PhpWord\IOFactory as WordIOFactory;
@@ -81,6 +82,7 @@ class DtReportExporter
                 ->setPaper('letter', 'landscape')
                 ->download("{$filename}.pdf"),
             'word' => $this->word($fragment, $filename),
+            default => throw new InvalidArgumentException("Unsupported export format: {$format}"),
         };
     }
 
@@ -110,6 +112,7 @@ class DtReportExporter
             'shift-changes' => $this->shiftChanges->build($start, $end, $userIds),
             'sundays' => $this->sundays->build($start, $end, $userIds),
             'incidents' => $this->incidents->build($start, $end),
+            default => throw new InvalidArgumentException("Unsupported report type: {$type}"),
         };
     }
 

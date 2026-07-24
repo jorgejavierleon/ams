@@ -76,7 +76,7 @@ class DocumentTemplateController extends Controller
             'template' => [
                 'id' => $documentTemplate->id,
                 'title' => $documentTemplate->title,
-                'type' => $documentTemplate->type?->value ?? '',
+                'type' => $documentTemplate->type->value ?? '',
                 'body' => $documentTemplate->body ?? '',
             ],
             'options' => $this->formOptions(),

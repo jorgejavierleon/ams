@@ -46,33 +46,33 @@ class DocumentVariableResolver
     private function replacementsFor(Document $document): array
     {
         $employee = $document->user;
-        $employee?->loadMissing(['company', 'premise', 'position']);
+        $employee->loadMissing(['company', 'premise', 'position']);
 
-        $company = $employee?->company;
-        $premise = $employee?->premise;
+        $company = $employee->company;
+        $premise = $employee->premise;
         $legalRep = $this->legalRepresentative($document);
 
         return array_map(
             fn (mixed $value): string => $this->stringify($value),
             [
                 // --- Employee ---
-                '{{employee_name}}' => $employee?->name,
-                '{{employee_first_name}}' => $employee?->first_name,
-                '{{employee_last_name}}' => $employee?->last_name,
-                '{{employee_second_last_name}}' => $employee?->second_last_name,
-                '{{employee_rut}}' => $employee?->formatted_rut,
-                '{{employee_nationality}}' => $employee?->nationality,
-                '{{employee_email}}' => $employee?->email,
-                '{{employee_personal_email}}' => $employee?->personal_email,
-                '{{employee_phone}}' => $employee?->phone,
-                '{{employee_position}}' => $employee?->position?->name,
-                '{{emergency_contact_name}}' => $employee?->emergency_contact_name,
-                '{{emergency_contact_phone}}' => $employee?->emergency_contact_phone,
+                '{{employee_name}}' => $employee->name,
+                '{{employee_first_name}}' => $employee->first_name,
+                '{{employee_last_name}}' => $employee->last_name,
+                '{{employee_second_last_name}}' => $employee->second_last_name,
+                '{{employee_rut}}' => $employee->formatted_rut,
+                '{{employee_nationality}}' => $employee->nationality,
+                '{{employee_email}}' => $employee->email,
+                '{{employee_personal_email}}' => $employee->personal_email,
+                '{{employee_phone}}' => $employee->phone,
+                '{{employee_position}}' => $employee->position?->name,
+                '{{emergency_contact_name}}' => $employee->emergency_contact_name,
+                '{{emergency_contact_phone}}' => $employee->emergency_contact_phone,
 
                 // --- Contract ---
-                '{{contract_start_date}}' => $employee?->contract_start_date?->format('d-m-Y'),
-                '{{contract_end_date}}' => $employee?->contract_end_date?->format('d-m-Y'),
-                '{{vacation_days}}' => $employee?->vacation_days,
+                '{{contract_start_date}}' => $employee->contract_start_date?->format('d-m-Y'),
+                '{{contract_end_date}}' => $employee->contract_end_date?->format('d-m-Y'),
+                '{{vacation_days}}' => $employee->vacation_days,
 
                 // --- Employer company ---
                 '{{company_social_reason}}' => $company?->social_reason,

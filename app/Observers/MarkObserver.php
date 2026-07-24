@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Mail\MarkCreated;
 use App\Models\Mark;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 
 class MarkObserver
@@ -29,8 +30,8 @@ class MarkObserver
             $mark->company_id = $user?->company_id;
         }
 
-        if ($mark->date_time === null) {
-            $mark->date_time = now();
+        if ($mark->getAttribute('date_time') === null) {
+            $mark->date_time = Carbon::now();
         }
         if ($mark->original_date_time === null) {
             $mark->original_date_time = $mark->date_time;

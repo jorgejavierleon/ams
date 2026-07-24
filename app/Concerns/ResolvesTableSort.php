@@ -12,6 +12,7 @@ trait ResolvesTableSort
      * permitted, protecting the query from arbitrary `orderBy` input.
      *
      * @param  array<int, string>  $sortable  columns the client may sort by
+     * @param  'asc'|'desc'  $defaultDirection
      * @return array{sort: string, direction: 'asc'|'desc'}
      */
     protected function resolveTableSort(

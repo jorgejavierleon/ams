@@ -136,7 +136,7 @@ class LeaveController extends Controller
 
         $employee = User::query()
             ->where('organization_id', $organizationId)
-            ->findOrFail($data['user_id']);
+            ->findOrFail($request->integer('user_id'));
 
         // A half-day leave is confined to a single day and always counts 0.5.
         if ($request->boolean('half_day')) {
@@ -192,7 +192,7 @@ class LeaveController extends Controller
 
         $employee = User::query()
             ->where('organization_id', Company::currentOrganizationId())
-            ->findOrFail($data['employee']);
+            ->findOrFail($request->integer('employee'));
 
         $businessDays = $calculator->calculate(
             $employee,

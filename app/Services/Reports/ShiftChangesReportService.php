@@ -6,6 +6,7 @@ use App\Enums\ShiftType;
 use App\Models\ShiftAssignment;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -36,17 +37,7 @@ class ShiftChangesReportService
      *     employee: string,
      *     employer: string|null,
      *     premise: string|null,
-     *     rows: list<array{
-     *         oldStartDate: string|null,
-     *         oldShift: string|null,
-     *         oldExtension: string|null,
-     *         notificationDate: string|null,
-     *         newStartDate: string,
-     *         newShift: string,
-     *         newExtension: string,
-     *         requestedBy: 'employee'|'employer',
-     *         observation: string|null,
-     *     }>,
+     *     rows: list<array<string, mixed>>,
      *     emptyReason: 'fixed-journey'|'no-changes'|null,
      * }>
      */
@@ -64,7 +55,7 @@ class ShiftChangesReportService
 
         $assignments = $this->shiftAssignmentsByUser($userIds);
 
-        return $users->map(function (User $user) use ($start, $end, $assignments): array {
+        return array_values($users->map(function (User $user) use ($start, $end, $assignments): array {
             $userAssignments = $assignments->get($user->id, collect());
             $rows = $this->rows($userAssignments, $start, $end);
 
@@ -77,7 +68,7 @@ class ShiftChangesReportService
                 'rows' => $rows,
                 'emptyReason' => $rows === [] ? $this->emptyReason($userAssignments) : null,
             ];
-        })->all();
+        })->all());
     }
 
     /**
@@ -96,7 +87,7 @@ class ShiftChangesReportService
             ->sortBy('start_date')
             ->values();
 
-        return $changes
+        return array_values($changes
             ->map(function (ShiftAssignment $assignment, int $index) use ($changes): array {
                 $previous = $index === 0 ? null : $changes->get($index - 1);
 
@@ -116,7 +107,7 @@ class ShiftChangesReportService
                     'observation' => null,
                 ];
             })
-            ->all();
+            ->all());
     }
 
     /**
@@ -140,7 +131,7 @@ class ShiftChangesReportService
      */
     private function shiftDetail(ShiftAssignment $assignment): string
     {
-        return $assignment->shift?->description ?? $assignment->shift?->name ?? '';
+        return $assignment->shift->description ?? $assignment->shift->name ?? '';
     }
 
     /**
@@ -165,7 +156,7 @@ class ShiftChangesReportService
      * rows and the fixed-journey check can read shift type and detail.
      *
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<int, ShiftAssignment>>
+     * @return Collection<int|string, EloquentCollection<int, ShiftAssignment>>
      */
     private function shiftAssignmentsByUser(array $userIds): Collection
     {

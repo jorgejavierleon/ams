@@ -22,7 +22,7 @@ enum ShiftType: string
     /**
      * All types as value/label pairs for select inputs.
      *
-     * @return array<int, array{value: string, label: string}>
+     * @return list<array{value: string, label: string}>
      */
     public static function options(): array
     {

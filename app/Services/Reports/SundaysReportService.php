@@ -10,6 +10,7 @@ use App\Models\ShiftAssignment;
 use App\Models\ShiftDay;
 use App\Models\User;
 use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -47,10 +48,10 @@ class SundaysReportService
      *     additionalSundays: bool,
      *     months: list<array{key: string, label: string, worked: int, rows: list<array{
      *         date: string,
-     *         dayType: 'sunday'|'holiday',
+     *         dayType: string,
      *         holiday: string|null,
      *         attendance: bool,
-     *         absence: 'justified'|'unjustified'|null,
+     *         absence: string|null,
      *         observation: array{kind: string, name?: string, type?: string}|null,
      *     }>}>,
      *     total: int,
@@ -79,17 +80,23 @@ class SundaysReportService
         $holidays = $this->holidaysByDate($start, $end);
 
         // Only Sundays and holidays are relevant to this report (Art. 27 c).
-        $relevantDates = collect(CarbonPeriod::create($start->copy()->startOfDay(), $end->copy()->startOfDay()))
-            ->filter(fn (Carbon $date): bool => $date->isSunday() || $holidays->has($date->format('Y-m-d')))
-            ->values();
+        $dates = [];
 
-        return $users->map(function (User $user) use ($relevantDates, $markDates, $leaves, $assignments, $holidays): array {
+        foreach (CarbonPeriod::create($start->copy()->startOfDay(), $end->copy()->startOfDay()) as $date) {
+            if ($date->isSunday() || $holidays->has($date->format('Y-m-d'))) {
+                $dates[] = $date;
+            }
+        }
+
+        $relevantDates = collect($dates);
+
+        return array_values($users->map(function (User $user) use ($relevantDates, $markDates, $leaves, $assignments, $holidays): array {
             $userLeaves = $leaves->get($user->id, collect());
             $userAssignments = $assignments->get($user->id, collect());
             $attendedDates = $markDates->get($user->id, collect());
 
             $months = $this->monthsFor($relevantDates, $attendedDates, $userAssignments, $userLeaves, $holidays);
-            $total = $months->sum('worked');
+            $total = array_sum(array_column($months, 'worked'));
 
             return [
                 'employee' => $this->label($user->name, $user->formatted_rut ?? $user->rut),
@@ -99,12 +106,12 @@ class SundaysReportService
                 'premise' => $user->premise?->name,
                 'position' => $user->position?->name,
                 'additionalSundays' => $user->has_additional_sundays,
-                'months' => $months->values()->all(),
+                'months' => $months,
                 'total' => $total,
                 // The fixed-journey legend (Art. 27 c, final paragraph).
-                'emptyReason' => $months->isEmpty() ? 'no-sundays' : null,
+                'emptyReason' => $months === [] ? 'no-sundays' : null,
             ];
-        })->all();
+        })->all());
     }
 
     /**
@@ -114,11 +121,11 @@ class SundaysReportService
      * hacerlo"); days off are omitted entirely.
      *
      * @param  Collection<int, Carbon>  $relevantDates
-     * @param  Collection<string, true>  $attendedDates
+     * @param  Collection<string, bool>  $attendedDates
      * @param  Collection<int, ShiftAssignment>  $assignments
      * @param  Collection<int, Leave>  $leaves
      * @param  Collection<string, Holiday>  $holidays
-     * @return Collection<int, array{key: string, label: string, worked: int, rows: list<array<string, mixed>>}>
+     * @return list<array{key: string, label: string, worked: int, rows: list<array{date: string, dayType: string, holiday: string|null, attendance: bool, absence: string|null, observation: array{kind: string, name?: string, type?: string}|null}>}>
      */
     private function monthsFor(
         Collection $relevantDates,
@@ -126,54 +133,88 @@ class SundaysReportService
         Collection $assignments,
         Collection $leaves,
         Collection $holidays,
-    ): Collection {
-        return $relevantDates
-            ->map(function (Carbon $date) use ($attendedDates, $assignments, $leaves, $holidays): ?array {
-                $key = $date->format('Y-m-d');
-                $attended = $attendedDates->has($key);
-                $shiftDay = $this->shiftDayFor($assignments, $date);
-                $scheduled = $shiftDay !== null && ! $shiftDay->is_free;
+    ): array {
+        $entries = [];
+        $monthKeys = [];
 
-                // Show the day only if worked or rostered (Art. 27 c, final paragraph).
-                if (! $attended && ! $scheduled) {
-                    return null;
+        foreach ($relevantDates as $date) {
+            $key = $date->format('Y-m-d');
+            $attended = $attendedDates->has($key);
+            $shiftDay = $this->shiftDayFor($assignments, $date);
+            $scheduled = $shiftDay !== null && ! $shiftDay->is_free;
+
+            // Show the day only if worked or rostered (Art. 27 c, final paragraph).
+            if (! $attended && ! $scheduled) {
+                continue;
+            }
+
+            $holiday = $holidays->get($key);
+            $leave = $leaves->first(
+                fn (Leave $leave): bool => $date->betweenIncluded($leave->start_date, $leave->end_date)
+            );
+
+            $monthKey = $date->format('Y-m');
+
+            if (! in_array($monthKey, $monthKeys, true)) {
+                $monthKeys[] = $monthKey;
+            }
+
+            $entries[] = [
+                'monthKey' => $monthKey,
+                // Prefer the month name for the subtotal label (Art. 27 c.7).
+                'monthLabel' => $date->translatedFormat('F Y'),
+                'attended' => $attended,
+                'row' => [
+                    // dd/mm/aa per Resolución 38, Art. 27 c.3.
+                    'date' => $date->format('d/m/y'),
+                    'dayType' => $holiday !== null ? 'holiday' : 'sunday',
+                    'holiday' => $holiday?->name,
+                    'attendance' => $attended,
+                    'absence' => $this->absence($attended, $leave),
+                    'observation' => $this->observation($holiday, $leave),
+                ],
+            ];
+        }
+
+        // Group into month blocks with simple appends so phpstan keeps the row
+        // shapes (Sundays are grouped by calendar month, Art. 27 c.7).
+        $months = [];
+
+        foreach ($monthKeys as $monthKey) {
+            $label = '';
+            $worked = 0;
+            $rows = [];
+
+            foreach ($entries as $entry) {
+                if ($entry['monthKey'] !== $monthKey) {
+                    continue;
                 }
 
-                $holiday = $holidays->get($key);
-                $leave = $leaves->first(
-                    fn (Leave $leave): bool => $date->betweenIncluded($leave->start_date, $leave->end_date)
-                );
+                $label = $entry['monthLabel'];
+                $rows[] = $entry['row'];
 
-                return [
-                    'monthKey' => $date->format('Y-m'),
-                    // Prefer the month name for the subtotal label (Art. 27 c.7).
-                    'monthLabel' => $date->translatedFormat('F Y'),
-                    'row' => [
-                        // dd/mm/aa per Resolución 38, Art. 27 c.3.
-                        'date' => $date->format('d/m/y'),
-                        'dayType' => $holiday !== null ? 'holiday' : 'sunday',
-                        'holiday' => $holiday?->name,
-                        'attendance' => $attended,
-                        'absence' => $this->absence($attended, $leave),
-                        'observation' => $this->observation($holiday, $leave),
-                    ],
-                ];
-            })
-            ->filter()
-            ->groupBy('monthKey')
-            ->map(fn (Collection $entries, string $monthKey): array => [
+                if ($entry['attended']) {
+                    $worked++;
+                }
+            }
+
+            $months[] = [
                 'key' => $monthKey,
-                'label' => $entries->first()['monthLabel'],
-                'worked' => $entries->filter(fn (array $entry): bool => $entry['row']['attendance'])->count(),
-                'rows' => $entries->pluck('row')->all(),
-            ])
-            ->values();
+                'label' => $label,
+                'worked' => $worked,
+                'rows' => $rows,
+            ];
+        }
+
+        return $months;
     }
 
     /**
      * The "Ausencia" column (Art. 27 c.5): null when the worker attended,
      * otherwise justified when an approved leave covers the day, else
      * unjustified.
+     *
+     * @return 'justified'|'unjustified'|null
      */
     private function absence(bool $attended, ?Leave $leave): ?string
     {
@@ -230,7 +271,7 @@ class SundaysReportService
      * Map user id to the set of `Y-m-d` days on which the worker has any mark.
      *
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<string, true>>
+     * @return Collection<int|string, Collection<string, bool>>
      */
     private function markDatesByUser(array $userIds, Carbon $start, Carbon $end): Collection
     {
@@ -239,14 +280,14 @@ class SundaysReportService
             ->whereBetween('date_time', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
             ->get(['user_id', 'date_time'])
             ->groupBy('user_id')
-            ->map(fn (Collection $marks): Collection => $marks
+            ->map(fn (Collection $marks) => $marks
                 ->keyBy(fn (Mark $mark): string => $mark->date_time->format('Y-m-d'))
                 ->map(fn (): bool => true));
     }
 
     /**
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<int, Leave>>
+     * @return Collection<int|string, EloquentCollection<int, Leave>>
      */
     private function approvedLeavesByUser(array $userIds, Carbon $start, Carbon $end): Collection
     {
@@ -261,7 +302,7 @@ class SundaysReportService
 
     /**
      * @param  list<int>  $userIds
-     * @return Collection<int, Collection<int, ShiftAssignment>>
+     * @return Collection<int|string, EloquentCollection<int, ShiftAssignment>>
      */
     private function shiftAssignmentsByUser(array $userIds, Carbon $start, Carbon $end): Collection
     {

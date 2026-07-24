@@ -34,17 +34,19 @@ class IncidentsReportService
      */
     public function build(Carbon $start, Carbon $end): array
     {
-        return Incident::query()
-            ->whereDate('start_time', '>=', $start)
-            ->whereDate('start_time', '<=', $end)
-            ->orderBy('start_time', 'desc')
-            ->get()
-            ->map(fn (Incident $incident): array => [
-                'start_time' => $incident->start_time->format('Y-m-d H:i'),
-                'end_time' => $incident->end_time?->format('Y-m-d H:i'),
-                'duration' => $incident->duration,
-                'description' => $incident->description,
-            ])
-            ->all();
+        return array_values(
+            Incident::query()
+                ->whereDate('start_time', '>=', $start)
+                ->whereDate('start_time', '<=', $end)
+                ->orderBy('start_time', 'desc')
+                ->get()
+                ->map(fn (Incident $incident): array => [
+                    'start_time' => $incident->start_time->format('Y-m-d H:i'),
+                    'end_time' => $incident->end_time?->format('Y-m-d H:i'),
+                    'duration' => $incident->duration,
+                    'description' => $incident->description,
+                ])
+                ->all()
+        );
     }
 }

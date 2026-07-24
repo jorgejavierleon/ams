@@ -114,8 +114,8 @@ class HandleInertiaRequests extends Middleware
      */
     private function translations(): array
     {
-        return collect(config('localization.shared_namespaces'))
-            ->mapWithKeys(fn (string $namespace) => [$namespace => trans($namespace)])
+        return collect((array) config('localization.shared_namespaces'))
+            ->mapWithKeys(fn (mixed $namespace) => [$namespace => trans((string) $namespace)])
             ->all();
     }
 }

@@ -2,11 +2,10 @@
 
 namespace App\Models\Scopes;
 
-use App\Models\Concerns\BelongsToOrganization;
+use App\Support\CurrentOrganization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * Constrains holiday reads to the official (global) list plus the current
@@ -16,9 +15,17 @@ use Illuminate\Support\Facades\Auth;
  * remain visible to every tenant. The scope is a no-op when no organization can
  * be resolved (console commands, SaaS panel), which lets the sync command and
  * super-admin see and manage the full table.
+ *
+ * @template TModel of Model
+ *
+ * @implements Scope<TModel>
  */
 class HolidayScope implements Scope
 {
+    /**
+     * @param  Builder<covariant TModel>  $builder
+     * @param  TModel  $model
+     */
     public function apply(Builder $builder, Model $model): void
     {
         $organizationId = static::currentOrganizationId();
@@ -35,25 +42,9 @@ class HolidayScope implements Scope
 
     /**
      * Resolve the organization the current request/session is scoped to.
-     *
-     * Mirrors {@see BelongsToOrganization::currentOrganizationId()}: prefers the
-     * DT audit session organization, then the tenant-switcher override, and
-     * finally the authenticated user.
      */
     public static function currentOrganizationId(): ?int
     {
-        $dtOrganizationId = session('dt_organization_id');
-
-        if ($dtOrganizationId !== null) {
-            return (int) $dtOrganizationId;
-        }
-
-        $sessionOrganizationId = session('organization_id');
-
-        if ($sessionOrganizationId !== null) {
-            return (int) $sessionOrganizationId;
-        }
-
-        return Auth::user()?->organization_id;
+        return CurrentOrganization::id();
     }
 }

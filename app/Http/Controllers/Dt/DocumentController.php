@@ -48,7 +48,7 @@ class DocumentController extends Controller
                 'id' => $document->id,
                 'title' => $document->title,
                 'type' => $document->type?->label(),
-                'employee' => $document->user?->name,
+                'employee' => $document->user->name,
                 'status' => [
                     'value' => $document->status->value,
                     'label' => $document->status->label(),
@@ -76,7 +76,7 @@ class DocumentController extends Controller
                 'id' => $document->id,
                 'title' => $document->title,
                 'type' => $document->type?->label(),
-                'employee' => $document->user?->name,
+                'employee' => $document->user->name,
                 'status' => [
                     'value' => $document->status->value,
                     'label' => $document->status->label(),
