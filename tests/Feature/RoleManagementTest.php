@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -171,6 +172,65 @@ it('roles index ignores a disallowed sort column', function () {
                 ->where('filters.sort', 'name')
                 ->where('filters.direction', 'asc')
         );
+});
+
+// --- Localized labels ---
+
+it('roles index exposes localized role labels alongside the raw name', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get(route('roles.index'))
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $employee = collect($page->toArray()['props']['roles']['data'])
+                ->firstWhere('name', 'employee');
+
+            expect($employee['name'])->toBe('employee')
+                ->and($employee['label'])->toBe('Empleado');
+        });
+});
+
+it('role detail groups permissions under localized group and permission labels', function () {
+    $this->seed(RoleSeeder::class);
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'employee')->first();
+
+    $this->actingAs($admin)
+        ->get(route('roles.show', $role))
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $props = $page->toArray()['props'];
+
+            expect($props['role']['label'])->toBe('Empleado');
+
+            $attendance = collect($props['permissionGroups'])->firstWhere('group', 'Asistencia');
+            expect($attendance)->not->toBeNull();
+
+            $permission = collect($attendance['permissions'])->firstWhere('name', 'ViewOwn:Mark');
+            expect($permission['label'])->toBe('Ver marcas propias');
+        });
+});
+
+it('user role assignment page exposes localized role labels', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->get(route('users.roles', $target))
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $employee = collect($page->toArray()['props']['roles'])
+                ->firstWhere('name', 'employee');
+
+            expect($employee['label'])->toBe('Empleado');
+        });
 });
 
 // --- Role show ---

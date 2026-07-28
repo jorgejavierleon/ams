@@ -353,6 +353,40 @@ return [
         'actions' => [
             'manage' => 'Gestionar permisos',
         ],
+
+        'detail_description' => 'Active o desactive los permisos de este rol',
+        'save' => 'Guardar permisos',
+        'saving' => 'Guardando…',
+
+        'names' => [
+            'admin' => 'Administrador',
+            'employee' => 'Empleado',
+            'supervisor' => 'Supervisor',
+            'dt' => 'Dirección del Trabajo',
+            'saas' => 'SaaS',
+        ],
+
+        'groups' => [
+            'Mark' => 'Asistencia',
+            'Workday' => 'Jornada',
+            'Leave' => 'Permisos y ausencias',
+            'Document' => 'Documentos',
+            'MarkModification' => 'Correcciones de marca',
+        ],
+
+        'permissions' => [
+            'RequestOwn:Leave' => 'Solicitar permisos propios',
+            'ViewOwn:Leave' => 'Ver permisos propios',
+            'CancelOwn:Leave' => 'Cancelar permisos propios',
+            'ClockOwn:Mark' => 'Marcar asistencia propia',
+            'ViewOwn:Mark' => 'Ver marcas propias',
+            'ViewOwn:Workday' => 'Ver jornada propia',
+            'ReviewOwn:MarkModification' => 'Revisar correcciones de marca propias',
+            'ViewOwn:Document' => 'Ver documentos propios',
+            'SignOwn:Document' => 'Firmar documentos propios',
+            'ViewTeam:Leave' => 'Ver permisos del equipo',
+            'ApproveTeam:Leave' => 'Aprobar permisos del equipo',
+        ],
     ],
 
     'holidays' => [

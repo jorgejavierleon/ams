@@ -12,6 +12,7 @@ import type { Paginated } from '@/types/ui';
 type Role = {
     id: number;
     name: string;
+    label: string;
     permissions_count: number;
 };
 
@@ -39,9 +40,7 @@ export default function RolesIndex({ roles, filters }: Props) {
                     />
                 ),
                 cell: ({ row }) => (
-                    <span className="font-medium capitalize">
-                        {row.original.name}
-                    </span>
+                    <span className="font-medium">{row.original.label}</span>
                 ),
             },
             {
@@ -62,7 +61,10 @@ export default function RolesIndex({ roles, filters }: Props) {
             {
                 id: 'actions',
                 enableHiding: false,
-                meta: { headClassName: 'text-right', cellClassName: 'text-right' },
+                meta: {
+                    headClassName: 'text-right',
+                    cellClassName: 'text-right',
+                },
                 header: () => null,
                 cell: ({ row }) => (
                     <Link

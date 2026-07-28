@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesTableSort;
+use App\Support\RolePresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,6 +38,7 @@ class RoleController extends Controller
             'roles' => $roles->through(fn (Role $role) => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'label' => RolePresenter::roleLabel($role->name),
                 'permissions_count' => $role->permissions_count,
             ]),
             'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],
@@ -51,19 +53,24 @@ class RoleController extends Controller
         $assignedIds = $role->permissions->pluck('id')->all();
 
         $grouped = $allPermissions
-            ->groupBy(fn (Permission $permission) => $this->groupName($permission->name))
-            ->map(fn ($permissions, $group) => [
-                'group' => $group,
+            ->groupBy(fn (Permission $permission) => RolePresenter::groupKey($permission->name))
+            ->map(fn ($permissions, $groupKey) => [
+                'group' => RolePresenter::groupLabel($groupKey),
                 'permissions' => $permissions->map(fn (Permission $permission) => [
                     'id' => $permission->id,
                     'name' => $permission->name,
+                    'label' => RolePresenter::permissionLabel($permission->name),
                     'assigned' => in_array($permission->id, $assignedIds),
                 ])->values(),
             ])
             ->values();
 
         return Inertia::render('roles/show', [
-            'role' => ['id' => $role->id, 'name' => $role->name],
+            'role' => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'label' => RolePresenter::roleLabel($role->name),
+            ],
             'permissionGroups' => $grouped,
         ]);
     }
@@ -86,13 +93,5 @@ class RoleController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Permissions updated.')]);
 
         return to_route('roles.show', $role);
-    }
-
-    private function groupName(string $permissionName): string
-    {
-        $parts = explode('_', $permissionName);
-        $resource = count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : $parts[0];
-
-        return ucwords($resource);
     }
 }

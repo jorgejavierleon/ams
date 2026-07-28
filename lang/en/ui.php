@@ -353,6 +353,40 @@ return [
         'actions' => [
             'manage' => 'Manage permissions',
         ],
+
+        'detail_description' => 'Toggle permissions on or off for this role',
+        'save' => 'Save permissions',
+        'saving' => 'Saving…',
+
+        'names' => [
+            'admin' => 'Administrator',
+            'employee' => 'Employee',
+            'supervisor' => 'Supervisor',
+            'dt' => 'Labor Directorate',
+            'saas' => 'SaaS',
+        ],
+
+        'groups' => [
+            'Mark' => 'Attendance',
+            'Workday' => 'Workday',
+            'Leave' => 'Leave & absences',
+            'Document' => 'Documents',
+            'MarkModification' => 'Mark corrections',
+        ],
+
+        'permissions' => [
+            'RequestOwn:Leave' => 'Request own leave',
+            'ViewOwn:Leave' => 'View own leave',
+            'CancelOwn:Leave' => 'Cancel own leave',
+            'ClockOwn:Mark' => 'Clock own attendance',
+            'ViewOwn:Mark' => 'View own marks',
+            'ViewOwn:Workday' => 'View own workday',
+            'ReviewOwn:MarkModification' => 'Review own mark corrections',
+            'ViewOwn:Document' => 'View own documents',
+            'SignOwn:Document' => 'Sign own documents',
+            'ViewTeam:Leave' => 'View team leave',
+            'ApproveTeam:Leave' => 'Approve team leave',
+        ],
     ],
 
     'holidays' => [
