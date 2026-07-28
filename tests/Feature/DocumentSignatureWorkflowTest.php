@@ -3,14 +3,17 @@
 use App\Enums\DocumentSignatureStatus;
 use App\Enums\DocumentSignatureType;
 use App\Enums\DocumentStatus;
+use App\Enums\DocumentType;
 use App\Mail\DocumentFullySigned;
 use App\Mail\DocumentSignatureVerificationCode;
 use App\Models\Document;
 use App\Models\DocumentSignature;
 use App\Models\Organization;
 use App\Models\User;
+use App\Notifications\DocumentSignatureRequested;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
@@ -21,12 +24,25 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     Storage::fake('public');
 
+    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+
     $employeeRole = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
     foreach (['ViewOwn:Document', 'SignOwn:Document'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
     $employeeRole->givePermissionTo(['ViewOwn:Document', 'SignOwn:Document']);
 });
+
+/**
+ * An admin in $organization able to publish documents and resend invitations.
+ */
+function signingAdmin(Organization $organization): User
+{
+    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin->assignRole('admin');
+
+    return $admin;
+}
 
 /**
  * An employee attached to a real organization so documents scope correctly.
@@ -60,6 +76,73 @@ function pendingContractFor(User $employee): Document
 
     return $document;
 }
+
+// --- Publishing ---
+
+test('publishing a draft contract creates the pending signatures and moves it to pending signature', function () {
+    Notification::fake();
+
+    $organization = Organization::factory()->create();
+    $admin = signingAdmin($organization);
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $legalRep = User::factory()->create([
+        'organization_id' => $organization->id,
+        'is_legal_rep' => true,
+    ]);
+
+    $document = Document::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'type' => DocumentType::Contracts,
+        'legal_rep_signatories' => 1,
+        'status' => DocumentStatus::Draft,
+        'published_at' => null,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('documents.publish', $document))
+        ->assertRedirect();
+
+    $document->refresh();
+
+    expect($document->status)->toBe(DocumentStatus::PendingSignature)
+        ->and($document->published_at)->not->toBeNull()
+        ->and($document->signatures()->count())->toBe(2);
+
+    $employeeSignature = $document->signatures()->where('user_id', $employee->id)->first();
+    $legalRepSignature = $document->signatures()->where('user_id', $legalRep->id)->first();
+
+    expect($employeeSignature->type)->toBe(DocumentSignatureType::Employee)
+        ->and($employeeSignature->status)->toBe(DocumentSignatureStatus::Pending)
+        ->and($legalRepSignature->type)->toBe(DocumentSignatureType::LegalRep)
+        ->and($legalRepSignature->status)->toBe(DocumentSignatureStatus::Pending);
+});
+
+test('publishing sends a signing invitation to every signatory', function () {
+    Notification::fake();
+
+    $organization = Organization::factory()->create();
+    $admin = signingAdmin($organization);
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $legalRep = User::factory()->create([
+        'organization_id' => $organization->id,
+        'is_legal_rep' => true,
+    ]);
+
+    $document = Document::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'type' => DocumentType::Contracts,
+        'legal_rep_signatories' => 1,
+        'status' => DocumentStatus::Draft,
+    ]);
+
+    $this->actingAs($admin)->post(route('documents.publish', $document));
+
+    Notification::assertSentTo($employee, DocumentSignatureRequested::class);
+    Notification::assertSentTo($legalRep, DocumentSignatureRequested::class);
+    Notification::assertSentTimes(DocumentSignatureRequested::class, 2);
+});
 
 // --- Access control ---
 
