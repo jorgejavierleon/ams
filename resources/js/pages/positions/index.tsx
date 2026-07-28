@@ -2,13 +2,14 @@ import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { AvatarGroup } from '@/components/avatar-group';
+import type { AvatarGroupUser } from '@/components/avatar-group';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import Heading from '@/components/heading';
 import PositionFormDialog from '@/components/position-form-dialog';
 import type { PositionFormTarget } from '@/components/position-form-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
 import { destroy, index, show } from '@/routes/positions';
@@ -18,6 +19,7 @@ type Position = {
     id: number;
     name: string;
     active_users_count: number;
+    avatars: AvatarGroupUser[];
 };
 
 type Props = {
@@ -65,15 +67,19 @@ export default function PositionsIndex({ positions, filters }: Props) {
                     />
                 ),
                 cell: ({ row }) => (
-                    <Badge variant="secondary">
-                        {row.original.active_users_count}
-                    </Badge>
+                    <AvatarGroup
+                        users={row.original.avatars}
+                        total={row.original.active_users_count}
+                    />
                 ),
             },
             {
                 id: 'actions',
                 enableHiding: false,
-                meta: { headClassName: 'text-right', cellClassName: 'text-right' },
+                meta: {
+                    headClassName: 'text-right',
+                    cellClassName: 'text-right',
+                },
                 header: () => null,
                 cell: ({ row }) => (
                     <div className="flex justify-end gap-2">
