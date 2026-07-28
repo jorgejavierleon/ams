@@ -74,6 +74,25 @@ test('a full day against a shift is regular and nets worked time minus lunch', f
         ->and($workday->in_time_difference)->toBe('00:00:00');
 });
 
+test('a late arrival stays regular but records the positive in-time difference', function () {
+    // The new app has no distinct LATE status: lateness against the shift start
+    // is captured numerically in in_time_difference while the day, having both
+    // marks against a scheduled shift, remains Regular.
+    [$employee, $date] = employeeOnShift();
+
+    punch($employee, MarkType::In, $date->copy()->setTime(8, 30));
+    punch($employee, MarkType::Out, $date->copy()->setTime(17, 0));
+
+    app(WorkdayCalculator::class)->calculateDate($date);
+
+    $workday = Workday::withoutGlobalScopes()->where('user_id', $employee->id)->firstOrFail();
+
+    expect($workday->status)->toBe(WorkdayStatus::Regular)
+        ->and($workday->in_time_difference)->toBe('00:30:00')
+        // Half an hour late off an eight-hour net shift leaves 7h30 worked.
+        ->and($workday->worked_time)->toBe('07:30:00');
+});
+
 test('a scheduled shift with no marks is an absence', function () {
     [$employee, $date] = employeeOnShift();
 
@@ -122,4 +141,32 @@ test('calculateDate does not create a second workday for a day already computed'
     $calculator->calculateDate($date);
 
     expect(Workday::withoutGlobalScopes()->where('user_id', $employee->id)->count())->toBe(1);
+});
+
+test('recalculateWorkday recomputes the totals after a mark is corrected', function () {
+    // Models the effect of approving a mark modification: the underlying mark's
+    // time is rewritten, then the workday is recalculated in place so its
+    // status, worked time and shift deltas reflect the corrected punch.
+    [$employee, $date] = employeeOnShift();
+
+    $markIn = punch($employee, MarkType::In, $date->copy()->setTime(8, 0));
+    punch($employee, MarkType::Out, $date->copy()->setTime(17, 0));
+
+    $calculator = app(WorkdayCalculator::class);
+    $calculator->calculateDate($date);
+
+    $workday = Workday::withoutGlobalScopes()->where('user_id', $employee->id)->firstOrFail();
+    expect($workday->in_time_difference)->toBe('00:00:00')
+        ->and($workday->worked_time)->toBe('08:00:00');
+
+    // Correct the entry mark to half an hour late and recalculate in place.
+    $markIn->update(['date_time' => $date->copy()->setTime(8, 30)]);
+
+    expect($calculator->recalculateWorkday($workday))->toBeTrue();
+
+    $workday->refresh();
+
+    expect($workday->status)->toBe(WorkdayStatus::Regular)
+        ->and($workday->in_time_difference)->toBe('00:30:00')
+        ->and($workday->worked_time)->toBe('07:30:00');
 });
