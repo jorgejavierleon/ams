@@ -14,6 +14,12 @@ class PositionController extends Controller
 {
     use ResolvesTableSort;
 
+    /**
+     * Number of employee avatars shown per position in the index list before
+     * the remainder collapses into a "+N" overflow bubble.
+     */
+    private const AVATAR_LIMIT = 5;
+
     public function index(Request $request): Response
     {
         $search = $request->string('search')->trim()->value() ?: null;
@@ -25,6 +31,11 @@ class PositionController extends Controller
 
         $positions = Position::query()
             ->withCount('activeUsers')
+            ->with(['activeUsers' => fn ($query) => $query
+                ->select('users.id', 'users.name', 'users.position_id')
+                ->with('media')
+                ->orderBy('name')
+                ->limit(self::AVATAR_LIMIT)])
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy($sort, $direction)
             ->paginate(10)
@@ -35,6 +46,11 @@ class PositionController extends Controller
                 'id' => $position->id,
                 'name' => $position->name,
                 'active_users_count' => $position->active_users_count,
+                'avatars' => $position->activeUsers->map(fn (User $user) => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'avatar' => $user->avatar,
+                ])->all(),
             ]),
             'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],
         ]);
