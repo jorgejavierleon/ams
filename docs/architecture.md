@@ -112,6 +112,7 @@ Chile ships first, so `es` (formatted as `es-CL`) is the default locale; the app
 - **Invariant:** every user-visible string goes through a lang key. Add each new string to **both** `lang/es/ui.php` and `lang/en/ui.php` — never hardcode UI text in a React component.
 - **Frontend usage:** `useTranslations()` returns `t('ui.nav.dashboard')` plus locale-aware `formatDate`/`formatNumber`/`formatCurrency` (driven by the `localeTag` shared prop). Server-side validation/auth messages are localized by app locale and reach the frontend already resolved via Inertia's `errors` prop — they are not shipped in `translations`.
 - **Switching:** `SetLocale` middleware resolves the locale from the session (default = app locale); the `locale.update` route persists the choice. The `LanguageSwitcher` in the user menu drives it.
+- **Roles & permissions are English identifiers, Spanish only in display:** Spatie role/permission names (`employee`, `ViewOwn:Mark`) are the authoritative keys that policies and `permission:` middleware gate on — never rename them for localization. `App\Support\RolePresenter` resolves the Spanish (or English) wording shown on the roles screens from `ui.roles.{names,groups,permissions}`, falling back to a title-cased identifier when a key is missing. Add a lang entry there for every new role/permission.
 
 ---
 

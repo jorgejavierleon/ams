@@ -9,6 +9,7 @@ import { index as rolesIndex } from '@/routes/roles';
 type Role = {
     id: number;
     name: string;
+    label: string;
     assigned: boolean;
 };
 
@@ -41,10 +42,15 @@ export default function UserRoles({ user, roles }: Props) {
                     {({ processing }) => (
                         <div className="space-y-6">
                             <div className="space-y-3">
-                                <h3 className="text-sm font-semibold text-foreground">Roles</h3>
+                                <h3 className="text-sm font-semibold text-foreground">
+                                    Roles
+                                </h3>
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                                     {roles.map((role) => (
-                                        <div key={role.id} className="flex items-center gap-2">
+                                        <div
+                                            key={role.id}
+                                            className="flex items-center gap-2"
+                                        >
                                             <Checkbox
                                                 id={`role-${role.id}`}
                                                 name="roles[]"
@@ -53,9 +59,9 @@ export default function UserRoles({ user, roles }: Props) {
                                             />
                                             <Label
                                                 htmlFor={`role-${role.id}`}
-                                                className="cursor-pointer text-sm font-normal capitalize"
+                                                className="cursor-pointer text-sm font-normal"
                                             >
-                                                {role.name}
+                                                {role.label}
                                             </Label>
                                         </div>
                                     ))}

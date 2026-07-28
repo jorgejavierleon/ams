@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\RolePresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,6 +22,7 @@ class UserRoleController extends Controller
             'roles' => $allRoles->map(fn (Role $role) => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'label' => RolePresenter::roleLabel($role->name),
                 'assigned' => in_array($role->id, $assignedIds),
             ]),
         ]);
