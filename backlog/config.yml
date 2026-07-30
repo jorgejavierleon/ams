@@ -1,0 +1,20 @@
+project_name: "kolvi"
+default_status: "To Do"
+statuses: ["To Do", "In Progress", "In Review", "Done"]
+labels: []
+definition_of_done:
+  - "vendor/bin/pint --dirty --format agent reports clean"
+  - "sa test --compact passes"
+  - "npm run types:check passes when TypeScript touched"
+  - "Every PHP change has a Pest test"
+date_format: yyyy-mm-dd
+max_column_width: 20
+auto_open_browser: true
+default_port: 6420
+remote_operations: true
+auto_commit: false
+filesystem_only: false
+bypass_git_hooks: false
+check_active_branches: true
+active_branch_days: 30
+task_prefix: "KOL"

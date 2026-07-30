@@ -1,6 +1,6 @@
 ---
 name: implement-ticket
-description: "Use this skill when the user asks to pick a ticket, work on the next issue, implement a GitHub issue, or start a new feature from the backlog. Triggers: 'pick next ticket', 'work on #N', 'implement next issue', 'start ticket', 'next issue', or any request to begin work on a migration issue. This skill encodes the full AI-assisted development workflow: ticket selection → branch → implementation → review gate → commit/merge/push."
+description: "Use this skill when the user asks to pick a task, work on the next ticket, implement a Backlog.md task, or start a new feature from the backlog. Triggers: 'pick next ticket', 'work on KOL-N', 'implement next task', 'start ticket', 'next issue', 'new task', or any request to begin work on a backlog item. This skill encodes the full AI-assisted development workflow: task selection → branch → implementation → review gate → commit/merge/push."
 license: MIT
 metadata:
   author: jorgejavierleon
@@ -8,27 +8,83 @@ metadata:
 
 # Implement Ticket Workflow
 
-This skill defines the full workflow for AI-assisted ticket implementation in the AMS migration project.
+This skill defines the full workflow for AI-assisted task implementation in this project.
 Follow every phase in order. Do not skip phases or reorder them.
+
+Tasks are managed with [Backlog.md](https://github.com/MrLesk/Backlog.md) in `backlog/`,
+as plain markdown committed with the code. There is no external issue tracker — **never
+use `gh issue`**. GitHub Issues #2–#77 are a closed, read-only archive from before the
+switch.
+
+## CLI ground rules
+
+- **Always pass `--plain` to `task list` and `task view`.** Without it they open an
+  interactive TUI that will hang a non-interactive shell.
+- **There is no `--json` flag** in the installed version (1.48.0). Parse `--plain` output.
+- **Never run bare `backlog board`** — also a TUI. Use `backlog board export <file> --force`
+  when a board snapshot is needed. Its path is resolved **project-relative**, so an
+  absolute path like `/tmp/x.md` creates `<project>/tmp/x.md`. Pass a bare filename.
+- Task IDs are `KOL-<n>` (uppercase) in commands and frontmatter; filenames use `kol-<n>`.
 
 ---
 
-## Phase 1 — Ticket Selection
+## Phase 0 — Creating a Task
 
-**If the user named a specific issue number:**
+Only when the user asks for a new task rather than work on an existing one.
+
 ```bash
-gh issue view <N> --repo jorgejavierleon/ams
+backlog task create "Short imperative title" \
+  -l <label> \
+  -d "Context: why this exists and what problem it solves." \
+  --ac "First verifiable criterion" \
+  --ac "Second verifiable criterion"
 ```
 
-**If the user said "next ticket" or similar (no number given):**
+Useful flags: `--dep KOL-3` (dependencies), `--draft` (not ready to start), `-l` (labels),
+`--ref <url-or-path>` (link a source), `--priority`, `-m` (milestone).
+
+Definition-of-Done items are applied automatically from `backlog/config.yml` — do not
+restate them per task.
+
+Acceptance criteria must be concrete and checkable. A task whose criteria are vague
+cannot be verified as done — push back and refine rather than accepting "improve X".
+
+**Prefer a normal task over `--draft`.** Drafts land in `backlog/drafts/` with a separate
+`DRAFT-<n>` ID and are **invisible to `backlog task list`** — easy to forget. For an
+under-specified item, create a normal task whose first acceptance criterion is to define
+the real ones. Use `--draft` only for genuinely speculative ideas, and promote with
+`backlog draft promote DRAFT-<n>` (which renumbers it into the KOL sequence).
+
+Creating a task does not start implementation. Stop here unless the user asked for both.
+
+---
+
+## Phase 1 — Task Selection
+
+**If the user named a specific task:**
 ```bash
-gh issue list --repo jorgejavierleon/ams --label migration --state open --limit 50 --json number,title,labels
+backlog task view KOL-<N> --plain
 ```
-Pick the **lowest-numbered open issue** that has no `in-progress` label. Issues are ordered M1→M4, so #2 comes before #3, etc.
 
-After selecting, read the full issue body — it contains Context, Acceptance Criteria, Technical Notes, Old App Reference, and Dependencies. Understand all of them before proceeding.
+**If the user said "next ticket" or similar (no ID given):**
+```bash
+backlog task list -s "To Do" --plain
+```
+Pick the **lowest-numbered** task in `To Do`. Skip anything in `Draft` (criteria not yet
+defined) and anything already `In Progress`.
 
-Check the Dependencies section. If any dependency issues are still open, stop and tell the user which issue must be completed first.
+After selecting, read the whole task — Description, Acceptance Criteria, and any
+Implementation Plan or Notes. Understand all of them before proceeding.
+
+**Check dependencies.** Read the `dependencies` frontmatter field. For each ID listed,
+confirm it is `Done`:
+```bash
+backlog task view KOL-<dep> --plain
+```
+If any dependency is not `Done`, stop and tell the user which task must be completed first.
+
+If the task is a `Draft` or its acceptance criteria are empty, stop and work with the user
+to define them before writing any code.
 
 ---
 
@@ -36,14 +92,17 @@ Check the Dependencies section. If any dependency issues are still open, stop an
 
 After verifying all acceptance criteria, determine whether any code changes are actually needed.
 
-**If every acceptance criterion is already satisfied** (the starter kit, prior work, or existing code already covers all checkboxes):
+**If every acceptance criterion is already satisfied** (the starter kit, prior work, or
+existing code already covers all of them):
 
 1. Do NOT create a branch.
-2. Close the issue directly on GitHub and move it to Done:
+2. Tick every criterion and close the task:
 ```bash
-gh issue close <N> --repo jorgejavierleon/ams --comment "All acceptance criteria already satisfied by existing code. No changes required."
+backlog task edit KOL-<N> --check-ac 1 --check-ac 2 \
+  --notes "All acceptance criteria already satisfied by existing code. No changes required." \
+  -s Done
 ```
-3. Announce to the user that the ticket is done and ask if they want to pick the next one.
+3. Announce to the user that the task is done and ask if they want to pick the next one.
 4. **Stop here — do not proceed to Phase 2.**
 
 Only continue to Phase 2 if actual code changes are needed.
@@ -52,17 +111,18 @@ Only continue to Phase 2 if actual code changes are needed.
 
 ## Phase 2 — Branch Creation
 
-Create a branch following this exact naming convention:
-```
-feature/<issue-number>-<short-slug>
-```
-
-Example: `feature/3-spatie-permissions`
-
 ```bash
 git checkout master
 git pull origin master
-git checkout -b feature/<N>-<slug>
+git checkout -b feature/kol-<N>-<slug>
+backlog task edit KOL-<N> -s "In Progress"
+```
+
+Example: `feature/kol-12-spanish-i18n`
+
+Record the approach on the task so it survives a context reset:
+```bash
+backlog task edit KOL-<N> --plan "1. …  2. …  3. …"
 ```
 
 Announce the branch name to the user.
@@ -72,7 +132,7 @@ Announce the branch name to the user.
 ## Phase 3 — Implementation
 
 ### Before writing any code
-1. Re-read the ticket's **Acceptance Criteria** — every checkbox must be satisfied
+1. Re-read the task's **Acceptance Criteria** — every one must be satisfied
 2. Check `../ams-filament` for existing business logic to reuse (models, managers, services, observers)
 3. Run `search-docs` for any framework API you're about to use
 
@@ -99,16 +159,24 @@ vendor/bin/pint --dirty --format agent
 
 ### Run tests
 ```bash
-php artisan test --compact
+sa test --compact
 ```
 
+This project runs under Laravel Sail — bare `php artisan test` fails because the DB host
+is `mysql`. Use the `sa` alias (or `./vendor/bin/sail artisan`).
+
 All tests must pass before proceeding to Phase 4. Fix failures before continuing.
+
+Record anything discovered along the way that the task should carry forward:
+```bash
+backlog task edit KOL-<N> --notes "…"
+```
 
 ---
 
 ## Phase 3.5 — Documentation (optional)
 
-Read `docs/architecture.md` before deciding. Update it **only** if the ticket introduced something a future developer or AI agent couldn't infer from reading the code:
+Read `docs/architecture.md` before deciding. Update it **only** if the task introduced something a future developer or AI agent couldn't infer from reading the code:
 
 - A non-obvious architectural decision (e.g. why a design was chosen over alternatives)
 - A naming convention that applies project-wide
@@ -120,7 +188,10 @@ Read `docs/architecture.md` before deciding. Update it **only** if the ticket in
 - Standard Laravel/Inertia patterns followed without deviation
 - Implementation details of a single feature
 
-Keep entries short. One paragraph or a small table is enough. If nothing in the ticket meets the bar above, skip this phase entirely.
+Keep entries short. One paragraph or a small table is enough. If nothing in the task meets the bar above, skip this phase entirely.
+
+If the work revealed something that changes a *different* task's scope, update that task
+now with `backlog task edit` while it's fresh.
 
 ---
 
@@ -128,9 +199,10 @@ Keep entries short. One paragraph or a small table is enough. If nothing in the 
 
 Before committing anything:
 
-1. If there is UI work, describe exactly what the user should verify in the browser
-2. Use `browser-logs` to check for console errors if the app is running
-3. Tell the user explicitly:
+1. Move the task to review: `backlog task edit KOL-<N> -s "In Review"`
+2. If there is UI work, describe exactly what the user should verify in the browser
+3. Use `browser-logs` to check for console errors if the app is running
+4. Tell the user explicitly:
 
 > "Implementation complete. Please review the changes — run `composer run dev` if you need the dev server. Let me know when you're happy and I'll commit, merge, and push."
 
@@ -140,23 +212,36 @@ Before committing anything:
 
 ## Phase 5 — Commit, Merge, Push (only after user confirms)
 
+Close the task **on the feature branch**, in the same commit as the code, so the merge
+carries both and the task file at any commit reflects the true state of the tree.
+
+1. Tick every acceptance criterion and Definition-of-Done item, then close:
 ```bash
-# Commit all changes on the feature branch
-git add <relevant files>
-git commit -m "#<N> <short description>"
+backlog task edit KOL-<N> \
+  --check-ac 1 --check-ac 2 --check-ac 3 \
+  --check-dod 1 --check-dod 2 \
+  --final-summary "<what shipped, one or two sentences>" \
+  -s Done
+```
+
+2. Commit, merge, push:
+```bash
+# Commit all changes on the feature branch, including the task file
+git add <relevant files> backlog/tasks/
+git commit -m "KOL-<N> <short description>"
 
 # Merge to master
 git checkout master
-git merge feature/<N>-<slug> --no-ff -m "#<N> Merge feature/<N>-<slug>"
+git merge feature/kol-<N>-<slug> --no-ff -m "KOL-<N> Merge feature/kol-<N>-<slug>"
 
 # Push
 git push origin master
-
-# Close the issue
-gh issue close <N> --repo jorgejavierleon/ams --comment "Implemented and merged to master."
 ```
 
-Announce to the user: the branch, commit hash, and that the issue is closed. Ask if they want to pick the next ticket.
+Commit messages are prefixed `KOL-<N>`, not `#<N>`. The `#N` form refers to the archived
+GitHub issues and means something different.
+
+Announce to the user: the branch, commit hash, and that the task is closed. Ask if they want to pick the next task.
 
 ---
 
@@ -164,9 +249,19 @@ Announce to the user: the branch, commit hash, and that the issue is closed. Ask
 
 | Command | Purpose |
 |---|---|
-| `gh issue list --repo jorgejavierleon/ams --label migration --state open` | Find next ticket |
-| `gh issue view <N> --repo jorgejavierleon/ams` | Read ticket details |
+| `backlog task list -s "To Do" --plain` | Find the next task |
+| `backlog task list --plain` | All tasks, grouped by status |
+| `backlog task view KOL-<N> --plain` | Read task details |
+| `backlog task create "<title>" --ac "…"` | Create a task |
+| `backlog task edit KOL-<N> -s "In Progress"` | Change status |
+| `backlog task edit KOL-<N> --check-ac <i>` | Tick an acceptance criterion |
+| `backlog search "<query>"` | Fuzzy search tasks, docs, decisions |
+| `backlog board export BOARD.md --force` | Write a markdown kanban snapshot (project-relative path) |
+| `backlog draft list --plain` | List drafts (hidden from `task list`) |
+| `backlog draft promote DRAFT-<n>` | Turn a draft into a numbered KOL task |
 | `sa test --compact` | Run tests |
 | `vendor/bin/pint --dirty --format agent` | Fix PHP code style |
 | `sa route:list --except-vendor` | Inspect routes |
 | `sa tinker --execute '...'` | Debug PHP in app context |
+
+Statuses are `Draft`, `To Do`, `In Progress`, `In Review`, `Done` (see `backlog/config.yml`).

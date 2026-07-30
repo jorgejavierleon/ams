@@ -206,3 +206,7 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 - IMPORTANT: Activate `inertia-react-development` when working with Inertia React client-side patterns.
 
 </laravel-boost-guidelines>
+
+## Task tracking
+
+Tasks are managed with Backlog.md in `backlog/`, not GitHub Issues. Run `backlog task list --plain` for current state (always `--plain`; bare commands open a TUI). Prefix commits with the task ID: `KOL-12 Add …`. GitHub Issues #2–#77 are a closed archive. See the `implement-ticket` skill for the full workflow.
