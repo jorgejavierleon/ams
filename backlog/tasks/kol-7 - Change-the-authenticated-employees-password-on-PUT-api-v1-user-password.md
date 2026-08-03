@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-03 20:16'
-updated_date: '2026-08-03 20:22'
+updated_date: '2026-08-03 20:34'
 labels: []
 dependencies: []
 documentation:
@@ -88,6 +88,10 @@ Three decisions worth recording:
 Validation: 11 new Pest tests in tests/Feature/Api/PasswordApiTest.php, all green. --group=api 36/36. Full suite 634 tests, 630 passed, 4 pre-existing skips. phpstan clean, pint clean on the touched files.
 
 Pre-existing and untouched: 'composer lint:check' fails on 10 unrelated test files (single_blank_line_at_eof). The failure list is byte-identical on master, so it predates this branch and fixing it here would be unrelated churn.
+
+Follow-up on the same branch after probing the live endpoint: added 'password' => 'contraseña' and 'current_password' => 'contraseña actual' to the attributes map in lang/es/validation.php. Without them Password::default() answered 'El campo password debe tener al menos 8 caracteres.' — a Spanish sentence with an English field name in it, which the app renders verbatim under the input. Now 'El campo contraseña debe tener al menos 8 caracteres.'. The web console's password form reads the same messages and gets the fix too.
+
+Verified live against the running sail instance, not only in Pest: wrong current password -> 422 errors.current_password 'La contraseña es incorrecta.'; weak new password -> 422 errors.password in full Spanish; success -> 204; the token that made the change still GETs /api/v1/user 200 while the same employee's other device token gets 401; and draining the queue delivered 'Datos de perfil actualizados' to the employee's personal_email in Mailpit.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
