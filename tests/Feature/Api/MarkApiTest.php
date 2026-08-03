@@ -28,7 +28,7 @@ function apiEmployee(?Organization $organization = null): User
 // --- Authentication ---
 
 test('unauthenticated mark creation returns 401', function () {
-    $this->postJson('/api/marks', [
+    $this->postJson('/api/v1/marks', [
         'type' => 'IN',
         'datetime' => '2026-07-24 09:00:00',
     ])->assertUnauthorized();
@@ -40,7 +40,7 @@ test('an authenticated employee creates a mark and receives its hash', function 
     $employee = apiEmployee();
     Sanctum::actingAs($employee);
 
-    $response = $this->postJson('/api/marks', [
+    $response = $this->postJson('/api/v1/marks', [
         'type' => 'IN',
         'datetime' => '2026-07-24 09:00:00',
         'lat' => -33.4489,
@@ -66,7 +66,7 @@ test('an authenticated employee creates a mark and receives its hash', function 
 test('geolocation is optional', function () {
     Sanctum::actingAs(apiEmployee());
 
-    $this->postJson('/api/marks', [
+    $this->postJson('/api/v1/marks', [
         'type' => 'out',
         'datetime' => '2026-07-24 18:00:00',
     ])->assertCreated()->assertJsonPath('type', 'out');
@@ -78,7 +78,7 @@ test('geolocation is optional', function () {
 test('the punch type must be valid', function () {
     Sanctum::actingAs(apiEmployee());
 
-    $this->postJson('/api/marks', [
+    $this->postJson('/api/v1/marks', [
         'type' => 'sideways',
         'datetime' => '2026-07-24 09:00:00',
     ])->assertStatus(422);
@@ -87,7 +87,7 @@ test('the punch type must be valid', function () {
 test('the datetime is required', function () {
     Sanctum::actingAs(apiEmployee());
 
-    $this->postJson('/api/marks', ['type' => 'IN'])
+    $this->postJson('/api/v1/marks', ['type' => 'IN'])
         ->assertStatus(422);
 });
 
@@ -95,7 +95,7 @@ test('the mark is created through MarkManager so the observer stamps the snapsho
     $employee = apiEmployee();
     Sanctum::actingAs($employee);
 
-    $this->postJson('/api/marks', [
+    $this->postJson('/api/v1/marks', [
         'type' => 'IN',
         'datetime' => '2026-07-24 09:00:00',
     ])->assertCreated();
@@ -110,7 +110,7 @@ test('a user without the clock permission cannot create a mark', function () {
     // A plain user with no employee role holds none of the self-service perms.
     Sanctum::actingAs(User::factory()->create());
 
-    $this->postJson('/api/marks', [
+    $this->postJson('/api/v1/marks', [
         'type' => 'IN',
         'datetime' => '2026-07-24 09:00:00',
     ])->assertForbidden();
@@ -135,7 +135,7 @@ test('index returns the employee own recent marks', function () {
 
     Sanctum::actingAs($employee);
 
-    $this->getJson('/api/marks')
+    $this->getJson('/api/v1/marks')
         ->assertOk()
         ->assertJsonCount(2)
         ->assertJsonStructure([['mark_id', 'hash', 'datetime', 'type']]);
@@ -150,7 +150,7 @@ test('show is scoped to the authenticated employee', function () {
 
     Sanctum::actingAs($employee);
 
-    $this->getJson("/api/marks/{$mark->id}")
+    $this->getJson("/api/v1/marks/{$mark->id}")
         ->assertOk()
         ->assertJsonPath('mark_id', $mark->id);
 });
@@ -165,7 +165,7 @@ test('an employee cannot view another employee mark', function () {
 
     Sanctum::actingAs($employee);
 
-    $this->getJson("/api/marks/{$mark->id}")->assertNotFound();
+    $this->getJson("/api/v1/marks/{$mark->id}")->assertNotFound();
 });
 
 // --- Token issuance ---
@@ -173,7 +173,7 @@ test('an employee cannot view another employee mark', function () {
 test('valid credentials issue a device token', function () {
     $employee = apiEmployee(); // factory password is "password"
 
-    $this->postJson('/api/sanctum/token', [
+    $this->postJson('/api/v1/tokens', [
         'email' => $employee->email,
         'password' => 'password',
         'device_name' => 'Pixel 8',
@@ -186,7 +186,7 @@ test('re-authenticating from a device replaces its previous token', function () 
     $employee = apiEmployee();
     $employee->createToken('Pixel 8');
 
-    $this->postJson('/api/sanctum/token', [
+    $this->postJson('/api/v1/tokens', [
         'email' => $employee->email,
         'password' => 'password',
         'device_name' => 'Pixel 8',
@@ -199,7 +199,7 @@ test('a deactivated employee cannot obtain a token', function () {
     $employee = apiEmployee();
     $employee->update(['is_active' => false]);
 
-    $this->postJson('/api/sanctum/token', [
+    $this->postJson('/api/v1/tokens', [
         'email' => $employee->email,
         'password' => 'password',
         'device_name' => 'Pixel 8',
@@ -213,7 +213,7 @@ test('a deactivated employee cannot obtain a token', function () {
 test('invalid credentials are rejected', function () {
     $employee = apiEmployee();
 
-    $this->postJson('/api/sanctum/token', [
+    $this->postJson('/api/v1/tokens', [
         'email' => $employee->email,
         'password' => 'wrong-password',
         'device_name' => 'Pixel 8',
@@ -227,7 +227,7 @@ test('a real device token authenticates subsequent requests end to end', functio
     $token = $employee->createToken('Pixel 8')->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
-        ->postJson('/api/marks', [
+        ->postJson('/api/v1/marks', [
             'type' => 'IN',
             'datetime' => '2026-07-24 09:00:00',
         ])

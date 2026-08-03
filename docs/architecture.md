@@ -54,6 +54,16 @@ $user->can('create_mark')       // MarkPolicy::create
 
 ---
 
+## Mobile API (`routes/api.php`)
+
+`routes/api.php` is the employee mobile app's surface and nothing else. Every route in it lives under `/api/v1` with a `v1.` route-name prefix — no exceptions, so there is never a question of which paths are versioned.
+
+- **Version what a client can't redeploy with you.** The app ships on its own store release cycle, so its contract must be able to outlive a backend deploy. The React frontend's own XHR endpoints (e.g. `GET /api/leaves/calendar`) deploy in the same commit as their caller, so they stay unversioned in `routes/web.php` and are *not* part of this surface despite the `/api` path.
+- **Auth is a Sanctum personal access token per device.** `POST /api/v1/tokens` takes `{email, password, device_name}` and is public; tokens are keyed by `device_name`, so re-authenticating from a device replaces that device's previous token. Everything else sits behind `auth:sanctum` plus the same `permission:` gates as the web routes.
+- **`DELETE /api/v1/tokens/current` is sign-out.** It deletes only `currentAccessToken()`, so an employee signing out on their phone stays signed in on other devices. Clearing client storage alone leaves the token valid on the server.
+
+---
+
 ## Multi-tenancy
 
 Organization-scoped via the `App\Models\Concerns\BelongsToOrganization` trait. All models belonging to an org must use this trait. It applies `App\Models\Scopes\OrganizationScope` (constrains every read to the current org) and stamps `organization_id` on creation. Never bypass this scope on org-owned models.

@@ -6,14 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Issues Sanctum personal access tokens to the employee mobile app. A device
- * exchanges the employee's credentials for a bearer token once, then sends it on
- * every subsequent API request. Re-authenticating from the same device replaces
- * that device's previous token.
+ * Issues and revokes Sanctum personal access tokens for the employee mobile app.
+ * A device exchanges the employee's credentials for a bearer token once, then
+ * sends it on every subsequent API request. Re-authenticating from the same
+ * device replaces that device's previous token.
  */
 class TokenController extends Controller
 {
@@ -50,5 +51,19 @@ class TokenController extends Controller
         return response()->json([
             'token' => $user->createToken($validated['device_name'])->plainTextToken,
         ]);
+    }
+
+    /**
+     * Revokes the token the request authenticated with, so signing out on one
+     * device leaves the employee's other devices signed in.
+     */
+    public function revokeCurrent(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $user->currentAccessToken()->delete();
+
+        return response()->noContent();
     }
 }
