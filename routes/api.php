@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\MarkController;
+use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -31,6 +32,11 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
 
             return new UserResource($user);
         })->name('user.show');
+
+        // Res. 38 Art. 7f: the worker changes their own password, and the
+        // confirmation email follows from UserObserver.
+        Route::put('user/password', [PasswordController::class, 'update'])
+            ->name('user.password.update');
 
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.

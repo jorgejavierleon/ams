@@ -186,6 +186,13 @@ return [
         'rut' => 'RUT',
         'business_line' => 'giro',
         'email' => 'correo electrónico',
+        // Without these two, Password::default() answers 'El campo password debe
+        // tener al menos 8 caracteres.' — a Spanish sentence with an English
+        // field name in the middle of it, which the mobile app shows verbatim
+        // under the input. Res. 38 Art. 5 asks for Spanish, and the web
+        // console's own password form reads the same messages.
+        'password' => 'contraseña',
+        'current_password' => 'contraseña actual',
         'region_id' => 'región',
         'commune_id' => 'comuna',
         'address' => 'dirección',
