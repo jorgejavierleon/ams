@@ -15,7 +15,7 @@ beforeEach(function () {
 });
 
 test('unauthenticated user requests return 401', function () {
-    $this->getJson('/api/user')->assertUnauthorized();
+    $this->getJson('/api/v1/user')->assertUnauthorized();
 });
 
 test('an authenticated employee receives their identity and effective permissions', function () {
@@ -28,7 +28,7 @@ test('an authenticated employee receives their identity and effective permission
 
     Sanctum::actingAs($employee);
 
-    $response = $this->getJson('/api/user')->assertOk();
+    $response = $this->getJson('/api/v1/user')->assertOk();
 
     $response
         ->assertJsonPath('id', $employee->id)
@@ -63,7 +63,7 @@ test('the payload exposes only the agreed fields and no sensitive columns', func
         'organization_id' => Organization::factory()->create()->id,
     ]));
 
-    $response = $this->getJson('/api/user')->assertOk();
+    $response = $this->getJson('/api/v1/user')->assertOk();
 
     expect(array_keys($response->json()))->toEqualCanonicalizing([
         'id', 'name', 'first_name', 'last_name', 'rut', 'email', 'avatar', 'permissions',
@@ -82,7 +82,7 @@ test('the payload exposes only the agreed fields and no sensitive columns', func
 test('a user with no roles and no permissions receives an empty permissions array', function () {
     Sanctum::actingAs(User::factory()->create());
 
-    $response = $this->getJson('/api/user')->assertOk();
+    $response = $this->getJson('/api/v1/user')->assertOk();
 
     expect($response->json('permissions'))->toBe([]);
 
@@ -101,7 +101,7 @@ test('permissions granted directly to the user are included alongside role permi
 
     Sanctum::actingAs($employee);
 
-    $permissions = $this->getJson('/api/user')->assertOk()->json('permissions');
+    $permissions = $this->getJson('/api/v1/user')->assertOk()->json('permissions');
 
     expect($permissions)->toHaveCount(10)
         ->toContain('ViewOwn:Payslip')
