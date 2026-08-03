@@ -6,6 +6,7 @@ use App\Listeners\StampMarkModificationNotifiedAt;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Notifications\Events\NotificationSent;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -35,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureMiddleware();
         $this->configureAuthorization();
+        $this->configureRateLimiting();
 
         Event::listen(NotificationSent::class, StampMarkModificationNotifiedAt::class);
     }
@@ -49,6 +52,37 @@ class AppServiceProvider extends ServiceProvider
     protected function configureAuthorization(): void
     {
         Gate::before(fn (User $user): ?bool => $user->hasRole('admin') ? true : null);
+    }
+
+    /**
+     * The baseline every route in routes/api.php runs under: `throttleApi()` in
+     * bootstrap/app.php points the api middleware group at this limiter, so no
+     * mobile endpoint is unlimited. The strict per-endpoint limits (token
+     * issuance, password change) sit on top of it as route middleware.
+     */
+    protected function configureRateLimiting(): void
+    {
+        RateLimiter::for('api', function (Request $request) {
+            // The api group's throttle runs before `auth:sanctum`, so the
+            // request's default (web) guard has no user yet and every bearer
+            // request would fall through to the IP bucket. Employees at one
+            // premise punch in over the same wifi or mobile NAT, so that bucket
+            // is shared by the whole premise — resolve the sanctum guard here to
+            // key authenticated traffic per employee instead. RequestGuard
+            // memoizes, so `auth:sanctum` does not repeat the token lookup.
+            $user = $request->user('sanctum');
+
+            if ($user !== null) {
+                return Limit::perMinute(60)->by('user:'.$user->getAuthIdentifier());
+            }
+
+            // Unauthenticated traffic can only be token issuance (or a request
+            // with a dead token), and it shares the premise IP. The ceiling is
+            // set for a shift change where every phone re-authenticates at once
+            // rather than for a single employee; credential stuffing against one
+            // account is what ThrottleTokenIssuance's 5/minute is for.
+            return Limit::perMinute(100)->by('ip:'.$request->ip());
+        });
     }
 
     protected function configureMiddleware(): void

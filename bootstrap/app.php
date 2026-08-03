@@ -25,6 +25,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // Laravel 11+ ships the api group without a throttle; without this every
+        // mobile endpoint accepts unlimited requests. The limiter itself lives in
+        // AppServiceProvider::configureRateLimiting().
+        $middleware->throttleApi();
+
         $middleware->web(append: [
             SetLocale::class,
             HandleAppearance::class,

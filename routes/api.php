@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\MarkController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\TokenController;
+use App\Http\Middleware\ThrottleTokenIssuance;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -15,8 +16,11 @@ use Illuminate\Support\Facades\Route;
  * endpoints the React app calls stay unversioned in routes/web.php.
  */
 Route::prefix('v1')->name('v1.')->group(function (): void {
-    // Public: exchange employee credentials for a device bearer token.
+    // Public: exchange employee credentials for a device bearer token. Throttled
+    // per email + IP so credential stuffing is capped without one employee's bad
+    // attempts locking out their whole premise.
     Route::post('tokens', [TokenController::class, 'issueToken'])
+        ->middleware(ThrottleTokenIssuance::class)
         ->name('tokens.store');
 
     Route::middleware('auth:sanctum')->group(function (): void {
@@ -34,8 +38,15 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         })->name('user.show');
 
         // Res. 38 Art. 7f: the worker changes their own password, and the
-        // confirmation email follows from UserObserver.
+        // confirmation email follows from UserObserver. Throttled at the same
+        // 6/minute as the web console's own change (routes/settings.php): the
+        // endpoint needs a bearer token, but Sanctum tokens never expire, so
+        // whoever holds a stolen phone could otherwise brute-force
+        // `current_password` into a full account takeover. Running after
+        // `auth:sanctum` makes the throttle signature the employee's id, not the
+        // shared premise IP.
         Route::put('user/password', [PasswordController::class, 'update'])
+            ->middleware('throttle:6,1')
             ->name('user.password.update');
 
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
