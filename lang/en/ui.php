@@ -582,11 +582,12 @@ return [
         'title' => 'Companies',
         'description' => 'Legal entities within your organization',
         'new' => 'New company',
-        'search_placeholder' => 'Search by name or RUT...',
+        'search_placeholder' => 'Search by name, code or RUT...',
         'empty' => 'No companies found.',
 
         'columns' => [
             'name' => 'Company',
+            'code' => 'Accounting code',
             'rut' => 'RUT',
             'region' => 'Region',
             'commune' => 'Commune',
@@ -607,6 +608,8 @@ return [
         'form' => [
             'details' => 'Company details',
             'social_reason' => 'Company name',
+            'code' => 'Accounting code',
+            'code_hint' => 'The code this company is known by in your accounting system.',
             'rut' => 'RUT',
             'rut_placeholder' => '12.345.678-9',
             'business_line' => 'Business line',
@@ -662,6 +665,7 @@ return [
             'created' => 'Company created.',
             'updated' => 'Company updated.',
             'deleted' => 'Company deleted.',
+            'delete_blocked' => 'Cannot delete: :count employee(s) are still assigned to this company. Reassign them first.',
         ],
     ],
 
@@ -928,6 +932,7 @@ return [
             'rut' => 'RUT',
             'position' => 'Position',
             'premise' => 'Premise',
+            'company' => 'Company',
             'is_admin' => 'Admin',
             'is_active' => 'Active',
             'admin_badge' => 'Admin',
@@ -942,6 +947,7 @@ return [
             'admin_no' => 'Non-admins',
             'premise' => 'Premise',
             'position' => 'Position',
+            'company' => 'Company',
             'clear' => 'Clear filters',
         ],
 

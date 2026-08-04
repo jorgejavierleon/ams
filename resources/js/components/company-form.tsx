@@ -27,6 +27,7 @@ export type RepresentativeData = {
 export type CompanyFormData = {
     rut: string;
     social_reason: string;
+    code: string;
     business_line: string;
     email: string;
     region_id: string;
@@ -59,6 +60,7 @@ function blankForm(): CompanyFormData {
     return {
         rut: '',
         social_reason: '',
+        code: '',
         business_line: '',
         email: '',
         region_id: '',
@@ -193,6 +195,19 @@ export default function CompanyForm({
                                 setData('social_reason', e.target.value)
                             }
                             autoFocus
+                        />
+                    </FormField>
+
+                    <FormField
+                        label={t('ui.companies.form.code')}
+                        htmlFor="code"
+                        hint={t('ui.companies.form.code_hint')}
+                        error={errors.code}
+                    >
+                        <Input
+                            id="code"
+                            value={data.code}
+                            onChange={(e) => setData('code', e.target.value)}
                         />
                     </FormField>
 

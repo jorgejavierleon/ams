@@ -154,6 +154,34 @@ test('employees can be filtered by premise', function () {
         ->assertInertia(fn ($page) => $page->has('employees.data', 1));
 });
 
+test('employees can be filtered by company', function () {
+    $admin = employeeAdmin();
+    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'company_id' => $company->id]);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.index', ['companies' => [$company->id]]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('employees.data', 1));
+});
+
+test('the employees list surfaces the company each employee belongs to', function () {
+    $admin = employeeAdmin();
+    $company = Company::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'social_reason' => 'Acme SpA',
+    ]);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'company_id' => $company->id]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('employees.data', 1)
+            ->where('employees.data.0.company', 'Acme SpA'));
+});
+
 test('employees can be searched by email and rut', function () {
     $admin = employeeAdmin();
     User::factory()->employee()->create([

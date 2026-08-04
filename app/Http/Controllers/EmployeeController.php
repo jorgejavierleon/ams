@@ -38,11 +38,12 @@ class EmployeeController extends Controller
         $isAdmin = $this->ternaryFilter($request, 'is_admin');
         $premiseIds = $this->idListFilter($request, 'premises');
         $positionIds = $this->idListFilter($request, 'positions');
+        $companyIds = $this->idListFilter($request, 'companies');
 
         $employees = User::query()
             ->employees()
             ->where('organization_id', Company::currentOrganizationId())
-            ->with(['position:id,name', 'premise:id,name'])
+            ->with(['position:id,name', 'premise:id,name', 'company:id,social_reason'])
             ->when($search, fn ($query) => $query->where(fn ($q) => $q
                 ->where('email', 'like', "%{$search}%")
                 ->orWhere('rut', 'like', "%{$search}%")))
@@ -50,6 +51,7 @@ class EmployeeController extends Controller
             ->when($isAdmin !== null, fn ($query) => $query->where('is_admin', $isAdmin))
             ->when($premiseIds, fn ($query) => $query->whereIn('premise_id', $premiseIds))
             ->when($positionIds, fn ($query) => $query->whereIn('position_id', $positionIds))
+            ->when($companyIds, fn ($query) => $query->whereIn('company_id', $companyIds))
             ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
@@ -63,6 +65,7 @@ class EmployeeController extends Controller
                 'avatar' => $employee->avatar,
                 'position' => $employee->position?->name,
                 'premise' => $employee->premise?->name,
+                'company' => $employee->company?->social_reason,
                 'is_active' => $employee->is_active,
                 'is_admin' => $employee->is_admin,
             ]),
@@ -74,9 +77,11 @@ class EmployeeController extends Controller
                 'is_admin' => $isAdmin === null ? null : ($isAdmin ? '1' : '0'),
                 'premises' => array_map('strval', $premiseIds),
                 'positions' => array_map('strval', $positionIds),
+                'companies' => array_map('strval', $companyIds),
             ],
             'premiseOptions' => $this->premiseOptions(),
             'positionOptions' => $this->positionOptions(),
+            'companyOptions' => $this->companyOptions(),
         ]);
     }
 

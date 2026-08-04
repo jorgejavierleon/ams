@@ -197,6 +197,7 @@ return [
         'commune_id' => 'comuna',
         'address' => 'dirección',
         'phone' => 'teléfono',
+        'code' => 'código contable',
         'company_type' => 'tipo de empresa',
         'representatives.*.rut' => 'RUT del representante',
         'representatives.*.first_name' => 'nombre del representante',

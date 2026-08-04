@@ -343,3 +343,171 @@ test('a company is soft-deleted', function () {
 
     $this->assertSoftDeleted('companies', ['id' => $company->id]);
 });
+
+test('a company with employees assigned cannot be deleted', function () {
+    $admin = companyAdmin();
+    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
+
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'company_id' => $company->id,
+        'is_legal_rep' => false,
+    ]);
+    $employee->assignRole('employee');
+
+    $this->actingAs($admin)
+        ->delete(route('companies.destroy', $company))
+        ->assertRedirect(route('companies.index'));
+
+    // Neither orphaned nor silently reassigned: the company survives and the
+    // employee is still on its payroll.
+    $this->assertNotSoftDeleted('companies', ['id' => $company->id]);
+    expect($employee->fresh()->company_id)->toBe($company->id);
+});
+
+test('deleting a company also removes its legal representatives', function () {
+    $admin = companyAdmin();
+    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
+
+    $representative = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'company_id' => $company->id,
+        'is_legal_rep' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('companies.destroy', $company))
+        ->assertRedirect(route('companies.index'));
+
+    // Users are not soft-deletable, so the representative row goes away entirely.
+    $this->assertSoftDeleted('companies', ['id' => $company->id]);
+    $this->assertDatabaseMissing('users', ['id' => $representative->id]);
+});
+
+// --- Accounting code (código contable) ---
+
+test('a company can be created with an accounting code', function () {
+    $admin = companyAdmin();
+    $region = Region::factory()->create();
+    $commune = Commune::factory()->create(['region_id' => $region->id]);
+
+    $this->actingAs($admin)
+        ->post(route('companies.store'), companyPayload($region, $commune, ['code' => 'CC-001']))
+        ->assertRedirect(route('companies.index'));
+
+    $this->assertDatabaseHas('companies', [
+        'social_reason' => 'Acme SpA',
+        'code' => 'CC-001',
+    ]);
+});
+
+test('the accounting code is optional and stored as null when blank', function () {
+    $admin = companyAdmin();
+    $region = Region::factory()->create();
+    $commune = Commune::factory()->create(['region_id' => $region->id]);
+
+    $this->actingAs($admin)
+        ->post(route('companies.store'), companyPayload($region, $commune, ['code' => '   ']))
+        ->assertRedirect(route('companies.index'));
+
+    $this->assertDatabaseHas('companies', [
+        'social_reason' => 'Acme SpA',
+        'code' => null,
+    ]);
+});
+
+test('the accounting code is unique within the organization but not across tenants', function () {
+    $admin = companyAdmin();
+    $region = Region::factory()->create();
+    $commune = Commune::factory()->create(['region_id' => $region->id]);
+
+    Company::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'code' => 'CC-001',
+    ]);
+
+    // Another tenant already using a code must not block this one.
+    Company::factory()->create(['code' => 'CC-002']);
+
+    $this->actingAs($admin)
+        ->post(route('companies.store'), companyPayload($region, $commune, ['code' => 'CC-001']))
+        ->assertSessionHasErrors('code');
+
+    $this->actingAs($admin)
+        ->post(route('companies.store'), companyPayload($region, $commune, ['code' => 'CC-002']))
+        ->assertRedirect(route('companies.index'));
+});
+
+test('a company keeps its own accounting code when updated', function () {
+    $admin = companyAdmin();
+    $region = Region::factory()->create();
+    $commune = Commune::factory()->create(['region_id' => $region->id]);
+    $company = Company::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'code' => 'CC-001',
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('companies.update', $company), companyPayload($region, $commune, ['code' => 'CC-001']))
+        ->assertRedirect(route('companies.index'));
+
+    expect($company->fresh()->code)->toBe('CC-001');
+});
+
+test('the companies index can be searched by accounting code', function () {
+    $admin = companyAdmin();
+    Company::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'social_reason' => 'Alpha',
+        'code' => 'CC-777',
+    ]);
+    Company::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'social_reason' => 'Beta',
+        'code' => 'CC-888',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('companies.index', ['search' => 'CC-777']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('companies.data', 1)
+                ->where('companies.data.0.code', 'CC-777'),
+        );
+});
+
+test('the edit page hands the accounting code to the form', function () {
+    $admin = companyAdmin();
+    $company = Company::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'code' => 'CC-042',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('companies.edit', $company))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->component('companies/edit')
+                ->where('company.code', 'CC-042'),
+        );
+});
+
+test('the companies index exposes the accounting code per row', function () {
+    $admin = companyAdmin();
+    Company::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'social_reason' => 'Acme SpA',
+        'code' => 'CC-099',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('companies.index'))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->component('companies/index')
+                ->where('companies.data.0.code', 'CC-099'),
+        );
+});

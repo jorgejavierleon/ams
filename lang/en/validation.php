@@ -198,6 +198,7 @@ return [
 
     'attributes' => [
         'social_reason' => 'company name',
+        'code' => 'accounting code',
         'rut' => 'RUT',
         'business_line' => 'business line',
         'email' => 'email',
