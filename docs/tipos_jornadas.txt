@@ -1,0 +1,112 @@
+Jornadas Laborales
+En este artículo aprenderás cuáles son las jornadas laborales que contiene nuestro sistema conforme al Código del Trabajo.
+
+11 de abril de 2025
+¿Quieres saber el detalle de las jornadas laborales? En este artículo podrás ver cuáles son las que contiene nuestro sistema de remuneraciones y qué hacen referencia cada una de ellas. 
+
+ 
+
+ 
+
+Tipo de Jornadas 
+Primero, debemos considerar que las jornadas son indicadas directamente en la ficha del funcionario en Maestros → Funcionarios. Aquí debemos seleccionar al funcionario e ir al apartado Información de Contrato 👇
+
+ 
+
+
+ 
+
+Teniendo esto en cuenta, te dejo aquí un listado con las jornadas laborales con las que cuenta el sistema. Debes considerar que estas jornadas están bajo lo indicado por el Código del Trabajo. 
+
+ 
+
+Puedes ver el código del trabajo haciendo clic en el siguiente botón 👇
+
+ 
+
+Revisar acá el Código del Trabajo
+Jornada
+
+Referencia (*)
+
+Bisemanal Jornada Especial Art. 149 Inc. 2
+
+Ver en página 76
+
+Especial Art. 8 Inc. 5 (Practicantes)
+
+Ver en página 22
+
+Especial Art. 106 (Gente de Mar)
+
+Ver página 65
+
+Especial Art. 149 (Trabajadores Casa Particular)
+
+Ver página 76
+
+Especial Art. 149 Inc. 2 (Trabajadores Casa Particular)
+
+Ver página 76
+
+Especial Art. 152 Bis (Cuerpo de Bomberos)
+
+Ver página 78
+
+Especial Art. 152 Ter. D (Deportistas profesionales) 
+
+Ver página 79
+
+Especial Art. 152 Ter. F (Tripulantes de aviones) 
+
+Ver página 83
+
+Especial Art. 22 Inciso Final (Deportistas)
+
+Ver página 31
+
+Especial Art. 23 (Naves pesqueras)
+
+Ver página 31
+
+Especial Art. 25 (Choferes y auxiliares de locomoción colectiva)
+
+Ver página 33
+
+Especial Art. 25 Bis (Choferes vehículos de carga terrestre interurbana)
+
+Ver página 33
+
+Especial Art. 36 145-D (Artes y espectáculos)
+
+Ver página 74
+
+Exenta Art. 22 (Gerentes administradores sin fiscalización directa)
+
+Ver página 31
+
+Extraordinaria Art. 30
+
+Ver página 36
+
+Excepcional Art. 38 Inciso Final (Casinos de juego, hoteles, pubs, entre otros) 
+
+Ver página 42
+
+Ordinaria Art. 22 (Jornada Laboral regular de 45 horas)
+
+Ver página 31
+
+Parcial Art. 40 Bis (Inspectores municipales, del trabajo y personal de Carabineros de Chile)
+
+Ver página 44
+
+(*) Las referencias que se señalizan en este cuadro, corresponden a las páginas del Código del Trabajo.
+
+ 
+
+🚨 El tipo de jornada utilizado comúnmente es Ordinaria Art. 22, que corresponde a una jornada laboral de 45 horas. 
+
+ 
+
+De todas formas, esta información debe estar predefinida según el acuerdo entre empleador y trabajador al momento de realizar el contrato de trabajo. 
