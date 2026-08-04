@@ -9,6 +9,7 @@ type Company = {
     id: number;
     rut: string;
     social_reason: string;
+    code: string | null;
     business_line: string;
     email: string;
     region_id: number | null;
@@ -39,6 +40,7 @@ export default function EditCompany({ company, regions }: Props) {
     const initial: CompanyFormData = {
         rut: company.rut,
         social_reason: company.social_reason,
+        code: company.code ?? '',
         business_line: company.business_line,
         email: company.email,
         region_id: company.region_id ? String(company.region_id) : '',

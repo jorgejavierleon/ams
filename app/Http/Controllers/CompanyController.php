@@ -25,7 +25,7 @@ class CompanyController extends Controller
         $search = $request->string('search')->trim()->value() ?: null;
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
-            ['social_reason', 'rut', 'company_type', 'users_count', 'created_at'],
+            ['social_reason', 'code', 'rut', 'company_type', 'users_count', 'created_at'],
             'social_reason',
         );
 
@@ -34,6 +34,7 @@ class CompanyController extends Controller
             ->withCount('users')
             ->when($search, fn ($query) => $query->where(fn ($q) => $q
                 ->where('social_reason', 'like', "%{$search}%")
+                ->orWhere('code', 'like', "%{$search}%")
                 ->orWhere('rut', 'like', "%{$search}%")))
             ->orderBy($sort, $direction)
             ->paginate(10)
@@ -43,6 +44,7 @@ class CompanyController extends Controller
             'companies' => $companies->through(fn (Company $company) => [
                 'id' => $company->id,
                 'social_reason' => $company->social_reason,
+                'code' => $company->code,
                 'rut' => $company->formatted_rut,
                 'region' => $company->region?->name,
                 'commune' => $company->commune?->name,
@@ -83,6 +85,7 @@ class CompanyController extends Controller
                 'id' => $company->id,
                 'rut' => $company->formatted_rut,
                 'social_reason' => $company->social_reason,
+                'code' => $company->code,
                 'business_line' => $company->business_line,
                 'email' => $company->email,
                 'region_id' => $company->region_id,
@@ -119,9 +122,29 @@ class CompanyController extends Controller
         return to_route('companies.index');
     }
 
+    /**
+     * Deleting a company that still has employees on its payroll would leave
+     * them pointing at a soft-deleted row, so refuse and make the admin reassign
+     * them first. Legal representatives belong to the company itself and do not
+     * block the delete.
+     */
     public function destroy(Company $company): RedirectResponse
     {
-        $company->delete();
+        $assignedEmployees = $company->users()->employees()->count();
+
+        if ($assignedEmployees > 0) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('ui.companies.flash.delete_blocked', ['count' => $assignedEmployees]),
+            ]);
+
+            return to_route('companies.index');
+        }
+
+        DB::transaction(function () use ($company) {
+            $company->representatives()->delete();
+            $company->delete();
+        });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.companies.flash.deleted')]);
 
@@ -158,6 +181,7 @@ class CompanyController extends Controller
 
         $request->merge([
             'rut' => Rut::normalize((string) $request->input('rut')),
+            'code' => $request->string('code')->trim()->value() ?: null,
             'representatives' => $representatives,
             'is_est' => $request->boolean('is_est'),
             'is_active' => $request->boolean('is_active'),
@@ -166,6 +190,13 @@ class CompanyController extends Controller
         $rules = [
             'rut' => ['required', 'string', new ValidRut],
             'social_reason' => ['required', 'string', 'max:255'],
+            'code' => [
+                'nullable', 'string', 'max:50',
+                Rule::unique('companies', 'code')
+                    ->where('organization_id', Company::currentOrganizationId())
+                    ->whereNull('deleted_at')
+                    ->ignore($company),
+            ],
             'business_line' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'region_id' => ['required', 'integer', 'exists:regions,id'],

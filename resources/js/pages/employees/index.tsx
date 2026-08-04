@@ -8,11 +8,7 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import type { FacetedOption } from '@/components/data-table-faceted-filter';
 import Heading from '@/components/heading';
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-} from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -42,6 +38,7 @@ type Employee = {
     avatar: string | null;
     position: string | null;
     premise: string | null;
+    company: string | null;
     is_active: boolean;
     is_admin: boolean;
 };
@@ -56,9 +53,11 @@ type Props = {
         is_admin: string | null;
         premises: string[];
         positions: string[];
+        companies: string[];
     };
     premiseOptions: FacetedOption[];
     positionOptions: FacetedOption[];
+    companyOptions: FacetedOption[];
 };
 
 export default function EmployeesIndex({
@@ -66,6 +65,7 @@ export default function EmployeesIndex({
     filters,
     premiseOptions,
     positionOptions,
+    companyOptions,
 }: Props) {
     const { t } = useTranslations();
     const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
@@ -76,6 +76,9 @@ export default function EmployeesIndex({
     const [positions, setPositions] = useState<string[]>(
         filters.positions ?? [],
     );
+    const [companies, setCompanies] = useState<string[]>(
+        filters.companies ?? [],
+    );
 
     const extraParams = useMemo(
         () => ({
@@ -83,21 +86,24 @@ export default function EmployeesIndex({
             is_admin: isAdmin === 'all' ? undefined : isAdmin,
             premises: premises.length > 0 ? premises : undefined,
             positions: positions.length > 0 ? positions : undefined,
+            companies: companies.length > 0 ? companies : undefined,
         }),
-        [isActive, isAdmin, premises, positions],
+        [isActive, isAdmin, premises, positions, companies],
     );
 
     const hasFilters =
         isActive !== 'all' ||
         isAdmin !== 'all' ||
         premises.length > 0 ||
-        positions.length > 0;
+        positions.length > 0 ||
+        companies.length > 0;
 
     function clearFilters() {
         setIsActive('all');
         setIsAdmin('all');
         setPremises([]);
         setPositions([]);
+        setCompanies([]);
     }
 
     function toggleEmployeeActive(employee: Employee) {
@@ -181,6 +187,14 @@ export default function EmployeesIndex({
                 meta: { title: t('ui.employees.columns.position') },
                 header: () => t('ui.employees.columns.position'),
                 cell: ({ row }) => row.original.position ?? '—',
+            },
+            {
+                id: 'company',
+                accessorKey: 'company',
+                enableSorting: false,
+                meta: { title: t('ui.employees.columns.company') },
+                header: () => t('ui.employees.columns.company'),
+                cell: ({ row }) => row.original.company ?? '—',
             },
             {
                 id: 'premise',
@@ -275,7 +289,10 @@ export default function EmployeesIndex({
                     emptyLabel={t('ui.employees.empty')}
                     toolbar={
                         <div className="flex flex-wrap items-center gap-2">
-                            <Select value={isActive} onValueChange={setIsActive}>
+                            <Select
+                                value={isActive}
+                                onValueChange={setIsActive}
+                            >
                                 <SelectTrigger className="w-[150px]">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -321,6 +338,13 @@ export default function EmployeesIndex({
                                 options={positionOptions}
                                 selected={positions}
                                 onChange={setPositions}
+                            />
+
+                            <DataTableFacetedFilter
+                                title={t('ui.employees.filters.company')}
+                                options={companyOptions}
+                                selected={companies}
+                                onChange={setCompanies}
                             />
 
                             {hasFilters && (

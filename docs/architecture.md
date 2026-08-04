@@ -127,6 +127,19 @@ Chile ships first, so `es` (formatted as `es-CL`) is the default locale; the app
 
 ---
 
+## Company as the cost-centre dimension
+
+`Company` is the **employer legal entity** — `rut`, `social_reason`, `business_line`, `company_type`, `is_est` (empresa de servicios transitorios) and its legal representatives. A tenant (`Organization`) may hold several.
+
+It is also the dimension the payroll reports call *centro de costo* (KOL-30). **Do not add a separate `CostCenter` model**: the product treats the two as one concept, and a parallel model was tried and reverted — attributes like `is_est` are legal-entity facts that make no sense on an accounting bucket. `companies.code` is the optional *código contable* the client matches to their own accounting system; it is unique per organization and nullable.
+
+Two constraints that follow from `Company` being the employer of record — the legal fields are not decoration:
+
+- The DT attendance reports emit an `employer` column (razón social + RUT) per Resolución 38, and `MarkObserver` freezes `employer_rut` / `employer_name` onto every mark for the fiscalizador validation endpoint.
+- The contract templates resolve `{{company_*}}` variables through `DocumentVariableResolver`.
+
+`CompanyController::destroy` **refuses** to delete a company that still has employees assigned, rather than orphaning them behind a soft-deleted row; legal representatives are owned by the company and are deleted with it.
+
 ## Chilean RUT handling
 
 RUTs are validated and formatted by the self-contained `App\Support\Rut` helper — we deliberately did **not** port the old app's `freshwork/chilean-bundle` dependency. Use it everywhere a RUT is touched:

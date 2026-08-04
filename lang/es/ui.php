@@ -582,11 +582,12 @@ return [
         'title' => 'Empresas',
         'description' => 'Entidades legales dentro de tu organización',
         'new' => 'Nueva empresa',
-        'search_placeholder' => 'Buscar por nombre o RUT...',
+        'search_placeholder' => 'Buscar por nombre, código o RUT...',
         'empty' => 'No se encontraron empresas.',
 
         'columns' => [
             'name' => 'Empresa',
+            'code' => 'Código contable',
             'rut' => 'RUT',
             'region' => 'Región',
             'commune' => 'Comuna',
@@ -607,6 +608,8 @@ return [
         'form' => [
             'details' => 'Datos de la empresa',
             'social_reason' => 'Razón social',
+            'code' => 'Código contable',
+            'code_hint' => 'Código con el que identificas esta empresa en tu sistema contable.',
             'rut' => 'RUT',
             'rut_placeholder' => '12.345.678-9',
             'business_line' => 'Giro',
@@ -662,6 +665,7 @@ return [
             'created' => 'Empresa creada.',
             'updated' => 'Empresa actualizada.',
             'deleted' => 'Empresa eliminada.',
+            'delete_blocked' => 'No se puede eliminar: :count trabajador(es) siguen asignados a esta empresa. Reasígnalos primero.',
         ],
     ],
 
@@ -928,6 +932,7 @@ return [
             'rut' => 'RUT',
             'position' => 'Cargo',
             'premise' => 'Sucursal',
+            'company' => 'Empresa',
             'is_admin' => 'Admin',
             'is_active' => 'Activo',
             'admin_badge' => 'Admin',
@@ -942,6 +947,7 @@ return [
             'admin_no' => 'No administradores',
             'premise' => 'Sucursal',
             'position' => 'Cargo',
+            'company' => 'Empresa',
             'clear' => 'Limpiar filtros',
         ],
 

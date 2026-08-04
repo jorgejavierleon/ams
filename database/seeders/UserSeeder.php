@@ -31,6 +31,7 @@ class UserSeeder extends Seeder
         $company = Company::factory()->create([
             'organization_id' => $organization->id,
             'social_reason' => 'Demo Company',
+            'code' => 'CC-001',
         ]);
 
         // Two branches (sucursales) for that company.

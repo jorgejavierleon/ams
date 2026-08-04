@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $organization_id
  * @property string $rut
  * @property string $social_reason
+ * @property string|null $code
  * @property string $business_line
  * @property string $email
  * @property string $country
@@ -35,6 +36,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'rut',
     'social_reason',
+    'code',
     'business_line',
     'email',
     'country',

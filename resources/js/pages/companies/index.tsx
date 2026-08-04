@@ -15,6 +15,7 @@ import type { Paginated } from '@/types/ui';
 type Company = {
     id: number;
     social_reason: string;
+    code: string | null;
     rut: string;
     region: string | null;
     commune: string | null;
@@ -53,6 +54,22 @@ export default function CompaniesIndex({ companies, filters }: Props) {
                     >
                         {row.original.social_reason}
                     </Link>
+                ),
+            },
+            {
+                accessorKey: 'code',
+                enableSorting: true,
+                meta: { title: t('ui.companies.columns.code') },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.companies.columns.code')}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-muted-foreground">
+                        {row.original.code ?? '—'}
+                    </span>
                 ),
             },
             {
