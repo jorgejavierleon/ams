@@ -8,6 +8,15 @@ return [
         'warning' => 'Si no realizaste esta acción o crees que es un error, por favor contacta a tu administrador.',
     ],
 
+    'password_reset' => [
+        'subject' => 'Restablece tu contraseña',
+        'heading' => 'Restablece tu contraseña',
+        'body' => 'Recibes este correo porque se solicitó restablecer la contraseña de tu cuenta.',
+        'action' => 'Crear una contraseña nueva',
+        'expiry' => 'El enlace vence en :minutes minutos.',
+        'warning' => 'Si no solicitaste esto, no necesitas hacer nada: tu contraseña actual sigue funcionando.',
+    ],
+
     'mark_created' => [
         'subject' => 'Comprobante de marca de asistencia',
         'heading' => 'Marca registrada',

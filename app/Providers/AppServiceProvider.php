@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
@@ -58,7 +59,8 @@ class AppServiceProvider extends ServiceProvider
      * The baseline every route in routes/api.php runs under: `throttleApi()` in
      * bootstrap/app.php points the api middleware group at this limiter, so no
      * mobile endpoint is unlimited. The strict per-endpoint limits (token
-     * issuance, password change) sit on top of it as route middleware.
+     * issuance, password change, forgot password) sit on top of it as route
+     * middleware.
      */
     protected function configureRateLimiting(): void
     {
@@ -82,6 +84,28 @@ class AppServiceProvider extends ServiceProvider
             // rather than for a single employee; credential stuffing against one
             // account is what ThrottleTokenIssuance's 5/minute is for.
             return Limit::perMinute(100)->by('ip:'.$request->ip());
+        });
+
+        // The forgot-password endpoint (KMO-14 #5). Its response is a 204
+        // whatever happened, so this limiter is the only thing standing between
+        // one tap and a mailbox full of reset links — and it is also the only
+        // thing an employee who taps repeatedly ever hears back from, which is
+        // why the app is built to read a 429 as "wait" rather than as a failure.
+        //
+        // Keyed on email + IP for ThrottleTokenIssuance's reason: employees at
+        // one premise share an IP, and an IP-only bucket would let one person's
+        // repeated requests block their colleagues'. Three a minute is well above
+        // any honest use — the broker itself will not mint a second token inside
+        // 60 seconds (config/auth.php) — and low enough that the endpoint cannot
+        // be used to flood one address.
+        RateLimiter::for('password-reset-requests', function (Request $request) {
+            $email = $request->input('email');
+
+            // Validation has not run yet, so an absent or non-string email still
+            // has to key to something rather than escape the limiter.
+            return Limit::perMinute(3)->by('password-reset|'.Str::transliterate(
+                Str::lower(is_string($email) ? $email : '').'|'.$request->ip()
+            ));
         });
     }
 
