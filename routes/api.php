@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\MarkController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\TokenController;
@@ -22,6 +23,16 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
     Route::post('tokens', [TokenController::class, 'issueToken'])
         ->middleware(ThrottleTokenIssuance::class)
         ->name('tokens.store');
+
+    // Public: mail the employee a link to the console's reset page. A mobile-only
+    // employee who forgets their password has no other way back in (PRD 7.1 A4).
+    // The response is the same 204 whatever the broker decided, so the limiter
+    // rather than the response is what caps repetition — and it counts every
+    // request, including ones for addresses with no account, so a 429 discloses
+    // nothing about who works here either.
+    Route::post('forgot-password', [ForgotPasswordController::class, 'store'])
+        ->middleware('throttle:password-reset-requests')
+        ->name('password.email');
 
     Route::middleware('auth:sanctum')->group(function (): void {
         // Sign out on this device only: revokes the bearer token that

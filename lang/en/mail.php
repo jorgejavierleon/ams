@@ -8,6 +8,15 @@ return [
         'warning' => 'If you did not perform this action or believe this is a mistake, please contact your administrator.',
     ],
 
+    'password_reset' => [
+        'subject' => 'Reset your password',
+        'heading' => 'Reset your password',
+        'body' => 'You are receiving this email because a password reset was requested for your account.',
+        'action' => 'Create a new password',
+        'expiry' => 'The link expires in :minutes minutes.',
+        'warning' => 'If you did not request this, no action is needed: your current password keeps working.',
+    ],
+
     'mark_created' => [
         'subject' => 'Attendance mark receipt',
         'heading' => 'Mark registered',
