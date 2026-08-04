@@ -4,6 +4,7 @@ title: 'Report: Maestro de Trabajadores'
 status: To Do
 assignee: []
 created_date: '2026-08-04 11:14'
+updated_date: '2026-08-04 19:00'
 labels:
   - payroll-reports
   - backend
@@ -11,10 +12,10 @@ labels:
   - report
 milestone: m-0
 dependencies:
-  - KOL-9
   - KOL-10
   - KOL-15
   - KOL-19
+  - KOL-30
 documentation:
   - docs/prd-reports.md
 priority: medium
@@ -27,7 +28,7 @@ ordinal: 22000
 <!-- SECTION:DESCRIPTION:BEGIN -->
 RF-1, matching Talana's 'Maestro de Empleados'. A bulk dump of the employee master file, which is what an accountant loads first when setting a client up in a payroll system — before any hours matter, they need the people, their RUTs and where each one belongs.
 
-Content per RF-1: the full ficha plus the current contract, sucursal and centro de costo. `users` already carries name parts, RUT, contract dates, position, premise, company, nationality, gender, phone, emergency contact and active flag; KOL-9 and KOL-10 add cost centre and contract type, which is why this depends on both.
+Content per RF-1: the full ficha plus the current contract, sucursal and centro de costo. `users` already carries name parts, RUT, contract dates, position, premise, company, nationality, gender, phone, emergency contact and active flag; KOL-30 and KOL-10 add cost centre and contract type, which is why this depends on both.
 
 Formats: Excel and CSV. This is the report most likely to be fed straight into another system, so the CSV correctness work in KOL-15 matters here most — RUT formatting in particular. Decide deliberately whether RUT is exported with dots and hyphen or bare, and be consistent, because it is the join key on the other side; `app/Support/Rut.php` already exists and should be the single authority for the formatting.
 

@@ -4,15 +4,16 @@ title: Build the shared report filter and bulk employee selection
 status: To Do
 assignee: []
 created_date: '2026-08-04 11:13'
+updated_date: '2026-08-04 19:00'
 labels:
   - payroll-reports
   - backend
   - frontend
 milestone: m-0
 dependencies:
-  - KOL-9
   - KOL-10
   - KOL-18
+  - KOL-30
 documentation:
   - docs/prd-reports.md
 priority: high
@@ -25,7 +26,7 @@ ordinal: 18000
 <!-- SECTION:DESCRIPTION:BEGIN -->
 RF-7. Every report in RF-1 takes the same selection — build it once as a shared filter rather than five times.
 
-Dimensions required: sucursal (premise), centro de costo (arrives with KOL-9), cargo (position), tipo de contrato (arrives with KOL-10), individual employee, and date range. Company is implied for multi-company tenants and should be there too, since `users`, `workdays` and `marks` all carry `company_id`.
+Dimensions required: sucursal (premise), centro de costo (arrives with KOL-30), cargo (position), tipo de contrato (arrives with KOL-10), individual employee, and date range. Company is implied for multi-company tenants and should be there too, since `users`, `workdays` and `marks` all carry `company_id`.
 
 The part that is easy to under-build is the selection model. The PRD calls for Talana's *exclusion* pattern: select everything matching the filters, then remove specific people — 'todos los de la sucursal Centro excepto Juan' is a normal payroll request, and it must survive the filter set changing. A plain list of checked ids does not express this; a filter plus an exclusion set does.
 
