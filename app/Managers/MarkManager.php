@@ -65,26 +65,15 @@ class MarkManager
      */
     public function getShiftForDate(User $user, CarbonInterface $dateTime): ?array
     {
-        $assignment = ShiftAssignment::query()
-            ->where('user_id', $user->id)
-            ->where('start_date', '<=', $dateTime)
-            ->where(function ($query) use ($dateTime) {
-                $query->whereNull('end_date')
-                    ->orWhere('end_date', '>=', $dateTime);
-            })
-            ->first();
+        $assignment = $this->getShiftAssignmentForDate($user, $dateTime);
 
         if ($assignment === null) {
             return null;
         }
 
-        // ShiftDay weekdays are 0=Monday … 6=Sunday.
-        $shiftDay = ShiftDay::query()
-            ->where('shift_id', $assignment->shift_id)
-            ->where('weekday', (int) $dateTime->format('N') - 1)
-            ->first();
+        $shiftDay = $this->getShiftDayForAssignment($assignment, $dateTime);
 
-        if ($shiftDay === null || $shiftDay->is_free) {
+        if ($shiftDay === null) {
             return null;
         }
 
@@ -93,6 +82,40 @@ class MarkManager
             'start_time' => Carbon::parse($shiftDay->start_time)->format('H:i'),
             'end_time' => Carbon::parse($shiftDay->end_time)->format('H:i'),
         ];
+    }
+
+    /**
+     * The assignment in force for the user on the given date, or null when they
+     * are between assignments. An assignment covers the date even when that day
+     * is free, which is what the weekly contracted total has to be read from.
+     */
+    public function getShiftAssignmentForDate(User $user, CarbonInterface $dateTime): ?ShiftAssignment
+    {
+        return ShiftAssignment::query()
+            ->where('user_id', $user->id)
+            ->where('start_date', '<=', $dateTime)
+            ->where(function ($query) use ($dateTime) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', $dateTime);
+            })
+            ->first();
+    }
+
+    /**
+     * The scheduled day of the assignment's shift for the given date, or null
+     * when the shift has no row for that weekday or the day is free.
+     *
+     * ShiftDay weekdays are 0=Monday … 6=Sunday, so the lookup keys off
+     * `format('N') - 1` (ISO day, 1=Monday) rather than Carbon's `dayOfWeek`.
+     */
+    public function getShiftDayForAssignment(ShiftAssignment $assignment, CarbonInterface $dateTime): ?ShiftDay
+    {
+        $shiftDay = ShiftDay::query()
+            ->where('shift_id', $assignment->shift_id)
+            ->where('weekday', (int) $dateTime->format('N') - 1)
+            ->first();
+
+        return $shiftDay === null || $shiftDay->is_free ? null : $shiftDay;
     }
 
     /**

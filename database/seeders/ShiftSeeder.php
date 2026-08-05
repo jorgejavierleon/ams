@@ -8,6 +8,7 @@ use App\Models\Shift;
 use App\Models\ShiftAssignment;
 use App\Models\ShiftDay;
 use App\Models\User;
+use App\Services\TimeZoneService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
@@ -71,6 +72,17 @@ class ShiftSeeder extends Seeder
             ->orderBy('id')
             ->get();
 
+        // The stable demo employee is pulled out of the rotation and given a
+        // shift that always covers the day the seeder ran, so the mobile app's
+        // home screen (GET /api/v1/me/today) has a shift and a colación window
+        // to assert against whatever day the Maestro flow runs on.
+        $demoEmployee = $employees->firstWhere('email', 'employee@example.com');
+
+        if ($demoEmployee !== null) {
+            $this->seedMobileDemoShift($organization, $demoEmployee);
+            $employees = $employees->reject(fn (User $employee): bool => $employee->is($demoEmployee))->values();
+        }
+
         $fallbackShifts = [$morning, $afternoon];
 
         $employees->each(function (User $employee, int $index) use ($organization, $histories, $rotating, $fallbackShifts): void {
@@ -100,6 +112,37 @@ class ShiftSeeder extends Seeder
                 'is_permanent' => true,
             ]);
         });
+    }
+
+    /**
+     * A five-day 08:00–17:00 shift, colación 13:00 to 14:00, whose working days
+     * start on the day the seeder ran — so the demo employee always has a shift
+     * today, on any day of the week, without the schedule becoming a
+     * seven-day 56-hour week no real contract would carry.
+     */
+    private function seedMobileDemoShift(Organization $organization, User $employee): void
+    {
+        // ShiftDay weekdays are 0=Monday … 6=Sunday, and "today" is the
+        // employee's own wall-clock day — the same reading the mobile home
+        // screen resolves the shift with, which late at night in UTC is not the
+        // server's.
+        $today = (int) now(app(TimeZoneService::class)->getAppTimezone())->format('N') - 1;
+        $working = array_map(fn (int $offset): int => ($today + $offset) % 7, range(0, 4));
+
+        $shift = $this->createShift($organization, [
+            'name' => 'Turno Demo Móvil',
+            'description' => 'Cinco días de 08:00 a 17:00 con una hora de colación, siempre incluyendo el día de hoy.',
+            'type' => ShiftType::Fixed,
+            'is_default' => false,
+        ], start: '08:00:00', end: '17:00:00', lunchStart: '13:00:00', lunchEnd: '14:00:00',
+            freeWeekdays: array_values(array_diff(range(0, 6), $working)));
+
+        $this->createAssignment($organization, $employee, $shift, [
+            'notification_date' => now()->subMonths(3)->subDays(7),
+            'start_date' => now()->subMonths(3),
+            'end_date' => null,
+            'is_permanent' => true,
+        ]);
     }
 
     /**
@@ -168,6 +211,7 @@ class ShiftSeeder extends Seeder
      * Create a shift with its seven day rows and derived hour totals.
      *
      * @param  array{name: string, description: string, type: ShiftType, is_default: bool}  $attributes
+     * @param  list<int>  $freeWeekdays  Non-working weekdays, 0=Monday … 6=Sunday.
      */
     private function createShift(
         Organization $organization,
@@ -176,6 +220,7 @@ class ShiftSeeder extends Seeder
         string $end,
         string $lunchStart = '12:00:00',
         string $lunchEnd = '13:00:00',
+        array $freeWeekdays = [5, 6],
     ): Shift {
         $shift = new Shift([
             'type' => $attributes['type'],
@@ -190,7 +235,7 @@ class ShiftSeeder extends Seeder
         $shift->organization_id = $organization->id;
         $shift->save();
 
-        $this->seedWeeklySchedule($shift, $start, $end, $lunchStart, $lunchEnd);
+        $this->seedWeeklySchedule($shift, $start, $end, $lunchStart, $lunchEnd, $freeWeekdays);
 
         // total_week_hours is a derived, non-fillable column normally rolled up
         // by the ShiftDayObserver; set it directly since events are muted.
@@ -201,12 +246,14 @@ class ShiftSeeder extends Seeder
     }
 
     /**
-     * Create the seven day rows: Mon–Fri working the given hours with the given
-     * lunch break, Saturday and Sunday non-working. total_work_hours is a
-     * non-fillable column derived by ShiftDay's saving hook, which is muted
-     * during seeding, so it is computed and assigned directly here.
+     * Create the seven day rows: every weekday not listed as free works the
+     * given hours with the given lunch break. total_work_hours is a non-fillable
+     * column derived by ShiftDay's saving hook, which is muted during seeding,
+     * so it is computed and assigned directly here.
+     *
+     * @param  list<int>  $freeWeekdays  Non-working weekdays, 0=Monday … 6=Sunday.
      */
-    private function seedWeeklySchedule(Shift $shift, string $start, string $end, string $lunchStart, string $lunchEnd): void
+    private function seedWeeklySchedule(Shift $shift, string $start, string $end, string $lunchStart, string $lunchEnd, array $freeWeekdays): void
     {
         $workedHours = (
             Carbon::parse($start)->diffInMinutes(Carbon::parse($end))
@@ -214,7 +261,7 @@ class ShiftSeeder extends Seeder
         ) / 60;
 
         for ($weekday = 0; $weekday < 7; $weekday++) {
-            $isFree = $weekday === 5 || $weekday === 6;
+            $isFree = in_array($weekday, $freeWeekdays, true);
 
             $day = new ShiftDay([
                 'weekday' => $weekday,

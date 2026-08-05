@@ -74,7 +74,13 @@ class ShiftDay extends Model
             }
 
             $workedMinutes = $shiftDay->start_time->diffInMinutes($shiftDay->end_time);
-            $workedMinutes -= $shiftDay->lunch_start_time->diffInMinutes($shiftDay->lunch_end_time);
+
+            // A day with no colación window subtracts nothing. The two ends are
+            // nullable and travel together, so half a window is not a break
+            // that can be deducted.
+            if ($shiftDay->lunch_start_time !== null && $shiftDay->lunch_end_time !== null) {
+                $workedMinutes -= $shiftDay->lunch_start_time->diffInMinutes($shiftDay->lunch_end_time);
+            }
 
             $shiftDay->total_work_hours = $workedMinutes / 60;
         });
