@@ -26,7 +26,8 @@ return [
         'roles' => 'Roles',
         'organization_settings' => 'General settings',
         'positions' => 'Positions',
-        'companies' => 'Companies',
+        'company' => 'Company',
+        'cost_centers' => 'Cost centres',
         'premises' => 'Premises',
         'shifts' => 'Shifts',
         'workdays_list' => 'Workdays',
@@ -579,37 +580,12 @@ return [
     ],
 
     'companies' => [
-        'title' => 'Companies',
-        'description' => 'Legal entities within your organization',
-        'new' => 'New company',
-        'search_placeholder' => 'Search by name, code or RUT...',
-        'empty' => 'No companies found.',
-
-        'columns' => [
-            'name' => 'Company',
-            'code' => 'Accounting code',
-            'rut' => 'RUT',
-            'region' => 'Region',
-            'commune' => 'Commune',
-            'employees' => 'Employees',
-            'status' => 'Status',
-        ],
-
-        'status' => [
-            'active' => 'Active',
-            'inactive' => 'Inactive',
-        ],
-
-        'actions' => [
-            'edit' => 'Edit',
-            'delete' => 'Delete',
-        ],
+        'title' => 'Company',
+        'description' => 'Details of your organization\'s employer legal entity',
 
         'form' => [
             'details' => 'Company details',
             'social_reason' => 'Company name',
-            'code' => 'Accounting code',
-            'code_hint' => 'The code this company is known by in your accounting system.',
             'rut' => 'RUT',
             'rut_placeholder' => '12.345.678-9',
             'business_line' => 'Business line',
@@ -643,29 +619,64 @@ return [
             'remove' => 'Remove',
         ],
 
-        'create' => [
-            'title' => 'New company',
-            'description' => 'Register a new company',
-            'submit' => 'Create company',
+        'edit' => [
+            'title' => 'Company',
+            'description' => 'Update your company details and representatives',
+            'submit' => 'Save changes',
         ],
 
-        'edit' => [
-            'title' => 'Edit company',
-            'description' => 'Update company details and representatives',
+        'flash' => [
+            'updated' => 'Company updated.',
+        ],
+    ],
+
+    'cost_centers' => [
+        'title' => 'Cost centres',
+        'description' => 'Cost centres used to segment payroll reports',
+        'new' => 'New cost centre',
+        'search_placeholder' => 'Search by name or code...',
+        'empty' => 'No cost centres found.',
+
+        'columns' => [
+            'name' => 'Name',
+            'code' => 'Accounting code',
+            'employees' => 'Employees',
+        ],
+
+        'actions' => [
+            'edit' => 'Edit',
+            'delete' => 'Delete',
+        ],
+
+        'form' => [
+            'name' => 'Name',
+            'name_placeholder' => 'e.g. Operations',
+            'code' => 'Accounting code',
+            'code_placeholder' => 'e.g. CC-001',
+            'code_hint' => 'The code this cost centre is known by in your accounting system.',
+        ],
+
+        'create_dialog' => [
+            'title' => 'New cost centre',
+            'submit' => 'Create cost centre',
+        ],
+
+        'edit_dialog' => [
+            'title' => 'Edit cost centre',
             'submit' => 'Save changes',
         ],
 
         'delete_dialog' => [
-            'title' => 'Delete company',
-            'description' => 'Are you sure you want to delete :name? It can be restored later.',
+            'title' => 'Delete cost centre',
+            'description' => 'Are you sure you want to delete :name? This action cannot be undone.',
             'confirm' => 'Delete',
         ],
 
         'flash' => [
-            'created' => 'Company created.',
-            'updated' => 'Company updated.',
-            'deleted' => 'Company deleted.',
-            'delete_blocked' => 'Cannot delete: :count employee(s) are still assigned to this company. Reassign them first.',
+            'created' => 'Cost centre created.',
+            'updated' => 'Cost centre updated.',
+            'deleted' => 'Cost centre deleted.',
+            'has_employees' => 'This cost centre cannot be deleted while it still has employees assigned.',
         ],
     ],
 
@@ -932,7 +943,7 @@ return [
             'rut' => 'RUT',
             'position' => 'Position',
             'premise' => 'Premise',
-            'company' => 'Company',
+            'cost_center' => 'Cost centre',
             'is_admin' => 'Admin',
             'is_active' => 'Active',
             'admin_badge' => 'Admin',
@@ -947,7 +958,7 @@ return [
             'admin_no' => 'Non-admins',
             'premise' => 'Premise',
             'position' => 'Position',
-            'company' => 'Company',
+            'cost_center' => 'Cost centre',
             'clear' => 'Clear filters',
         ],
 
@@ -980,7 +991,8 @@ return [
             'password_hint' => 'Leave blank to keep the current password.',
             'nationality' => 'Nationality',
             'gender' => 'Gender',
-            'company' => 'Company',
+            'employer' => 'Employer',
+            'cost_center' => 'Cost centre',
             'premise' => 'Premise',
             'position' => 'Position',
             'supervisor' => 'Supervisor',

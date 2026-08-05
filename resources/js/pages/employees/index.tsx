@@ -38,7 +38,7 @@ type Employee = {
     avatar: string | null;
     position: string | null;
     premise: string | null;
-    company: string | null;
+    cost_center: string | null;
     is_active: boolean;
     is_admin: boolean;
 };
@@ -53,11 +53,11 @@ type Props = {
         is_admin: string | null;
         premises: string[];
         positions: string[];
-        companies: string[];
+        costCenters: string[];
     };
     premiseOptions: FacetedOption[];
     positionOptions: FacetedOption[];
-    companyOptions: FacetedOption[];
+    costCenterOptions: FacetedOption[];
 };
 
 export default function EmployeesIndex({
@@ -65,7 +65,7 @@ export default function EmployeesIndex({
     filters,
     premiseOptions,
     positionOptions,
-    companyOptions,
+    costCenterOptions,
 }: Props) {
     const { t } = useTranslations();
     const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
@@ -76,8 +76,8 @@ export default function EmployeesIndex({
     const [positions, setPositions] = useState<string[]>(
         filters.positions ?? [],
     );
-    const [companies, setCompanies] = useState<string[]>(
-        filters.companies ?? [],
+    const [costCenters, setCostCenters] = useState<string[]>(
+        filters.costCenters ?? [],
     );
 
     const extraParams = useMemo(
@@ -86,9 +86,9 @@ export default function EmployeesIndex({
             is_admin: isAdmin === 'all' ? undefined : isAdmin,
             premises: premises.length > 0 ? premises : undefined,
             positions: positions.length > 0 ? positions : undefined,
-            companies: companies.length > 0 ? companies : undefined,
+            costCenters: costCenters.length > 0 ? costCenters : undefined,
         }),
-        [isActive, isAdmin, premises, positions, companies],
+        [isActive, isAdmin, premises, positions, costCenters],
     );
 
     const hasFilters =
@@ -96,14 +96,14 @@ export default function EmployeesIndex({
         isAdmin !== 'all' ||
         premises.length > 0 ||
         positions.length > 0 ||
-        companies.length > 0;
+        costCenters.length > 0;
 
     function clearFilters() {
         setIsActive('all');
         setIsAdmin('all');
         setPremises([]);
         setPositions([]);
-        setCompanies([]);
+        setCostCenters([]);
     }
 
     function toggleEmployeeActive(employee: Employee) {
@@ -189,12 +189,12 @@ export default function EmployeesIndex({
                 cell: ({ row }) => row.original.position ?? '—',
             },
             {
-                id: 'company',
-                accessorKey: 'company',
+                id: 'cost_center',
+                accessorKey: 'cost_center',
                 enableSorting: false,
-                meta: { title: t('ui.employees.columns.company') },
-                header: () => t('ui.employees.columns.company'),
-                cell: ({ row }) => row.original.company ?? '—',
+                meta: { title: t('ui.employees.columns.cost_center') },
+                header: () => t('ui.employees.columns.cost_center'),
+                cell: ({ row }) => row.original.cost_center ?? '—',
             },
             {
                 id: 'premise',
@@ -341,10 +341,10 @@ export default function EmployeesIndex({
                             />
 
                             <DataTableFacetedFilter
-                                title={t('ui.employees.filters.company')}
-                                options={companyOptions}
-                                selected={companies}
-                                onChange={setCompanies}
+                                title={t('ui.employees.filters.cost_center')}
+                                options={costCenterOptions}
+                                selected={costCenters}
+                                onChange={setCostCenters}
                             />
 
                             {hasFilters && (

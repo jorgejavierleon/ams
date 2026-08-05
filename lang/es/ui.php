@@ -26,7 +26,8 @@ return [
         'roles' => 'Roles',
         'organization_settings' => 'Configuración general',
         'positions' => 'Cargos',
-        'companies' => 'Empresas',
+        'company' => 'Empresa',
+        'cost_centers' => 'Centros de costo',
         'premises' => 'Sucursales',
         'shifts' => 'Turnos',
         'workdays_list' => 'Jornadas',
@@ -579,37 +580,12 @@ return [
     ],
 
     'companies' => [
-        'title' => 'Empresas',
-        'description' => 'Entidades legales dentro de tu organización',
-        'new' => 'Nueva empresa',
-        'search_placeholder' => 'Buscar por nombre, código o RUT...',
-        'empty' => 'No se encontraron empresas.',
-
-        'columns' => [
-            'name' => 'Empresa',
-            'code' => 'Código contable',
-            'rut' => 'RUT',
-            'region' => 'Región',
-            'commune' => 'Comuna',
-            'employees' => 'Empleados',
-            'status' => 'Estado',
-        ],
-
-        'status' => [
-            'active' => 'Activa',
-            'inactive' => 'Inactiva',
-        ],
-
-        'actions' => [
-            'edit' => 'Editar',
-            'delete' => 'Eliminar',
-        ],
+        'title' => 'Empresa',
+        'description' => 'Datos de la entidad legal empleadora de tu organización',
 
         'form' => [
             'details' => 'Datos de la empresa',
             'social_reason' => 'Razón social',
-            'code' => 'Código contable',
-            'code_hint' => 'Código con el que identificas esta empresa en tu sistema contable.',
             'rut' => 'RUT',
             'rut_placeholder' => '12.345.678-9',
             'business_line' => 'Giro',
@@ -643,29 +619,64 @@ return [
             'remove' => 'Eliminar',
         ],
 
-        'create' => [
-            'title' => 'Nueva empresa',
-            'description' => 'Registra una nueva empresa',
-            'submit' => 'Crear empresa',
+        'edit' => [
+            'title' => 'Empresa',
+            'description' => 'Actualiza los datos y representantes de tu empresa',
+            'submit' => 'Guardar cambios',
         ],
 
-        'edit' => [
-            'title' => 'Editar empresa',
-            'description' => 'Actualiza los datos y representantes de la empresa',
+        'flash' => [
+            'updated' => 'Empresa actualizada.',
+        ],
+    ],
+
+    'cost_centers' => [
+        'title' => 'Centros de costo',
+        'description' => 'Centros de costo para segmentar los reportes de remuneraciones',
+        'new' => 'Nuevo centro de costo',
+        'search_placeholder' => 'Buscar por nombre o código...',
+        'empty' => 'No se encontraron centros de costo.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'code' => 'Código contable',
+            'employees' => 'Empleados',
+        ],
+
+        'actions' => [
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+        ],
+
+        'form' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'ej. Operaciones',
+            'code' => 'Código contable',
+            'code_placeholder' => 'ej. CC-001',
+            'code_hint' => 'Código con el que identificas este centro de costo en tu sistema contable.',
+        ],
+
+        'create_dialog' => [
+            'title' => 'Nuevo centro de costo',
+            'submit' => 'Crear centro de costo',
+        ],
+
+        'edit_dialog' => [
+            'title' => 'Editar centro de costo',
             'submit' => 'Guardar cambios',
         ],
 
         'delete_dialog' => [
-            'title' => 'Eliminar empresa',
-            'description' => '¿Seguro que quieres eliminar :name? Podrá restaurarse más adelante.',
+            'title' => 'Eliminar centro de costo',
+            'description' => '¿Está seguro de que desea eliminar :name? Esta acción no se puede deshacer.',
             'confirm' => 'Eliminar',
         ],
 
         'flash' => [
-            'created' => 'Empresa creada.',
-            'updated' => 'Empresa actualizada.',
-            'deleted' => 'Empresa eliminada.',
-            'delete_blocked' => 'No se puede eliminar: :count trabajador(es) siguen asignados a esta empresa. Reasígnalos primero.',
+            'created' => 'Centro de costo creado.',
+            'updated' => 'Centro de costo actualizado.',
+            'deleted' => 'Centro de costo eliminado.',
+            'has_employees' => 'Este centro de costo no se puede eliminar mientras tenga empleados asignados.',
         ],
     ],
 
@@ -932,7 +943,7 @@ return [
             'rut' => 'RUT',
             'position' => 'Cargo',
             'premise' => 'Sucursal',
-            'company' => 'Empresa',
+            'cost_center' => 'Centro de costo',
             'is_admin' => 'Admin',
             'is_active' => 'Activo',
             'admin_badge' => 'Admin',
@@ -947,7 +958,7 @@ return [
             'admin_no' => 'No administradores',
             'premise' => 'Sucursal',
             'position' => 'Cargo',
-            'company' => 'Empresa',
+            'cost_center' => 'Centro de costo',
             'clear' => 'Limpiar filtros',
         ],
 
@@ -980,7 +991,8 @@ return [
             'password_hint' => 'Déjalo en blanco para mantener la contraseña actual.',
             'nationality' => 'Nacionalidad',
             'gender' => 'Género',
-            'company' => 'Empresa',
+            'employer' => 'Empleador',
+            'cost_center' => 'Centro de costo',
             'premise' => 'Sucursal',
             'position' => 'Cargo',
             'supervisor' => 'Supervisor',

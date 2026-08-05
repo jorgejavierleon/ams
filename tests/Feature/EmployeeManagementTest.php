@@ -2,6 +2,7 @@
 
 use App\Mail\AuthProfileUpdated;
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\Organization;
 use App\Models\Position;
 use App\Models\Premise;
@@ -35,8 +36,6 @@ function employeeAdmin(?Organization $organization = null): User
  */
 function employeePayload(User $admin, array $overrides = []): array
 {
-    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
-
     return array_merge([
         'first_name' => 'Ana',
         'last_name' => 'Pérez',
@@ -48,7 +47,7 @@ function employeePayload(User $admin, array $overrides = []): array
         'nationality' => 'Chilena',
         'gender' => 'F',
         'is_active' => true,
-        'company_id' => $company->id,
+        'cost_center_id' => null,
         'premise_id' => null,
         'position_id' => null,
         'supervisor_id' => null,
@@ -154,32 +153,66 @@ test('employees can be filtered by premise', function () {
         ->assertInertia(fn ($page) => $page->has('employees.data', 1));
 });
 
-test('employees can be filtered by company', function () {
+test('employees can be filtered by cost centre', function () {
     $admin = employeeAdmin();
-    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
-    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'company_id' => $company->id]);
+    $costCenter = CostCenter::factory()->create(['organization_id' => $admin->organization_id]);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'cost_center_id' => $costCenter->id]);
     User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
 
     $this->actingAs($admin)
-        ->get(route('employees.index', ['companies' => [$company->id]]))
+        ->get(route('employees.index', ['costCenters' => [$costCenter->id]]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page->has('employees.data', 1));
 });
 
-test('the employees list surfaces the company each employee belongs to', function () {
+test('the employees list surfaces the cost centre each employee charges to', function () {
     $admin = employeeAdmin();
-    $company = Company::factory()->create([
+    $costCenter = CostCenter::factory()->create([
         'organization_id' => $admin->organization_id,
-        'social_reason' => 'Acme SpA',
+        'name' => 'Operaciones',
     ]);
-    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'company_id' => $company->id]);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'cost_center_id' => $costCenter->id]);
 
     $this->actingAs($admin)
         ->get(route('employees.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->has('employees.data', 1)
-            ->where('employees.data.0.company', 'Acme SpA'));
+            ->where('employees.data.0.cost_center', 'Operaciones'));
+});
+
+test('an employee with no cost centre assigned still lists and loads', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'cost_center_id' => null,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('employees.data', 1)
+            ->where('employees.data.0.cost_center', null));
+
+    $this->actingAs($admin)
+        ->get(route('employees.show', $employee))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('employee.cost_center', null));
+});
+
+test('a created employee is assigned the organization single company', function () {
+    $admin = employeeAdmin();
+    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->post(route('employees.store'), employeePayload($admin))
+        ->assertRedirect(route('employees.index'));
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'ana@example.com',
+        'company_id' => $company->id,
+    ]);
 });
 
 test('employees can be searched by email and rut', function () {

@@ -8,6 +8,11 @@ use App\Models\Company;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
 
+/**
+ * The company is a per-organization singleton (KOL-32): it is viewed and
+ * edited, never created, deleted or reordered. The abilities for those
+ * operations were dropped along with the routes.
+ */
 class CompanyPolicy
 {
     use HandlesAuthorization;
@@ -22,48 +27,8 @@ class CompanyPolicy
         return $authUser->can('View:Company');
     }
 
-    public function create(AuthUser $authUser): bool
-    {
-        return $authUser->can('Create:Company');
-    }
-
     public function update(AuthUser $authUser, Company $company): bool
     {
         return $authUser->can('Update:Company');
-    }
-
-    public function delete(AuthUser $authUser, Company $company): bool
-    {
-        return $authUser->can('Delete:Company');
-    }
-
-    public function restore(AuthUser $authUser, Company $company): bool
-    {
-        return $authUser->can('Restore:Company');
-    }
-
-    public function forceDelete(AuthUser $authUser, Company $company): bool
-    {
-        return $authUser->can('ForceDelete:Company');
-    }
-
-    public function forceDeleteAny(AuthUser $authUser): bool
-    {
-        return $authUser->can('ForceDeleteAny:Company');
-    }
-
-    public function restoreAny(AuthUser $authUser): bool
-    {
-        return $authUser->can('RestoreAny:Company');
-    }
-
-    public function replicate(AuthUser $authUser, Company $company): bool
-    {
-        return $authUser->can('Replicate:Company');
-    }
-
-    public function reorder(AuthUser $authUser): bool
-    {
-        return $authUser->can('Reorder:Company');
     }
 }

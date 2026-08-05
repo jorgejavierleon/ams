@@ -6,6 +6,7 @@ use App\Concerns\ResolvesTableSort;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\Leave;
 use App\Models\Position;
 use App\Models\Premise;
@@ -38,12 +39,12 @@ class EmployeeController extends Controller
         $isAdmin = $this->ternaryFilter($request, 'is_admin');
         $premiseIds = $this->idListFilter($request, 'premises');
         $positionIds = $this->idListFilter($request, 'positions');
-        $companyIds = $this->idListFilter($request, 'companies');
+        $costCenterIds = $this->idListFilter($request, 'costCenters');
 
         $employees = User::query()
             ->employees()
             ->where('organization_id', Company::currentOrganizationId())
-            ->with(['position:id,name', 'premise:id,name', 'company:id,social_reason'])
+            ->with(['position:id,name', 'premise:id,name', 'costCenter:id,name'])
             ->when($search, fn ($query) => $query->where(fn ($q) => $q
                 ->where('email', 'like', "%{$search}%")
                 ->orWhere('rut', 'like', "%{$search}%")))
@@ -51,7 +52,7 @@ class EmployeeController extends Controller
             ->when($isAdmin !== null, fn ($query) => $query->where('is_admin', $isAdmin))
             ->when($premiseIds, fn ($query) => $query->whereIn('premise_id', $premiseIds))
             ->when($positionIds, fn ($query) => $query->whereIn('position_id', $positionIds))
-            ->when($companyIds, fn ($query) => $query->whereIn('company_id', $companyIds))
+            ->when($costCenterIds, fn ($query) => $query->whereIn('cost_center_id', $costCenterIds))
             ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
@@ -65,7 +66,7 @@ class EmployeeController extends Controller
                 'avatar' => $employee->avatar,
                 'position' => $employee->position?->name,
                 'premise' => $employee->premise?->name,
-                'company' => $employee->company?->social_reason,
+                'cost_center' => $employee->costCenter?->name,
                 'is_active' => $employee->is_active,
                 'is_admin' => $employee->is_admin,
             ]),
@@ -77,11 +78,11 @@ class EmployeeController extends Controller
                 'is_admin' => $isAdmin === null ? null : ($isAdmin ? '1' : '0'),
                 'premises' => array_map('strval', $premiseIds),
                 'positions' => array_map('strval', $positionIds),
-                'companies' => array_map('strval', $companyIds),
+                'costCenters' => array_map('strval', $costCenterIds),
             ],
             'premiseOptions' => $this->premiseOptions(),
             'positionOptions' => $this->positionOptions(),
-            'companyOptions' => $this->companyOptions(),
+            'costCenterOptions' => $this->costCenterOptions(),
         ]);
     }
 
@@ -97,8 +98,11 @@ class EmployeeController extends Controller
         $data = $this->validateEmployee($request);
 
         // The User model carries no org-scope trait, so stamp the tenant here.
+        // The employer is not a choice: an organization has exactly one company
+        // (KOL-32), so it is assigned rather than picked in the form.
         $employee = User::create($this->prepareForStorage($data, isCreate: true) + [
             'organization_id' => Company::currentOrganizationId(),
+            'company_id' => Company::query()->value('id'),
         ]);
         $employee->assignRole('employee');
 
@@ -115,7 +119,7 @@ class EmployeeController extends Controller
     {
         $this->assertEmployee($employee);
 
-        $employee->load(['company:id,social_reason', 'premise:id,name', 'position:id,name', 'supervisor:id,name']);
+        $employee->load(['company:id,social_reason', 'costCenter:id,name', 'premise:id,name', 'position:id,name', 'supervisor:id,name']);
 
         return Inertia::render('employees/show', [
             'employee' => [
@@ -132,6 +136,7 @@ class EmployeeController extends Controller
                 'nationality' => $employee->nationality,
                 'gender' => $employee->gender,
                 'company' => $employee->company?->social_reason,
+                'cost_center' => $employee->costCenter?->name,
                 'premise' => $employee->premise?->name,
                 'position' => $employee->position?->name,
                 'supervisor' => $employee->supervisor?->name,
@@ -174,7 +179,7 @@ class EmployeeController extends Controller
                 'nationality' => $employee->nationality,
                 'gender' => $employee->gender,
                 'is_active' => $employee->is_active,
-                'company_id' => $employee->company_id,
+                'cost_center_id' => $employee->cost_center_id,
                 'premise_id' => $employee->premise_id,
                 'position_id' => $employee->position_id,
                 'supervisor_id' => $employee->supervisor_id,
@@ -327,9 +332,9 @@ class EmployeeController extends Controller
             'nationality' => ['nullable', 'string', 'max:255'],
             'gender' => ['nullable', 'string', 'max:255'],
             'is_active' => ['boolean'],
-            'company_id' => [
-                'required', 'integer',
-                Rule::exists('companies', 'id')->where('organization_id', $organizationId),
+            'cost_center_id' => [
+                'nullable', 'integer',
+                Rule::exists('cost_centers', 'id')->where('organization_id', $organizationId),
             ],
             'premise_id' => [
                 'nullable', 'integer',
@@ -429,7 +434,7 @@ class EmployeeController extends Controller
     private function formOptions(?User $employee = null): array
     {
         return [
-            'companies' => $this->companyOptions(),
+            'costCenters' => $this->costCenterOptions(),
             'premises' => $this->premiseOptions(),
             'positions' => $this->positionOptions(),
             'supervisors' => $this->supervisorOptions($employee),
@@ -440,12 +445,12 @@ class EmployeeController extends Controller
     /**
      * @return array<int, array{value: string, label: string}>
      */
-    private function companyOptions(): array
+    private function costCenterOptions(): array
     {
-        return Company::query()
-            ->orderBy('social_reason')
-            ->get(['id', 'social_reason'])
-            ->map(fn (Company $company) => ['value' => (string) $company->id, 'label' => $company->social_reason])
+        return CostCenter::query()
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (CostCenter $costCenter) => ['value' => (string) $costCenter->id, 'label' => $costCenter->name])
             ->all();
     }
 

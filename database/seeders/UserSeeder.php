@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\Organization;
 use App\Models\Premise;
 use App\Models\User;
@@ -27,12 +28,21 @@ class UserSeeder extends Seeder
             'organization_id' => $organization->id,
         ])->assignRole('admin');
 
-        // A company the demo employees all belong to.
+        // The employer. Exactly one per organization (KOL-32).
         $company = Company::factory()->create([
             'organization_id' => $organization->id,
             'social_reason' => 'Demo Company',
-            'code' => 'CC-001',
         ]);
+
+        // Cost centres — the accounting dimension the payroll reports segment
+        // by. Demo employees are spread across them round-robin below.
+        $costCenters = collect([
+            ['name' => 'Operaciones', 'code' => 'CC-001'],
+            ['name' => 'Administración', 'code' => 'CC-002'],
+        ])->map(fn (array $costCenter) => CostCenter::factory()->create([
+            'organization_id' => $organization->id,
+            ...$costCenter,
+        ]));
 
         // Two branches (sucursales) for that company.
         $premises = collect(['Sucursal Centro', 'Sucursal Norte'])
@@ -119,6 +129,7 @@ class UserSeeder extends Seeder
             ])
             ->each(fn (User $employee, int $index) => $employee->update([
                 'premise_id' => $premises[$index % $premises->count()]->id,
+                'cost_center_id' => $costCenters[$index % $costCenters->count()]->id,
                 'rut' => $ruts[$index],
                 'supervisor_id' => $index < 6 ? $supervisor->id : null,
             ]));

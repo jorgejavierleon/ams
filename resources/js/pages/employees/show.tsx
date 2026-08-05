@@ -31,6 +31,7 @@ type Employee = {
     nationality: string | null;
     gender: string | null;
     company: string | null;
+    cost_center: string | null;
     premise: string | null;
     position: string | null;
     supervisor: string | null;
@@ -203,8 +204,12 @@ export default function ShowEmployee({
                         <Card>
                             <CardContent className="grid gap-6 pt-6 sm:grid-cols-2 lg:grid-cols-3">
                                 <Field
-                                    label={t('ui.employees.form.company')}
+                                    label={t('ui.employees.form.employer')}
                                     value={employee.company}
+                                />
+                                <Field
+                                    label={t('ui.employees.form.cost_center')}
+                                    value={employee.cost_center}
                                 />
                                 <Field
                                     label={t('ui.employees.form.premise')}

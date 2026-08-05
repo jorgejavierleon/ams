@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CommuneController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CostCenterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentSignatureController;
@@ -71,8 +72,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('positions', PositionController::class)
         ->only(['index', 'store', 'show', 'update', 'destroy']);
 
-    Route::resource('companies', CompanyController::class)
-        ->except(['show']);
+    Route::resource('cost-centers', CostCenterController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    // One employer per organization (KOL-32) — a singleton form, not a resource.
+    Route::get('company', [CompanyController::class, 'edit'])->name('company.edit');
+    Route::put('company', [CompanyController::class, 'update'])->name('company.update');
 
     Route::resource('premises', PremiseController::class)
         ->except(['show']);

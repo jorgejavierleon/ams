@@ -1,4 +1,4 @@
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslations } from '@/hooks/use-translations';
-import { index } from '@/routes/companies';
+import { update } from '@/routes/company';
 import { communes as communesRoute } from '@/routes/regions';
 
 export type Option = { value: number; label: string };
@@ -27,7 +27,6 @@ export type RepresentativeData = {
 export type CompanyFormData = {
     rut: string;
     social_reason: string;
-    code: string;
     business_line: string;
     email: string;
     region_id: string;
@@ -42,8 +41,6 @@ export type CompanyFormData = {
 
 type Props = {
     regions: Option[];
-    method: 'post' | 'patch';
-    action: string;
     submitLabel: string;
     initial?: CompanyFormData;
 };
@@ -60,7 +57,6 @@ function blankForm(): CompanyFormData {
     return {
         rut: '',
         social_reason: '',
-        code: '',
         business_line: '',
         email: '',
         region_id: '',
@@ -74,16 +70,11 @@ function blankForm(): CompanyFormData {
     };
 }
 
-export default function CompanyForm({
-    regions,
-    method,
-    action,
-    submitLabel,
-    initial,
-}: Props) {
+export default function CompanyForm({ regions, submitLabel, initial }: Props) {
     const { t } = useTranslations();
-    const { data, setData, post, patch, processing, errors } =
-        useForm<CompanyFormData>(initial ?? blankForm());
+    const { data, setData, put, processing, errors } = useForm<CompanyFormData>(
+        initial ?? blankForm(),
+    );
 
     const fieldErrors = errors as Record<string, string>;
 
@@ -153,13 +144,7 @@ export default function CompanyForm({
 
     function submit(event: FormEvent) {
         event.preventDefault();
-        const options = { preserveScroll: true };
-
-        if (method === 'patch') {
-            patch(action, options);
-        } else {
-            post(action, options);
-        }
+        put(update().url, { preserveScroll: true });
     }
 
     // Combobox works with string values so it slots into the form fields.
@@ -195,19 +180,6 @@ export default function CompanyForm({
                                 setData('social_reason', e.target.value)
                             }
                             autoFocus
-                        />
-                    </FormField>
-
-                    <FormField
-                        label={t('ui.companies.form.code')}
-                        htmlFor="code"
-                        hint={t('ui.companies.form.code_hint')}
-                        error={errors.code}
-                    >
-                        <Input
-                            id="code"
-                            value={data.code}
-                            onChange={(e) => setData('code', e.target.value)}
                         />
                     </FormField>
 
@@ -534,9 +506,6 @@ export default function CompanyForm({
                 <Button type="submit" disabled={processing}>
                     {processing && <Spinner />}
                     {submitLabel}
-                </Button>
-                <Button variant="ghost" asChild>
-                    <Link href={index()}>{t('ui.common.cancel')}</Link>
                 </Button>
             </div>
         </form>

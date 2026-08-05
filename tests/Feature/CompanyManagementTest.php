@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\Region;
 use App\Models\User;
 use App\Support\Rut;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 
@@ -56,74 +57,70 @@ function companyPayload(Region $region, Commune $commune, array $overrides = [])
 // --- Access control ---
 
 test('unauthenticated users are redirected to login', function () {
-    $this->get(route('companies.index'))->assertRedirect(route('login'));
+    $this->get(route('company.edit'))->assertRedirect(route('login'));
 });
 
 test('non-admin users are denied access', function () {
     $user = User::factory()->create();
     $user->assignRole('employee');
 
-    $this->actingAs($user)->get(route('companies.index'))->assertForbidden();
+    $this->actingAs($user)->get(route('company.edit'))->assertForbidden();
 });
 
-// --- Index ---
+// --- One employer per organization ---
 
-test('admin can list companies with region, commune and employee count', function () {
+test('the database refuses a second company for the same organization', function () {
+    $organization = Organization::factory()->create();
+    Company::factory()->create(['organization_id' => $organization->id]);
+
+    expect(fn () => Company::factory()->create(['organization_id' => $organization->id]))
+        ->toThrow(QueryException::class);
+});
+
+test('there is no route to create or delete a company', function () {
+    expect(Route::has('companies.index'))->toBeFalse();
+    expect(Route::has('companies.create'))->toBeFalse();
+    expect(Route::has('companies.store'))->toBeFalse();
+    expect(Route::has('companies.destroy'))->toBeFalse();
+});
+
+// --- Edit ---
+
+test('the edit page shows the organization own company', function () {
     $admin = companyAdmin();
-    $region = Region::factory()->create(['name' => 'Región de Prueba']);
-    $commune = Commune::factory()->create(['region_id' => $region->id, 'name' => 'Comuna Prueba']);
-    $company = Company::factory()->create([
+    $region = Region::factory()->create();
+    $commune = Commune::factory()->create(['region_id' => $region->id]);
+    Company::factory()->create([
         'organization_id' => $admin->organization_id,
         'social_reason' => 'Acme SpA',
         'region_id' => $region->id,
         'commune_id' => $commune->id,
     ]);
-    User::factory()->count(2)->create([
-        'organization_id' => $admin->organization_id,
-        'company_id' => $company->id,
-    ]);
+
+    // Another tenant's employer must stay invisible.
+    Company::factory()->create(['social_reason' => 'Foreign SpA']);
 
     $this->actingAs($admin)
-        ->get(route('companies.index'))
+        ->get(route('company.edit'))
         ->assertOk()
         ->assertInertia(
             fn ($page) => $page
-                ->component('companies/index')
-                ->has('companies.data', 1)
-                ->where('companies.data.0.social_reason', 'Acme SpA')
-                ->where('companies.data.0.region', 'Región de Prueba')
-                ->where('companies.data.0.commune', 'Comuna Prueba')
-                ->where('companies.data.0.users_count', 2),
+                ->component('companies/edit')
+                ->where('company.social_reason', 'Acme SpA')
+                ->where('company.region_id', $region->id),
         );
 });
 
-test('companies index only shows the current organization companies', function () {
+test('the edit page renders an empty form when the organization has no company yet', function () {
     $admin = companyAdmin();
-    Company::factory()->create(['organization_id' => $admin->organization_id, 'social_reason' => 'Mine']);
-    Company::factory()->create(['social_reason' => 'Foreign']);
 
     $this->actingAs($admin)
-        ->get(route('companies.index'))
+        ->get(route('company.edit'))
         ->assertOk()
         ->assertInertia(
             fn ($page) => $page
-                ->has('companies.data', 1)
-                ->where('companies.data.0.social_reason', 'Mine'),
-        );
-});
-
-test('companies index can be searched by name or rut', function () {
-    $admin = companyAdmin();
-    Company::factory()->create(['organization_id' => $admin->organization_id, 'social_reason' => 'Alpha', 'rut' => validRut(76000002)]);
-    Company::factory()->create(['organization_id' => $admin->organization_id, 'social_reason' => 'Beta', 'rut' => validRut(76000003)]);
-
-    $this->actingAs($admin)
-        ->get(route('companies.index', ['search' => 'Alph']))
-        ->assertOk()
-        ->assertInertia(
-            fn ($page) => $page
-                ->has('companies.data', 1)
-                ->where('companies.data.0.social_reason', 'Alpha'),
+                ->component('companies/edit')
+                ->where('company', null),
         );
 });
 
@@ -141,18 +138,18 @@ test('the communes endpoint returns only the communes for the given region', fun
         ->assertJsonCount(3);
 });
 
-// --- Create ---
+// --- Update ---
 
-test('admin can create a company with cascading region and commune', function () {
+test('the first save creates the organization company', function () {
     $admin = companyAdmin();
     $region = Region::factory()->create();
     $commune = Commune::factory()->create(['region_id' => $region->id]);
 
     $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune, [
+        ->put(route('company.update'), companyPayload($region, $commune, [
             'rut' => '76.111.111-6',
         ]))
-        ->assertRedirect(route('companies.index'));
+        ->assertRedirect(route('company.edit'));
 
     $this->assertDatabaseHas('companies', [
         'social_reason' => 'Acme SpA',
@@ -163,124 +160,40 @@ test('admin can create a company with cascading region and commune', function ()
     ]);
 });
 
-test('creating a company assigns representatives as company users', function () {
+test('saving twice updates the same company rather than creating a second one', function () {
     $admin = companyAdmin();
     $region = Region::factory()->create();
     $commune = Commune::factory()->create(['region_id' => $region->id]);
 
     $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune, [
-            'representatives' => [
-                [
-                    'rut' => validRut(15000001),
-                    'first_name' => 'Ana',
-                    'last_name' => 'Pérez',
-                    'second_last_name' => 'Soto',
-                    'email' => 'ana@acme.test',
-                ],
-                [
-                    'rut' => validRut(15000002),
-                    'first_name' => 'Luis',
-                    'last_name' => 'Rojas',
-                    'second_last_name' => '',
-                    'email' => 'luis@acme.test',
-                ],
-            ],
+        ->put(route('company.update'), companyPayload($region, $commune))
+        ->assertRedirect(route('company.edit'));
+
+    $this->actingAs($admin)
+        ->put(route('company.update'), companyPayload($region, $commune, [
+            'social_reason' => 'Acme Renamed SpA',
         ]))
-        ->assertRedirect(route('companies.index'));
+        ->assertRedirect(route('company.edit'));
 
-    $company = Company::query()->firstOrFail();
-
-    expect($company->representatives()->count())->toBe(2);
-
-    $this->assertDatabaseHas('users', [
-        'company_id' => $company->id,
-        'organization_id' => $admin->organization_id,
-        'name' => 'Ana Pérez',
-        'rut' => validRut(15000001),
-        'personal_email' => 'ana@acme.test',
-        'is_legal_rep' => true,
-    ]);
+    expect(Company::query()->where('organization_id', $admin->organization_id)->count())->toBe(1);
+    expect(Company::query()->first()->social_reason)->toBe('Acme Renamed SpA');
 });
 
-test('creating a company rejects an invalid rut', function () {
+test('an admin only ever edits their own organization company', function () {
     $admin = companyAdmin();
     $region = Region::factory()->create();
     $commune = Commune::factory()->create(['region_id' => $region->id]);
 
-    $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune, [
-            'rut' => '12.345.678-9',
-        ]))
-        ->assertSessionHasErrors('rut');
-});
-
-test('creating a company rejects a commune outside the selected region', function () {
-    $admin = companyAdmin();
-    $region = Region::factory()->create();
-    $commune = Commune::factory()->create(); // different region
+    $foreign = Company::factory()->create(['social_reason' => 'Foreign SpA']);
 
     $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune))
-        ->assertSessionHasErrors('commune_id');
+        ->put(route('company.update'), companyPayload($region, $commune))
+        ->assertRedirect(route('company.edit'));
+
+    // The other tenant's employer is untouched, and this one got its own row.
+    expect($foreign->fresh()->social_reason)->toBe('Foreign SpA');
+    expect(Company::query()->where('organization_id', $admin->organization_id)->count())->toBe(1);
 });
-
-test('creating a company validates all required fields server-side', function () {
-    $admin = companyAdmin();
-
-    $this->actingAs($admin)
-        ->post(route('companies.store'), [])
-        ->assertSessionHasErrors([
-            'social_reason',
-            'rut',
-            'business_line',
-            'email',
-            'region_id',
-            'commune_id',
-            'address',
-            'phone',
-            'company_type',
-        ]);
-});
-
-test('creating a company rejects an invalid email', function () {
-    $admin = companyAdmin();
-    $region = Region::factory()->create();
-    $commune = Commune::factory()->create(['region_id' => $region->id]);
-
-    $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune, [
-            'email' => 'not-an-email',
-        ]))
-        ->assertSessionHasErrors('email');
-});
-
-test('creating a company validates representative fields server-side', function () {
-    $admin = companyAdmin();
-    $region = Region::factory()->create();
-    $commune = Commune::factory()->create(['region_id' => $region->id]);
-
-    $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune, [
-            'representatives' => [
-                [
-                    'rut' => 'invalid',
-                    'first_name' => '',
-                    'last_name' => '',
-                    'second_last_name' => '',
-                    'email' => 'nope',
-                ],
-            ],
-        ]))
-        ->assertSessionHasErrors([
-            'representatives.0.rut',
-            'representatives.0.first_name',
-            'representatives.0.last_name',
-            'representatives.0.email',
-        ]);
-});
-
-// --- Update ---
 
 test('updating a company reconciles its representatives', function () {
     $admin = companyAdmin();
@@ -300,7 +213,7 @@ test('updating a company reconciles its representatives', function () {
     ]);
 
     $this->actingAs($admin)
-        ->patch(route('companies.update', $company), companyPayload($region, $commune, [
+        ->put(route('company.update'), companyPayload($region, $commune, [
             'representatives' => [
                 [
                     'rut' => validRut(15000011),
@@ -311,7 +224,7 @@ test('updating a company reconciles its representatives', function () {
                 ],
             ],
         ]))
-        ->assertRedirect(route('companies.index'));
+        ->assertRedirect(route('company.edit'));
 
     expect(User::query()->whereKey($existing->id)->exists())->toBeFalse();
     expect($company->representatives()->count())->toBe(1);
@@ -322,192 +235,127 @@ test('updating a company reconciles its representatives', function () {
     ]);
 });
 
-test('admin cannot edit a company from another organization', function () {
+test('saving a company assigns representatives as company users', function () {
     $admin = companyAdmin();
-    $foreign = Company::factory()->create();
+    $region = Region::factory()->create();
+    $commune = Commune::factory()->create(['region_id' => $region->id]);
 
     $this->actingAs($admin)
-        ->get(route('companies.edit', $foreign))
-        ->assertNotFound();
-});
+        ->put(route('company.update'), companyPayload($region, $commune, [
+            'representatives' => [
+                [
+                    'rut' => validRut(15000001),
+                    'first_name' => 'Ana',
+                    'last_name' => 'Pérez',
+                    'second_last_name' => 'Soto',
+                    'email' => 'ana@acme.test',
+                ],
+                [
+                    'rut' => validRut(15000002),
+                    'first_name' => 'Luis',
+                    'last_name' => 'Rojas',
+                    'second_last_name' => '',
+                    'email' => 'luis@acme.test',
+                ],
+            ],
+        ]))
+        ->assertRedirect(route('company.edit'));
 
-// --- Delete ---
+    $company = Company::query()->firstOrFail();
 
-test('a company is soft-deleted', function () {
-    $admin = companyAdmin();
-    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
+    expect($company->representatives()->count())->toBe(2);
 
-    $this->actingAs($admin)
-        ->delete(route('companies.destroy', $company))
-        ->assertRedirect(route('companies.index'));
-
-    $this->assertSoftDeleted('companies', ['id' => $company->id]);
-});
-
-test('a company with employees assigned cannot be deleted', function () {
-    $admin = companyAdmin();
-    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
-
-    $employee = User::factory()->create([
-        'organization_id' => $admin->organization_id,
+    $this->assertDatabaseHas('users', [
         'company_id' => $company->id,
-        'is_legal_rep' => false,
-    ]);
-    $employee->assignRole('employee');
-
-    $this->actingAs($admin)
-        ->delete(route('companies.destroy', $company))
-        ->assertRedirect(route('companies.index'));
-
-    // Neither orphaned nor silently reassigned: the company survives and the
-    // employee is still on its payroll.
-    $this->assertNotSoftDeleted('companies', ['id' => $company->id]);
-    expect($employee->fresh()->company_id)->toBe($company->id);
-});
-
-test('deleting a company also removes its legal representatives', function () {
-    $admin = companyAdmin();
-    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
-
-    $representative = User::factory()->create([
         'organization_id' => $admin->organization_id,
-        'company_id' => $company->id,
+        'name' => 'Ana Pérez',
+        'rut' => validRut(15000001),
+        'personal_email' => 'ana@acme.test',
         'is_legal_rep' => true,
     ]);
-
-    $this->actingAs($admin)
-        ->delete(route('companies.destroy', $company))
-        ->assertRedirect(route('companies.index'));
-
-    // Users are not soft-deletable, so the representative row goes away entirely.
-    $this->assertSoftDeleted('companies', ['id' => $company->id]);
-    $this->assertDatabaseMissing('users', ['id' => $representative->id]);
 });
 
-// --- Accounting code (código contable) ---
+// --- Validation ---
 
-test('a company can be created with an accounting code', function () {
+test('saving a company rejects an invalid rut', function () {
     $admin = companyAdmin();
     $region = Region::factory()->create();
     $commune = Commune::factory()->create(['region_id' => $region->id]);
 
     $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune, ['code' => 'CC-001']))
-        ->assertRedirect(route('companies.index'));
-
-    $this->assertDatabaseHas('companies', [
-        'social_reason' => 'Acme SpA',
-        'code' => 'CC-001',
-    ]);
+        ->put(route('company.update'), companyPayload($region, $commune, [
+            'rut' => '12.345.678-9',
+        ]))
+        ->assertSessionHasErrors('rut');
 });
 
-test('the accounting code is optional and stored as null when blank', function () {
+test('saving a company rejects a commune outside the selected region', function () {
+    $admin = companyAdmin();
+    $region = Region::factory()->create();
+    $commune = Commune::factory()->create(); // different region
+
+    $this->actingAs($admin)
+        ->put(route('company.update'), companyPayload($region, $commune))
+        ->assertSessionHasErrors('commune_id');
+});
+
+test('saving a company validates all required fields server-side', function () {
+    $admin = companyAdmin();
+
+    $this->actingAs($admin)
+        ->put(route('company.update'), [])
+        ->assertSessionHasErrors([
+            'social_reason',
+            'rut',
+            'business_line',
+            'email',
+            'region_id',
+            'commune_id',
+            'address',
+            'phone',
+            'company_type',
+        ]);
+});
+
+test('saving a company rejects an invalid email', function () {
     $admin = companyAdmin();
     $region = Region::factory()->create();
     $commune = Commune::factory()->create(['region_id' => $region->id]);
 
     $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune, ['code' => '   ']))
-        ->assertRedirect(route('companies.index'));
-
-    $this->assertDatabaseHas('companies', [
-        'social_reason' => 'Acme SpA',
-        'code' => null,
-    ]);
+        ->put(route('company.update'), companyPayload($region, $commune, [
+            'email' => 'not-an-email',
+        ]))
+        ->assertSessionHasErrors('email');
 });
 
-test('the accounting code is unique within the organization but not across tenants', function () {
+test('saving a company validates representative fields server-side', function () {
     $admin = companyAdmin();
     $region = Region::factory()->create();
     $commune = Commune::factory()->create(['region_id' => $region->id]);
 
-    Company::factory()->create([
-        'organization_id' => $admin->organization_id,
-        'code' => 'CC-001',
-    ]);
-
-    // Another tenant already using a code must not block this one.
-    Company::factory()->create(['code' => 'CC-002']);
-
     $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune, ['code' => 'CC-001']))
-        ->assertSessionHasErrors('code');
-
-    $this->actingAs($admin)
-        ->post(route('companies.store'), companyPayload($region, $commune, ['code' => 'CC-002']))
-        ->assertRedirect(route('companies.index'));
+        ->put(route('company.update'), companyPayload($region, $commune, [
+            'representatives' => [
+                [
+                    'rut' => 'invalid',
+                    'first_name' => '',
+                    'last_name' => '',
+                    'second_last_name' => '',
+                    'email' => 'nope',
+                ],
+            ],
+        ]))
+        ->assertSessionHasErrors([
+            'representatives.0.rut',
+            'representatives.0.first_name',
+            'representatives.0.last_name',
+            'representatives.0.email',
+        ]);
 });
 
-test('a company keeps its own accounting code when updated', function () {
-    $admin = companyAdmin();
-    $region = Region::factory()->create();
-    $commune = Commune::factory()->create(['region_id' => $region->id]);
-    $company = Company::factory()->create([
-        'organization_id' => $admin->organization_id,
-        'code' => 'CC-001',
-    ]);
+// --- The accounting code no longer lives here ---
 
-    $this->actingAs($admin)
-        ->patch(route('companies.update', $company), companyPayload($region, $commune, ['code' => 'CC-001']))
-        ->assertRedirect(route('companies.index'));
-
-    expect($company->fresh()->code)->toBe('CC-001');
-});
-
-test('the companies index can be searched by accounting code', function () {
-    $admin = companyAdmin();
-    Company::factory()->create([
-        'organization_id' => $admin->organization_id,
-        'social_reason' => 'Alpha',
-        'code' => 'CC-777',
-    ]);
-    Company::factory()->create([
-        'organization_id' => $admin->organization_id,
-        'social_reason' => 'Beta',
-        'code' => 'CC-888',
-    ]);
-
-    $this->actingAs($admin)
-        ->get(route('companies.index', ['search' => 'CC-777']))
-        ->assertOk()
-        ->assertInertia(
-            fn ($page) => $page
-                ->has('companies.data', 1)
-                ->where('companies.data.0.code', 'CC-777'),
-        );
-});
-
-test('the edit page hands the accounting code to the form', function () {
-    $admin = companyAdmin();
-    $company = Company::factory()->create([
-        'organization_id' => $admin->organization_id,
-        'code' => 'CC-042',
-    ]);
-
-    $this->actingAs($admin)
-        ->get(route('companies.edit', $company))
-        ->assertOk()
-        ->assertInertia(
-            fn ($page) => $page
-                ->component('companies/edit')
-                ->where('company.code', 'CC-042'),
-        );
-});
-
-test('the companies index exposes the accounting code per row', function () {
-    $admin = companyAdmin();
-    Company::factory()->create([
-        'organization_id' => $admin->organization_id,
-        'social_reason' => 'Acme SpA',
-        'code' => 'CC-099',
-    ]);
-
-    $this->actingAs($admin)
-        ->get(route('companies.index'))
-        ->assertOk()
-        ->assertInertia(
-            fn ($page) => $page
-                ->component('companies/index')
-                ->where('companies.data.0.code', 'CC-099'),
-        );
+test('the company no longer carries an accounting code', function () {
+    expect(Schema::hasColumn('companies', 'code'))->toBeFalse();
 });

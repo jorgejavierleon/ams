@@ -23,7 +23,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { index } from '@/routes/employees';
 
 export type EmployeeFormOptions = {
-    companies: ComboboxOption[];
+    costCenters: ComboboxOption[];
     premises: ComboboxOption[];
     positions: ComboboxOption[];
     supervisors: ComboboxOption[];
@@ -41,7 +41,7 @@ export type EmployeeFormData = {
     nationality: string;
     gender: string;
     is_active: boolean;
-    company_id: string;
+    cost_center_id: string;
     premise_id: string;
     position_id: string;
     supervisor_id: string;
@@ -317,17 +317,17 @@ export default function EmployeeForm({
                 <TabsContent value="labor" className="grid gap-6 pt-2">
                     <div className="grid gap-6 sm:grid-cols-2">
                         <FormField
-                            label={t('ui.employees.form.company')}
-                            htmlFor="company_id"
+                            label={t('ui.employees.form.cost_center')}
+                            htmlFor="cost_center_id"
                             required
-                            error={fieldErrors.company_id}
+                            error={fieldErrors.cost_center_id}
                         >
                             <Combobox
-                                id="company_id"
-                                options={options.companies}
-                                value={data.company_id}
+                                id="cost_center_id"
+                                options={options.costCenters}
+                                value={data.cost_center_id}
                                 onChange={(value) =>
-                                    setData('company_id', value)
+                                    setData('cost_center_id', value)
                                 }
                                 placeholder={t('ui.employees.form.select')}
                                 searchPlaceholder={t(

@@ -199,6 +199,7 @@ return [
     'attributes' => [
         'social_reason' => 'company name',
         'code' => 'accounting code',
+        'cost_center_id' => 'cost centre',
         'rut' => 'RUT',
         'business_line' => 'business line',
         'email' => 'email',
