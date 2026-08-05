@@ -20,7 +20,7 @@ type Employee = {
     nationality: string | null;
     gender: string | null;
     is_active: boolean;
-    company_id: number | null;
+    cost_center_id: number | null;
     premise_id: number | null;
     position_id: number | null;
     supervisor_id: number | null;
@@ -60,7 +60,7 @@ export default function EditEmployee({ employee, options }: Props) {
         nationality: employee.nationality ?? '',
         gender: employee.gender ?? '',
         is_active: employee.is_active,
-        company_id: toId(employee.company_id),
+        cost_center_id: toId(employee.cost_center_id),
         premise_id: toId(employee.premise_id),
         position_id: toId(employee.position_id),
         supervisor_id: toId(employee.supervisor_id),

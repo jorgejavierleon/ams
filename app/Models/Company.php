@@ -18,7 +18,6 @@ use Illuminate\Support\Carbon;
  * @property int|null $organization_id
  * @property string $rut
  * @property string $social_reason
- * @property string|null $code
  * @property string $business_line
  * @property string $email
  * @property string $country
@@ -33,10 +32,19 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
+/**
+ * The employer legal entity — the party a DT inspector audits, and the RUT the
+ * libro de asistencia is kept under.
+ *
+ * **Exactly one per organization** (KOL-32), enforced by a unique index on
+ * `organization_id`. A client operating several RUTs gets one organization per
+ * RUT; that is what Resolución 38 assumes, since the libro and the art. 26
+ * platform upload are both keyed by employer RUT. The accounting dimension the
+ * payroll reports segment by is {@see CostCenter}, not a second company.
+ */
 #[Fillable([
     'rut',
     'social_reason',
-    'code',
     'business_line',
     'email',
     'country',

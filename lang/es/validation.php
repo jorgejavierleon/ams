@@ -198,6 +198,7 @@ return [
         'address' => 'dirección',
         'phone' => 'teléfono',
         'code' => 'código contable',
+        'cost_center_id' => 'centro de costo',
         'company_type' => 'tipo de empresa',
         'representatives.*.rut' => 'RUT del representante',
         'representatives.*.first_name' => 'nombre del representante',

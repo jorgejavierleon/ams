@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Concerns\ResolvesTableSort;
 use App\Models\Company;
 use App\Models\Region;
 use App\Models\User;
@@ -16,76 +15,27 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * The organization's single employer profile (KOL-32).
+ *
+ * There is no listing, no create and no delete: an organization *is* one
+ * employer, enforced by a unique index on `companies.organization_id`. This is
+ * account configuration — one form, edited in place. The many-to-one accounting
+ * dimension lives in {@see CostCenterController}.
+ */
 class CompanyController extends Controller
 {
-    use ResolvesTableSort;
-
-    public function index(Request $request): Response
+    public function edit(): Response
     {
-        $search = $request->string('search')->trim()->value() ?: null;
-        ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
-            $request,
-            ['social_reason', 'code', 'rut', 'company_type', 'users_count', 'created_at'],
-            'social_reason',
-        );
+        $company = $this->currentCompany();
 
-        $companies = Company::query()
-            ->with(['region:id,name', 'commune:id,name'])
-            ->withCount('users')
-            ->when($search, fn ($query) => $query->where(fn ($q) => $q
-                ->where('social_reason', 'like', "%{$search}%")
-                ->orWhere('code', 'like', "%{$search}%")
-                ->orWhere('rut', 'like', "%{$search}%")))
-            ->orderBy($sort, $direction)
-            ->paginate(10)
-            ->withQueryString();
-
-        return Inertia::render('companies/index', [
-            'companies' => $companies->through(fn (Company $company) => [
-                'id' => $company->id,
-                'social_reason' => $company->social_reason,
-                'code' => $company->code,
-                'rut' => $company->formatted_rut,
-                'region' => $company->region?->name,
-                'commune' => $company->commune?->name,
-                'users_count' => $company->users_count,
-                'is_active' => $company->is_active,
-            ]),
-            'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],
-        ]);
-    }
-
-    public function create(): Response
-    {
-        return Inertia::render('companies/create', [
-            'regions' => $this->regionOptions(),
-        ]);
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        $data = $this->validateCompany($request);
-
-        DB::transaction(function () use ($data) {
-            $company = Company::create(Arr::except($data, 'representatives'));
-            $this->syncRepresentatives($company, $data['representatives'] ?? []);
-        });
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.companies.flash.created')]);
-
-        return to_route('companies.index');
-    }
-
-    public function edit(Company $company): Response
-    {
-        $company->load(['representatives:id,company_id,rut,first_name,last_name,second_last_name,personal_email']);
+        $company?->load(['representatives:id,company_id,rut,first_name,last_name,second_last_name,personal_email']);
 
         return Inertia::render('companies/edit', [
-            'company' => [
+            'company' => $company === null ? null : [
                 'id' => $company->id,
                 'rut' => $company->formatted_rut,
                 'social_reason' => $company->social_reason,
-                'code' => $company->code,
                 'business_line' => $company->business_line,
                 'email' => $company->email,
                 'region_id' => $company->region_id,
@@ -108,47 +58,35 @@ class CompanyController extends Controller
         ]);
     }
 
-    public function update(Request $request, Company $company): RedirectResponse
+    /**
+     * Save the employer profile, creating it on first submit for an
+     * organization that does not have one yet.
+     */
+    public function update(Request $request): RedirectResponse
     {
-        $data = $this->validateCompany($request, $company);
+        $company = $this->currentCompany();
+        $data = $this->validateCompany($request);
 
         DB::transaction(function () use ($company, $data) {
-            $company->update(Arr::except($data, 'representatives'));
+            $company = $company === null
+                ? Company::create(Arr::except($data, 'representatives'))
+                : tap($company)->update(Arr::except($data, 'representatives'));
+
             $this->syncRepresentatives($company, $data['representatives'] ?? []);
         });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.companies.flash.updated')]);
 
-        return to_route('companies.index');
+        return to_route('company.edit');
     }
 
     /**
-     * Deleting a company that still has employees on its payroll would leave
-     * them pointing at a soft-deleted row, so refuse and make the admin reassign
-     * them first. Legal representatives belong to the company itself and do not
-     * block the delete.
+     * The organization's single company, or null before it has been set up.
+     * The `OrganizationScope` on the model does the tenant filtering.
      */
-    public function destroy(Company $company): RedirectResponse
+    private function currentCompany(): ?Company
     {
-        $assignedEmployees = $company->users()->employees()->count();
-
-        if ($assignedEmployees > 0) {
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => __('ui.companies.flash.delete_blocked', ['count' => $assignedEmployees]),
-            ]);
-
-            return to_route('companies.index');
-        }
-
-        DB::transaction(function () use ($company) {
-            $company->representatives()->delete();
-            $company->delete();
-        });
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.companies.flash.deleted')]);
-
-        return to_route('companies.index');
+        return Company::query()->first();
     }
 
     /**
@@ -169,7 +107,7 @@ class CompanyController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function validateCompany(Request $request, ?Company $company = null): array
+    private function validateCompany(Request $request): array
     {
         $representatives = array_values($request->input('representatives', []));
 
@@ -181,7 +119,6 @@ class CompanyController extends Controller
 
         $request->merge([
             'rut' => Rut::normalize((string) $request->input('rut')),
-            'code' => $request->string('code')->trim()->value() ?: null,
             'representatives' => $representatives,
             'is_est' => $request->boolean('is_est'),
             'is_active' => $request->boolean('is_active'),
@@ -190,13 +127,6 @@ class CompanyController extends Controller
         $rules = [
             'rut' => ['required', 'string', new ValidRut],
             'social_reason' => ['required', 'string', 'max:255'],
-            'code' => [
-                'nullable', 'string', 'max:50',
-                Rule::unique('companies', 'code')
-                    ->where('organization_id', Company::currentOrganizationId())
-                    ->whereNull('deleted_at')
-                    ->ignore($company),
-            ],
             'business_line' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'region_id' => ['required', 'integer', 'exists:regions,id'],

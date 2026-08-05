@@ -14,6 +14,7 @@ import {
     SlidersHorizontal,
     Sun,
     Users,
+    Wallet,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -29,7 +30,8 @@ import {
 } from '@/components/ui/sidebar';
 import { useTranslations } from '@/hooks/use-translations';
 import { dashboard } from '@/routes';
-import { index as companiesIndex } from '@/routes/companies';
+import { edit as companyEdit } from '@/routes/company';
+import { index as costCentersIndex } from '@/routes/cost-centers';
 import { index as documentTemplatesIndex } from '@/routes/document-templates';
 import { index as documentsIndex } from '@/routes/documents';
 import { index as employeesIndex } from '@/routes/employees';
@@ -123,9 +125,14 @@ export function AppSidebar() {
                     icon: LayoutGrid,
                 },
                 {
-                    title: t('ui.nav.companies'),
-                    href: companiesIndex(),
+                    title: t('ui.nav.company'),
+                    href: companyEdit(),
                     icon: Building2,
+                },
+                {
+                    title: t('ui.nav.cost_centers'),
+                    href: costCentersIndex(),
+                    icon: Wallet,
                 },
                 {
                     title: t('ui.nav.premises'),

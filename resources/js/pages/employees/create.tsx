@@ -23,7 +23,7 @@ const emptyEmployee: EmployeeFormData = {
     nationality: '',
     gender: '',
     is_active: true,
-    company_id: '',
+    cost_center_id: '',
     premise_id: '',
     position_id: '',
     supervisor_id: '',

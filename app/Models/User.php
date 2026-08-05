@@ -27,6 +27,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int $id
  * @property int|null $organization_id
  * @property int|null $company_id
+ * @property int|null $cost_center_id
  * @property int|null $position_id
  * @property int|null $premise_id
  * @property int|null $supervisor_id
@@ -65,7 +66,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read string|null $avatar
  * @property-read string|null $formatted_rut
  */
-#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'is_admin', 'password_changed_at', 'organization_id', 'company_id', 'position_id', 'premise_id', 'supervisor_id', 'contract_start_date', 'contract_end_date', 'vacation_days', 'additional_vacation_days', 'administrative_days', 'has_additional_sundays', 'nationality', 'gender', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'timezone'])]
+#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'is_admin', 'password_changed_at', 'organization_id', 'company_id', 'cost_center_id', 'position_id', 'premise_id', 'supervisor_id', 'contract_start_date', 'contract_end_date', 'vacation_days', 'additional_vacation_days', 'administrative_days', 'has_additional_sundays', 'nationality', 'gender', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'timezone'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 #[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements HasMedia
@@ -94,6 +95,14 @@ class User extends Authenticatable implements HasMedia
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * @return BelongsTo<CostCenter, $this>
+     */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 
     /**

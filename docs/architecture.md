@@ -83,7 +83,7 @@ DT (Dirección del Trabajo) inspectors authenticate on the `dt` guard but carry 
 - **Cross-tenant tools** — the checksum-validation page (`/dt/marks/validate`, #23) deliberately runs with *no* audit organization selected: with no tenant resolved the scope is a no-op, so `Mark::where('checksum', …)` spans every employer, which is the point. It is intentionally left outside the org gate. Do not add explicit org scoping to it.
 - **Audit session (org-scoped views)** — before viewing an employer's data an inspector picks one via the organization selector (`/dt/select-organization`, #26; `Dt\OrganizationController`), which stores `dt_organization_id` in the session. `currentOrganizationId()` then resolves *that* org, so every `BelongsToOrganization` model scopes to the audited employer with no per-query changes. The `dt_organization_selected` middleware (`EnsureDtOrganizationSelected`) gates these views, bouncing to the selector until a choice is made; DT logout flushes the session, clearing the selection.
 
-The selector implements Resolución 38 **Art. 24**: an alphabetical list of employers with a **name/RUT search**, and on selection an automatic **non-nominative audit notice** (`Mail\DtAuditNotification`, fixed legal wording, castellano) to the employer's email. The **employer identity** the inspector searches and audits (`rut`, `email`, `phone`, `address`; razón social = `name`) lives on `Organization` itself — added in #26 rather than sourced from `Company`, since one organization represents one employer. Consolidating the remaining employer profile onto `Organization` / retiring `Company` is deferred to a later ticket.
+The selector implements Resolución 38 **Art. 24**: an alphabetical list of employers with a **name/RUT search**, and on selection an automatic **non-nominative audit notice** (`Mail\DtAuditNotification`, fixed legal wording, castellano) to the employer's email. The **employer identity** the inspector searches and audits (`rut`, `email`, `phone`, `address`; razón social = `name`) lives on `Organization` itself — added in #26 rather than sourced from `Company`, since one organization represents one employer. KOL-32 made that a hard invariant across the schema (see *One organization, one employer* below).
 
 ### Shared/hybrid ownership (holidays)
 
@@ -128,18 +128,28 @@ Chile ships first, so `es` (formatted as `es-CL`) is the default locale; the app
 
 ---
 
-## Company as the cost-centre dimension
+## One organization, one employer
 
-`Company` is the **employer legal entity** — `rut`, `social_reason`, `business_line`, `company_type`, `is_est` (empresa de servicios transitorios) and its legal representatives. A tenant (`Organization`) may hold several.
+`Company` is the **employer legal entity** — `rut`, `social_reason`, `business_line`, `company_type`, `is_est` (empresa de servicios transitorios) and its legal representatives. **An organization has exactly one** (KOL-32).
 
-It is also the dimension the payroll reports call *centro de costo* (KOL-30). **Do not add a separate `CostCenter` model**: the product treats the two as one concept, and a parallel model was tried and reverted — attributes like `is_est` are legal-entity facts that make no sense on an accounting bucket. `companies.code` is the optional *código contable* the client matches to their own accounting system; it is unique per organization and nullable.
+The constraint is in the schema, not just the controller: a generated column `companies.live_organization_id` mirrors `organization_id` while the row is live and is NULL once soft-deleted, and carries the unique index. That is what lets a retired employer row survive intact alongside the live one — MySQL treats NULLs in a unique index as distinct. It is `VIRTUAL` rather than `STORED` because adding a stored generated column derived from a foreign-key column fails with errno 1215.
+
+A client that genuinely operates several RUTs (a holding) gets **one organization per RUT**, not several companies in one tenant. This is the Resolución 38-correct shape: the libro de asistencia is kept per employer RUT, and the art. 26 monthly platform upload is a client list keyed by RUT. The tenant switcher is what makes that usable day to day.
+
+Because the employer is not a choice, `CompanyController` is a **singleton form** (`GET`/`PUT /company`) with no index, create or delete, and `EmployeeController::store` assigns `company_id` from the org's one company rather than offering a select.
 
 Two constraints that follow from `Company` being the employer of record — the legal fields are not decoration:
 
 - The DT attendance reports emit an `employer` column (razón social + RUT) per Resolución 38, and `MarkObserver` freezes `employer_rut` / `employer_name` onto every mark for the fiscalizador validation endpoint.
 - The contract templates resolve `{{company_*}}` variables through `DocumentVariableResolver`.
 
-`CompanyController::destroy` **refuses** to delete a company that still has employees assigned, rather than orphaning them behind a soft-deleted row; legal representatives are owned by the company and are deleted with it.
+## Cost centres
+
+`CostCenter` is the accounting dimension the payroll reports call *centro de costo* — an org-scoped catalogue in the same shape as `Position`, with a name and an optional `code` (*código contable*) unique per organization. Employees reference at most one, optionally.
+
+**A cost centre is not an employer and must never be rendered as one.** It has no RUT and no legal standing, so substituting it for the `employer` column on any art. 27 report would break the libro de asistencia. `tests/Feature/DtReportEmployerIdentityTest.php` is the guard rail against exactly that drift.
+
+KOL-30 originally put the *código contable* on `companies` and treated the company itself as the cost-centre dimension; KOL-32 separated them, and the `convert_extra_companies_to_cost_centers` migration is what moves an existing tenant across — extra companies become cost centres, their employees keep working, and no row is destroyed.
 
 ## Chilean RUT handling
 

@@ -3,13 +3,11 @@ import CompanyForm from '@/components/company-form';
 import type { CompanyFormData, Option } from '@/components/company-form';
 import Heading from '@/components/heading';
 import { useTranslations } from '@/hooks/use-translations';
-import { update } from '@/routes/companies';
 
 type Company = {
     id: number;
     rut: string;
     social_reason: string;
-    code: string | null;
     business_line: string;
     email: string;
     region_id: number | null;
@@ -30,35 +28,39 @@ type Company = {
 };
 
 type Props = {
-    company: Company;
+    /** Null until the organization has filled in its employer profile. */
+    company: Company | null;
     regions: Option[];
 };
 
 export default function EditCompany({ company, regions }: Props) {
     const { t } = useTranslations();
 
-    const initial: CompanyFormData = {
-        rut: company.rut,
-        social_reason: company.social_reason,
-        code: company.code ?? '',
-        business_line: company.business_line,
-        email: company.email,
-        region_id: company.region_id ? String(company.region_id) : '',
-        commune_id: company.commune_id ? String(company.commune_id) : '',
-        address: company.address,
-        phone: company.phone,
-        company_type: company.company_type,
-        is_est: company.is_est,
-        is_active: company.is_active,
-        representatives: company.representatives.map((representative) => ({
-            id: representative.id,
-            rut: representative.rut,
-            first_name: representative.first_name,
-            last_name: representative.last_name,
-            second_last_name: representative.second_last_name ?? '',
-            email: representative.email,
-        })),
-    };
+    const initial: CompanyFormData | undefined = company
+        ? {
+              rut: company.rut,
+              social_reason: company.social_reason,
+              business_line: company.business_line,
+              email: company.email,
+              region_id: company.region_id ? String(company.region_id) : '',
+              commune_id: company.commune_id ? String(company.commune_id) : '',
+              address: company.address,
+              phone: company.phone,
+              company_type: company.company_type,
+              is_est: company.is_est,
+              is_active: company.is_active,
+              representatives: company.representatives.map(
+                  (representative) => ({
+                      id: representative.id,
+                      rut: representative.rut,
+                      first_name: representative.first_name,
+                      last_name: representative.last_name,
+                      second_last_name: representative.second_last_name ?? '',
+                      email: representative.email,
+                  }),
+              ),
+          }
+        : undefined;
 
     return (
         <>
@@ -72,8 +74,6 @@ export default function EditCompany({ company, regions }: Props) {
 
                 <CompanyForm
                     regions={regions}
-                    method="patch"
-                    action={update(company.id).url}
                     submitLabel={t('ui.companies.edit.submit')}
                     initial={initial}
                 />
