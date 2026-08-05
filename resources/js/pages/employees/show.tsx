@@ -3,11 +3,8 @@ import { Pencil } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { ComboboxOption } from '@/components/combobox';
 import Heading from '@/components/heading';
-import {
-    ShiftAssignments
-    
-} from '@/components/shift-assignments';
-import type {ShiftAssignment} from '@/components/shift-assignments';
+import { ShiftAssignments } from '@/components/shift-assignments';
+import type { ShiftAssignment } from '@/components/shift-assignments';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,6 +34,7 @@ type Employee = {
     supervisor: string | null;
     contract_start_date: string | null;
     contract_end_date: string | null;
+    contract_type: string | null;
     vacation_days: number;
     additional_vacation_days: number;
     administrative_days: number;
@@ -234,6 +232,10 @@ export default function ShowEmployee({
                                         'ui.employees.form.contract_end_date',
                                     )}
                                     value={employee.contract_end_date}
+                                />
+                                <Field
+                                    label={t('ui.employees.form.contract_type')}
+                                    value={employee.contract_type}
                                 />
                                 <Field
                                     label={t('ui.employees.form.vacation_days')}

@@ -939,6 +939,13 @@ return [
             'available' => ':available días disponibles',
         ],
 
+        'contract_types' => [
+            'indefinido' => 'Indefinido',
+            'plazo_fijo' => 'Plazo fijo',
+            'por_obra_o_faena' => 'Por obra o faena',
+            'honorarios' => 'Honorarios',
+        ],
+
         'columns' => [
             'employee' => 'Empleado',
             'email' => 'Email',
@@ -946,6 +953,7 @@ return [
             'position' => 'Cargo',
             'premise' => 'Sucursal',
             'cost_center' => 'Centro de costo',
+            'contract_type' => 'Tipo de contrato',
             'is_admin' => 'Admin',
             'is_active' => 'Activo',
             'admin_badge' => 'Admin',
@@ -961,6 +969,7 @@ return [
             'premise' => 'Sucursal',
             'position' => 'Cargo',
             'cost_center' => 'Centro de costo',
+            'contract_type' => 'Tipo de contrato',
             'clear' => 'Limpiar filtros',
         ],
 
@@ -1000,6 +1009,7 @@ return [
             'supervisor' => 'Supervisor',
             'contract_start_date' => 'Inicio de contrato',
             'contract_end_date' => 'Término de contrato',
+            'contract_type' => 'Tipo de contrato',
             'is_admin' => 'Administrador',
             'vacation_days' => 'Días de vacaciones',
             'additional_vacation_days' => 'Días de vacaciones adicionales',

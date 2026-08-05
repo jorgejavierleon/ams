@@ -39,6 +39,7 @@ type Employee = {
     position: string | null;
     premise: string | null;
     cost_center: string | null;
+    contract_type_label: string | null;
     is_active: boolean;
     is_admin: boolean;
 };
@@ -54,10 +55,12 @@ type Props = {
         premises: string[];
         positions: string[];
         costCenters: string[];
+        contractTypes: string[];
     };
     premiseOptions: FacetedOption[];
     positionOptions: FacetedOption[];
     costCenterOptions: FacetedOption[];
+    contractTypeOptions: FacetedOption[];
 };
 
 export default function EmployeesIndex({
@@ -66,6 +69,7 @@ export default function EmployeesIndex({
     premiseOptions,
     positionOptions,
     costCenterOptions,
+    contractTypeOptions,
 }: Props) {
     const { t } = useTranslations();
     const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
@@ -79,6 +83,9 @@ export default function EmployeesIndex({
     const [costCenters, setCostCenters] = useState<string[]>(
         filters.costCenters ?? [],
     );
+    const [contractTypes, setContractTypes] = useState<string[]>(
+        filters.contractTypes ?? [],
+    );
 
     const extraParams = useMemo(
         () => ({
@@ -87,8 +94,9 @@ export default function EmployeesIndex({
             premises: premises.length > 0 ? premises : undefined,
             positions: positions.length > 0 ? positions : undefined,
             costCenters: costCenters.length > 0 ? costCenters : undefined,
+            contractTypes: contractTypes.length > 0 ? contractTypes : undefined,
         }),
-        [isActive, isAdmin, premises, positions, costCenters],
+        [isActive, isAdmin, premises, positions, costCenters, contractTypes],
     );
 
     const hasFilters =
@@ -96,7 +104,8 @@ export default function EmployeesIndex({
         isAdmin !== 'all' ||
         premises.length > 0 ||
         positions.length > 0 ||
-        costCenters.length > 0;
+        costCenters.length > 0 ||
+        contractTypes.length > 0;
 
     function clearFilters() {
         setIsActive('all');
@@ -104,6 +113,7 @@ export default function EmployeesIndex({
         setPremises([]);
         setPositions([]);
         setCostCenters([]);
+        setContractTypes([]);
     }
 
     function toggleEmployeeActive(employee: Employee) {
@@ -202,6 +212,13 @@ export default function EmployeesIndex({
                 meta: { title: t('ui.employees.columns.premise') },
                 header: () => t('ui.employees.columns.premise'),
                 cell: ({ row }) => row.original.premise ?? '—',
+            },
+            {
+                id: 'contract_type',
+                enableSorting: false,
+                meta: { title: t('ui.employees.columns.contract_type') },
+                header: () => t('ui.employees.columns.contract_type'),
+                cell: ({ row }) => row.original.contract_type_label ?? '—',
             },
             {
                 id: 'is_admin',
@@ -345,6 +362,13 @@ export default function EmployeesIndex({
                                 options={costCenterOptions}
                                 selected={costCenters}
                                 onChange={setCostCenters}
+                            />
+
+                            <DataTableFacetedFilter
+                                title={t('ui.employees.filters.contract_type')}
+                                options={contractTypeOptions}
+                                selected={contractTypes}
+                                onChange={setContractTypes}
                             />
 
                             {hasFilters && (

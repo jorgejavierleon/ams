@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesTableSort;
+use App\Enums\ContractType;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\Company;
@@ -40,6 +41,7 @@ class EmployeeController extends Controller
         $premiseIds = $this->idListFilter($request, 'premises');
         $positionIds = $this->idListFilter($request, 'positions');
         $costCenterIds = $this->idListFilter($request, 'costCenters');
+        $contractTypes = $this->enumListFilter($request, 'contractTypes', ContractType::class);
 
         $employees = User::query()
             ->employees()
@@ -53,6 +55,7 @@ class EmployeeController extends Controller
             ->when($premiseIds, fn ($query) => $query->whereIn('premise_id', $premiseIds))
             ->when($positionIds, fn ($query) => $query->whereIn('position_id', $positionIds))
             ->when($costCenterIds, fn ($query) => $query->whereIn('cost_center_id', $costCenterIds))
+            ->when($contractTypes, fn ($query) => $query->whereIn('contract_type', $contractTypes))
             ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
@@ -67,6 +70,8 @@ class EmployeeController extends Controller
                 'position' => $employee->position?->name,
                 'premise' => $employee->premise?->name,
                 'cost_center' => $employee->costCenter?->name,
+                'contract_type' => $employee->contract_type?->value,
+                'contract_type_label' => $employee->contract_type?->label(),
                 'is_active' => $employee->is_active,
                 'is_admin' => $employee->is_admin,
             ]),
@@ -79,10 +84,12 @@ class EmployeeController extends Controller
                 'premises' => array_map('strval', $premiseIds),
                 'positions' => array_map('strval', $positionIds),
                 'costCenters' => array_map('strval', $costCenterIds),
+                'contractTypes' => array_map(fn (ContractType $type) => $type->value, $contractTypes),
             ],
             'premiseOptions' => $this->premiseOptions(),
             'positionOptions' => $this->positionOptions(),
             'costCenterOptions' => $this->costCenterOptions(),
+            'contractTypeOptions' => ContractType::options(),
         ]);
     }
 
@@ -142,6 +149,7 @@ class EmployeeController extends Controller
                 'supervisor' => $employee->supervisor?->name,
                 'contract_start_date' => $employee->contract_start_date?->format('Y-m-d'),
                 'contract_end_date' => $employee->contract_end_date?->format('Y-m-d'),
+                'contract_type' => $employee->contract_type?->label(),
                 'vacation_days' => $employee->vacation_days,
                 'additional_vacation_days' => $employee->additional_vacation_days,
                 'administrative_days' => $employee->administrative_days,
@@ -185,6 +193,7 @@ class EmployeeController extends Controller
                 'supervisor_id' => $employee->supervisor_id,
                 'contract_start_date' => $employee->contract_start_date?->format('Y-m-d'),
                 'contract_end_date' => $employee->contract_end_date?->format('Y-m-d'),
+                'contract_type' => $employee->contract_type?->value,
                 'is_admin' => $employee->is_admin,
                 'vacation_days' => $employee->vacation_days,
                 'additional_vacation_days' => $employee->additional_vacation_days,
@@ -282,6 +291,24 @@ class EmployeeController extends Controller
     }
 
     /**
+     * Resolve a list of backed-enum cases from a repeated query parameter,
+     * discarding any value that is not a valid case.
+     *
+     * @template TEnum of \BackedEnum
+     *
+     * @param  class-string<TEnum>  $enum
+     * @return array<int, TEnum>
+     */
+    private function enumListFilter(Request $request, string $key, string $enum): array
+    {
+        return collect((array) $request->input($key, []))
+            ->map(fn ($value) => $enum::tryFrom((string) $value))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
      * Map the validated payload onto the columns the User model expects.
      *
      * @param  array<string, mixed>  $data
@@ -351,6 +378,7 @@ class EmployeeController extends Controller
             ],
             'contract_start_date' => ['nullable', 'date'],
             'contract_end_date' => ['nullable', 'date', 'after_or_equal:contract_start_date'],
+            'contract_type' => ['nullable', Rule::enum(ContractType::class)],
             'is_admin' => ['boolean'],
             'vacation_days' => ['nullable', 'numeric', 'min:0'],
             'additional_vacation_days' => ['nullable', 'numeric', 'min:0'],
@@ -438,6 +466,7 @@ class EmployeeController extends Controller
             'premises' => $this->premiseOptions(),
             'positions' => $this->positionOptions(),
             'supervisors' => $this->supervisorOptions($employee),
+            'contractTypes' => ContractType::options(),
             'timezones' => $this->timezoneOptions(),
         ];
     }

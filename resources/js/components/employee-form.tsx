@@ -27,6 +27,7 @@ export type EmployeeFormOptions = {
     premises: ComboboxOption[];
     positions: ComboboxOption[];
     supervisors: ComboboxOption[];
+    contractTypes: ComboboxOption[];
     timezones: ComboboxOption[];
 };
 
@@ -47,6 +48,7 @@ export type EmployeeFormData = {
     supervisor_id: string;
     contract_start_date: string;
     contract_end_date: string;
+    contract_type: string;
     is_admin: boolean;
     vacation_days: string;
     additional_vacation_days: string;
@@ -427,6 +429,26 @@ export default function EmployeeForm({
                                 onChange={(e) =>
                                     setData('contract_end_date', e.target.value)
                                 }
+                            />
+                        </FormField>
+
+                        <FormField
+                            label={t('ui.employees.form.contract_type')}
+                            htmlFor="contract_type"
+                            error={fieldErrors.contract_type}
+                        >
+                            <Combobox
+                                id="contract_type"
+                                options={[noneOption, ...options.contractTypes]}
+                                value={data.contract_type}
+                                onChange={(value) =>
+                                    setData('contract_type', value)
+                                }
+                                placeholder={t('ui.employees.form.select')}
+                                searchPlaceholder={t(
+                                    'ui.employees.form.search',
+                                )}
+                                emptyLabel={t('ui.employees.form.no_results')}
                             />
                         </FormField>
                     </div>

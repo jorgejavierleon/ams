@@ -152,6 +152,14 @@ Two constraints that follow from `Company` being the employer of record — the 
 
 KOL-30 originally put the *código contable* on `companies` and treated the company itself as the cost-centre dimension; KOL-32 separated them, and the `convert_extra_companies_to_cost_centers` migration is what moves an existing tenant across — extra companies become cost centres, their employees keep working, and no row is destroyed.
 
+## Contract type
+
+`users.contract_type` is a nullable `App\Enums\ContractType`: the three contratos de trabajo the Código del Trabajo recognises for dependent workers (`indefinido`, `plazo_fijo`, `por_obra_o_faena`) plus `honorarios`.
+
+Honorarios is deliberately a **case of the same enum, not a parallel boolean**: a separate flag could contradict the contract type, and one column that answers "what is this person's engagement" cannot. Because honorarios workers have no employment relationship, anything payroll-shaped must exclude them by asking `ContractType::isEmploymentContract()` (or `employmentContractCases()`) rather than hard-coding a case list. The RF-1 *Maestro de Trabajadores* still lists them — it is a roster, not a payroll run.
+
+The column is nullable and was never backfilled: employees created before KOL-10 have no contract type, and reports must treat `null` as unknown rather than assume indefinido.
+
 ## Chilean RUT handling
 
 RUTs are validated and formatted by the self-contained `App\Support\Rut` helper — we deliberately did **not** port the old app's `freshwork/chilean-bundle` dependency. Use it everywhere a RUT is touched:

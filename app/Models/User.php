@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\ContractType;
 use App\Models\Concerns\FormatedRut;
 use App\Observers\UserObserver;
 use Database\Factories\UserFactory;
@@ -40,6 +41,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $personal_email
  * @property Carbon|null $contract_start_date
  * @property Carbon|null $contract_end_date
+ * @property ContractType|null $contract_type
  * @property float $vacation_days
  * @property float $additional_vacation_days
  * @property float $administrative_days
@@ -66,7 +68,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read string|null $avatar
  * @property-read string|null $formatted_rut
  */
-#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'is_admin', 'password_changed_at', 'organization_id', 'company_id', 'cost_center_id', 'position_id', 'premise_id', 'supervisor_id', 'contract_start_date', 'contract_end_date', 'vacation_days', 'additional_vacation_days', 'administrative_days', 'has_additional_sundays', 'nationality', 'gender', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'timezone'])]
+#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'is_admin', 'password_changed_at', 'organization_id', 'company_id', 'cost_center_id', 'position_id', 'premise_id', 'supervisor_id', 'contract_start_date', 'contract_end_date', 'contract_type', 'vacation_days', 'additional_vacation_days', 'administrative_days', 'has_additional_sundays', 'nationality', 'gender', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'timezone'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 #[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements HasMedia
@@ -183,6 +185,7 @@ class User extends Authenticatable implements HasMedia
             'password' => 'hashed',
             'contract_start_date' => 'date',
             'contract_end_date' => 'date',
+            'contract_type' => ContractType::class,
             'vacation_days' => 'float',
             'additional_vacation_days' => 'float',
             'administrative_days' => 'float',

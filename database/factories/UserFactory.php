@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ContractType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Collection;
@@ -88,6 +89,18 @@ class UserFactory extends Factory
                 Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
                 $user->assignRole('employee');
             });
+    }
+
+    /**
+     * Put the employee on a specific contract type, so report tests can build
+     * populations that mix indefinidos, plazos fijos, obra o faena and
+     * honorarios.
+     */
+    public function contractType(ContractType $type): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'contract_type' => $type,
+        ]);
     }
 
     /**
