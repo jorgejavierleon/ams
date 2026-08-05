@@ -44,11 +44,17 @@ class UserSeeder extends Seeder
             ...$costCenter,
         ]));
 
-        // Two branches (sucursales) for that company.
-        $premises = collect(['Sucursal Centro', 'Sucursal Norte'])
-            ->map(fn (string $name) => Premise::factory()
-                ->forCompany($company)
-                ->create(['name' => $name]));
+        // Two branches (sucursales) for that company. The first carries real
+        // Santiago coordinates and a 150 m geofence — it is where the demo
+        // employee punches, and the mobile Maestro flow drives in and out of
+        // range against exactly this point with `bin/device geo`. The second is
+        // left without a radius so the no-geofence path stays demoable.
+        $premises = collect([
+            ['name' => 'Sucursal Centro', 'lat' => -33.44890000, 'lng' => -70.66930000, 'geofence_radius_meters' => 150],
+            ['name' => 'Sucursal Norte'],
+        ])->map(fn (array $attributes) => Premise::factory()
+            ->forCompany($company)
+            ->create($attributes));
 
         // Two legal representatives for the demo company. They are flagged
         // `is_legal_rep` so they are picked up as document co-signatories (the

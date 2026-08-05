@@ -25,7 +25,7 @@ class TodayResource extends JsonResource
     /**
      * @return array{
      *     date: string,
-     *     shift: array{premise: string|null, start_time: string|null, end_time: string|null, lunch_start_time: string|null, lunch_end_time: string|null}|null,
+     *     shift: array{premise: string|null, start_time: string|null, end_time: string|null, lunch_start_time: string|null, lunch_end_time: string|null, geofence: array{lat: float, lng: float, radius_meters: int|null}|null}|null,
      *     punch: array{state: string}|null,
      *     week: array{worked_hours: float, contracted_hours: float},
      * }
@@ -54,7 +54,7 @@ class TodayResource extends JsonResource
      * or an employee between assignments. The app has its own empty state for
      * that and does not need to be told which of the two it was.
      *
-     * @return array{premise: string|null, start_time: string|null, end_time: string|null, lunch_start_time: string|null, lunch_end_time: string|null}|null
+     * @return array{premise: string|null, start_time: string|null, end_time: string|null, lunch_start_time: string|null, lunch_end_time: string|null, geofence: array{lat: float, lng: float, radius_meters: int|null}|null}|null
      */
     private function shift(): ?array
     {
@@ -75,6 +75,32 @@ class TodayResource extends JsonResource
             'end_time' => $this->wallClock($shiftDay->end_time),
             'lunch_start_time' => $hasLunch ? $this->wallClock($shiftDay->lunch_start_time) : null,
             'lunch_end_time' => $hasLunch ? $this->wallClock($shiftDay->lunch_end_time) : null,
+            // Nested inside the shift because it is the premise *that shift is
+            // worked at*, not a property of the employee.
+            'geofence' => $this->geofence(),
+        ];
+    }
+
+    /**
+     * Where the premise is and how far from it still counts, or null when it
+     * has no coordinates. A premise with coordinates but no radius still
+     * travels: the app draws the confirmed state from the fix alone and leaves
+     * the out-of-range state unreachable.
+     *
+     * @return array{lat: float, lng: float, radius_meters: int|null}|null
+     */
+    private function geofence(): ?array
+    {
+        $geofence = $this->geofence;
+
+        if ($geofence === null) {
+            return null;
+        }
+
+        return [
+            'lat' => $geofence->lat,
+            'lng' => $geofence->lng,
+            'radius_meters' => $geofence->radiusMeters,
         ];
     }
 

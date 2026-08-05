@@ -22,6 +22,7 @@ class TodaySummary
      * @param  CarbonInterface  $date  The employee's own wall-clock day, not the server's.
      * @param  ShiftDay|null  $shiftDay  The day scheduled for them, or null when the day is free or they hold no assignment.
      * @param  string|null  $premiseLabel  Where the shift is worked, for the shift card.
+     * @param  Geofence|null  $geofence  The premise's coordinates and radius, or null when it has none.
      * @param  PunchState|null  $punchState  Null for an employee who does not punch at all.
      * @param  float  $workedHours  Worked time from Monday to today.
      * @param  float  $contractedHours  The shift's contracted weekly total.
@@ -30,6 +31,7 @@ class TodaySummary
         public readonly CarbonInterface $date,
         public readonly ?ShiftDay $shiftDay,
         public readonly ?string $premiseLabel,
+        public readonly ?Geofence $geofence,
         public readonly ?PunchState $punchState,
         public readonly float $workedHours,
         public readonly float $contractedHours,

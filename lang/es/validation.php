@@ -200,6 +200,7 @@ return [
         'code' => 'código contable',
         'cost_center_id' => 'centro de costo',
         'company_type' => 'tipo de empresa',
+        'geofence_radius_meters' => 'radio del geocerco',
         'representatives.*.rut' => 'RUT del representante',
         'representatives.*.first_name' => 'nombre del representante',
         'representatives.*.last_name' => 'apellido paterno del representante',

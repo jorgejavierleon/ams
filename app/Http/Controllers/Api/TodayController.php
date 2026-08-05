@@ -8,10 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\TodayResource;
 use App\Managers\MarkManager;
 use App\Models\Mark;
+use App\Models\Premise;
 use App\Models\ShiftDay;
 use App\Models\User;
 use App\Models\Workday;
 use App\Services\TimeZoneService;
+use App\Support\Geofence;
 use App\Support\TodaySummary;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
@@ -49,10 +51,16 @@ class TodayController extends Controller
         // so a free day still reports the week's progress against its contract.
         $assignment?->loadMissing('shift');
 
+        // Read once and used twice: the shift card's label and the geofence
+        // block are both facts about the same premise, so the block costs no
+        // query of its own.
+        $premise = $shiftDay === null ? null : $user->premise;
+
         return new TodayResource(new TodaySummary(
             date: $today,
             shiftDay: $shiftDay,
-            premiseLabel: $shiftDay === null ? null : $this->premiseLabel($user, $shiftDay),
+            premiseLabel: $shiftDay === null ? null : $this->premiseLabel($premise, $shiftDay),
+            geofence: Geofence::fromPremise($premise),
             punchState: $this->punchState($user, $today),
             workedHours: $this->weekWorkedHours($user, $today),
             contractedHours: $this->nonNegativeHours($assignment?->shift?->total_week_hours),
@@ -64,9 +72,9 @@ class TodayController extends Controller
      * shift's own name stands in for an employee not attached to one, since the
      * app requires a label and an empty card reads as a broken response.
      */
-    private function premiseLabel(User $user, ShiftDay $shiftDay): ?string
+    private function premiseLabel(?Premise $premise, ShiftDay $shiftDay): ?string
     {
-        return $user->premise?->name ?? $shiftDay->shift?->name;
+        return $premise?->name ?? $shiftDay->shift?->name;
     }
 
     /**
