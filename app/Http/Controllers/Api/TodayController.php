@@ -74,7 +74,7 @@ class TodayController extends Controller
      */
     private function premiseLabel(?Premise $premise, ShiftDay $shiftDay): ?string
     {
-        return $premise?->name ?? $shiftDay->shift?->name;
+        return $premise->name ?? $shiftDay->shift?->name;
     }
 
     /**
