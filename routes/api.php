@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\MarkController;
 use App\Http\Controllers\Api\PasswordController;
+use App\Http\Controllers\Api\TodayController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Middleware\ThrottleTokenIssuance;
 use App\Http\Resources\UserResource;
@@ -59,6 +60,12 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         Route::put('user/password', [PasswordController::class, 'update'])
             ->middleware('throttle:6,1')
             ->name('user.password.update');
+
+        // The whole home screen in one request: today's shift, the punch state
+        // and the week so far. Deliberately ungated — an admin who does not
+        // punch still gets the tab, with the punch block omitted rather than a
+        // 403 that would break the screen for them.
+        Route::get('me/today', TodayController::class)->name('me.today');
 
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
