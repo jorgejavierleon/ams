@@ -78,6 +78,7 @@ class PremiseController extends Controller
                 'address' => $premise->address,
                 'lat' => $premise->lat,
                 'lng' => $premise->lng,
+                'geofence_radius_meters' => $premise->geofence_radius_meters,
                 'responsable_name' => $premise->responsable_name,
                 'responsable_email' => $premise->responsable_email,
                 'responsable_phone' => $premise->responsable_phone,
@@ -143,6 +144,10 @@ class PremiseController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'lat' => ['nullable', 'numeric', 'between:-90,90'],
             'lng' => ['nullable', 'numeric', 'between:-180,180'],
+            // Empty means no geofence, which is a legitimate configuration. A
+            // floor of 25 m keeps out radii nobody could ever punch inside:
+            // consumer GPS is rarely accurate to better than that.
+            'geofence_radius_meters' => ['nullable', 'numeric', 'min:25', 'max:65535'],
             'responsable_name' => ['nullable', 'string', 'max:255'],
             'responsable_email' => ['nullable', 'email', 'max:255'],
             'responsable_phone' => ['nullable', 'string', 'max:255'],

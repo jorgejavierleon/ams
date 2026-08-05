@@ -720,6 +720,8 @@ return [
             'location_hint' => 'Haz clic en el mapa o arrastra el marcador para fijar las coordenadas.',
             'lat' => 'Latitud',
             'lng' => 'Longitud',
+            'geofence_radius' => 'Radio del geocerco (metros)',
+            'geofence_radius_hint' => 'Distancia máxima desde la sucursal para marcar desde la app. Déjalo vacío para no aplicar geocerco.',
             'responsable' => 'Responsable',
             'responsable_name' => 'Nombre',
             'responsable_email' => 'Email',

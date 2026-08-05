@@ -16,6 +16,7 @@ type Premise = {
     address: string | null;
     lat: number | null;
     lng: number | null;
+    geofence_radius_meters: number | null;
     responsable_name: string | null;
     responsable_email: string | null;
     responsable_phone: string | null;
@@ -39,6 +40,10 @@ export default function EditPremise({ premise, companies }: Props) {
         address: premise.address ?? '',
         lat: premise.lat !== null ? String(premise.lat) : '',
         lng: premise.lng !== null ? String(premise.lng) : '',
+        geofence_radius_meters:
+            premise.geofence_radius_meters !== null
+                ? String(premise.geofence_radius_meters)
+                : '',
         responsable_name: premise.responsable_name ?? '',
         responsable_email: premise.responsable_email ?? '',
         responsable_phone: premise.responsable_phone ?? '',

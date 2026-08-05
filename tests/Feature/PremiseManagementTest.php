@@ -40,6 +40,7 @@ function premisePayload(Company $company, array $overrides = []): array
         'address' => 'Av. Libertador 1234',
         'lat' => -33.44890000,
         'lng' => -70.66930000,
+        'geofence_radius_meters' => 150,
         'responsable_name' => 'Ana Pérez',
         'responsable_email' => 'ana@acme.test',
         'responsable_phone' => '+56911111111',
@@ -135,6 +136,7 @@ test('admin can create a premise with coordinates', function () {
         'company_id' => $company->id,
         'lat' => -33.44890000,
         'lng' => -70.66930000,
+        'geofence_radius_meters' => 150,
     ]);
 });
 
@@ -182,6 +184,49 @@ test('a premise can be created without coordinates', function () {
 
     expect($premise->lat)->toBeNull();
     expect($premise->lng)->toBeNull();
+});
+
+// --- Geofence radius (KOL-33) ---
+
+test('an empty geofence radius means no geofence', function () {
+    $admin = premiseAdmin();
+    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->post(route('premises.store'), premisePayload($company, [
+            'geofence_radius_meters' => '',
+        ]))
+        ->assertRedirect(route('premises.index'));
+
+    expect(Premise::query()->firstOrFail()->geofence_radius_meters)->toBeNull();
+});
+
+test('a geofence radius below the floor is rejected', function (mixed $radius) {
+    $admin = premiseAdmin();
+    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->post(route('premises.store'), premisePayload($company, [
+            'geofence_radius_meters' => $radius,
+        ]))
+        ->assertSessionHasErrors('geofence_radius_meters');
+})->with([
+    'a radius nobody could punch inside' => [5],
+    'not a number at all' => ['muy cerca'],
+]);
+
+test('the geofence radius can be cleared on an existing premise', function () {
+    $admin = premiseAdmin();
+    $company = Company::factory()->create(['organization_id' => $admin->organization_id]);
+    $premise = Premise::factory()->forCompany($company)->withGeofence(200)->create();
+
+    $this->actingAs($admin)
+        ->patch(route('premises.update', $premise), premisePayload($company, [
+            'geofence_radius_meters' => '',
+        ]))
+        ->assertRedirect(route('premises.index'));
+
+    expect($premise->fresh()->geofence_radius_meters)->toBeNull();
 });
 
 // --- Update ---

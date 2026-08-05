@@ -36,6 +36,8 @@ class PremiseFactory extends Factory
             // Chilean bounding box, kept within the stored column precision.
             'lat' => fake()->randomFloat(6, -55, -17),
             'lng' => fake()->randomFloat(6, -75, -66),
+            // No geofence by default: it is opt-in per premise.
+            'geofence_radius_meters' => null,
             'responsable_name' => fake()->optional()->name(),
             'responsable_email' => fake()->optional()->safeEmail(),
             'responsable_phone' => fake()->optional()->numerify('+569########'),
@@ -61,6 +63,16 @@ class PremiseFactory extends Factory
         return $this->state(fn () => [
             'lat' => null,
             'lng' => null,
+        ]);
+    }
+
+    /**
+     * Premise with a geofence: a radius around whatever coordinates it carries.
+     */
+    public function withGeofence(int $radiusMeters = 150): static
+    {
+        return $this->state(fn () => [
+            'geofence_radius_meters' => $radiusMeters,
         ]);
     }
 }

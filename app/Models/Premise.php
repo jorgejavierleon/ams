@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $address
  * @property float|null $lat
  * @property float|null $lng
+ * @property int|null $geofence_radius_meters
  * @property string|null $responsable_name
  * @property string|null $responsable_email
  * @property string|null $responsable_phone
@@ -41,6 +42,7 @@ use Illuminate\Support\Carbon;
     'address',
     'lat',
     'lng',
+    'geofence_radius_meters',
     'responsable_name',
     'responsable_email',
     'responsable_phone',
@@ -56,8 +58,12 @@ class Premise extends Model
     protected function casts(): array
     {
         return [
+            // Numeric casts rather than `decimal:8`, which would emit the
+            // coordinates quoted: the mobile app's geofence parser reads them
+            // as JSON numbers and rejects strings.
             'lat' => 'float',
             'lng' => 'float',
+            'geofence_radius_meters' => 'integer',
         ];
     }
 

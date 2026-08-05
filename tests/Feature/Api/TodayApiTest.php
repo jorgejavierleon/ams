@@ -39,15 +39,22 @@ function employeeToday(): Carbon
 }
 
 /**
- * An employee attached to a premise, in their own organization.
+ * An employee attached to a premise, in their own organization. The premise
+ * carries coordinates and a geofence radius unless overridden.
+ *
+ * @param  array<string, mixed>  $premiseAttributes
  */
-function todayEmployee(?Organization $organization = null): User
+function todayEmployee(?Organization $organization = null, array $premiseAttributes = []): User
 {
     $organization ??= Organization::factory()->create();
 
     $premise = Premise::factory()->create([
         'organization_id' => $organization->id,
         'name' => 'Sucursal Ñuñoa',
+        'lat' => -33.4569,
+        'lng' => -70.5975,
+        'geofence_radius_meters' => 150,
+        ...$premiseAttributes,
     ]);
 
     return User::factory()->employee()->create([
@@ -201,6 +208,87 @@ test('half a colación window is reported as none at all', function () {
         ->assertOk()
         ->assertJsonPath('shift.lunch_start_time', null)
         ->assertJsonPath('shift.lunch_end_time', null);
+});
+
+// --- The premise geofence (KOL-33) ---
+
+test('the shift carries the premise coordinates and radius', function () {
+    $employee = todayEmployee();
+    todayShift($employee);
+    Sanctum::actingAs($employee);
+
+    $payload = $this->getJson('/api/v1/me/today')
+        ->assertOk()
+        ->assertJsonPath('shift.geofence.lat', -33.4569)
+        ->assertJsonPath('shift.geofence.lng', -70.5975)
+        ->assertJsonPath('shift.geofence.radius_meters', 150)
+        ->json();
+
+    // The client's parser rejects quoted coordinates outright, which is what a
+    // `decimal:8` cast on the model would emit.
+    expect($payload['shift']['geofence']['lat'])->toBeFloat();
+    expect($payload['shift']['geofence']['lng'])->toBeFloat();
+    expect($payload['shift']['geofence']['radius_meters'])->toBeInt();
+});
+
+test('a premise with coordinates but no radius sends a null radius, not an error', function () {
+    $employee = todayEmployee(premiseAttributes: ['geofence_radius_meters' => null]);
+    todayShift($employee);
+    Sanctum::actingAs($employee);
+
+    $this->getJson('/api/v1/me/today')
+        ->assertOk()
+        ->assertJsonPath('shift.geofence.lat', -33.4569)
+        ->assertJsonPath('shift.geofence.radius_meters', null);
+});
+
+test('a premise with no coordinates has no geofence at all', function () {
+    $employee = todayEmployee(premiseAttributes: ['lat' => null, 'lng' => null]);
+    todayShift($employee);
+    Sanctum::actingAs($employee);
+
+    $this->getJson('/api/v1/me/today')
+        ->assertOk()
+        ->assertJsonPath('shift.premise', 'Sucursal Ñuñoa')
+        ->assertJsonPath('shift.geofence', null);
+});
+
+test('an employee attached to no premise has no geofence', function () {
+    $employee = todayEmployee();
+    $employee->update(['premise_id' => null]);
+    todayShift($employee);
+    Sanctum::actingAs($employee->fresh());
+
+    $this->getJson('/api/v1/me/today')
+        ->assertOk()
+        ->assertJsonPath('shift.geofence', null);
+});
+
+test('the geofence block costs no query of its own', function () {
+    $organization = Organization::factory()->create();
+
+    $fenced = todayEmployee($organization);
+    todayShift($fenced);
+
+    $unfenced = todayEmployee($organization, ['lat' => null, 'lng' => null]);
+    todayShift($unfenced);
+
+    $countQueries = function (User $employee): int {
+        $queries = 0;
+        $listener = function () use (&$queries): void {
+            $queries++;
+        };
+
+        Sanctum::actingAs($employee);
+        DB::listen($listener);
+        $this->getJson('/api/v1/me/today')->assertOk();
+
+        return $queries;
+    };
+
+    // The premise is already read for the shift card's label; the geofence is
+    // the same row seen twice.
+    expect($countQueries($fenced))->toBe($countQueries($unfenced));
 });
 
 // --- Punch state (#5) ---

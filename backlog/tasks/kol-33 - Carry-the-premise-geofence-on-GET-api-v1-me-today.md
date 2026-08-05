@@ -1,9 +1,10 @@
 ---
 id: KOL-33
 title: Carry the premise geofence on GET /api/v1/me/today
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-05 10:37'
+updated_date: '2026-08-05 20:38'
 labels: []
 dependencies: []
 documentation:
@@ -55,19 +56,44 @@ A radius nobody can set is a radius that is always null, so the column needs a f
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A nullable geofence_radius_meters column exists on premises, in metres, and is fillable and cast on the model
-- [ ] #2 The premise form accepts and persists the radius, validated as nullable, numeric and at least 25 metres, and leaving it empty means no geofence
-- [ ] #3 GET /api/v1/me/today returns shift.geofence as {lat, lng, radius_meters} with lat and lng as JSON numbers, not strings
-- [ ] #4 shift.geofence is null when the premise has no coordinates, and radius_meters is null when no radius is configured — neither is an error
-- [ ] #5 The geofence block adds no query to the response — the premise is already loaded for the shift card's label
-- [ ] #6 A Pest feature test covers a premise with coordinates and a radius, one with coordinates and no radius, and one with no coordinates
-- [ ] #7 The demo seeder gives employee@example.com a premise with coordinates and a radius, so the mobile Maestro flow can drive in and out of range with bin/device geo
+- [x] #1 A nullable geofence_radius_meters column exists on premises, in metres, and is fillable and cast on the model
+- [x] #2 The premise form accepts and persists the radius, validated as nullable, numeric and at least 25 metres, and leaving it empty means no geofence
+- [x] #3 GET /api/v1/me/today returns shift.geofence as {lat, lng, radius_meters} with lat and lng as JSON numbers, not strings
+- [x] #4 shift.geofence is null when the premise has no coordinates, and radius_meters is null when no radius is configured — neither is an error
+- [x] #5 The geofence block adds no query to the response — the premise is already loaded for the shift card's label
+- [x] #6 A Pest feature test covers a premise with coordinates and a radius, one with coordinates and no radius, and one with no coordinates
+- [x] #7 The demo seeder gives employee@example.com a premise with coordinates and a radius, so the mobile Maestro flow can drive in and out of range with bin/device geo
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
-- [ ] #3 npm run types:check passes when TypeScript touched
-- [ ] #4 Every PHP change has a Pest test
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #2 sa test --compact passes
+- [x] #3 npm run types:check passes when TypeScript touched
+- [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Migration: nullable unsigned geofence_radius_meters on premises (after lng).
+2. Premise model: fillable + integer cast + @property docblock.
+3. PremiseController: validate nullable|numeric|min:25, expose on edit() payload.
+4. premise-form.tsx: radius input in the Location section; edit.tsx type/initial; es+en translations.
+5. TodaySummary/TodayController: carry the already-loaded Premise (no extra query) alongside premiseLabel.
+6. TodayResource: shift.geofence = {lat, lng, radius_meters}, null when the premise has no coordinates.
+7. PremiseFactory: withGeofence() state; UserSeeder: Sucursal Centro gets fixed Santiago coords + 150 m radius.
+8. Tests: TodayApiTest geofence cases (coords+radius, coords no radius, no coords, query count) and PremiseManagementTest radius persist/validation.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Geofence shipped as a value object (App\Support\Geofence) rather than raw fields on TodaySummary, so the 'null without coordinates' rule lives in one place. TodayController now reads $user->premise once and uses it for both the shift label and the geofence, which is what keeps the block query-free. Column is unsignedSmallInteger (caps at 65 km); validation floor is 25 m. Demo seeder: Sucursal Centro = -33.4489/-70.6693 with a 150 m radius; Sucursal Norte deliberately has none.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added a nullable geofence_radius_meters column to premises, exposed it on the premise form (nullable, numeric, >= 25 m; empty means no geofence), and shipped shift.geofence = {lat, lng, radius_meters} on GET /api/v1/me/today via a new App\Support\Geofence value object. The block reuses the premise already read for the shift card's label, so it costs no extra query. The demo seeder gives employee@example.com's premise (Sucursal Centro) real Santiago coordinates and a 150 m radius. Verified with 5 new TodayApiTest cases (coords+radius, coords no radius, no coords, no premise, query-count parity) and 3 PremiseManagementTest cases; full suite 705 passed / 4 skipped, pint clean, tsc --noEmit clean.
+<!-- SECTION:FINAL_SUMMARY:END -->

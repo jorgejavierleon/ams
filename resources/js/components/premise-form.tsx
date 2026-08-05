@@ -21,6 +21,7 @@ export type PremiseFormData = {
     address: string;
     lat: string;
     lng: string;
+    geofence_radius_meters: string;
     responsable_name: string;
     responsable_email: string;
     responsable_phone: string;
@@ -45,6 +46,7 @@ function blankForm(): PremiseFormData {
         address: '',
         lat: '',
         lng: '',
+        geofence_radius_meters: '',
         responsable_name: '',
         responsable_email: '',
         responsable_phone: '',
@@ -257,6 +259,27 @@ export default function PremiseForm({
                             value={data.lng}
                             onChange={(e) => setData('lng', e.target.value)}
                             placeholder="-70.66930000"
+                        />
+                    </FormField>
+
+                    <FormField
+                        label={t('ui.premises.form.geofence_radius')}
+                        htmlFor="geofence_radius_meters"
+                        error={errors.geofence_radius_meters}
+                        hint={t('ui.premises.form.geofence_radius_hint')}
+                        className="sm:col-span-2"
+                    >
+                        <Input
+                            id="geofence_radius_meters"
+                            inputMode="numeric"
+                            value={data.geofence_radius_meters}
+                            onChange={(e) =>
+                                setData(
+                                    'geofence_radius_meters',
+                                    e.target.value,
+                                )
+                            }
+                            placeholder="150"
                         />
                     </FormField>
                 </div>

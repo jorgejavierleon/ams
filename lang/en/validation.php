@@ -208,6 +208,7 @@ return [
         'address' => 'address',
         'phone' => 'phone',
         'company_type' => 'company type',
+        'geofence_radius_meters' => 'geofence radius',
         'representatives.*.rut' => 'representative RUT',
         'representatives.*.first_name' => 'representative first name',
         'representatives.*.last_name' => 'representative last name',

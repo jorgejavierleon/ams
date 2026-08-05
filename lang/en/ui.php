@@ -720,6 +720,8 @@ return [
             'location_hint' => 'Click the map or drag the marker to set the coordinates.',
             'lat' => 'Latitude',
             'lng' => 'Longitude',
+            'geofence_radius' => 'Geofence radius (metres)',
+            'geofence_radius_hint' => 'How far from the premise a punch from the app still counts. Leave empty for no geofence.',
             'responsable' => 'Person in charge',
             'responsable_name' => 'Name',
             'responsable_email' => 'Email',
