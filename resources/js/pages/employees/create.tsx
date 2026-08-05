@@ -29,6 +29,7 @@ const emptyEmployee: EmployeeFormData = {
     supervisor_id: '',
     contract_start_date: '',
     contract_end_date: '',
+    contract_type: '',
     is_admin: false,
     vacation_days: '0',
     additional_vacation_days: '0',

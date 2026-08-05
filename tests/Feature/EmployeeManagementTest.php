@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ContractType;
 use App\Mail\AuthProfileUpdated;
 use App\Models\Company;
 use App\Models\CostCenter;
@@ -53,6 +54,7 @@ function employeePayload(User $admin, array $overrides = []): array
         'supervisor_id' => null,
         'contract_start_date' => null,
         'contract_end_date' => null,
+        'contract_type' => null,
         'is_admin' => false,
         'vacation_days' => 15,
         'additional_vacation_days' => 0,
@@ -311,6 +313,124 @@ test('the employee avatar must be an image', function () {
             'avatar' => UploadedFile::fake()->create('document.pdf', 100),
         ]))
         ->assertSessionHasErrors('avatar');
+});
+
+// --- Contract type ---
+
+test('an employee can be created with a contract type', function () {
+    $admin = employeeAdmin();
+
+    $this->actingAs($admin)
+        ->post(route('employees.store'), employeePayload($admin, [
+            'contract_type' => ContractType::PlazoFijo->value,
+        ]))
+        ->assertSessionHasNoErrors();
+
+    expect(User::where('email', 'ana@example.com')->first()->contract_type)
+        ->toBe(ContractType::PlazoFijo);
+});
+
+test('an employee created without a contract type keeps it empty', function () {
+    $admin = employeeAdmin();
+
+    $this->actingAs($admin)
+        ->post(route('employees.store'), employeePayload($admin))
+        ->assertSessionHasNoErrors();
+
+    expect(User::where('email', 'ana@example.com')->first()->contract_type)->toBeNull();
+});
+
+test('the contract type can be updated on an existing employee', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->contractType(ContractType::PlazoFijo)->create([
+        'organization_id' => $admin->organization_id,
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin, [
+            'contract_type' => ContractType::Indefinido->value,
+            'password' => '',
+        ]))
+        ->assertSessionHasNoErrors();
+
+    expect($employee->fresh()->contract_type)->toBe(ContractType::Indefinido);
+});
+
+test('an unknown contract type is rejected', function () {
+    $admin = employeeAdmin();
+
+    $this->actingAs($admin)
+        ->post(route('employees.store'), employeePayload($admin, [
+            'contract_type' => 'part_time',
+        ]))
+        ->assertSessionHasErrors('contract_type');
+});
+
+test('employees can be filtered by contract type', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->contractType(ContractType::Indefinido)->create([
+        'organization_id' => $admin->organization_id,
+    ]);
+    User::factory()->employee()->contractType(ContractType::Honorarios)->create([
+        'organization_id' => $admin->organization_id,
+    ]);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.index', ['contractTypes' => [ContractType::Honorarios->value]]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('employees.data', 1)
+            ->where('employees.data.0.contract_type', ContractType::Honorarios->value)
+            ->where('filters.contractTypes', [ContractType::Honorarios->value]));
+});
+
+test('an unknown contract type filter value is ignored', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->contractType(ContractType::Indefinido)->create([
+        'organization_id' => $admin->organization_id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.index', ['contractTypes' => ['part_time']]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('employees.data', 1));
+});
+
+test('the employee detail page shows the translated contract type', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->contractType(ContractType::PorObraOFaena)->create([
+        'organization_id' => $admin->organization_id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.show', $employee))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('employee.contract_type', 'Por obra o faena'));
+});
+
+test('the edit form receives the raw contract type value and its options', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->contractType(ContractType::Indefinido)->create([
+        'organization_id' => $admin->organization_id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.edit', $employee))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('employee.contract_type', ContractType::Indefinido->value)
+            ->has('options.contractTypes', count(ContractType::cases())));
+});
+
+test('honorarios is the only contract type that is not an employment contract', function () {
+    expect(ContractType::Honorarios->isEmploymentContract())->toBeFalse();
+    expect(ContractType::employmentContractCases())->toBe([
+        ContractType::Indefinido,
+        ContractType::PlazoFijo,
+        ContractType::PorObraOFaena,
+    ]);
 });
 
 // --- Update ---
