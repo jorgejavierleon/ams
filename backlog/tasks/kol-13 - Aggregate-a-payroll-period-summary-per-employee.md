@@ -4,12 +4,14 @@ title: Aggregate a payroll period summary per employee
 status: To Do
 assignee: []
 created_date: '2026-08-04 11:11'
+updated_date: '2026-08-06 02:57'
 labels:
   - payroll-reports
   - backend
 milestone: m-0
 dependencies:
   - KOL-12
+  - KOL-49
 documentation:
   - docs/prd-reports.md
 priority: high

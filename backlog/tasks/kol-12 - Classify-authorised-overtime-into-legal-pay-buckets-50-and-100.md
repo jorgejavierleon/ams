@@ -4,6 +4,7 @@ title: Classify authorised overtime into legal pay buckets (50% and 100%)
 status: To Do
 assignee: []
 created_date: '2026-08-04 11:11'
+updated_date: '2026-08-06 02:56'
 labels:
   - payroll-reports
   - backend
@@ -11,6 +12,8 @@ labels:
 milestone: m-0
 dependencies:
   - KOL-11
+  - KOL-46
+  - KOL-49
 documentation:
   - docs/prd-reports.md
 priority: high
@@ -48,3 +51,13 @@ Produce a service that, for an employee over a date range, returns the classifie
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @planning
+created: 2026-08-06 02:56
+---
+Scope note from the overtime module planning (m-2): KOL-11 has been rescoped to just the authorisation record, and the wider overtime work now lives in milestone m-2 "Módulo de Horas Extras (HHEE)". This task should read the approved-only export dataset from KOL-49 rather than reaching into overtime records or `workdays.extra_time` directly — KOL-49 already resolves day type (weekday / Sunday / holiday) from the existing Holiday data and the SundaysReportService reasoning, and already excludes rest-day-compensated and unauthorised hours. The unauthorised bucket this task must report separately comes from KOL-46.
+---
+<!-- COMMENTS:END -->

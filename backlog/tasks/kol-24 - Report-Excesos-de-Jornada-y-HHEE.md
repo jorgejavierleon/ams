@@ -4,6 +4,7 @@ title: 'Report: Excesos de Jornada y HHEE'
 status: To Do
 assignee: []
 created_date: '2026-08-04 11:15'
+updated_date: '2026-08-06 02:57'
 labels:
   - payroll-reports
   - backend
@@ -14,6 +15,7 @@ dependencies:
   - KOL-12
   - KOL-15
   - KOL-19
+  - KOL-41
 documentation:
   - docs/prd-reports.md
 priority: medium
@@ -53,3 +55,13 @@ Formats: Excel and PDF per RF-1.
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @planning
+created: 2026-08-06 02:57
+---
+Scope note from the overtime module planning (m-2): the weekly-limit question this task raises in AC #4 and #5 is settled upstream — KOL-41 defines the week used for the weekly overtime cap and documents the straddling-period rule, and KOL-36 makes the limit itself date-versioned (45h until 2026-04-25, 42h from 2026-04-26 under Ley 21.561, 40h thereafter). Consume both rather than fixing a threshold in this report. The pactada / no pactada split comes from the authorisation record in KOL-11.
+---
+<!-- COMMENTS:END -->
