@@ -21,6 +21,7 @@ return [
         'subject' => 'Attendance mark receipt',
         'heading' => 'Mark registered',
         'body' => 'Your attendance mark has been registered with the following details:',
+        'folio' => 'Receipt no.',
         'type' => 'Type',
         'date_time' => 'Date and time',
         'checksum' => 'Verification code',

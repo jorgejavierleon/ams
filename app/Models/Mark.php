@@ -19,7 +19,8 @@ use Illuminate\Support\Carbon;
  * A single attendance punch: an employee entering (IN) or leaving (OUT) work.
  * Marks are the raw record behind the electronic attendance book required by
  * Chilean labor law (Resolución 38): each one carries an immutable legal
- * snapshot and a SHA-256 checksum stamped by {@see MarkObserver} at creation.
+ * snapshot, a SHA-256 checksum and a receipt folio stamped by
+ * {@see MarkObserver} at creation.
  *
  * @property int $id
  * @property int|null $organization_id
@@ -44,6 +45,7 @@ use Illuminate\Support\Carbon;
  * @property GeoStatus|null $geo_status
  * @property float|null $accuracy_meters
  * @property string $checksum
+ * @property string|null $folio
  */
 #[ObservedBy(MarkObserver::class)]
 #[Fillable([

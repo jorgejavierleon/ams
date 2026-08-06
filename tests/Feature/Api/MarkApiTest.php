@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\GeoStatus;
+use App\Mail\MarkCreated;
 use App\Models\Mark;
 use App\Models\Organization;
 use App\Models\Premise;
@@ -8,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -316,6 +318,77 @@ test('the receipt datetime is a naive wall clock string', function () {
     // `2026-08-05 08:03:11`, never `2026-08-05T08:03:11-04:00`: an offset would
     // be re-read in the device's timezone and move a legal timestamp.
     expect($response->json('datetime'))->toMatch('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/');
+});
+
+// --- The Art. 13 receipt ---
+
+test('the punch response carries everything the receipt has to show', function () {
+    $employee = apiEmployee();
+    $employee->update(['name' => 'Camila Rojas', 'rut' => '12345678-9']);
+    Sanctum::actingAs($employee);
+
+    // Res. 38 Art. 13 sets the minimum content of the receipt an employee gets
+    // after punching; the design adds `N° comprobante` on top of it. Nothing the
+    // client already reads is removed.
+    $this->postJson('/api/v1/marks', punchBody('IN'))
+        ->assertCreated()
+        ->assertJsonStructure([
+            'mark_id', 'folio', 'hash', 'datetime', 'type', 'geo_status',
+            'employee_name', 'employee_rut',
+        ])
+        ->assertJsonPath('employee_name', 'Camila Rojas')
+        ->assertJsonPath('folio', Mark::first()->folio);
+});
+
+test('the receipt RUT travels undotted exactly as users.rut holds it', function () {
+    $employee = apiEmployee();
+    $employee->update(['rut' => '12345678-9']);
+    Sanctum::actingAs($employee);
+
+    // The mobile client has one spelling of a Chilean RUT and applies it itself
+    // through `formatRut`; dotting it here would give it a second one.
+    $this->postJson('/api/v1/marks', punchBody('IN'))
+        ->assertCreated()
+        ->assertJsonPath('employee_rut', '12345678-9');
+});
+
+test('the receipt shows who the employee was at the punch, not who they are now', function () {
+    $employee = apiEmployee();
+    $employee->update(['name' => 'Camila Rojas', 'rut' => '12345678-9']);
+    Sanctum::actingAs($employee);
+
+    $markId = $this->postJson('/api/v1/marks', punchBody('IN'))
+        ->assertCreated()
+        ->json('mark_id');
+
+    // A married name, a corrected RUT — a receipt reprinted years later shows
+    // the snapshot MarkObserver stamped, never the live user record.
+    $employee->update(['name' => 'Camila Rojas Díaz', 'rut' => '98765432-5']);
+
+    $this->getJson("/api/v1/marks/{$markId}")
+        ->assertOk()
+        ->assertJsonPath('employee_name', 'Camila Rojas')
+        ->assertJsonPath('employee_rut', '12345678-9');
+});
+
+test('the emailed receipt shows the same folio as the API response', function () {
+    Mail::fake();
+
+    $employee = apiEmployee();
+    $employee->update(['personal_email' => 'camila@example.com']);
+    Sanctum::actingAs($employee);
+
+    $folio = $this->postJson('/api/v1/marks', punchBody('IN'))
+        ->assertCreated()
+        ->json('folio');
+
+    // The number an employee quotes to HR may not differ between the copy in
+    // their inbox (Art. 12) and the sheet on their phone.
+    Mail::assertQueued(
+        MarkCreated::class,
+        fn (MarkCreated $mail) => $mail->mark->folio === $folio
+            && str_contains($mail->render(), $folio),
+    );
 });
 
 // --- Reads ---

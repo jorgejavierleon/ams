@@ -23,12 +23,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class MarkResource extends JsonResource
 {
     /**
-     * @return array{mark_id: int, hash: string, datetime: string, type: string, geo_status: string|null}
+     * @return array{mark_id: int, folio: string|null, hash: string, datetime: string, type: string, geo_status: string|null, employee_name: string|null, employee_rut: string|null}
      */
     public function toArray(Request $request): array
     {
         return [
             'mark_id' => $this->id,
+            // The `N° comprobante` on the receipt (Art. 13), and the number an
+            // employee quotes to HR — so the same one the emailed copy shows.
+            'folio' => $this->folio,
             'hash' => $this->checksum,
             'datetime' => $this->date_time->format('Y-m-d H:i:s'),
             'type' => $this->type->value,
@@ -36,6 +39,14 @@ class MarkResource extends JsonResource
             // or one made before the endpoint evaluated any. The client reads
             // that as `unknown`, which is what it means.
             'geo_status' => $this->geo_status?->value,
+            // From the snapshot on the mark, never from the live user: a
+            // receipt reprinted years later must show who the employee was at
+            // the punch, not who they are now.
+            'employee_name' => $this->employee_name,
+            // Undotted with its verifier digit, exactly as `users.rut` holds it.
+            // There is one spelling of a Chilean RUT in the mobile client and it
+            // is `formatRut`'s to choose, not the server's.
+            'employee_rut' => $this->employee_rut,
         ];
     }
 }
