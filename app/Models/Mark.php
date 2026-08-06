@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\GeoStatus;
 use App\Enums\MarkType;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Observers\MarkObserver;
@@ -40,6 +41,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $address
  * @property float|null $lat
  * @property float|null $lng
+ * @property GeoStatus|null $geo_status
+ * @property float|null $accuracy_meters
  * @property string $checksum
  */
 #[ObservedBy(MarkObserver::class)]
@@ -55,6 +58,8 @@ use Illuminate\Support\Carbon;
     'type',
     'lat',
     'lng',
+    'geo_status',
+    'accuracy_meters',
 ])]
 class Mark extends Model
 {
@@ -68,6 +73,7 @@ class Mark extends Model
     {
         return [
             'type' => MarkType::class,
+            'geo_status' => GeoStatus::class,
             'date_time' => 'datetime',
             'original_date_time' => 'datetime',
             'shift_start_time' => 'datetime:H:i',
