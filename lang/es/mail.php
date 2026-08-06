@@ -21,6 +21,7 @@ return [
         'subject' => 'Comprobante de marca de asistencia',
         'heading' => 'Marca registrada',
         'body' => 'Se ha registrado tu marca de asistencia con los siguientes datos:',
+        'folio' => 'N° comprobante',
         'type' => 'Tipo',
         'date_time' => 'Fecha y hora',
         'checksum' => 'Código de verificación',
