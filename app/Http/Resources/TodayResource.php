@@ -12,11 +12,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * it, where the employee is in their day and the week so far.
  *
  * Every date and time here is a **naive wall-clock string** — `Y-m-d` and
- * `H:i:s`, no offset. Deliberately not `toIso8601String()`, which is what
- * {@see MarkResource} emits: a shift window stamped with an offset is re-read in
- * the device's timezone, and a window silently moved an hour is a different
- * legal fact under Resolución 38 Art. 8 with nothing on screen to say it moved.
- * The app rejects an offset outright rather than render one.
+ * `H:i:s`, no offset, as in {@see MarkResource}. Deliberately not
+ * `toIso8601String()`: a shift window stamped with an offset is re-read in the
+ * device's timezone, and a window silently moved an hour is a different legal
+ * fact under Resolución 38 Art. 8 with nothing on screen to say it moved. The
+ * app rejects an offset outright rather than render one.
  *
  * @mixin TodaySummary
  */

@@ -3,10 +3,10 @@ id: KOL-34
 title: >-
   Make POST /api/v1/marks server-authoritative: timestamp, geofence verdict and
   the one-per-day guard
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-05 22:10'
-updated_date: '2026-08-05 22:16'
+updated_date: '2026-08-06 01:12'
 labels: []
 dependencies:
   - KOL-33
@@ -64,23 +64,61 @@ Notes on the shape:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 POST /api/v1/marks no longer accepts a client-supplied datetime, rejects a body containing one, and stamps the mark server-side in the employee's own timezone
-- [ ] #2 The endpoint accepts lat, lng, accuracy_m and geo_status, each nullable, and an explicit null is accepted rather than treated as a missing field
-- [ ] #3 The server evaluates the geofence itself at punch time by haversine against Premise.geofence_radius_meters, and the client-reported geo_status never decides the stored verdict
-- [ ] #4 The stored verdict is inside, outside or unknown on the mark, and unknown covers no fix, no premise coordinates and no configured radius alike
-- [ ] #5 No verdict ever blocks the punch — an out-of-range or unknown punch is recorded and flagged, and still returns 201
-- [ ] #6 The reported accuracy is persisted in metres alongside the verdict
-- [ ] #7 Geolocation stays outside the integrity checksum, attached after the mark is stamped as it is today
-- [ ] #8 MarkResource emits datetime as a naive Santiago wall-clock string YYYY-MM-DD HH:mm:ss, never ISO 8601 with an offset, and carries geo_status
-- [ ] #9 Pest feature tests cover a punch inside the radius, outside it, with no fix, at a premise with no radius, and both duplicate refusals
-- [ ] #10 The demo seeder leaves employee@example.com able to punch in and out end to end, so the kolvi-mobile Maestro flow can drive the whole state machine
-- [ ] #11 A second in, or a second out, on the same day is refused with 409 Conflict and a Spanish message — the mobile client keys on that status alone, since ApiError keeps only message and Laravel's errors bag and a body code would not survive its transport layer
+- [x] #1 POST /api/v1/marks no longer accepts a client-supplied datetime, rejects a body containing one, and stamps the mark server-side in the employee's own timezone
+- [x] #2 The endpoint accepts lat, lng, accuracy_m and geo_status, each nullable, and an explicit null is accepted rather than treated as a missing field
+- [x] #3 The server evaluates the geofence itself at punch time by haversine against Premise.geofence_radius_meters, and the client-reported geo_status never decides the stored verdict
+- [x] #4 The stored verdict is inside, outside or unknown on the mark, and unknown covers no fix, no premise coordinates and no configured radius alike
+- [x] #5 No verdict ever blocks the punch — an out-of-range or unknown punch is recorded and flagged, and still returns 201
+- [x] #6 The reported accuracy is persisted in metres alongside the verdict
+- [x] #7 Geolocation stays outside the integrity checksum, attached after the mark is stamped as it is today
+- [x] #8 MarkResource emits datetime as a naive Santiago wall-clock string YYYY-MM-DD HH:mm:ss, never ISO 8601 with an offset, and carries geo_status
+- [x] #9 Pest feature tests cover a punch inside the radius, outside it, with no fix, at a premise with no radius, and both duplicate refusals
+- [x] #10 The demo seeder leaves employee@example.com able to punch in and out end to end, so the kolvi-mobile Maestro flow can drive the whole state machine
+- [x] #11 A second in, or a second out, on the same day is refused with 409 Conflict and a Spanish message — the mobile client keys on that status alone, since ApiError keeps only message and Laravel's errors bag and a body code would not survive its transport layer
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
-- [ ] #3 npm run types:check passes when TypeScript touched
-- [ ] #4 Every PHP change has a Pest test
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #2 sa test --compact passes
+- [x] #3 npm run types:check passes when TypeScript touched
+- [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add App\Enums\GeoStatus (inside|outside|unknown).
+2. Migration: marks.geo_status (string, nullable) + marks.accuracy_meters (decimal 8,2 nullable); add both to Mark fillable/casts/docblock.
+3. App\Support\Geofence: add distanceTo() (haversine, mean-earth-radius sphere) and evaluate(?lat, ?lng) returning GeoStatus — unknown for no fix, no premise coords, or no radius.
+4. Api\MarkController::store: prohibit 'datetime'; accept nullable lat/lng/accuracy_m/geo_status; refuse a second in or out today with 409 + Spanish message via MarkManager::getTodayMark; create the mark with no client datetime (MarkManager stamps now() in the employee timezone); evaluate the geofence server-side against the mark's stamped premise and attach lat/lng/accuracy/verdict after creation, outside the checksum.
+5. MarkResource: datetime as naive 'Y-m-d H:i:s' wall clock, plus geo_status.
+6. Spanish/English strings for the duplicate refusals.
+7. Pest: rewrite the store tests in tests/Feature/Api/MarkApiTest.php — inside, outside, no fix, premise without radius, no premise, advisory geo_status ignored, both duplicate refusals, prohibited datetime, naive datetime + geo_status on the resource.
+8. Verify the demo seeder still leaves employee@example.com able to punch in and out today (WorkdaySeeder stops at yesterday).
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The mobile client half is built and merged-ready on kolvi-mobile KMO-17: `src/features/marcaje/punch-api.ts` is the authoritative reading of this contract, with `punch-api.test.ts` asserting the exact request body — `{type, lat, lng, accuracy_m, geo_status}`, every key present, explicit nulls, and no `datetime` under any circumstances.
+
+Observed against the endpoint as it stands, from the app on a device: the punch is refused with `El campo datetime es obligatorio.`, which the app renders as a Spanish line under an unchanged button. That is the current behaviour this ticket replaces.
+
+Implemented on feature/kol-34-server-authoritative-punch.
+
+- `marks.geo_status` (nullable string, cast to the new `App\Enums\GeoStatus`) and `marks.accuracy_meters` (decimal 8,2) added by migration. Both are null on web punches and on every mark made before this shipped; `MarkResource` emits `geo_status` as null there, which the client already reads as `unknown`.
+- The verdict is `Geofence::verdictFor()`: haversine on a 6 371 008.8 m sphere, the same constant the client measures with. The device's reported accuracy is deliberately NOT folded into the comparison — the client lets uncertainty lean its card toward `confirmed` because a wrong `outside` disables the button in someone's face, but the register has no such cost and records the distance actually measured, storing the accuracy beside it for review.
+- The one-per-day guard lives in the API controller via `MarkManager::getTodayMark()`, mirroring the web `My\MarkController`, rather than inside `createMark()`: `getTodayMark` is anchored on today, and a guard in the manager would refuse the backdated punches `WorkdaySeeder` creates for the last fortnight. It is a read-then-write check, so two genuinely simultaneous punches from one device could both pass; a DB-level guarantee would need a unique index that the soft-deleted, historically-duplicated marks table cannot currently carry.
+- `MarkManager::createMark()` keeps its optional `$dateTime` argument — no production caller passes one now, but it is what backfills and the seeder path use.
+- AC #10 verified against the seeded demo data in a rolled-back transaction: employee@example.com has a shift today, no marks today (WorkdaySeeder stops at yesterday), punches in and out at Sucursal Centro with verdict `inside`, and a repeat OUT is refused with 'Ya registraste tu salida de hoy.'
+- docs/architecture.md's mobile-API section updated: the note telling readers not to copy `MarkResource`'s ISO 8601 datetime is now false, and the server-authoritative punch, the never-blocking verdict and the checksum boundary are invariants a future change could silently break.
+
+Validation: sa test --compact — 733 tests, 729 passed, 4 pre-existing skips, 3712 assertions. vendor/bin/pint --dirty clean. vendor/bin/phpstan analyse 0 errors. npm run types:check passes (no TypeScript changed).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+POST /api/v1/marks is now server-authoritative: a client datetime is rejected with 422 rather than ignored and the mark is stamped in the employee's timezone; lat/lng/accuracy_m/geo_status are accepted as nullable and the server decides the verdict itself by haversine (Geofence::verdictFor) against the premise snapshotted onto the mark, storing it on the new marks.geo_status alongside marks.accuracy_meters and outside the integrity checksum. No verdict blocks a punch — inside, outside and unknown all answer 201 — and the only refusal is a second in or out on the same day, which answers 409 with a Spanish message. MarkResource now emits a naive Santiago wall-clock datetime and carries geo_status. Verified by 30 Pest feature tests in tests/Feature/Api/MarkApiTest.php covering inside, outside, no fix, a premise with no radius, a premise with no coordinates, no premise, the advisory client status being ignored, the checksum boundary and both duplicate refusals; the demo seeder path was verified in a rolled-back transaction with employee@example.com punching in and out at Sucursal Centro.
+<!-- SECTION:FINAL_SUMMARY:END -->

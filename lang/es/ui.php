@@ -113,6 +113,13 @@ return [
             'registered' => 'Marca registrada correctamente.',
             'already_marked' => 'Ya registraste esta marca hoy.',
         ],
+        // Refusals the mobile app renders as a state, not as an error.
+        'api' => [
+            'already_marked' => [
+                'in' => 'Ya registraste tu entrada de hoy.',
+                'out' => 'Ya registraste tu salida de hoy.',
+            ],
+        ],
     ],
 
     'settings' => [
