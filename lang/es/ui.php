@@ -119,6 +119,14 @@ return [
                 'in' => 'Ya registraste tu entrada de hoy.',
                 'out' => 'Ya registraste tu salida de hoy.',
             ],
+            // A punch that waited in the phone's queue. Shown verbatim by the
+            // app, so each one has to say what happened to the marca and what
+            // the employee does next.
+            'offline' => [
+                'too_old' => 'Esta marca esperó más de :hours horas sin conexión, así que no podemos agregarla directamente al libro de asistencia. La enviamos a tu jefatura como marca faltante: recibirás un correo para revisarla y tienes :review_hours horas para responder.',
+                'in_future' => 'La fecha y hora de tu teléfono está adelantada respecto del servidor, así que no podemos registrar esta marca. Ajusta la fecha y hora automáticas en tu dispositivo y vuelve a intentarlo.',
+                'modification_notes' => 'Marca capturada sin conexión el :captured y sincronizada el :synced, fuera del plazo de envío automático.',
+            ],
         ],
     ],
 
