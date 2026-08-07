@@ -210,6 +210,54 @@ Before committing anything:
 
 ---
 
+## Phase 4.5 — Deferred QA (only when the user cannot test now)
+
+If the user says they cannot check the work in a browser right now — "I'm not at my
+machine", "can't QA this", "I'll test it later", or anything to that effect — do **not**
+leave the branch hanging. Log what needs eyes on it, then ship.
+
+1. **Append an entry to `docs/QA_CHECKLIST.md`**, at the top of the _Pending_ section
+   (newest first), following the shape of the entries already there:
+
+```markdown
+### KOL-<N> — <task title, short>
+
+- **Branch:** `feature/kol-<N>-<slug>` (merged to `master`)
+- **Deferred on:** <YYYY-MM-DD>
+- **Where:** <screen name in Spanish> (`/route`), as a <role>
+- **Automated coverage:** <one line: what the Pest tests already prove, and where>
+
+- [ ] <one concrete, observable check>
+- [ ] <…>
+```
+
+2. **Write checks a human can actually perform.** Each box names a screen, an action and
+   an expected result specific enough that "it looks fine" is not a valid answer. Cover
+   the things tests cannot: rendering and layout at wide and narrow widths, Spanish
+   wording, dark mode, empty and error states, the toast after saving, values surviving a
+   reload, and console errors.
+
+3. **Do not restate what Pest already asserts.** If a behaviour is covered by a test, the
+   `Automated coverage` line mentions it and no box is spent on it. A checklist padded
+   with things the suite already guarantees stops being read.
+
+4. **Include the regression edge.** When the change extends an existing screen or form,
+   add a box for the pre-existing behaviour that could break — a form that submits as a
+   whole is the usual case.
+
+5. If the task had no UI at all, skip the file entirely and say so; a backend-only change
+   has nothing for a human to look at that the tests don't already cover.
+
+6. **Then run Phase 5 in full** — close the task, commit, merge, push. Include
+   `docs/QA_CHECKLIST.md` in the same commit. Tell the user the work is on `master` and
+   that the QA entry is waiting for them.
+
+When the user later reports back that an entry passed, move it from _Pending_ to
+_Verified_ with the date. If something failed, keep the entry where it is and open the
+fix from the branch recorded in it.
+
+---
+
 ## Phase 5 — Commit, Merge, Push (only after user confirms)
 
 Close the task **on the feature branch**, in the same commit as the code, so the merge
@@ -259,6 +307,7 @@ Announce to the user: the branch, commit hash, and that the task is closed. Ask 
 | `backlog board export BOARD.md --force` | Write a markdown kanban snapshot (project-relative path) |
 | `backlog draft list --plain` | List drafts (hidden from `task list`) |
 | `backlog draft promote DRAFT-<n>` | Turn a draft into a numbered KOL task |
+| `docs/QA_CHECKLIST.md` | Manual checks waiting on the user (Phase 4.5) |
 | `sa test --compact` | Run tests |
 | `vendor/bin/pint --dirty --format agent` | Fix PHP code style |
 | `sa route:list --except-vendor` | Inspect routes |

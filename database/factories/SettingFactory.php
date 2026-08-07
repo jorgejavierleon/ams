@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\OvertimeAuthorizationMode;
+use App\Enums\OvertimeCompensationType;
 use App\Models\Organization;
 use App\Models\Setting;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -27,6 +29,11 @@ class SettingFactory extends Factory
             'leave_approval_notification' => true,
             'documents_signature_enabled' => false,
             'documents_require_ordered_signing' => false,
+            'overtime_authorization_mode' => OvertimeAuthorizationMode::PostHoc,
+            'overtime_requires_pact' => false,
+            'overtime_weekly_anomaly_threshold_hours' => 10,
+            'overtime_retroactive_request_days' => 7,
+            'overtime_default_compensation_type' => OvertimeCompensationType::Payment,
         ];
     }
 }
