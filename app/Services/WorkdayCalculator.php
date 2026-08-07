@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\DB;
  */
 class WorkdayCalculator
 {
+    public function __construct(private LegalHourLimits $legalHourLimits) {}
+
     /**
      * Compute and insert the workdays for every employee with attendance or a
      * scheduled shift on the given date. Existing rows for the date are skipped.
@@ -28,7 +30,12 @@ class WorkdayCalculator
     {
         $success = true;
 
-        $this->getWorkdayQuery($date)->chunk(100, function ($workdays) use (&$success): void {
+        // Resolved from the day being computed, never from today, and stamped
+        // onto every row so the rule each day was judged against stays
+        // readable after the law moves on.
+        $legalHourLimitId = $this->legalHourLimits->on(Carbon::parse($date))->id;
+
+        $this->getWorkdayQuery($date)->chunk(100, function ($workdays) use (&$success, $legalHourLimitId): void {
             $insertData = $workdays->map(fn ($workday): array => [
                 'date' => $workday->date,
                 'user_id' => $workday->user_id,
@@ -43,6 +50,7 @@ class WorkdayCalculator
                 'shift_start_time' => $workday->shift_start_time,
                 'shift_end_time' => $workday->shift_end_time,
                 'shift_id' => $workday->shift_id,
+                'legal_hour_limit_id' => $legalHourLimitId,
                 'in_time_difference' => $workday->in_time_difference,
                 'out_time_difference' => $workday->out_time_difference,
                 'worked_time' => $this->calculateWorkedTime($workday),
@@ -77,6 +85,7 @@ class WorkdayCalculator
                 'shift_start_time' => $row->shift_start_time,
                 'shift_end_time' => $row->shift_end_time,
                 'shift_id' => $row->shift_id,
+                'legal_hour_limit_id' => $this->legalHourLimits->on(Carbon::parse($workday->date))->id,
                 'leave_id' => $row->leave_id,
                 'in_time_difference' => $row->in_time_difference,
                 'out_time_difference' => $row->out_time_difference,

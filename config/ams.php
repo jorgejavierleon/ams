@@ -7,15 +7,15 @@ return [
     | Legal working-hour limits (Chile)
     |--------------------------------------------------------------------------
     |
-    | Maximum ordinary hours allowed per week and per day under the Chilean
-    | Código del Trabajo (arts. 22 & 28). Used to flag shifts that exceed the
-    | legal maximum. The weekly cap is being reduced by law over time, so it is
-    | kept configurable rather than hardcoded.
+    | Deliberately absent. `max_weekly_hours` and `max_daily_hours` used to live
+    | here as scalars, which cannot be right for more than one date at a time:
+    | Ley 21.561 moves the ordinary week from 45 to 44, 42 and 40 hours on three
+    | separate dates, and a report that reads a single number gives a closed
+    | period a different answer after the law changes than it gave the first
+    | time. The limits are now date-versioned rows resolved through
+    | App\Services\LegalHourLimits, which requires the date it is asked about.
     |
     */
-
-    'max_weekly_hours' => 45,
-    'max_daily_hours' => 10,
 
     /*
     |--------------------------------------------------------------------------

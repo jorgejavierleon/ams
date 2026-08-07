@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-06 02:51'
-updated_date: '2026-08-06 02:57'
+updated_date: '2026-08-07 01:17'
 labels:
   - overtime
   - backend
@@ -62,3 +62,9 @@ Warning at the point of *entry* (loading a schedule that would exceed the caps) 
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Week definition settled by KOL-36 and already implemented there — do not re-decide it. A week is Monday–Sunday (matching DailyReportService, the DT-certified report), and a week straddling a limit change is judged against the version in force on its **Monday**. Reasoning: two of the three Ley 21.561 steps land mid-week (26 Apr 2024 was a Friday, 26 Apr 2028 is a Wednesday), and the weekly cap is a budget spent across the week — applying a newly lowered ceiling from Wednesday would retroactively turn hours already lawfully worked on Monday and Tuesday into an excess against a limit that did not exist when they were worked. Use App\\Services\\LegalHourLimits::forWeekOf() for the weekly caps and ::on() for the daily ones. This answers AC #6 of this task; KOL-24 must use the same definition. Also note KOL-36 left shift-cap validation blocking as it was: making it advisory per Res. 38 art. 45.2 is AC #2/#7 here.
+<!-- SECTION:NOTES:END -->
