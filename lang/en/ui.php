@@ -478,6 +478,110 @@ return [
         ],
     ],
 
+    'saas_legal_hour_limits' => [
+        'nav' => 'Legal limits',
+        'title' => 'Legal working-hour limits',
+        'description' => 'The legal working-hour maximums in force in Chile, applied to every organization',
+        'empty' => 'No versions recorded.',
+
+        'columns' => [
+            'period' => 'In force',
+            'ordinary_weekly_hours' => 'Weekly jornada',
+            'ordinary_daily_hours' => 'Daily jornada',
+            'overtime' => 'Max. overtime',
+            'total' => 'Max. total',
+            'legal_reference' => 'Legal reference',
+            'status' => 'Status',
+            'calculated_days' => 'Calculated days',
+            'actions' => 'Actions',
+        ],
+
+        'status' => [
+            'in_force' => 'In force',
+            'scheduled' => 'Scheduled',
+            'superseded' => 'Superseded',
+        ],
+
+        'hours' => ':hours h',
+        'hours_per_day' => ':hours h/day',
+        'hours_per_week' => ':hours h/week',
+        'from' => 'From :date',
+        'range' => ':from to :to',
+        'open_ended' => 'From :date, open-ended',
+
+        'current' => [
+            'title' => 'In force today',
+            'since' => 'In force since :date',
+            'until' => 'Until :date',
+            'indefinite' => 'No end date',
+        ],
+
+        'scheduled_notice' => [
+            'title' => 'Scheduled changes',
+            'body' => 'Future versions already recorded: :count. Each takes effect automatically on its own date.',
+        ],
+
+        'timeline' => [
+            'title' => 'Timeline',
+        ],
+
+        'create' => [
+            'nav' => 'New version',
+            'title' => 'New legal working-hour limit version',
+            'description' => 'Record a change in the law with the date it takes effect',
+            'submit' => 'Record version',
+        ],
+
+        'correct' => [
+            'title' => 'Correct the version of :date',
+            'description' => 'A version is not edited to reflect a change in the law — that is a new version. Correct only a figure or a date that was entered wrong.',
+            'submit' => 'Apply correction and recalculate',
+            'action' => 'Correct',
+            'used_warning' => 'Days already calculated against this version: :count. The correction recalculates every one of them before it finishes.',
+            'unused_notice' => 'No calculated day has been judged against this version yet, so there is nothing to recalculate.',
+            'reason' => 'Reason for the correction',
+            'reason_hint' => 'Recorded in the audit log next to your name. Explain what was wrong in the recorded version.',
+        ],
+
+        'form' => [
+            'effective_from' => 'Effective from',
+            'effective_from_hint' => 'A week is judged against the version in force on the Monday that opens it.',
+            'ordinary_weekly_hours' => 'Ordinary weekly hours',
+            'ordinary_daily_hours' => 'Ordinary daily hours',
+            'max_overtime_daily_hours' => 'Maximum overtime per day',
+            'max_overtime_weekly_hours' => 'Maximum overtime per week',
+            'max_total_daily_hours' => 'Maximum total per day (ordinary + overtime)',
+            'max_total_weekly_hours' => 'Maximum total per week (ordinary + overtime)',
+            'legal_reference' => 'Legal reference',
+            'legal_reference_placeholder' => 'Ley 21.561',
+            'notes' => 'Notes',
+        ],
+
+        'global_effect' => [
+            'title' => 'This version applies to every organization',
+            'body' => 'From its effective date, every organization in the system is measured against these figures. Days already calculated against earlier versions do not change.',
+            'acknowledge' => 'I understand this version will apply to every organization from its effective date',
+        ],
+
+        'append_only' => [
+            'title' => 'Versions are never edited or deleted',
+            'body' => 'A change in the law is recorded as a new version. A mistyped figure is fixed with a correction, which recalculates the affected days and is written to the audit log.',
+        ],
+
+        'validation' => [
+            'acknowledge' => 'You must confirm that this version will apply to every organization.',
+            'duplicate_date' => 'A version already takes effect on that date.',
+            'total_below_ordinary_daily' => 'The daily total maximum cannot be lower than the ordinary daily jornada.',
+            'total_below_ordinary_weekly' => 'The weekly total maximum cannot be lower than the ordinary weekly jornada.',
+            'unchanged' => 'A correction must change at least one of the recorded figures.',
+        ],
+
+        'flash' => [
+            'created' => 'Version recorded, in force from :date.',
+            'corrected' => 'Correction applied. Days recalculated: :count.',
+        ],
+    ],
+
     'saas_audit_log' => [
         'nav' => 'Audit log',
         'title' => 'Audit log',
