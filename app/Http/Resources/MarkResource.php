@@ -23,7 +23,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class MarkResource extends JsonResource
 {
     /**
-     * @return array{mark_id: int, folio: string|null, hash: string, datetime: string, type: string, geo_status: string|null, employee_name: string|null, employee_rut: string|null}
+     * @return array{mark_id: int, folio: string|null, hash: string, datetime: string, type: string, geo_status: string|null, employee_name: string|null, employee_rut: string|null, device_datetime: string|null, synced_at: string|null, captured_offline: bool}
      */
     public function toArray(Request $request): array
     {
@@ -47,6 +47,14 @@ class MarkResource extends JsonResource
             // There is one spelling of a Chilean RUT in the mobile client and it
             // is `formatRut`'s to choose, not the server's.
             'employee_rut' => $this->employee_rut,
+            // Provenance, so a receipt opened after a sync can state its own
+            // (Res. 38 Art. 10). The raw phone reading `datetime` was
+            // adjudicated from — null on an online punch, which sends none.
+            'device_datetime' => $this->device_datetime?->format('Y-m-d H:i:s'),
+            // When the register received the punch. Equal to `datetime` online;
+            // on a queued punch the gap between them is the queue's own age.
+            'synced_at' => $this->synced_at?->format('Y-m-d H:i:s'),
+            'captured_offline' => (bool) $this->captured_offline,
         ];
     }
 }

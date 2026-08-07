@@ -10,6 +10,7 @@ use App\Models\MarkModification;
 use App\Models\Workday;
 use App\Notifications\MarkModificationRequested;
 use App\Services\WorkdayCalculator;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +53,13 @@ class MarkModificationManager
                     'shift_id' => $workday->shift_id,
                     'shift_start_time' => $workday->shift_start_time,
                     'shift_end_time' => $workday->shift_end_time,
+                    // A request that came from a queued punch carries its
+                    // provenance onto the mark it creates. Without this the
+                    // register would hold a mark that looks like an ordinary
+                    // punch made at that hour, and could no longer say which of
+                    // its marks were captured offline (Res. 38 Art. 10).
+                    'device_datetime' => $modification->device_datetime,
+                    'captured_offline' => $modification->captured_offline,
                 ]);
                 $mark->organization_id = $workday->organization_id;
                 $mark->save();
@@ -177,6 +185,10 @@ class MarkModificationManager
      * Create a single pending modification for the workday's mark of the given
      * type and notify the employee. Returns null when a pending request of that
      * type already exists (the duplicate guard).
+     *
+     * `$deviceDateTime` is set only when the request originates from a punch the
+     * employee's phone captured offline and could no longer be inserted directly
+     * (KOL-54); it travels onto the mark that approving the request creates.
      */
     public function createModification(
         Workday $workday,
@@ -184,6 +196,7 @@ class MarkModificationManager
         string $time,
         MarkModificationReason $reason,
         ?string $notes = null,
+        ?CarbonInterface $deviceDateTime = null,
     ): ?MarkModification {
         if ($this->hasPendingModification($workday, $type)) {
             return null;
@@ -202,6 +215,8 @@ class MarkModificationManager
             // Snapshot the mark's current time: approving rewrites the mark, so
             // the original can no longer be read back from it afterwards.
             'original_date_time' => $type === MarkType::In ? $workday->mark_in_at : $workday->mark_out_at,
+            'device_datetime' => $deviceDateTime,
+            'captured_offline' => $deviceDateTime !== null,
             'mark_type' => $type,
             'notes' => $notes,
         ]);

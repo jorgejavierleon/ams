@@ -30,6 +30,10 @@ use Illuminate\Support\Carbon;
  * @property int|null $shift_id
  * @property Carbon|null $original_date_time
  * @property Carbon $date_time
+ * @property Carbon|null $device_datetime
+ * @property Carbon|null $synced_at
+ * @property bool $captured_offline
+ * @property string|null $idempotency_key
  * @property Carbon|null $shift_start_time
  * @property Carbon|null $shift_end_time
  * @property MarkType $type
@@ -55,6 +59,10 @@ use Illuminate\Support\Carbon;
     'shift_id',
     'original_date_time',
     'date_time',
+    'device_datetime',
+    'synced_at',
+    'captured_offline',
+    'idempotency_key',
     'shift_start_time',
     'shift_end_time',
     'type',
@@ -78,6 +86,9 @@ class Mark extends Model
             'geo_status' => GeoStatus::class,
             'date_time' => 'datetime',
             'original_date_time' => 'datetime',
+            'device_datetime' => 'datetime',
+            'synced_at' => 'datetime',
+            'captured_offline' => 'boolean',
             'shift_start_time' => 'datetime:H:i',
             'shift_end_time' => 'datetime:H:i',
         ];

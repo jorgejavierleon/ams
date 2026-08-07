@@ -29,8 +29,15 @@ class MarkManager
      * Register a punch of the given type for the user (defaults to the
      * authenticated employee), stamped in their timezone and tagged with the
      * shift scheduled for that day.
+     *
+     * `$attributes` are merged into the row before it is created, which is the
+     * only way offline provenance can reach the mark: {@see MarkObserver} hashes
+     * it, so it has to be present at creation rather than attached afterwards
+     * the way geolocation is.
+     *
+     * @param  array<string, mixed>  $attributes
      */
-    public function createMark(MarkType $type, ?User $user = null, ?string $dateTime = null): Mark
+    public function createMark(MarkType $type, ?User $user = null, ?string $dateTime = null, array $attributes = []): Mark
     {
         $user = $this->resolveUser($user);
         $when = $this->resolveDateTime($user, $dateTime);
@@ -44,6 +51,7 @@ class MarkManager
             'shift_id' => $shift['shift_id'] ?? null,
             'shift_start_time' => $shift['start_time'] ?? null,
             'shift_end_time' => $shift['end_time'] ?? null,
+            ...$attributes,
         ]);
     }
 
@@ -125,12 +133,24 @@ class MarkManager
     public function getTodayMark(MarkType $type, ?User $user = null): ?Mark
     {
         $user = $this->resolveUser($user);
-        $timezone = $this->timeZoneService->getUserTimezone($user);
+
+        return $this->getMarkOnDate($type, Carbon::now($this->timeZoneService->getUserTimezone($user)), $user);
+    }
+
+    /**
+     * The user's existing mark of the given type on the given calendar date, if
+     * any. A queued punch is guarded against the day it was *made* rather than
+     * today: a punch taken at 23:40 and synced the next morning collides with
+     * yesterday's punches, not with tomorrow's.
+     */
+    public function getMarkOnDate(MarkType $type, CarbonInterface $date, ?User $user = null): ?Mark
+    {
+        $user = $this->resolveUser($user);
 
         return Mark::query()
             ->where('user_id', $user->id)
             ->where('type', $type)
-            ->whereDate('date_time', Carbon::now($timezone))
+            ->whereDate('date_time', $date)
             ->first();
     }
 

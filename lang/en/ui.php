@@ -119,6 +119,11 @@ return [
                 'in' => 'You already registered your check in for today.',
                 'out' => 'You already registered your check out for today.',
             ],
+            'offline' => [
+                'too_old' => 'This punch waited more than :hours hours without a connection, so it cannot be added to the attendance book directly. It has been filed with your supervisor as a missing punch: you will receive an email to review it and have :review_hours hours to respond.',
+                'in_future' => 'Your phone\'s date and time are ahead of the server, so this punch cannot be recorded. Turn on automatic date and time on your device and try again.',
+                'modification_notes' => 'Punch captured offline on :captured and synced on :synced, past the automatic transmission window.',
+            ],
         ],
     ],
 
