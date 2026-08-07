@@ -307,10 +307,11 @@ return [
 
     'organization_settings' => [
         'title' => 'Configuración general',
-        'description' => 'Configure las notificaciones y los valores por defecto de documentos de su organización',
+        'description' => 'Configure las notificaciones, los documentos y la política de horas extra de su organización',
         'sections' => [
             'notifications' => 'Notificaciones',
             'documents' => 'Documentos',
+            'overtime' => 'Horas extra',
         ],
         'fields' => [
             'employee_missing_in_notification' => [
@@ -341,6 +342,35 @@ return [
                 'label' => 'Exigir firma ordenada por defecto',
                 'hint' => 'Los nuevos documentos firmables usan firma secuencial (ordenada) por defecto.',
             ],
+            'overtime_authorization_mode' => [
+                'label' => 'Modo de autorización',
+                'hint' => 'Cómo se autorizan las horas extra: solicitud previa del trabajador, revisión posterior del exceso de jornada, o ambas.',
+            ],
+            'overtime_requires_pact' => [
+                'label' => 'Exigir pacto escrito',
+                'hint' => 'Un registro de horas extra solo puede aprobarse si existe un pacto vigente que lo respalde.',
+            ],
+            'overtime_weekly_anomaly_threshold_hours' => [
+                'label' => 'Umbral semanal de anomalía (horas)',
+                'hint' => 'Sobre esta cantidad de horas extra en la semana se marca una anomalía para revisión. No bloquea el registro.',
+            ],
+            'overtime_retroactive_request_days' => [
+                'label' => 'Días hacia atrás para solicitar',
+                'hint' => 'Cuántos días hacia atrás puede el trabajador solicitar horas extra en el modo de autorización previa.',
+            ],
+            'overtime_default_compensation_type' => [
+                'label' => 'Compensación por defecto',
+                'hint' => 'Cómo se compensan las horas extra aprobadas cuando el pacto no dice otra cosa. La ley asume pago en remuneraciones.',
+            ],
+        ],
+        'overtime_authorization_modes' => [
+            'pre_authorization' => 'Autorización previa',
+            'post_hoc' => 'Revisión posterior',
+            'combined' => 'Combinado',
+        ],
+        'overtime_compensation_types' => [
+            'payment' => 'Pago en remuneraciones',
+            'rest_days' => 'Días de descanso',
         ],
         'flash' => [
             'updated' => 'Configuración guardada.',

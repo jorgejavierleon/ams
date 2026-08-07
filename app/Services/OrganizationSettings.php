@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\OvertimeAuthorizationMode;
+use App\Enums\OvertimeCompensationType;
 use App\Models\Setting;
 use App\Observers\SettingObserver;
 use Illuminate\Support\Facades\Cache;
@@ -50,6 +52,30 @@ class OrganizationSettings
         );
 
         return $attributes[$key] ?? $default;
+    }
+
+    /**
+     * The organization's overtime authorisation mode (PRD §7.1), read off the
+     * cached attributes array so calculation code can consult it per workday
+     * without a query. Falls back to the schema default if the stored value is
+     * not a mode the application knows.
+     */
+    public function overtimeAuthorizationMode(?int $organizationId = null): OvertimeAuthorizationMode
+    {
+        $value = $this->get('overtime_authorization_mode', organizationId: $organizationId);
+
+        return OvertimeAuthorizationMode::tryFrom((string) $value) ?? OvertimeAuthorizationMode::PostHoc;
+    }
+
+    /**
+     * How approved overtime is compensated by default: payroll payment or
+     * additional rest days. Payment when unset, per Resolución 38 art. 43.
+     */
+    public function overtimeDefaultCompensationType(?int $organizationId = null): OvertimeCompensationType
+    {
+        $value = $this->get('overtime_default_compensation_type', organizationId: $organizationId);
+
+        return OvertimeCompensationType::tryFrom((string) $value) ?? OvertimeCompensationType::Payment;
     }
 
     /**
