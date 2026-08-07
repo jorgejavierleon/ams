@@ -298,11 +298,16 @@ test('yesterday punch does not block today', function () {
     $employee = apiEmployeeAtPremise();
     Sanctum::actingAs($employee);
 
+    // Yesterday on the *employee's* calendar, not the server's. Marks are
+    // stored as a naive Santiago wall clock and the one-per-day guard compares
+    // them against today in the employee's timezone, so a UTC `now()->subDay()`
+    // still lands on today's Chilean date between 00:00 and 04:00 UTC — and the
+    // test would fail for four hours a day for the wrong reason.
     Mark::factory()->create([
         'user_id' => $employee->id,
         'organization_id' => $employee->organization_id,
         'type' => 'in',
-        'date_time' => now()->subDay(),
+        'date_time' => Carbon::now($employee->timezone)->subDay(),
     ]);
 
     $this->postJson('/api/v1/marks', punchBody('IN'))->assertCreated();

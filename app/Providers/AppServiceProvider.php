@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Listeners\StampMarkModificationNotifiedAt;
 use App\Models\User;
+use App\Services\LegalHourLimits;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -27,7 +28,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Scoped rather than transient: the resolver memoises per date, and the
+        // shift list asks for the same date once per row.
+        $this->app->scoped(LegalHourLimits::class);
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\MarkModificationStatus;
 use App\Enums\WorkdayStatus;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Services\LegalHourLimitDrift;
 use App\Services\WorkdayCalculator;
 use Carbon\CarbonInterface;
 use Database\Factories\WorkdayFactory;
@@ -30,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $mark_out_id
  * @property int|null $leave_id
  * @property int|null $shift_id
+ * @property int|null $legal_hour_limit_id
  * @property Carbon|null $mark_in_at
  * @property Carbon|null $mark_out_at
  * @property string|null $shift_start_time
@@ -107,6 +109,19 @@ class Workday extends Model
     public function leave(): BelongsTo
     {
         return $this->belongsTo(Leave::class);
+    }
+
+    /**
+     * The legal working-hour limit version this day was judged against. Proof
+     * of which rule was applied, not the source of the figures — those are
+     * resolved from the day's own date. {@see LegalHourLimitDrift} is what
+     * surfaces the two disagreeing.
+     *
+     * @return BelongsTo<LegalHourLimit, $this>
+     */
+    public function legalHourLimit(): BelongsTo
+    {
+        return $this->belongsTo(LegalHourLimit::class);
     }
 
     /**

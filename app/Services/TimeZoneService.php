@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -19,6 +20,18 @@ class TimeZoneService
     public function getAppTimezone(): string
     {
         return config('app.timezone_display') ?? config('app.timezone');
+    }
+
+    /**
+     * The calendar date it currently is where the application's users are.
+     *
+     * The server runs in UTC, so between 21:00 and midnight Chilean time
+     * `now()->toDateString()` is already tomorrow. Anything asking "what rule
+     * applies today" has to ask about the day the user is actually living.
+     */
+    public function today(): CarbonImmutable
+    {
+        return CarbonImmutable::now($this->getAppTimezone())->startOfDay();
     }
 
     /**

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Observers\ShiftDayObserver;
+use App\Services\LegalHourLimits;
+use App\Services\TimeZoneService;
 use Database\Factories\ShiftDayFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -11,7 +13,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Config;
 
 /**
  * @property int $id
@@ -95,14 +96,20 @@ class ShiftDay extends Model
     }
 
     /**
-     * Whether the day's worked hours exceed the legal daily maximum.
+     * Whether the day's worked hours exceed the legal ordinary daily maximum.
+     *
+     * A shift day is a template with no date of its own, so it is judged
+     * against the limits in force today. The resolver memoises per date, so
+     * asking once per row costs one query for the whole listing.
      *
      * @return Attribute<bool, never>
      */
     protected function exceedsLegalMaxHours(): Attribute
     {
         return Attribute::get(
-            fn (): bool => $this->total_work_hours > Config::get('ams.max_daily_hours'),
+            fn (): bool => $this->total_work_hours > app(LegalHourLimits::class)
+                ->on(app(TimeZoneService::class)->today())
+                ->ordinary_daily_hours,
         );
     }
 }

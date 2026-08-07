@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesTableSort;
 use App\Enums\ShiftType;
+use App\Models\LegalHourLimit;
 use App\Models\Shift;
 use App\Models\ShiftDay;
+use App\Services\LegalHourLimits;
+use App\Services\TimeZoneService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -20,8 +23,15 @@ class ShiftController extends Controller
 {
     use ResolvesTableSort;
 
+    public function __construct(
+        private LegalHourLimits $legalHourLimits,
+        private TimeZoneService $timeZone,
+    ) {}
+
     public function index(Request $request): Response
     {
+        $limits = $this->limitsForToday();
+
         $search = $request->string('search')->trim()->value() ?: null;
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
@@ -42,22 +52,24 @@ class ShiftController extends Controller
                 'name' => $shift->name,
                 'type' => $shift->type->label(),
                 'total_week_hours' => $shift->total_week_hours,
-                'exceeds_max' => $shift->total_week_hours > config('ams.max_weekly_hours'),
+                'exceeds_max' => $shift->total_week_hours > $limits->ordinary_weekly_hours,
                 'assignments_count' => $shift->active_shift_assignments_count,
                 'is_default' => $shift->is_default,
             ]),
             'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],
-            'maxWeeklyHours' => (int) config('ams.max_weekly_hours'),
+            'maxWeeklyHours' => (int) $limits->ordinary_weekly_hours,
         ]);
     }
 
     public function create(): Response
     {
+        $limits = $this->limitsForToday();
+
         return Inertia::render('shifts/create', [
             'types' => ShiftType::options(),
             'defaultDays' => $this->defaultDays(),
-            'maxWeeklyHours' => (int) config('ams.max_weekly_hours'),
-            'maxDailyHours' => (int) config('ams.max_daily_hours'),
+            'maxWeeklyHours' => (int) $limits->ordinary_weekly_hours,
+            'maxDailyHours' => (int) $limits->ordinary_daily_hours,
         ]);
     }
 
@@ -80,6 +92,7 @@ class ShiftController extends Controller
     public function edit(Shift $shift): Response
     {
         $shift->load(['days' => fn ($query) => $query->orderBy('weekday')]);
+        $limits = $this->limitsForToday();
 
         return Inertia::render('shifts/edit', [
             'shift' => [
@@ -104,8 +117,8 @@ class ShiftController extends Controller
                 ])->all(),
             ],
             'types' => ShiftType::options(),
-            'maxWeeklyHours' => (int) config('ams.max_weekly_hours'),
-            'maxDailyHours' => (int) config('ams.max_daily_hours'),
+            'maxWeeklyHours' => (int) $limits->ordinary_weekly_hours,
+            'maxDailyHours' => (int) $limits->ordinary_daily_hours,
         ]);
     }
 
@@ -220,12 +233,26 @@ class ShiftController extends Controller
     }
 
     /**
+     * The limits in force today, the date a shift saved now is judged against.
+     *
+     * A shift is a template with no date of its own, so "today" is the only
+     * date it can be measured against — and it has to be today in Chile, not
+     * on a UTC server. The date is stated explicitly because
+     * {@see LegalHourLimits} has no notion of a current value.
+     */
+    private function limitsForToday(): LegalHourLimit
+    {
+        return $this->legalHourLimits->on($this->timeZone->today());
+    }
+
+    /**
      * Guard the legal weekly maximum and reject days with negative duration.
      *
      * @param  array<int, array<string, mixed>>  $days
      */
     private function assertWithinLegalHours(array $days): void
     {
+        $maxWeeklyHours = $this->limitsForToday()->ordinary_weekly_hours;
         $weeklyHours = 0.0;
 
         foreach ($days as $index => $day) {
@@ -244,10 +271,10 @@ class ShiftController extends Controller
             $weeklyHours += $dailyHours;
         }
 
-        if ($weeklyHours > config('ams.max_weekly_hours')) {
+        if ($weeklyHours > $maxWeeklyHours) {
             throw ValidationException::withMessages([
                 'days' => __('ui.shifts.validation.exceeds_weekly', [
-                    'max' => config('ams.max_weekly_hours'),
+                    'max' => (int) $maxWeeklyHours,
                     'total' => rtrim(rtrim(number_format($weeklyHours, 2), '0'), '.'),
                 ]),
             ]);
