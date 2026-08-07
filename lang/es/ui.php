@@ -478,6 +478,110 @@ return [
         ],
     ],
 
+    'saas_legal_hour_limits' => [
+        'nav' => 'Límites legales',
+        'title' => 'Límites legales de jornada',
+        'description' => 'Los máximos legales de jornada vigentes en Chile, aplicados a todas las organizaciones',
+        'empty' => 'No hay versiones registradas.',
+
+        'columns' => [
+            'period' => 'Vigencia',
+            'ordinary_weekly_hours' => 'Jornada semanal',
+            'ordinary_daily_hours' => 'Jornada diaria',
+            'overtime' => 'Horas extra máx.',
+            'total' => 'Total máx.',
+            'legal_reference' => 'Norma',
+            'status' => 'Estado',
+            'calculated_days' => 'Días calculados',
+            'actions' => 'Acciones',
+        ],
+
+        'status' => [
+            'in_force' => 'Vigente',
+            'scheduled' => 'Programada',
+            'superseded' => 'Histórica',
+        ],
+
+        'hours' => ':hours h',
+        'hours_per_day' => ':hours h/día',
+        'hours_per_week' => ':hours h/semana',
+        'from' => 'Desde el :date',
+        'range' => 'Del :from al :to',
+        'open_ended' => 'Desde el :date, sin término',
+
+        'current' => [
+            'title' => 'Vigente hoy',
+            'since' => 'En vigor desde el :date',
+            'until' => 'Hasta el :date',
+            'indefinite' => 'Sin fecha de término',
+        ],
+
+        'scheduled_notice' => [
+            'title' => 'Cambios programados',
+            'body' => 'Versiones futuras ya registradas: :count. Cada una entrará en vigencia automáticamente en su fecha.',
+        ],
+
+        'timeline' => [
+            'title' => 'Línea de tiempo',
+        ],
+
+        'create' => [
+            'nav' => 'Nueva versión',
+            'title' => 'Nueva versión de los límites legales',
+            'description' => 'Registra un cambio en la ley con su fecha de entrada en vigencia',
+            'submit' => 'Registrar versión',
+        ],
+
+        'correct' => [
+            'title' => 'Corregir la versión del :date',
+            'description' => 'Una versión no se edita para reflejar un cambio en la ley: para eso se registra una versión nueva. Corrige solo una cifra o una fecha mal ingresada.',
+            'submit' => 'Aplicar corrección y recalcular',
+            'action' => 'Corregir',
+            'used_warning' => 'Días ya calculados con esta versión: :count. La corrección los recalculará todos antes de terminar.',
+            'unused_notice' => 'Ningún día calculado se ha juzgado todavía con esta versión, así que no hay nada que recalcular.',
+            'reason' => 'Motivo de la corrección',
+            'reason_hint' => 'Queda registrado en la auditoría junto a tu nombre. Explica qué estaba mal en la versión registrada.',
+        ],
+
+        'form' => [
+            'effective_from' => 'Entrada en vigencia',
+            'effective_from_hint' => 'La semana se juzga con la versión vigente el lunes que la abre.',
+            'ordinary_weekly_hours' => 'Jornada ordinaria semanal (horas)',
+            'ordinary_daily_hours' => 'Jornada ordinaria diaria (horas)',
+            'max_overtime_daily_hours' => 'Máximo de horas extra por día',
+            'max_overtime_weekly_hours' => 'Máximo de horas extra por semana',
+            'max_total_daily_hours' => 'Máximo total por día (ordinaria + extra)',
+            'max_total_weekly_hours' => 'Máximo total por semana (ordinaria + extra)',
+            'legal_reference' => 'Norma legal',
+            'legal_reference_placeholder' => 'Ley 21.561',
+            'notes' => 'Notas',
+        ],
+
+        'global_effect' => [
+            'title' => 'Esta versión rige para todas las organizaciones',
+            'body' => 'Desde su fecha de entrada en vigencia, todas las organizaciones del sistema quedan medidas contra estas cifras. Los días ya calculados con versiones anteriores no cambian.',
+            'acknowledge' => 'Entiendo que esta versión se aplicará a todas las organizaciones desde su fecha de entrada en vigencia',
+        ],
+
+        'append_only' => [
+            'title' => 'Las versiones no se editan ni se eliminan',
+            'body' => 'Un cambio en la ley se registra como una versión nueva. Una cifra mal ingresada se arregla con una corrección, que recalcula los días afectados y queda en la auditoría.',
+        ],
+
+        'validation' => [
+            'acknowledge' => 'Debes confirmar que esta versión se aplicará a todas las organizaciones.',
+            'duplicate_date' => 'Ya existe una versión que entra en vigencia en esa fecha.',
+            'total_below_ordinary_daily' => 'El máximo total diario no puede ser menor que la jornada ordinaria diaria.',
+            'total_below_ordinary_weekly' => 'El máximo total semanal no puede ser menor que la jornada ordinaria semanal.',
+            'unchanged' => 'Una corrección debe cambiar al menos una de las cifras registradas.',
+        ],
+
+        'flash' => [
+            'created' => 'Versión registrada, con vigencia desde el :date.',
+            'corrected' => 'Corrección aplicada. Días recalculados: :count.',
+        ],
+    ],
+
     'saas_audit_log' => [
         'nav' => 'Registro de auditoría',
         'title' => 'Registro de auditoría',

@@ -30,6 +30,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Saas\AuditLogController;
 use App\Http\Controllers\Saas\DocumentVarController;
 use App\Http\Controllers\Saas\HolidayController as SaasHolidayController;
+use App\Http\Controllers\Saas\LegalHourLimitController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use App\Http\Controllers\Saas\OrganizationController;
 use App\Http\Controllers\SettingController;
@@ -297,6 +298,16 @@ Route::prefix('saas')->name('saas.')->group(function () {
 
             Route::get('holidays', [SaasHolidayController::class, 'index'])->name('holidays.index');
             Route::post('holidays/sync', [SaasHolidayController::class, 'sync'])->name('holidays.sync');
+
+            // The global legal working-hour limits. No destroy route: a version
+            // a calculated day was judged against is never removed, and a
+            // mistaken one is fixed through the correction flow below, which
+            // recalculates the days it affected.
+            Route::get('legal-hour-limits', [LegalHourLimitController::class, 'index'])->name('legal-hour-limits.index');
+            Route::get('legal-hour-limits/create', [LegalHourLimitController::class, 'create'])->name('legal-hour-limits.create');
+            Route::post('legal-hour-limits', [LegalHourLimitController::class, 'store'])->name('legal-hour-limits.store');
+            Route::get('legal-hour-limits/{legalHourLimit}/correct', [LegalHourLimitController::class, 'correct'])->name('legal-hour-limits.correct');
+            Route::put('legal-hour-limits/{legalHourLimit}', [LegalHourLimitController::class, 'update'])->name('legal-hour-limits.update');
 
             Route::get('audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
         });

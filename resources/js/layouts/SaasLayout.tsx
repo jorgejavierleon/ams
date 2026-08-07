@@ -15,6 +15,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import * as auditLog from '@/routes/saas/audit-log';
 import * as documentVariables from '@/routes/saas/document-variables';
 import * as holidays from '@/routes/saas/holidays';
+import * as legalHourLimits from '@/routes/saas/legal-hour-limits';
 import * as organizations from '@/routes/saas/organizations';
 import type { AppLayoutProps } from '@/types';
 
@@ -54,6 +55,12 @@ export default function SaasLayout({ children }: AppLayoutProps) {
                             className="text-sm font-medium text-muted-foreground hover:text-foreground"
                         >
                             {t('ui.saas_holidays.nav')}
+                        </Link>
+                        <Link
+                            href={legalHourLimits.index()}
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                        >
+                            {t('ui.saas_legal_hour_limits.nav')}
                         </Link>
                         <Link
                             href={auditLog.index()}

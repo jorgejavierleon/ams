@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\LegalHourLimit;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * The only way a legal working-hour limit version comes into existence.
@@ -34,6 +35,19 @@ class LegalHourLimitVersions
         // A version added for a date already resolved this request would
         // otherwise keep answering with the version it superseded.
         $this->limits->flush();
+
+        // An appended version changes what every employer in the system is
+        // measured against from its effective date, so it is attributable to a
+        // person and a moment for the same reason a correction is.
+        activity()
+            ->causedBy(Auth::user())
+            ->performedOn($version)
+            ->event('created')
+            ->withProperties(['attributes' => [
+                ...$version->only(LegalHourLimit::FIGURES),
+                'effective_from' => $version->effective_from->toDateString(),
+            ]])
+            ->log('Legal working-hour limit version added');
 
         return $version;
     }
