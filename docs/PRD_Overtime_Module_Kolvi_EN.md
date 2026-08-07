@@ -42,7 +42,7 @@ The naive flow would be: `raw mark → subtract against shift → "overtime" →
 | Term | Definition |
 |---|---|
 | **Raw mark** | Immutable clock-in/out record exactly as received from the device or app. Never edited or deleted — it's the legal record. |
-| **Shift excess** | Positive difference between what was marked and the assigned shift, not yet managed (equivalent to Buk's term). |
+| **Shift excess** | Positive difference between what was marked and the assigned shift, not yet managed (equivalent to Buk's term). Split into **post-shift excess** (`last mark − shift end`) and **pre-shift excess** (`shift start − first mark`); both are recorded, but only post-shift feeds OHC unless the company configures otherwise (§7.2). |
 | **OHR (Overtime Hours Requested)** | Hours the employee requested to work, before or after the fact (equivalent to Talana's request flow). |
 | **OHA (Overtime Hours Authorized)** | Hours a supervisor/admin explicitly authorized (equivalent to GeoVictoria's HEA). |
 | **OHC (Overtime Hours Calculated)** | Automatic output of the calculation engine from raw marks, with no human intervention. |
@@ -92,9 +92,16 @@ A company can combine both (e.g., Mode A for planned overtime, Mode B as a safet
 ### 7.2 Automatic calculation engine (OHC)
 
 - Runs as an async job after shift close-out (or near-real-time if the shift allows).
-- Calculates shift excess as `(last mark − shift end time)`, based exclusively on marks and assigned shift — never inferred when there's no shift.
+- Calculates two shift excesses separately, based exclusively on marks and assigned shift — never inferred when there's no shift:
+  - **Post-shift excess** = `(last mark − shift end time)`, positive values only.
+  - **Pre-shift excess** = `(shift start time − first mark)`, positive values only.
+- **`OHC = post-shift excess + (pre-shift excess if the company counts it)`.** Whether early arrival contributes is per-company configuration (§10), defaulting to **not counted**.
+- Both excesses are **always stored**, whatever the company's setting. The setting governs what feeds OHC, not what gets recorded — so enabling it later is a configuration change, never a recalculation of history, and a recurring pre-shift excess remains visible to anomaly detection (§7.4) as a probable shift-definition error rather than silent overtime.
+- Never computed from `(worked span − scheduled shift duration)`. That formula cannot distinguish an early arrival from a late exit and silently converts unauthorized presence into a payment obligation.
 - Applies hour:minute:second precision (Resolución 38, Art. 44), no rounding.
 - **Never writes directly to an "approved" state.** The output of this calculation can reach "pending review" at most.
+
+**Why early arrival is configurable rather than fixed either way.** Art. 32 requires employer knowledge or authorization behind excess hours, so an employee who decides alone to arrive two hours early has not thereby earned overtime — counting it by default is the mirror image of the forgotten clock-out this module exists to prevent (§2). But the DT's *reality criterion* holds that hours actually worked with the employer's knowledge must be paid whether or not they were requested, and that includes work before shift start: early loading, shift handover, opening prep. Neither rule is safe as an absolute. The market has already settled on configuration — GeoVictoria's `AttendanceBook` API returns *horas extra (antes/después de turno)* as distinct figures (see `docs/prd-reports.md`), and Buk and Talana split the same way. Defaulting to *not counted* keeps the conservative posture; storing both figures regardless keeps the permissive case one setting away.
 
 ### 7.3 Legal-cap validation
 
@@ -118,6 +125,7 @@ Automatically flags — and blocks progression to "approved" without review — 
 ### 7.5 Approval / objection flow
 
 - "Pending overtime" queue for supervisors, with individual or bulk approval (Buk-style).
+- On a day whose **pre-shift excess** was excluded by company policy (§7.2), an authorized reviewer may include it in that day's OHC, for that day only, with a mandatory written reason. This amends which stored excess feeds OHC — it does not bypass the `MIN` rule, which then applies unchanged. Never available in bulk: without this escape hatch, legitimate pre-shift work in a company that defaults to excluding it would be structurally unpayable, since `MIN` caps at OHC.
 - Every approval/objection records: acting user, timestamp, and optional reason (mandatory if it exceeds the legal cap).
 - Resulting status: `approved`, `objected`, or `pending` (never auto-approved by timeout — an ungoverned record simply isn't exported, it's not assumed approved by default).
 
@@ -150,6 +158,8 @@ AttendanceMark (immutable)
 
 WorkdayCalculation
  ├─ id, employee_id, date, shift_id, ordinary_hours, ohc_hours, anomaly_flags[]
+ ├─ pre_shift_excess, post_shift_excess (both always recorded; ohc_hours derives from
+ │   post_shift_excess, plus pre_shift_excess only if the company counts early arrival)
  ├─ calculated_at, legal_cap_version_id (references the legal workweek in effect on that date)
 
 OvertimeRequest (OHR) — only if Mode A is active
@@ -185,6 +195,7 @@ OvertimeExportBatch
 
 - Mode: Pre-authorization / Post-hoc / Combined.
 - Written agreement requirement: Yes/No.
+- Early arrival counts towards OHC: Yes/No (default: No — see §7.2).
 - Weekly volume anomaly threshold (suggested default: 10h).
 - Lookback window for retroactive requests (Mode A).
 - Default compensation type: payroll payment vs. rest days (Art. 32, paragraph 4).
