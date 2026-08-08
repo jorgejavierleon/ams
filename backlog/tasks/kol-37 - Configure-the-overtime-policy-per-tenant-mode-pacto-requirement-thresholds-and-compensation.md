@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-08-06 02:49'
-updated_date: '2026-08-07 15:28'
+updated_date: '2026-08-08 11:33'
 labels:
   - overtime
   - backend
@@ -88,6 +88,16 @@ AC #4 is proven at the level automation reaches: the route stays behind role:adm
 
 Also added Phase 4.5 to the implement-ticket skill: when the user cannot QA locally, append the pending checks to docs/QA_CHECKLIST.md and then merge as usual.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @jorge
+created: 2026-08-08 11:33
+---
+Correction, filed as KOL-56: the overtime_default_compensation_type setting shipped here should not exist. Its justification cited Resolución 38 art. 43, but art. 43 read in full requires systems to *offer* both compensation modes and then fixes the fallback as law — absent a written pacto, the hours are paid — so it is not an employer-level preference. The agreement is per worker (art. 45.3, art. 41 i), which puts the compensation type on the pacto in KOL-47. The other four keys added here are unaffected: mode, pacto requirement, retroactive window and the weekly anomaly threshold are genuine tenant policy. The threshold in particular was re-checked and is not a legal figure — the legal ceilings live globally in legal_hour_limits (max_overtime_daily_hours 2, max_overtime_weekly_hours 12) per KOL-36, and the threshold only decides when a week is flagged for review.
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 

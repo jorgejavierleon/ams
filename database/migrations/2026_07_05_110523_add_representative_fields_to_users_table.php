@@ -25,23 +25,4 @@ return new class extends Migration
             $table->boolean('is_legal_rep')->default(false)->after('is_active');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('company_id');
-            $table->dropUnique(['rut']);
-            $table->dropColumn([
-                'first_name',
-                'last_name',
-                'second_last_name',
-                'rut',
-                'personal_email',
-                'is_legal_rep',
-            ]);
-        });
-    }
 };

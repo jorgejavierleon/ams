@@ -21,11 +21,4 @@ return new class extends Migration
             $table->string('code')->nullable()->after('social_reason');
         });
     }
-
-    public function down(): void
-    {
-        Schema::table('companies', function (Blueprint $table) {
-            $table->dropColumn('code');
-        });
-    }
 };

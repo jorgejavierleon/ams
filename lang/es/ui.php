@@ -354,10 +354,6 @@ return [
                 'label' => 'Modo de autorización',
                 'hint' => 'Cómo se autorizan las horas extra: solicitud previa del trabajador, revisión posterior del exceso de jornada, o ambas.',
             ],
-            'overtime_requires_pact' => [
-                'label' => 'Exigir pacto escrito',
-                'hint' => 'Un registro de horas extra solo puede aprobarse si existe un pacto vigente que lo respalde.',
-            ],
             'overtime_weekly_anomaly_threshold_hours' => [
                 'label' => 'Umbral semanal de anomalía (horas)',
                 'hint' => 'Sobre esta cantidad de horas extra en la semana se marca una anomalía para revisión. No bloquea el registro.',
@@ -366,19 +362,15 @@ return [
                 'label' => 'Días hacia atrás para solicitar',
                 'hint' => 'Cuántos días hacia atrás puede el trabajador solicitar horas extra en el modo de autorización previa.',
             ],
-            'overtime_default_compensation_type' => [
-                'label' => 'Compensación por defecto',
-                'hint' => 'Cómo se compensan las horas extra aprobadas cuando el pacto no dice otra cosa. La ley asume pago en remuneraciones.',
+            'overtime_counts_pre_shift_excess' => [
+                'label' => 'Contar la llegada anticipada como hora extra',
+                'hint' => 'El tiempo trabajado antes del inicio del turno suma a las horas extra calculadas. Desactivado por defecto: las horas de exceso requieren conocimiento del empleador. En ambos casos queda registrado.',
             ],
         ],
         'overtime_authorization_modes' => [
             'pre_authorization' => 'Autorización previa',
             'post_hoc' => 'Revisión posterior',
             'combined' => 'Combinado',
-        ],
-        'overtime_compensation_types' => [
-            'payment' => 'Pago en remuneraciones',
-            'rest_days' => 'Días de descanso',
         ],
         'flash' => [
             'updated' => 'Configuración guardada.',

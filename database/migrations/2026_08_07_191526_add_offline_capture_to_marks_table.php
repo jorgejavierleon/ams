@@ -43,16 +43,4 @@ return new class extends Migration
             $table->index(['organization_id', 'captured_offline', 'date_time']);
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('marks', function (Blueprint $table) {
-            $table->dropIndex(['organization_id', 'captured_offline', 'date_time']);
-            $table->dropUnique(['user_id', 'idempotency_key']);
-            $table->dropColumn(['device_datetime', 'synced_at', 'captured_offline', 'idempotency_key']);
-        });
-    }
 };

@@ -205,6 +205,23 @@ Invariants future work must respect:
 
 ---
 
+## Overtime calculation (OHC)
+
+`workdays` carries **two overtime numbers that mean different things**, and conflating them is the failure this design exists to prevent:
+
+- `extra_time` — the historical *worked span minus scheduled duration*, computed in the calculator's SQL. The Resolución 38 DT reports read it. **Do not change what it means.** Retiring it is a deliberate exercise that re-points those reports first.
+- `calculated_overtime` — the OHC of PRD §7.2, built in PHP from `pre_shift_excess` (`shift start − first mark`) and `post_shift_excess` (`last mark − shift end`), both positive-only and both stored on every calculated day.
+
+Invariants future work must respect:
+
+- **Both excesses are stored regardless of policy; only what feeds OHC is gated.** `settings.overtime_counts_pre_shift_excess` (default **off**, per art. 32 wanting the employer's knowledge behind excess hours) decides whether the pre-shift excess is added. Because the excesses are recorded either way, enabling it later is a configuration change, never a recalculation of history — and a recurring pre-shift excess stays visible as a probable shift-definition error rather than silent overtime.
+- **The policy is resolved through one seam.** `App\Services\Overtime\OvertimeExcessPolicyResolver::for($workday)` is the only thing that reads the setting; `ShiftExcess` takes the resulting `OvertimeExcessPolicy` and knows nothing about tenants. Moving the decision to the shift or to a single day (PRD §7.3's per-day override) changes the resolver and nothing in the arithmetic. The toggle is per tenant today by choice, not by structure.
+- **Null means "not computed", and it is not zero.** A day with no assigned shift, or with only one mark, stores `null` in all three columns — there is no basis to claim overtime and nothing is inferred. Anomaly detection needs to see that difference.
+- **Excesses are anchored to instants, not clock times, and to the second.** A shift whose `end_time` is at or before its `start_time` runs past midnight, so its end lands on the following day. Its excesses — and therefore its overtime — are attributed to the calendar day the shift **started**: a jornada is one indivisible unit, splitting it across two days would double-count the boundary and would judge each half against the wrong daily cap. No rounding happens in the engine (Resolución 38 art. 44); a report may round when it renders.
+- **Known gap:** the calculator joins marks by calendar date, so an overnight shift's exit mark, landing on the next day, is not yet paired to the workday that owns it — such a day reads as one mark and computes no OHC. Fixing the join moves `extra_time`, `worked_time` and `status` for those days, so it is its own task, not a side effect of another.
+
+---
+
 ## Documents
 
 Employment documents (`Document`) are drafted per employee, published, and later signed. Invariants:
@@ -223,7 +240,7 @@ The editor is Tiptap (`@tiptap/react`) — see the SSR note above. The "Insert v
 
 Per-organization configuration (notification toggles, document defaults) lives in a single `Setting` row per organization (`BelongsToOrganization`, one-per-org enforced by a unique `organization_id`). Invariants:
 
-- **Read through `App\Services\OrganizationSettings`, never query `Setting` directly.** `->current()` returns the org's row as a live model (creating it with the model's `$attributes` defaults on first access) for read+write; `->get($key, $default)` is the cached hot path for scalar reads. The cache stores a **plain attributes array, never the Eloquent model** — a serialized model round-trips to `__PHP_Incomplete_Class` in a real cache store, so caching the model directly 500s on the next request.
+- **Read through `App\Services\OrganizationSettings`, never query `Setting` directly.** `->current()` returns the org's row as a live model (creating it with the model's `$attributes` defaults on first access) for read+write; `->get($key, $default)` is the cached hot path for scalar reads. `organization_id` is **not fillable** — a settings row must never change tenant through mass assignment — so `current()` stamps it by hand on creation; the `BelongsToOrganization` creating hook only covers a request with an active tenant, and the calculation engine reads settings from the console where there is none. With no organization at all it returns an unsaved model rather than writing an orphan row. The cache stores a **plain attributes array, never the Eloquent model** — a serialized model round-trips to `__PHP_Incomplete_Class` in a real cache store, so caching the model directly 500s on the next request.
 - **Writes must go through Eloquent so the cache stays fresh.** `SettingObserver::saved` invalidates the cached array on every create/update. A raw `DB::table('settings')->update(...)` bypasses the observer and leaves stale reads — don't do it. The `SettingController@update` saves via `$setting->update()` for this reason.
 - **Route naming: `/organization-settings` (admin-only) is distinct from the starter-kit `/settings/*`**, which are the *personal* user pages (profile, security, appearance). Org settings sit in the `role:admin` group and appear under the sidebar "Settings" group; they deliberately do not reuse `/settings` to avoid clobbering the personal-settings redirect.
 - **Some toggles are stored but not yet consumed.** `leave_approval_notification` and `documents_require_ordered_signing` persist a preference that their respective features do not read yet; wiring them into the leave-approval mail and the document create-form default is a follow-up.

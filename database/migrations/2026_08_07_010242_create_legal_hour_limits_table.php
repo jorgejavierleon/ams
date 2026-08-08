@@ -47,11 +47,6 @@ return new class extends Migration
         DB::table('legal_hour_limits')->insert($this->baseline());
     }
 
-    public function down(): void
-    {
-        Schema::dropIfExists('legal_hour_limits');
-    }
-
     /**
      * The real timeline of the Chilean ordinary workweek, seeded here rather
      * than in a seeder because the application cannot resolve a limit for any

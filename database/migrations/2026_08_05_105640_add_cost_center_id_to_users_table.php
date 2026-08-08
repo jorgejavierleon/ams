@@ -21,11 +21,4 @@ return new class extends Migration
                 ->nullOnDelete();
         });
     }
-
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('cost_center_id');
-        });
-    }
 };

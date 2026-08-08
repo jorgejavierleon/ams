@@ -42,12 +42,4 @@ return new class extends Migration
             $table->index('checksum');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('marks');
-    }
 };

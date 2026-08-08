@@ -28,12 +28,4 @@ return new class extends Migration
             $table->unique(['organization_id', 'country', 'date']);
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('holidays');
-    }
 };

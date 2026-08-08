@@ -21,12 +21,4 @@ return new class extends Migration
             $table->string('address')->nullable()->after('phone');
         });
     }
-
-    public function down(): void
-    {
-        Schema::table('organizations', function (Blueprint $table) {
-            $table->dropUnique(['rut']);
-            $table->dropColumn(['rut', 'email', 'phone', 'address']);
-        });
-    }
 };

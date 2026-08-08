@@ -108,15 +108,4 @@ return new class extends Migration
             }
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('marks', function (Blueprint $table) {
-            $table->dropUnique(['organization_id', 'folio']);
-            $table->dropColumn('folio');
-        });
-    }
 };

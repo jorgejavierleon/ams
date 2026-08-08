@@ -28,10 +28,9 @@ type SettingsForm = {
     documents_signature_enabled: boolean;
     documents_require_ordered_signing: boolean;
     overtime_authorization_mode: string;
-    overtime_requires_pact: boolean;
     overtime_weekly_anomaly_threshold_hours: number;
     overtime_retroactive_request_days: number;
-    overtime_default_compensation_type: string;
+    overtime_counts_pre_shift_excess: boolean;
 };
 
 /** The keys whose control is a plain on/off switch. */
@@ -42,13 +41,11 @@ type ToggleKey = {
 type Props = {
     settings: SettingsForm;
     overtimeAuthorizationModeOptions: Option[];
-    overtimeCompensationTypeOptions: Option[];
 };
 
 export default function OrganizationSettings({
     settings,
     overtimeAuthorizationModeOptions,
-    overtimeCompensationTypeOptions,
 }: Props) {
     const { t } = useTranslations();
     const { data, setData, patch, processing, errors } = useForm<SettingsForm>({
@@ -71,6 +68,10 @@ export default function OrganizationSettings({
     const documentKeys: ToggleKey[] = [
         'documents_signature_enabled',
         'documents_require_ordered_signing',
+    ];
+
+    const overtimeToggleKeys: ToggleKey[] = [
+        'overtime_counts_pre_shift_excess',
     ];
 
     return (
@@ -167,43 +168,6 @@ export default function OrganizationSettings({
 
                         <FormField
                             label={t(
-                                'ui.organization_settings.fields.overtime_default_compensation_type.label',
-                            )}
-                            htmlFor="overtime_default_compensation_type"
-                            hint={t(
-                                'ui.organization_settings.fields.overtime_default_compensation_type.hint',
-                            )}
-                            error={errors.overtime_default_compensation_type}
-                        >
-                            <Select
-                                value={data.overtime_default_compensation_type}
-                                onValueChange={(value) =>
-                                    setData(
-                                        'overtime_default_compensation_type',
-                                        value,
-                                    )
-                                }
-                            >
-                                <SelectTrigger id="overtime_default_compensation_type">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {overtimeCompensationTypeOptions.map(
-                                        (option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ),
-                                    )}
-                                </SelectContent>
-                            </Select>
-                        </FormField>
-
-                        <FormField
-                            label={t(
                                 'ui.organization_settings.fields.overtime_weekly_anomaly_threshold_hours.label',
                             )}
                             htmlFor="overtime_weekly_anomaly_threshold_hours"
@@ -259,19 +223,20 @@ export default function OrganizationSettings({
                         </FormField>
                     </div>
 
-                    <SettingToggle
-                        id="overtime_requires_pact"
-                        label={t(
-                            'ui.organization_settings.fields.overtime_requires_pact.label',
-                        )}
-                        hint={t(
-                            'ui.organization_settings.fields.overtime_requires_pact.hint',
-                        )}
-                        checked={data.overtime_requires_pact}
-                        onCheckedChange={(value) =>
-                            setData('overtime_requires_pact', value)
-                        }
-                    />
+                    {overtimeToggleKeys.map((key) => (
+                        <SettingToggle
+                            key={key}
+                            id={key}
+                            label={t(
+                                `ui.organization_settings.fields.${key}.label`,
+                            )}
+                            hint={t(
+                                `ui.organization_settings.fields.${key}.hint`,
+                            )}
+                            checked={data[key]}
+                            onCheckedChange={(value) => setData(key, value)}
+                        />
+                    ))}
                 </Section>
 
                 <div className="flex justify-end">

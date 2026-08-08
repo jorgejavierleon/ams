@@ -34,9 +34,4 @@ return new class extends Migration
             $table->index(['workday_id', 'status']);
         });
     }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('mark_modifications');
-    }
 };

@@ -19,14 +19,4 @@ return new class extends Migration
             $table->unsignedSmallInteger('geofence_radius_meters')->nullable()->after('lng');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('premises', function (Blueprint $table) {
-            $table->dropColumn('geofence_radius_meters');
-        });
-    }
 };

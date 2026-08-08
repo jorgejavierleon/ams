@@ -194,11 +194,11 @@ OvertimeExportBatch
 ## 10. Per-company configuration
 
 - Mode: Pre-authorization / Post-hoc / Combined.
-- Written agreement requirement: Yes/No.
+- ~~Written agreement requirement: Yes/No.~~ **Not per company.** Art. 32 requires the pacto in writing, but its absence does not stop the hours being overtime — the DT reality criterion (§2) makes hours worked with the employer's knowledge payable regardless, so a switch making such a record unapprovable produces an unlawful outcome. A missing pacto is a flag demanding a written justification (§7.6, KOL-42), never a bar. See `backlog/decisions/decision-1`.
 - Early arrival counts towards OHC: Yes/No (default: No — see §7.2).
 - Weekly volume anomaly threshold (suggested default: 10h).
 - Lookback window for retroactive requests (Mode A).
-- Default compensation type: payroll payment vs. rest days (Art. 32, paragraph 4).
+- ~~Default compensation type: payroll payment vs. rest days (Art. 32, paragraph 4).~~ **Not per company.** Res. 38 art. 43 requires the system to *offer* both modes, then fixes the fallback as law — absent a written pacto, the hours are paid — so it is not an employer preference. The agreement is per worker (art. 45.3, art. 41 i), which puts the compensation type on the pacto (§5, KOL-47), never on the company.
 
 ---
 

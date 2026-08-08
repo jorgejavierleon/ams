@@ -15,14 +15,4 @@ return new class extends Migration
             $table->boolean('is_active')->default(true)->after('is_dt');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('is_active');
-        });
-    }
 };

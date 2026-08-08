@@ -12,6 +12,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Models\Workday;
 use App\Services\WorkdayCalculator;
+use App\Support\Folio;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -138,6 +139,11 @@ class WorkdaySeeder extends Seeder
         ]);
         $mark->organization_id = $employee->organization_id;
         $mark->checksum = hash('sha256', $employee->id.$type->value.$at->toIso8601String());
+        // `folio` is NOT NULL since KOL-35, and the observer that would have
+        // allocated one is muted here too. Go through the same allocator so
+        // seeded receipts are numbered per organization and per day like any
+        // other, rather than carrying a placeholder that looks real.
+        $mark->folio = Folio::allocate($employee->organization_id, $at);
         $mark->save();
     }
 

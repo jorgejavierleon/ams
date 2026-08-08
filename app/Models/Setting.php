@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\OvertimeAuthorizationMode;
-use App\Enums\OvertimeCompensationType;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Observers\SettingObserver;
 use App\Services\OrganizationSettings;
@@ -30,10 +29,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $documents_signature_enabled
  * @property bool $documents_require_ordered_signing
  * @property OvertimeAuthorizationMode $overtime_authorization_mode
- * @property bool $overtime_requires_pact
  * @property float $overtime_weekly_anomaly_threshold_hours
  * @property int $overtime_retroactive_request_days
- * @property OvertimeCompensationType $overtime_default_compensation_type
+ * @property bool $overtime_counts_pre_shift_excess
  */
 #[Fillable([
     'employee_missing_in_notification',
@@ -44,10 +42,9 @@ use Illuminate\Database\Eloquent\Model;
     'documents_signature_enabled',
     'documents_require_ordered_signing',
     'overtime_authorization_mode',
-    'overtime_requires_pact',
     'overtime_weekly_anomaly_threshold_hours',
     'overtime_retroactive_request_days',
-    'overtime_default_compensation_type',
+    'overtime_counts_pre_shift_excess',
 ])]
 #[ObservedBy(SettingObserver::class)]
 class Setting extends Model
@@ -71,10 +68,9 @@ class Setting extends Model
         'documents_signature_enabled' => false,
         'documents_require_ordered_signing' => false,
         'overtime_authorization_mode' => OvertimeAuthorizationMode::PostHoc->value,
-        'overtime_requires_pact' => false,
         'overtime_weekly_anomaly_threshold_hours' => 10,
         'overtime_retroactive_request_days' => 7,
-        'overtime_default_compensation_type' => OvertimeCompensationType::Payment->value,
+        'overtime_counts_pre_shift_excess' => false,
     ];
 
     protected function casts(): array
@@ -88,10 +84,9 @@ class Setting extends Model
             'documents_signature_enabled' => 'boolean',
             'documents_require_ordered_signing' => 'boolean',
             'overtime_authorization_mode' => OvertimeAuthorizationMode::class,
-            'overtime_requires_pact' => 'boolean',
             'overtime_weekly_anomaly_threshold_hours' => 'float',
             'overtime_retroactive_request_days' => 'integer',
-            'overtime_default_compensation_type' => OvertimeCompensationType::class,
+            'overtime_counts_pre_shift_excess' => 'boolean',
         ];
     }
 }
