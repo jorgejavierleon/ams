@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-06 02:52'
-updated_date: '2026-08-06 02:56'
+updated_date: '2026-08-08 15:27'
 labels:
   - overtime
   - backend
@@ -45,10 +45,10 @@ UI in Spanish, managed by users holding the right permission from KOL-43. The li
 - [ ] #2 Renewal produces a new agreement rather than extending an existing one, so the history of what was agreed and when is preserved
 - [ ] #3 An agreement nearing expiry raises an alert to the users responsible for it
 - [ ] #4 An overtime record links to the agreement covering its worked date, judged by the date worked and not the date approved
-- [ ] #5 When the tenant requires an agreement and none covers the date, the overtime record stays pending with that specific reason recorded, distinguishable from any other pending reason
-- [ ] #6 Agreements are listed, created, edited and revoked from the UI in Spanish by a user holding the right permission
-- [ ] #7 Agreements are organization-scoped and never visible across tenants
-- [ ] #8 Pest tests cover a valid agreement, one exceeding three months, a renewal, an expired agreement at approval time, approval blocked for a missing agreement when the tenant requires one, and tenant isolation
+- [ ] #5 Agreements are listed, created, edited and revoked from the UI in Spanish by a user holding the right permission
+- [ ] #6 Agreements are organization-scoped and never visible across tenants
+- [ ] #7 When no agreement covers the worked date, the record is flagged with that specific reason and can still be approved with a mandatory written justification; the absence of an agreement never blocks payment
+- [ ] #8 Pest tests cover a valid agreement, one exceeding three months, a renewal, an expired agreement at approval time, a missing agreement approved with a written justification and refused without one, and tenant isolation
 <!-- AC:END -->
 
 ## Definition of Done
@@ -58,3 +58,19 @@ UI in Spanish, managed by users holding the right permission from KOL-43. The li
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @jorge
+created: 2026-08-08 15:27
+---
+Amended, and the KOL-37 tenant switch it referenced is gone (removed in KOL-57).
+
+Art. 32 requires overtime to be agreed in writing, but the absence of that agreement does not make the hours cease to be overtime: the DT reality criterion — stated by the PRD itself at line 22 — holds that hours worked with the employer's knowledge are payable whether or not a written pacto exists. A rule making a record unapprovable without one therefore produces an unlawful outcome, not a conservative one.
+
+The correct shape is already in the source: Res. 38 art. 45.2 says of the excessive-shift alert that it 'no impedirá la carga de la jornada, sino que sólo constituirá un aviso para el empleador'. KOL-41 implements exactly that for legal caps. A missing pacto is a flag demanding a written justification, never a bar. See decision-1.
+
+Everything else in this task stands: the three-month ceiling, renewal creating a new record rather than extending, validity judged by the date worked, and the expiry alert. Caveat carried from decision-1: the Código del Trabajo text is not in the repo, so the art. 32 reading here must be confirmed with the labor advisor before this task is finalised.
+---
+<!-- COMMENTS:END -->

@@ -32,29 +32,4 @@ return new class extends Migration
             $table->string('timezone')->default('America/Santiago')->after('emergency_contact_phone');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('supervisor_id');
-            $table->dropColumn([
-                'is_admin',
-                'contract_start_date',
-                'contract_end_date',
-                'vacation_days',
-                'additional_vacation_days',
-                'administrative_days',
-                'has_additional_sundays',
-                'nationality',
-                'gender',
-                'phone',
-                'emergency_contact_name',
-                'emergency_contact_phone',
-                'timezone',
-            ]);
-        });
-    }
 };

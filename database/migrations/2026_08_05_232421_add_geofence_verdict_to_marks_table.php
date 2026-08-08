@@ -23,14 +23,4 @@ return new class extends Migration
             $table->decimal('accuracy_meters', 8, 2)->nullable()->after('geo_status');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('marks', function (Blueprint $table) {
-            $table->dropColumn(['geo_status', 'accuracy_meters']);
-        });
-    }
 };

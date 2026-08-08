@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\WorkdayStatus;
 use App\Models\Workday;
+use App\Services\Overtime\OvertimeExcessPolicyResolver;
+use App\Services\Overtime\ShiftExcess;
 use DateTimeInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
@@ -17,10 +19,18 @@ use Illuminate\Support\Facades\DB;
  * The heavy lifting is a single set-based SQL query so a whole organization's
  * day can be computed in one pass. Time math relies on MySQL's TIMEDIFF/TIME
  * functions.
+ *
+ * The two shift excesses and the calculated overtime (OHC) are the exception:
+ * they are computed in PHP by {@see ShiftExcess}, because clock-time arithmetic
+ * cannot express a shift that runs past midnight and because they have to be
+ * able to say "not computed" where SQL would hand back a zero.
  */
 class WorkdayCalculator
 {
-    public function __construct(private LegalHourLimits $legalHourLimits) {}
+    public function __construct(
+        private LegalHourLimits $legalHourLimits,
+        private OvertimeExcessPolicyResolver $excessPolicyResolver,
+    ) {}
 
     /**
      * Compute and insert the workdays for every employee with attendance or a
@@ -57,6 +67,7 @@ class WorkdayCalculator
                 'status' => $this->getStatus($workday),
                 'extra_time' => $workday->extra_time,
                 'missing_time' => $workday->missing_time,
+                ...$this->calculateShiftExcess($workday),
                 'created_at' => now(),
                 'updated_at' => now(),
             ])->all();
@@ -93,6 +104,7 @@ class WorkdayCalculator
                 'status' => $this->getStatus($row),
                 'extra_time' => $row->extra_time,
                 'missing_time' => $row->missing_time,
+                ...$this->calculateShiftExcess($row),
             ])
             ->first();
 
@@ -246,6 +258,38 @@ class WorkdayCalculator
         }
 
         return null;
+    }
+
+    /**
+     * The day's two shift excesses and the calculated overtime (OHC) they
+     * produce under the organization's policy (PRD §7.2).
+     *
+     * Both excesses are stored whatever the policy says, so enabling early
+     * arrival later changes only what future days count and never asks for a
+     * recalculation of history. All three are null together when the day gives
+     * no basis to claim overtime.
+     *
+     * @return array{pre_shift_excess: string|null, post_shift_excess: string|null, calculated_overtime: string|null}
+     */
+    protected function calculateShiftExcess(\stdClass $workday): array
+    {
+        $excess = ShiftExcess::forWorkdayRow($workday);
+
+        if ($excess === null) {
+            return [
+                'pre_shift_excess' => null,
+                'post_shift_excess' => null,
+                'calculated_overtime' => null,
+            ];
+        }
+
+        return [
+            'pre_shift_excess' => $excess->preShiftExcess(),
+            'post_shift_excess' => $excess->postShiftExcess(),
+            'calculated_overtime' => $excess->calculatedOvertime(
+                $this->excessPolicyResolver->for($workday),
+            ),
+        ];
     }
 
     /**

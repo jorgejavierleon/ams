@@ -88,11 +88,6 @@ return new class extends Migration
         }
     }
 
-    public function down(): void
-    {
-        // Irreversible: see the class docblock.
-    }
-
     /**
      * Insert a cost centre, keeping the code only when it is still free within
      * the organization — two companies may legitimately have carried the same

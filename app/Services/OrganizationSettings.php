@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\OvertimeAuthorizationMode;
-use App\Enums\OvertimeCompensationType;
 use App\Models\Setting;
 use App\Observers\SettingObserver;
 use Illuminate\Support\Facades\Cache;
@@ -33,7 +32,26 @@ class OrganizationSettings
     {
         $organizationId ??= Setting::currentOrganizationId();
 
-        return Setting::query()->firstOrCreate(['organization_id' => $organizationId]);
+        // Nothing to attach a row to. The unsaved model still carries the schema
+        // defaults, so reads keep working and no orphan row is written.
+        if ($organizationId === null) {
+            return new Setting;
+        }
+
+        $setting = Setting::query()->firstOrNew(['organization_id' => $organizationId]);
+
+        if (! $setting->exists) {
+            // `organization_id` is deliberately absent from the model's fillable
+            // list, so mass assignment cannot move a settings row between
+            // tenants — which also means it has to be stamped by hand here. The
+            // creating hook only covers the case of an active tenant, and the
+            // calculation engine reads these settings from the console, where
+            // there is none.
+            $setting->organization_id = $organizationId;
+            $setting->save();
+        }
+
+        return $setting;
     }
 
     /**
@@ -68,14 +86,15 @@ class OrganizationSettings
     }
 
     /**
-     * How approved overtime is compensated by default: payroll payment or
-     * additional rest days. Payment when unset, per Resolución 38 art. 43.
+     * Whether an early arrival contributes to the calculated overtime (PRD
+     * §7.2). Read per workday by the calculation engine, so it comes off the
+     * cached attributes array rather than the database. Off unless the tenant
+     * has said otherwise — art. 32 wants the employer's knowledge behind excess
+     * hours, and an unrequested early arrival carries none.
      */
-    public function overtimeDefaultCompensationType(?int $organizationId = null): OvertimeCompensationType
+    public function overtimeCountsPreShiftExcess(?int $organizationId = null): bool
     {
-        $value = $this->get('overtime_default_compensation_type', organizationId: $organizationId);
-
-        return OvertimeCompensationType::tryFrom((string) $value) ?? OvertimeCompensationType::Payment;
+        return (bool) $this->get('overtime_counts_pre_shift_excess', false, $organizationId);
     }
 
     /**

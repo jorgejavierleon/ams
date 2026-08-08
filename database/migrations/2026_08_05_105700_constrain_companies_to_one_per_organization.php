@@ -37,13 +37,4 @@ return new class extends Migration
             $table->unique('live_organization_id');
         });
     }
-
-    public function down(): void
-    {
-        Schema::table('companies', function (Blueprint $table) {
-            $table->dropUnique(['live_organization_id']);
-            $table->dropColumn('live_organization_id');
-            $table->string('code')->nullable()->after('social_reason');
-        });
-    }
 };

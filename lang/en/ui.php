@@ -351,10 +351,6 @@ return [
                 'label' => 'Authorization mode',
                 'hint' => 'How overtime is authorized: the employee requests it beforehand, a supervisor reviews the shift excess afterwards, or both.',
             ],
-            'overtime_requires_pact' => [
-                'label' => 'Require a written pact',
-                'hint' => 'An overtime record can only be approved when a valid written pact backs it.',
-            ],
             'overtime_weekly_anomaly_threshold_hours' => [
                 'label' => 'Weekly anomaly threshold (hours)',
                 'hint' => 'Above this many overtime hours in a week the record is flagged for review. It never blocks the record.',
@@ -363,19 +359,15 @@ return [
                 'label' => 'Retroactive request window (days)',
                 'hint' => 'How many days back an employee may request overtime for under pre-authorization.',
             ],
-            'overtime_default_compensation_type' => [
-                'label' => 'Default compensation',
-                'hint' => 'How approved overtime is compensated when the pact says nothing else. The law assumes payment in payroll.',
+            'overtime_counts_pre_shift_excess' => [
+                'label' => 'Count early arrival as overtime',
+                'hint' => 'Time worked before the shift starts feeds the calculated overtime. Off by default: excess hours need the employer behind them. It is always recorded either way.',
             ],
         ],
         'overtime_authorization_modes' => [
             'pre_authorization' => 'Pre-authorization',
             'post_hoc' => 'Post-hoc review',
             'combined' => 'Combined',
-        ],
-        'overtime_compensation_types' => [
-            'payment' => 'Payroll payment',
-            'rest_days' => 'Rest days',
         ],
         'flash' => [
             'updated' => 'Settings saved.',

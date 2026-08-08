@@ -26,9 +26,4 @@ return new class extends Migration
             $table->unique(['organization_id', 'code']);
         });
     }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('cost_centers');
-    }
 };

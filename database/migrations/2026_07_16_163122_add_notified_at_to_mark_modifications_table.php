@@ -18,11 +18,4 @@ return new class extends Migration
             $table->timestamp('notified_at')->nullable()->after('reviewed_at');
         });
     }
-
-    public function down(): void
-    {
-        Schema::table('mark_modifications', function (Blueprint $table) {
-            $table->dropColumn('notified_at');
-        });
-    }
 };

@@ -29,12 +29,4 @@ return new class extends Migration
             $table->unique(['organization_id', 'folio_date']);
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('mark_folios');
-    }
 };

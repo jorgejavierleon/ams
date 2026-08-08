@@ -6,6 +6,7 @@ use App\Enums\MarkModificationStatus;
 use App\Enums\WorkdayStatus;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Services\LegalHourLimitDrift;
+use App\Services\Overtime\ShiftExcess;
 use App\Services\WorkdayCalculator;
 use Carbon\CarbonInterface;
 use Database\Factories\WorkdayFactory;
@@ -20,6 +21,13 @@ use Illuminate\Support\Carbon;
  * One computed day of attendance for an employee: the daily roll-up of that
  * day's marks, scheduled shift and approved leave into a status and the worked,
  * extra and missing time. Rows are produced by {@see WorkdayCalculator}.
+ *
+ * Two overtime figures live side by side here and mean different things.
+ * `extra_time` is the historical worked-span minus scheduled-duration, kept
+ * untouched because the Resolución 38 DT reports read it. `calculated_overtime`
+ * is the OHC of PRD §7.2, built from `pre_shift_excess` and `post_shift_excess`
+ * by {@see ShiftExcess}; it is null, not zero, on a day with no shift or a
+ * single mark.
  *
  * @property int $id
  * @property Carbon $date
@@ -41,6 +49,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $worked_time
  * @property string|null $extra_time
  * @property string|null $missing_time
+ * @property string|null $pre_shift_excess
+ * @property string|null $post_shift_excess
+ * @property string|null $calculated_overtime
  * @property WorkdayStatus|null $status
  */
 class Workday extends Model

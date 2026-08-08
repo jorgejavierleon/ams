@@ -19,11 +19,4 @@ return new class extends Migration
             $table->string('contract_type')->nullable()->after('contract_end_date');
         });
     }
-
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('contract_type');
-        });
-    }
 };

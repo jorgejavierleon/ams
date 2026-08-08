@@ -50,11 +50,4 @@ return new class extends Migration
                 ->update(['legal_hour_limit_id' => $version->id]);
         }
     }
-
-    public function down(): void
-    {
-        Schema::table('workdays', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('legal_hour_limit_id');
-        });
-    }
 };

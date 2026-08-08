@@ -24,18 +24,4 @@ return new class extends Migration
             $table->string('rejection_reason')->nullable()->after('signed_content_hash');
         });
     }
-
-    public function down(): void
-    {
-        Schema::table('document_signatures', function (Blueprint $table) {
-            $table->dropColumn([
-                'verification_code',
-                'verification_code_expires_at',
-                'signed_ip',
-                'signed_user_agent',
-                'signed_content_hash',
-                'rejection_reason',
-            ]);
-        });
-    }
 };

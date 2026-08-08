@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OvertimeAuthorizationMode;
-use App\Enums\OvertimeCompensationType;
 use App\Services\OrganizationSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,7 +30,7 @@ class SettingController extends Controller
         'leave_approval_notification',
         'documents_signature_enabled',
         'documents_require_ordered_signing',
-        'overtime_requires_pact',
+        'overtime_counts_pre_shift_excess',
     ];
 
     /**
@@ -59,10 +58,8 @@ class SettingController extends Controller
                 'overtime_authorization_mode' => $setting->overtime_authorization_mode->value,
                 'overtime_weekly_anomaly_threshold_hours' => (float) $setting->overtime_weekly_anomaly_threshold_hours,
                 'overtime_retroactive_request_days' => (int) $setting->overtime_retroactive_request_days,
-                'overtime_default_compensation_type' => $setting->overtime_default_compensation_type->value,
             ],
             'overtimeAuthorizationModeOptions' => OvertimeAuthorizationMode::options(),
-            'overtimeCompensationTypeOptions' => OvertimeCompensationType::options(),
         ]);
     }
 
@@ -76,7 +73,6 @@ class SettingController extends Controller
                 ->all(),
             ...self::VALUE_RULES,
             'overtime_authorization_mode' => ['required', Rule::enum(OvertimeAuthorizationMode::class)],
-            'overtime_default_compensation_type' => ['required', Rule::enum(OvertimeCompensationType::class)],
         ]);
 
         // Update through Eloquent so SettingObserver fires and the cache clears.

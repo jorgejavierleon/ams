@@ -1,11 +1,10 @@
 ---
 id: KOL-46
-title: >-
-  Derive the final payable overtime figure as MIN of requested, authorised and
-  calculated
+title: Derive the final payable overtime figure as MIN of authorised and calculated
 status: To Do
 assignee: []
 created_date: '2026-08-06 02:53'
+updated_date: '2026-08-08 15:27'
 labels:
   - overtime
   - backend
@@ -42,13 +41,14 @@ Precision stays at the second throughout, with no rounding at any intermediate s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 When requested, authorised and calculated hours all exist, the final figure is the minimum of the three
-- [ ] #2 A missing input is excluded from the comparison rather than treated as zero, so a tenant with no request flow is not floored to nothing
-- [ ] #3 Under pure post-hoc mode with no request, the figure is the calculated value capped by legal-cap validation and the record remains pending until a human confirms it
-- [ ] #4 Recomputation is deterministic and can never silently raise an already-approved figure; a calculated value that grows after approval marks the record as needing re-review instead
-- [ ] #5 Hours falling outside the final figure remain queryable as unauthorised and are never merged into a payable total
-- [ ] #6 All arithmetic is to the second with no intermediate rounding
-- [ ] #7 Pest tests cover all three inputs present, each input missing in turn, requested exceeding worked, worked exceeding authorised, the pure post-hoc fallback, and a post-approval recalculation that increases the calculated value
+- [ ] #1 When authorised and calculated hours both exist, the final payable figure is the lesser of the two
+- [ ] #2 Requested hours are recorded and reportable but never cap the payable figure: a day authorised for more than was requested, and worked in full, pays the authorised amount
+- [ ] #3 A missing input is excluded from the comparison rather than treated as zero, so a tenant with no request flow is not floored to nothing
+- [ ] #4 Under pure post-hoc mode with no request, the figure is the calculated value capped by legal-cap validation and the record remains pending until a human confirms it
+- [ ] #5 Recomputation is deterministic and can never silently raise an already-approved figure; a calculated value that grows after approval marks the record as needing re-review instead
+- [ ] #6 Hours falling outside the final figure remain queryable as unauthorised and are never merged into a payable total
+- [ ] #7 All arithmetic is to the second with no intermediate rounding
+- [ ] #8 Pest tests cover authorised exceeding worked, worked exceeding authorised, authorised exceeding requested with the full amount worked, each input missing in turn, the pure post-hoc fallback, and a post-approval recalculation that increases the calculated value
 <!-- AC:END -->
 
 ## Definition of Done
@@ -58,3 +58,21 @@ Precision stays at the second throughout, with no rounding at any intermediate s
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @jorge
+created: 2026-08-08 15:27
+---
+Amended: the payable figure is MIN(OHA, OHC), not MIN(OHR, OHA, OHC).
+
+The three-term rule inherited from Talana fails a real case: the worker requests 1h, the supervisor authorises 3h, the worker works 3h. MIN pays 1h, leaving two hours unpaid that were both explicitly authorised by the employer and actually worked — against art. 32 and the DT reality criterion. See decision-1.
+
+Note that this task's own justification never needed the third term: 'requested 10 but worked 8, pay 8' is OHC capping, and 'worked 10 but authorised 8, pay 8' is OHA capping. OHR only ever binds when it is below both others, which is precisely the underpayment case.
+
+The alternative fix — forbidding a supervisor from authorising more than was requested — was rejected because it recreates the same trap one step earlier: the supervisor who needs 3h from someone who asked for 1h could not authorise them, and the extra hours would be unpayable again.
+
+OHR stays on the record as evidence and traceability (who asked for what, and when, per KOL-11 and KOL-51) and as the Mode A gate for whether there is anything to authorise at all. It leaves the arithmetic.
+---
+<!-- COMMENTS:END -->

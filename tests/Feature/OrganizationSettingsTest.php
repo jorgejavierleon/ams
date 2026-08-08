@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\OvertimeAuthorizationMode;
-use App\Enums\OvertimeCompensationType;
 use App\Models\Organization;
 use App\Models\Setting;
 use App\Models\User;
@@ -9,6 +8,7 @@ use App\Services\OrganizationSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
@@ -50,10 +50,9 @@ function settingsPayload(array $overrides = []): array
         'documents_signature_enabled' => false,
         'documents_require_ordered_signing' => false,
         'overtime_authorization_mode' => OvertimeAuthorizationMode::PostHoc->value,
-        'overtime_requires_pact' => false,
         'overtime_weekly_anomaly_threshold_hours' => 10,
         'overtime_retroactive_request_days' => 7,
-        'overtime_default_compensation_type' => OvertimeCompensationType::Payment->value,
+        'overtime_counts_pre_shift_excess' => false,
         ...$overrides,
     ];
 }
@@ -190,21 +189,16 @@ test('a brand-new organization gets the legal overtime defaults', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('settings.overtime_authorization_mode', OvertimeAuthorizationMode::PostHoc->value)
-            ->where('settings.overtime_requires_pact', false)
             // JSON has no float/int distinction, so compare numerically.
             ->where('settings.overtime_weekly_anomaly_threshold_hours', fn ($hours) => (float) $hours === 10.0)
             ->where('settings.overtime_retroactive_request_days', 7)
-            // Resolución 38 art. 43: absent a written agreement, overtime is paid.
-            ->where('settings.overtime_default_compensation_type', OvertimeCompensationType::Payment->value)
         );
 
     $setting = Setting::query()->where('organization_id', $admin->organization_id)->firstOrFail();
 
     expect($setting->overtime_authorization_mode)->toBe(OvertimeAuthorizationMode::PostHoc)
-        ->and($setting->overtime_requires_pact)->toBeFalse()
         ->and($setting->overtime_weekly_anomaly_threshold_hours)->toBe(10.0)
-        ->and($setting->overtime_retroactive_request_days)->toBe(7)
-        ->and($setting->overtime_default_compensation_type)->toBe(OvertimeCompensationType::Payment);
+        ->and($setting->overtime_retroactive_request_days)->toBe(7);
 });
 
 test('the defaults are readable through the settings service without a query per read', function () {
@@ -218,10 +212,8 @@ test('the defaults are readable through the settings service without a query per
     DB::enableQueryLog();
 
     expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::PostHoc)
-        ->and($settings->overtimeDefaultCompensationType())->toBe(OvertimeCompensationType::Payment)
         ->and($settings->get('overtime_weekly_anomaly_threshold_hours'))->toEqual(10.0)
         ->and($settings->get('overtime_retroactive_request_days'))->toEqual(7)
-        ->and($settings->get('overtime_requires_pact'))->toBeFalse()
         ->and(DB::getQueryLog())->toBeEmpty();
 
     DB::disableQueryLog();
@@ -253,36 +245,29 @@ test('the whole overtime policy persists and is read back typed', function () {
 
     $this->patch(route('organization-settings.update'), settingsPayload([
         'overtime_authorization_mode' => OvertimeAuthorizationMode::Combined->value,
-        'overtime_requires_pact' => true,
         'overtime_weekly_anomaly_threshold_hours' => 14.5,
         'overtime_retroactive_request_days' => 30,
-        'overtime_default_compensation_type' => OvertimeCompensationType::RestDays->value,
     ]))->assertRedirect();
 
     $setting = Setting::query()->where('organization_id', $admin->organization_id)->firstOrFail();
 
     expect($setting->overtime_authorization_mode)->toBe(OvertimeAuthorizationMode::Combined)
-        ->and($setting->overtime_requires_pact)->toBeTrue()
         ->and($setting->overtime_weekly_anomaly_threshold_hours)->toBe(14.5)
         ->and($setting->overtime_retroactive_request_days)->toBe(30)
-        ->and($setting->overtime_default_compensation_type)->toBe(OvertimeCompensationType::RestDays)
-        ->and($settings->overtimeDefaultCompensationType())->toBe(OvertimeCompensationType::RestDays)
         ->and($settings->get('overtime_weekly_anomaly_threshold_hours'))->toEqual(14.5);
 });
 
-test('an unknown authorization mode or compensation type is rejected', function () {
+test('an unknown authorization mode or out-of-range value is rejected', function () {
     $admin = settingsAdmin();
 
     $this->actingAs($admin)
         ->patch(route('organization-settings.update'), settingsPayload([
             'overtime_authorization_mode' => 'whenever',
-            'overtime_default_compensation_type' => 'bitcoin',
             'overtime_weekly_anomaly_threshold_hours' => -1,
             'overtime_retroactive_request_days' => 'soon',
         ]))
         ->assertSessionHasErrors([
             'overtime_authorization_mode',
-            'overtime_default_compensation_type',
             'overtime_weekly_anomaly_threshold_hours',
             'overtime_retroactive_request_days',
         ]);
@@ -295,10 +280,8 @@ test('every overtime field and option has a Spanish label', function () {
         'ui.organization_settings.sections.overtime',
         ...collect([
             'overtime_authorization_mode',
-            'overtime_requires_pact',
             'overtime_weekly_anomaly_threshold_hours',
             'overtime_retroactive_request_days',
-            'overtime_default_compensation_type',
         ])->flatMap(fn (string $field): array => [
             "ui.organization_settings.fields.{$field}.label",
             "ui.organization_settings.fields.{$field}.hint",
@@ -312,9 +295,7 @@ test('every overtime field and option has a Spanish label', function () {
 
     // The enum labels the selects render come from the same catalogue.
     expect(collect(OvertimeAuthorizationMode::options())->pluck('label')->all())
-        ->toBe(['Autorización previa', 'Revisión posterior', 'Combinado'])
-        ->and(collect(OvertimeCompensationType::options())->pluck('label')->all())
-        ->toBe(['Pago en remuneraciones', 'Días de descanso']);
+        ->toBe(['Autorización previa', 'Revisión posterior', 'Combinado']);
 });
 
 test('the overtime policy is organization-scoped in both directions', function () {
@@ -324,19 +305,19 @@ test('the overtime policy is organization-scoped in both directions', function (
     $settingB = Setting::factory()->create([
         'organization_id' => $orgB->id,
         'overtime_authorization_mode' => OvertimeAuthorizationMode::PreAuthorization,
-        'overtime_requires_pact' => true,
+        'overtime_retroactive_request_days' => 21,
     ]);
 
     $settings = app(OrganizationSettings::class);
 
     $this->actingAs($adminA)->patch(route('organization-settings.update'), settingsPayload([
         'overtime_authorization_mode' => OvertimeAuthorizationMode::Combined->value,
-        'overtime_requires_pact' => false,
+        'overtime_retroactive_request_days' => 5,
     ]))->assertRedirect();
 
     // B's policy survived A's write untouched.
     expect($settingB->refresh()->overtime_authorization_mode)->toBe(OvertimeAuthorizationMode::PreAuthorization)
-        ->and($settingB->overtime_requires_pact)->toBeTrue();
+        ->and($settingB->overtime_retroactive_request_days)->toBe(21);
 
     // Each tenant reads its own policy and never the other's — and B's row is
     // not even visible to a query made while A is the active tenant.
@@ -371,4 +352,135 @@ test('a write invalidates only the acting organization cache', function () {
 
     expect(Cache::has('org_settings:'.$adminA->organization_id))->toBeFalse()
         ->and(Cache::has('org_settings:'.$orgB->id))->toBeTrue();
+});
+
+// --- Pre-shift excess policy (KOL-38) ---
+
+test('a brand-new organization does not count early arrival as overtime', function () {
+    // Art. 32 wants the employer's knowledge or authorisation behind excess
+    // hours, so the safe default is the one that cannot turn an employee's own
+    // decision to arrive early into overtime.
+    $admin = settingsAdmin();
+
+    $this->actingAs($admin)
+        ->get(route('organization-settings.edit'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('settings.overtime_counts_pre_shift_excess', false)
+        );
+
+    expect(app(OrganizationSettings::class)->overtimeCountsPreShiftExcess($admin->organization_id))
+        ->toBeFalse();
+});
+
+test('an admin can turn on counting early arrival and the calculation engine reads it back', function () {
+    $admin = settingsAdmin();
+    $this->actingAs($admin);
+    $settings = app(OrganizationSettings::class);
+
+    // Warm the cache with the default so the update has something to invalidate.
+    expect($settings->overtimeCountsPreShiftExcess())->toBeFalse();
+
+    $this->patch(route('organization-settings.update'), settingsPayload([
+        'overtime_counts_pre_shift_excess' => true,
+    ]))->assertRedirect();
+
+    expect($settings->overtimeCountsPreShiftExcess())->toBeTrue()
+        ->and(Setting::query()->where('organization_id', $admin->organization_id)->firstOrFail()
+            ->overtime_counts_pre_shift_excess)->toBeTrue();
+});
+
+test('the pre-shift excess policy is read without a query per workday', function () {
+    $admin = settingsAdmin();
+    $this->actingAs($admin);
+    $settings = app(OrganizationSettings::class);
+
+    // First read creates the row and warms the cache; a day's calculation pass
+    // then asks as often as it likes without touching the database.
+    expect($settings->overtimeCountsPreShiftExcess())->toBeFalse();
+
+    DB::enableQueryLog();
+
+    expect($settings->overtimeCountsPreShiftExcess())->toBeFalse()
+        ->and($settings->overtimeCountsPreShiftExcess())->toBeFalse()
+        ->and(DB::getQueryLog())->toBeEmpty();
+
+    DB::disableQueryLog();
+});
+
+test('one organization enabling early arrival leaves the others on the default', function () {
+    $adminA = settingsAdmin();
+    $orgB = Organization::factory()->create();
+
+    $this->actingAs($adminA)->patch(route('organization-settings.update'), settingsPayload([
+        'overtime_counts_pre_shift_excess' => true,
+    ]))->assertRedirect();
+
+    $settings = app(OrganizationSettings::class);
+
+    expect($settings->overtimeCountsPreShiftExcess($adminA->organization_id))->toBeTrue()
+        ->and($settings->overtimeCountsPreShiftExcess($orgB->id))->toBeFalse();
+});
+
+test('an employee cannot change the pre-shift excess policy', function () {
+    $employee = User::factory()->create();
+    $employee->assignRole('employee');
+
+    $this->actingAs($employee)
+        ->patch(route('organization-settings.update'), settingsPayload([
+            'overtime_counts_pre_shift_excess' => true,
+        ]))
+        ->assertForbidden();
+});
+
+test('a non-boolean pre-shift excess policy is rejected', function () {
+    $admin = settingsAdmin();
+
+    $this->actingAs($admin)
+        ->patch(route('organization-settings.update'), settingsPayload([
+            'overtime_counts_pre_shift_excess' => 'sometimes',
+        ]))
+        ->assertSessionHasErrors('overtime_counts_pre_shift_excess');
+});
+
+// --- No tenant-wide compensation default (KOL-56) ---
+
+test('the organization carries no default overtime compensation type', function () {
+    // Resolución 38 art. 43 requires the system to *offer* both compensation
+    // modes, then fixes the fallback as law: absent a written pacto the hours
+    // are paid. That is not an employer preference, and the pacto is per worker
+    // (art. 45.3, art. 41 i), so there is no organization-level answer to store.
+    // KOL-47 puts the choice on the agreement, where it belongs.
+    $admin = settingsAdmin();
+
+    expect(Schema::hasColumn('settings', 'overtime_default_compensation_type'))->toBeFalse();
+
+    $this->actingAs($admin)
+        ->get(route('organization-settings.edit'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->missing('settings.overtime_default_compensation_type')
+            ->missing('overtimeCompensationTypeOptions')
+        );
+});
+
+// --- No tenant switch making a pacto mandatory (KOL-57) ---
+
+test('the organization carries no pacto requirement switch', function () {
+    // Art. 32 requires overtime to be agreed in writing, but the absence of the
+    // agreement does not stop the hours being overtime: the DT reality criterion
+    // makes hours worked with the employer's knowledge payable regardless. A
+    // switch that made such a record unapprovable would produce an unlawful
+    // outcome, so a missing pacto is a flag demanding a written justification
+    // (KOL-42), never a bar. See decision-1.
+    $admin = settingsAdmin();
+
+    expect(Schema::hasColumn('settings', 'overtime_requires_pact'))->toBeFalse();
+
+    $this->actingAs($admin)
+        ->get(route('organization-settings.edit'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->missing('settings.overtime_requires_pact')
+        );
 });

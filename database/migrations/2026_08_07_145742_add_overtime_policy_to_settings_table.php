@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\OvertimeAuthorizationMode;
-use App\Enums\OvertimeCompensationType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,10 +12,11 @@ return new class extends Migration
      * reads these values, so they live on the existing per-organization
      * settings row rather than in a table of their own.
      *
-     * Defaults describe the least surprising organization: it does not run a
-     * request flow yet, has signed no pactos, and pays its overtime — the
-     * assumption Resolución 38 art. 43 makes when no written agreement says
-     * otherwise.
+     * Only genuine tenant policy lives here. Two keys that shipped with this
+     * migration were removed again once their sources were read properly: how
+     * overtime is compensated (KOL-56) and whether a pacto is mandatory to
+     * approve it (KOL-57) are both settled by law, not by the employer. See
+     * decision-1 — no configuration may make a worked hour unpayable.
      */
     public function up(): void
     {
@@ -24,9 +24,6 @@ return new class extends Migration
             // Pre-authorisation, post-hoc, or both combined (PRD §7.1).
             $table->string('overtime_authorization_mode')
                 ->default(OvertimeAuthorizationMode::PostHoc->value);
-
-            // Whether a record needs a valid pacto behind it to be approvable.
-            $table->boolean('overtime_requires_pact')->default(false);
 
             // Weekly volume above which the week is flagged as anomalous
             // (PRD §7.4). Per-tenant because a legitimate spike in a critical
@@ -37,22 +34,10 @@ return new class extends Migration
             // pre-authorisation flow.
             $table->unsignedSmallInteger('overtime_retroactive_request_days')->default(7);
 
-            // Payment in payroll versus additional rest days (art. 32 inc. 4).
-            $table->string('overtime_default_compensation_type')
-                ->default(OvertimeCompensationType::Payment->value);
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::table('settings', function (Blueprint $table) {
-            $table->dropColumn([
-                'overtime_authorization_mode',
-                'overtime_requires_pact',
-                'overtime_weekly_anomaly_threshold_hours',
-                'overtime_retroactive_request_days',
-                'overtime_default_compensation_type',
-            ]);
+            // How overtime is compensated is deliberately absent: Resolución 38
+            // art. 43 fixes payment as the fallback whenever no written pacto
+            // says otherwise, and the pacto is per worker, so there is no
+            // organization-level answer to store. See KOL-56 and KOL-47.
         });
     }
 };

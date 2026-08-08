@@ -20,14 +20,4 @@ return new class extends Migration
             $table->boolean('captured_offline')->default(false)->after('device_datetime');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('mark_modifications', function (Blueprint $table) {
-            $table->dropColumn(['device_datetime', 'captured_offline']);
-        });
-    }
 };
