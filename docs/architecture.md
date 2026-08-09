@@ -234,6 +234,22 @@ Invariants future work must respect:
 
 ---
 
+## Overtime authorisation (OHA)
+
+`overtime_authorizations` (`App\Models\OvertimeAuthorization`, PRD §8) is **the only row from which a payable overtime hour can be born**. `workdays` says what an employee's marks imply; this table says what the employer owes. The engine writes the first and never the second; payroll reads the second and never the first.
+
+- **Never derive payable hours from attendance at read time.** A report, an export or a summary that recomputes overtime from marks has just paid hours nobody approved. Ask `Workday::authorizedOvertime()` / `unauthorizedOvertime()`, or read the record directly. New exports read `OvertimeAuthorization::approved()`; they do not join their way to `calculated_overtime`.
+- **The three figures stay apart.** `calculated_hours` (OHC, snapshotted when the record opens), `requested_hours` (OHR, Mode A only), `authorized_hours` (OHA) and the derived `final_hours` are four columns, not one. Collapsing them makes the payable figure unexplainable — "why two hours and not three" has to be answerable off a single row. All are nullable, and **null is "this tenant has no such figure", not zero**: `Duration::min()` skips the absent ones rather than flooring the result to nothing.
+- **There is no lapsed status, and there must never be one.** `App\Enums\OvertimeAuthorizationStatus` has exactly `pending | approved | objected` (PRD §7.5: overtime is *never* auto-approved by timeout). This is the deliberate opposite of `MarkModificationStatus`, where silence *does* consolidate after the art. 40 d window: there, silence confirms a correction the employer already made; here it would create a payment obligation nobody agreed to. An ungoverned record simply stays pending and is never exported.
+- **The guarantee is on the write path, not at the call sites.** `OvertimeAuthorization::booted()` refuses to save any row in a status that `requiresReviewer()` without both `reviewed_by` and `reviewed_at` (`OvertimeDecisionRefused::withoutAReviewer()`). A cron, a backfill or a future queue job hits it exactly as a controller does, so no code path can age a record into being payable. Do not add a write path that sets `status` without a reviewer.
+- **`approve()` and `object()` are the only ways out of pending**, and both take a `User` as their first argument — there is no signature that omits the human. Both also refuse a reviewer from another tenant (`OvertimeDecisionRefused::byAnotherTenant()`), covering the write the way `OrganizationScope` covers the read.
+- **Unauthorised hours are kept, not dropped.** `unauthorizedOvertime()` is the calculated figure less the payable one, so an objected day and a partially authorised day both stay reportable (KOL-13, KOL-24) without ever merging into a payable total.
+- **`final_hours` is the lesser of authorised and calculated**, so an approver cannot grant hours nobody worked. The requested figure is recorded but deliberately outside the comparison — a day authorised for more than was asked for, and worked in full, pays the authorised amount. KOL-46 owns the remainder of the rule (legal-cap ceiling, determinism after recalculation).
+- **`overtime_pact_id` is intentionally unconstrained** until KOL-42 creates the pactos table, which adds the foreign key. It stays nullable afterwards: a missing pacto demands a written justification, never a bar to payment (`backlog/decisions/decision-1`).
+- **Hour arithmetic goes through `App\Support\Duration`**, not through the `HH:MM:SS` strings. Comparing those lexically gets `'10:00:00'` vs `'9:00:00'` wrong, and Resolución 38 art. 44 leaves no room for intermediate rounding. `Duration` holds whole seconds, clamps at zero, and preserves null through `tryFrom()`.
+
+---
+
 ## Documents
 
 Employment documents (`Document`) are drafted per employee, published, and later signed. Invariants:
