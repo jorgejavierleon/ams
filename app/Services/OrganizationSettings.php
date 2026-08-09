@@ -98,6 +98,17 @@ class OrganizationSettings
     }
 
     /**
+     * The weekly overtime volume above which a week is flagged as anomalous
+     * (PRD §7.4), read off the cached attributes array so the anomaly check can
+     * be made per workday without a query. Per-tenant because a legitimate
+     * spike in a critical shift is not the same signal as in an office.
+     */
+    public function overtimeWeeklyAnomalyThresholdHours(?int $organizationId = null): float
+    {
+        return (float) $this->get('overtime_weekly_anomaly_threshold_hours', 10.0, $organizationId);
+    }
+
+    /**
      * Drop the cached settings for an organization so the next read reloads it.
      * Called by the observer on every change.
      */

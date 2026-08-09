@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AnomalyFlagReason;
 use App\Enums\MarkModificationStatus;
 use App\Enums\OvertimeCalculationState;
 use App\Enums\WorkdayStatus;
@@ -68,6 +69,7 @@ use Illuminate\Support\Collection;
  * @property Carbon|null $overtime_decided_at
  * @property string|null $overtime_decided_value
  * @property WorkdayStatus|null $status
+ * @property array<int, string>|null $anomaly_flags
  */
 class Workday extends Model
 {
@@ -89,6 +91,7 @@ class Workday extends Model
             'overtime_state' => OvertimeCalculationState::class,
             'overtime_calculated_at' => 'datetime',
             'overtime_decided_at' => 'datetime',
+            'anomaly_flags' => 'array',
         ];
     }
 
@@ -246,6 +249,31 @@ class Workday extends Model
     {
         return $this->overtime_decided_at !== null
             && $this->overtime_decided_value !== $this->calculated_overtime;
+    }
+
+    /**
+     * The reasons this day's data is not trustworthy enough to pay from (PRD
+     * §7.4), computed by {@see WorkdayCalculator} on every pass. Empty on a day
+     * with nothing to review — never null in the return type, so callers can
+     * check the result without a null-coalesce of their own.
+     *
+     * @return array<int, AnomalyFlagReason>
+     */
+    public function anomalyFlags(): array
+    {
+        return array_map(
+            fn (string $reason): AnomalyFlagReason => AnomalyFlagReason::from($reason),
+            $this->anomaly_flags ?? [],
+        );
+    }
+
+    /**
+     * Whether this day carries any anomaly flag at all — the condition
+     * {@see OvertimeAuthorization} refuses to approve against.
+     */
+    public function isFlagged(): bool
+    {
+        return $this->anomalyFlags() !== [];
     }
 
     /**

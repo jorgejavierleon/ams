@@ -1585,6 +1585,14 @@ return [
             'approved' => 'Authorised',
             'objected' => 'Objected',
         ],
+
+        'anomaly_reasons' => [
+            'no_assigned_shift' => 'No shift assigned that day',
+            'incomplete_marks' => 'Only one of the day\'s two marks exists',
+            'contract_not_active' => 'The contract is not active on the marked date',
+            'outside_geofence' => 'A mark fell outside the expected geofence',
+            'period_volume_exceeded' => 'The period\'s total overtime exceeds the configured threshold',
+        ],
     ],
 
     'mark_modifications' => [

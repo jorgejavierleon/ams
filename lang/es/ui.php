@@ -1588,6 +1588,14 @@ return [
             'approved' => 'Autorizada',
             'objected' => 'Objetada',
         ],
+
+        'anomaly_reasons' => [
+            'no_assigned_shift' => 'Sin turno asignado ese día',
+            'incomplete_marks' => 'Solo una de las dos marcas del día',
+            'contract_not_active' => 'El contrato no está vigente en la fecha marcada',
+            'outside_geofence' => 'La marca quedó fuera del geocerco esperado',
+            'period_volume_exceeded' => 'El total de horas extra del período supera el umbral configurado',
+        ],
     ],
 
     'mark_modifications' => [
