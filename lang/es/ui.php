@@ -1582,6 +1582,12 @@ return [
             'not_applicable' => 'Sin horas extra',
             'pending_review' => 'Pendiente de revisión',
         ],
+
+        'authorization_statuses' => [
+            'pending' => 'Pendiente',
+            'approved' => 'Autorizada',
+            'objected' => 'Objetada',
+        ],
     ],
 
     'mark_modifications' => [

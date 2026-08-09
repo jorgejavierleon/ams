@@ -1579,6 +1579,12 @@ return [
             'not_applicable' => 'No overtime',
             'pending_review' => 'Pending review',
         ],
+
+        'authorization_statuses' => [
+            'pending' => 'Pending',
+            'approved' => 'Authorised',
+            'objected' => 'Objected',
+        ],
     ],
 
     'mark_modifications' => [

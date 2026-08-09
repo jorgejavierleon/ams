@@ -9,6 +9,7 @@ use App\Models\Concerns\BelongsToOrganization;
 use App\Services\LegalHourLimitDrift;
 use App\Services\Overtime\ShiftExcess;
 use App\Services\WorkdayCalculator;
+use App\Support\Duration;
 use Carbon\CarbonInterface;
 use Database\Factories\WorkdayFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -193,6 +195,41 @@ class Workday extends Model
         return collect([$this->markIn, $this->markOut])
             ->filter()
             ->values();
+    }
+
+    /**
+     * The human decision on this day's overtime, when one has been opened. The
+     * engine never creates or touches it (PRD §7.2); it is the row payroll
+     * reads.
+     *
+     * @return HasOne<OvertimeAuthorization, $this>
+     */
+    public function overtimeAuthorization(): HasOne
+    {
+        return $this->hasOne(OvertimeAuthorization::class);
+    }
+
+    /**
+     * How many of this day's overtime hours are payable, answered from the
+     * authorisation record rather than by recomputing attendance.
+     *
+     * A day nobody has opened a record for authorises nothing — the absence of a
+     * decision is not a decision, and the export reads approved records only.
+     */
+    public function authorizedOvertime(): Duration
+    {
+        return $this->overtimeAuthorization?->authorizedOvertime() ?? Duration::zero();
+    }
+
+    /**
+     * The overtime this day produced that nobody authorised: the calculated
+     * figure less the payable one. Visible rather than dropped, and never
+     * merged into a payable total.
+     */
+    public function unauthorizedOvertime(): Duration
+    {
+        return (Duration::tryFrom($this->calculated_overtime) ?? Duration::zero())
+            ->minus($this->authorizedOvertime());
     }
 
     /**
