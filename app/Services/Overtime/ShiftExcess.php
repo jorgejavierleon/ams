@@ -38,7 +38,7 @@ final readonly class ShiftExcess
      * Compute both excesses for a candidate workday row produced by
      * {@see WorkdayCalculator::getWorkdayQuery()}.
      */
-    public static function forWorkdayRow(object $row): ?self
+    public static function forWorkdayRow(\stdClass $row): ?self
     {
         return self::for(
             markIn: $row->mark_in_at ?? null,

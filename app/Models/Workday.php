@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MarkModificationStatus;
+use App\Enums\OvertimeCalculationState;
 use App\Enums\WorkdayStatus;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Services\LegalHourLimitDrift;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * One computed day of attendance for an employee: the daily roll-up of that
@@ -28,6 +30,13 @@ use Illuminate\Support\Carbon;
  * is the OHC of PRD §7.2, built from `pre_shift_excess` and `post_shift_excess`
  * by {@see ShiftExcess}; it is null, not zero, on a day with no shift or a
  * single mark.
+ *
+ * `overtime_state` is the engine's verdict and nothing more: an
+ * {@see OvertimeCalculationState}, which has no approved case, so no
+ * recalculation can produce a payable day (PRD §7.2). The `overtime_decided_*`
+ * columns are the opposite half — written only by a human decision, never by the
+ * engine — and the gap between the decided figure and the current one is what
+ * {@see Workday::overtimeNeedsReReview()} reads.
  *
  * @property int $id
  * @property Carbon $date
@@ -52,6 +61,10 @@ use Illuminate\Support\Carbon;
  * @property string|null $pre_shift_excess
  * @property string|null $post_shift_excess
  * @property string|null $calculated_overtime
+ * @property OvertimeCalculationState|null $overtime_state
+ * @property Carbon|null $overtime_calculated_at
+ * @property Carbon|null $overtime_decided_at
+ * @property string|null $overtime_decided_value
  * @property WorkdayStatus|null $status
  */
 class Workday extends Model
@@ -71,6 +84,9 @@ class Workday extends Model
             'date' => 'date',
             'mark_in_at' => 'datetime',
             'mark_out_at' => 'datetime',
+            'overtime_state' => OvertimeCalculationState::class,
+            'overtime_calculated_at' => 'datetime',
+            'overtime_decided_at' => 'datetime',
         ];
     }
 
@@ -160,5 +176,55 @@ class Workday extends Model
     public function scopeBetweenDates(Builder $query, CarbonInterface $from, CarbonInterface $to): void
     {
         $query->whereBetween('date', [$from->toDateString(), $to->toDateString()]);
+    }
+
+    /**
+     * The raw marks this day's figures were derived from — the first step of the
+     * `raw mark → OHC → OHA → exported value` chain of PRD §7.8, and where the
+     * traceability walk of KOL-49 starts.
+     *
+     * A day can carry one, two or no marks at all, so this is a collection
+     * rather than two nullable relations pretending to be a pair.
+     *
+     * @return Collection<int, Mark>
+     */
+    public function sourceMarks(): Collection
+    {
+        return collect([$this->markIn, $this->markOut])
+            ->filter()
+            ->values();
+    }
+
+    /**
+     * Whether a human decision on this day's overtime has been overtaken by a
+     * recalculation.
+     *
+     * The engine cannot answer this by writing a state — it never touches the
+     * decision columns, which is precisely what stops a corrected mark from
+     * erasing an approval. So the answer is derived instead: a decision exists
+     * and the figure it was made against is no longer the figure the engine
+     * computes. Neither silently overwritten nor silently kept — visibly stale.
+     */
+    public function overtimeNeedsReReview(): bool
+    {
+        return $this->overtime_decided_at !== null
+            && $this->overtime_decided_value !== $this->calculated_overtime;
+    }
+
+    /**
+     * The query form of {@see Workday::overtimeNeedsReReview()}, for the queue
+     * that surfaces these days to a reviewer.
+     *
+     * `<=>` rather than `!=` because either side can be null — a day that had a
+     * figure when it was decided and has none now (a mark correction that left
+     * it with one mark) is exactly the case a reviewer must see, and `!=` would
+     * silently drop it.
+     *
+     * @param  Builder<Workday>  $query
+     */
+    public function scopeNeedsOvertimeReReview(Builder $query): void
+    {
+        $query->whereNotNull('overtime_decided_at')
+            ->whereRaw('NOT (overtime_decided_value <=> calculated_overtime)');
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\OvertimeCalculationState;
 use App\Enums\WorkdayStatus;
+use App\Jobs\CalculateOvertime;
 use App\Models\Workday;
 use App\Services\Overtime\OvertimeExcessPolicyResolver;
 use App\Services\Overtime\ShiftExcess;
@@ -24,6 +26,19 @@ use Illuminate\Support\Facades\DB;
  * they are computed in PHP by {@see ShiftExcess}, because clock-time arithmetic
  * cannot express a shift that runs past midnight and because they have to be
  * able to say "not computed" where SQL would hand back a zero.
+ *
+ * **Every pass is idempotent.** A day is written through an upsert keyed on the
+ * `(user_id, date)` unique index, so re-running produces the same row rather
+ * than a second one, and the same figures whenever the inputs have not moved.
+ * That is what lets {@see CalculateOvertime} be re-run freely for a backfill or
+ * after a correction.
+ *
+ * **The write set is the safety property.** Every column this class writes is
+ * listed explicitly in {@see WorkdayCalculator::calculatedAttributes()}, and the
+ * human-decision columns (`overtime_decided_at`, `overtime_decided_value`) are
+ * not among them — so no recalculation, however triggered, can erase or
+ * fabricate a decision. The engine's own verdict is an
+ * {@see OvertimeCalculationState}, an enum with no approved case (PRD §7.2).
  */
 class WorkdayCalculator
 {
@@ -33,10 +48,39 @@ class WorkdayCalculator
     ) {}
 
     /**
-     * Compute and insert the workdays for every employee with attendance or a
-     * scheduled shift on the given date. Existing rows for the date are skipped.
+     * Compute the workdays for every employee with attendance or a scheduled
+     * shift on the given date, creating the rows that do not exist yet and
+     * updating the ones that do.
+     *
+     * @param  int|null  $organizationId  Restrict to one tenant. Null processes every organization, which only the seeder and single-tenant callers want.
+     * @param  array<int, int>|null  $userIds  Restrict to these employees.
      */
-    public function calculateDate(DateTimeInterface $date): bool
+    public function calculateDate(DateTimeInterface $date, ?int $organizationId = null, ?array $userIds = null): bool
+    {
+        return $this->runForDate($date, $organizationId, $userIds, onlyComputedDays: false);
+    }
+
+    /**
+     * Recompute only the days already computed for the given date — the shape
+     * an event-driven recalculation wants.
+     *
+     * A leave being approved or a shift assignment being edited says something
+     * about days the register has already rolled up; it is not an instruction to
+     * backfill every day in the affected range that nobody ever computed. That
+     * backfill is a deliberate act, and it goes through
+     * {@see WorkdayCalculator::calculateDate()}.
+     *
+     * @param  array<int, int>|null  $userIds  Restrict to these employees.
+     */
+    public function recalculateComputedDate(DateTimeInterface $date, ?int $organizationId = null, ?array $userIds = null): bool
+    {
+        return $this->runForDate($date, $organizationId, $userIds, onlyComputedDays: true);
+    }
+
+    /**
+     * @param  array<int, int>|null  $userIds
+     */
+    private function runForDate(DateTimeInterface $date, ?int $organizationId, ?array $userIds, bool $onlyComputedDays): bool
     {
         $success = true;
 
@@ -45,34 +89,40 @@ class WorkdayCalculator
         // readable after the law moves on.
         $legalHourLimitId = $this->legalHourLimits->on(Carbon::parse($date))->id;
 
-        $this->getWorkdayQuery($date)->chunk(100, function ($workdays) use (&$success, $legalHourLimitId): void {
-            $insertData = $workdays->map(fn ($workday): array => [
+        $query = $this->getWorkdayQuery($date, organizationId: $organizationId, userIds: $userIds);
+
+        if ($onlyComputedDays) {
+            $query->whereNotNull('workdays.id');
+        }
+
+        $query->chunk(100, function ($workdays) use (&$success, $legalHourLimitId): void {
+            $rows = $workdays->map(fn ($workday): array => [
                 'date' => $workday->date,
                 'user_id' => $workday->user_id,
                 'organization_id' => $workday->organization_id,
                 'company_id' => $workday->company_id,
-                'premise_id' => $workday->premise_id,
-                'mark_in_at' => $workday->mark_in_at,
-                'mark_out_at' => $workday->mark_out_at,
-                'mark_in_id' => $workday->mark_in_id,
-                'mark_out_id' => $workday->mark_out_id,
-                'leave_id' => $workday->leave_id,
-                'shift_start_time' => $workday->shift_start_time,
-                'shift_end_time' => $workday->shift_end_time,
-                'shift_id' => $workday->shift_id,
-                'legal_hour_limit_id' => $legalHourLimitId,
-                'in_time_difference' => $workday->in_time_difference,
-                'out_time_difference' => $workday->out_time_difference,
-                'worked_time' => $this->calculateWorkedTime($workday),
-                'status' => $this->getStatus($workday),
-                'extra_time' => $workday->extra_time,
-                'missing_time' => $workday->missing_time,
-                ...$this->calculateShiftExcess($workday),
+                ...$this->calculatedAttributes($workday, $legalHourLimitId),
                 'created_at' => now(),
                 'updated_at' => now(),
             ])->all();
 
-            if (! Workday::query()->insert($insertData)) {
+            if ($rows === []) {
+                return;
+            }
+
+            // Keyed on the (user_id, date) unique index, so a date already
+            // processed is updated in place rather than duplicated. The update
+            // set is read off the payload itself — everything written except the
+            // key and `created_at`, since a recalculation is not a new row — so
+            // it cannot drift from what the engine actually produces, and the
+            // `overtime_decided_*` columns stay out of it for the only reason
+            // that matters: they are never in the payload to begin with.
+            $updatable = array_values(array_diff(
+                array_keys($rows[array_key_first($rows)]),
+                ['user_id', 'date', 'created_at'],
+            ));
+
+            if (! Workday::query()->upsert($rows, ['user_id', 'date'], $updatable)) {
                 $success = false;
             }
         });
@@ -85,27 +135,11 @@ class WorkdayCalculator
      */
     public function recalculateWorkday(Workday $workday): bool
     {
-        $data = $this->getWorkdayQuery($workday->date, $workday->id)
+        $legalHourLimitId = $this->legalHourLimits->on(Carbon::parse($workday->date))->id;
+
+        $data = $this->getWorkdayQuery($workday->date, workdayId: $workday->id)
             ->get()
-            ->map(fn ($row): array => [
-                'premise_id' => $row->premise_id,
-                'mark_in_at' => $row->mark_in_at,
-                'mark_out_at' => $row->mark_out_at,
-                'mark_in_id' => $row->mark_in_id,
-                'mark_out_id' => $row->mark_out_id,
-                'shift_start_time' => $row->shift_start_time,
-                'shift_end_time' => $row->shift_end_time,
-                'shift_id' => $row->shift_id,
-                'legal_hour_limit_id' => $this->legalHourLimits->on(Carbon::parse($workday->date))->id,
-                'leave_id' => $row->leave_id,
-                'in_time_difference' => $row->in_time_difference,
-                'out_time_difference' => $row->out_time_difference,
-                'worked_time' => $this->calculateWorkedTime($row),
-                'status' => $this->getStatus($row),
-                'extra_time' => $row->extra_time,
-                'missing_time' => $row->missing_time,
-                ...$this->calculateShiftExcess($row),
-            ])
+            ->map(fn ($row): array => $this->calculatedAttributes($row, $legalHourLimitId))
             ->first();
 
         if ($data === null) {
@@ -116,14 +150,61 @@ class WorkdayCalculator
     }
 
     /**
+     * Everything the engine derives for one day, and the whole of what it is
+     * allowed to write.
+     *
+     * Both write paths — the set-based upsert and the single-row recalculation —
+     * go through this one method, so the columns a recalculation can move are
+     * the same however it was triggered. The absences matter as much as the
+     * entries: `overtime_decided_at` and `overtime_decided_value` are not here,
+     * which is why a human decision survives every recalculation, and
+     * `overtime_state` can only ever hold what {@see OvertimeCalculationState}
+     * can express — never an approved or payable day (PRD §7.2).
+     *
+     * @return array<string, mixed>
+     */
+    protected function calculatedAttributes(\stdClass $row, ?int $legalHourLimitId): array
+    {
+        $excess = $this->calculateShiftExcess($row);
+
+        return [
+            'premise_id' => $row->premise_id,
+            'mark_in_at' => $row->mark_in_at,
+            'mark_out_at' => $row->mark_out_at,
+            'mark_in_id' => $row->mark_in_id,
+            'mark_out_id' => $row->mark_out_id,
+            'leave_id' => $row->leave_id,
+            'shift_start_time' => $row->shift_start_time,
+            'shift_end_time' => $row->shift_end_time,
+            'shift_id' => $row->shift_id,
+            'legal_hour_limit_id' => $legalHourLimitId,
+            'in_time_difference' => $row->in_time_difference,
+            'out_time_difference' => $row->out_time_difference,
+            'worked_time' => $this->calculateWorkedTime($row),
+            'status' => $this->getStatus($row),
+            'extra_time' => $row->extra_time,
+            'missing_time' => $row->missing_time,
+            ...$excess,
+            'overtime_state' => OvertimeCalculationState::forCalculatedOvertime($excess['calculated_overtime'])->value,
+            'overtime_calculated_at' => now(),
+        ];
+    }
+
+    /**
      * The set-based query joining users to their marks, scheduled shift day and
      * approved leave for the date, producing one candidate workday row per user.
      *
      * ShiftDay weekdays are 0=Monday … 6=Sunday, so the join keys off
      * `format('N') - 1` (ISO day, 1=Monday) rather than Carbon's `dayOfWeek`.
+     *
+     * @param  array<int, int>|null  $userIds
      */
-    protected function getWorkdayQuery(DateTimeInterface $date, ?int $workdayId = null): Builder
-    {
+    protected function getWorkdayQuery(
+        DateTimeInterface $date,
+        ?int $workdayId = null,
+        ?int $organizationId = null,
+        ?array $userIds = null,
+    ): Builder {
         $dateString = Carbon::parse($date)->toDateString();
         $weekday = (int) Carbon::parse($date)->format('N') - 1;
 
@@ -212,12 +293,23 @@ class WorkdayCalculator
             ->orderBy('users.id')
             ->distinct();
 
-        // A workday id means we are recomputing that single row; otherwise only
-        // days without an existing workday are computed.
+        // A workday id means we are recomputing that single row. Otherwise every
+        // candidate is returned, computed or not: the bulk pass upserts, so an
+        // existing row is updated rather than skipped.
         if ($workdayId !== null) {
             $query->where('workdays.id', $workdayId);
-        } else {
-            $query->whereNull('workdays.id');
+        }
+
+        // The tenant boundary. `users.organization_id` is the one the whole
+        // query hangs off — marks, assignments and leaves all reach the row
+        // through the employee — so constraining it here is what keeps one
+        // tenant's pass from reading, let alone writing, another's day.
+        if ($organizationId !== null) {
+            $query->where('users.organization_id', $organizationId);
+        }
+
+        if ($userIds !== null) {
+            $query->whereIn('users.id', $userIds);
         }
 
         return $query;

@@ -1577,6 +1577,13 @@ return [
         ],
     ],
 
+    'overtime' => [
+        'calculation_states' => [
+            'not_applicable' => 'Sin horas extra',
+            'pending_review' => 'Pendiente de revisión',
+        ],
+    ],
+
     'mark_modifications' => [
         'statuses' => [
             'pending' => 'Pendiente',

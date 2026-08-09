@@ -1574,6 +1574,13 @@ return [
         ],
     ],
 
+    'overtime' => [
+        'calculation_states' => [
+            'not_applicable' => 'No overtime',
+            'pending_review' => 'Pending review',
+        ],
+    ],
+
     'mark_modifications' => [
         'statuses' => [
             'pending' => 'Pending',
