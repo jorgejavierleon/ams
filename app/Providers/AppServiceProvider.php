@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Listeners\StampMarkModificationNotifiedAt;
 use App\Models\User;
 use App\Services\LegalHourLimits;
 use Carbon\CarbonImmutable;
@@ -10,11 +9,9 @@ use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -43,7 +40,12 @@ class AppServiceProvider extends ServiceProvider
         $this->configureAuthorization();
         $this->configureRateLimiting();
 
-        Event::listen(NotificationSent::class, StampMarkModificationNotifiedAt::class);
+        // No event listeners are registered here on purpose. Laravel scans
+        // app/Listeners and binds every handle()/__invoke() method to the event
+        // it type-hints, so a manual Event::listen() for a listener in that
+        // directory registers it a *second* time and the handler runs twice per
+        // event. Verify with `sa event:list`; add a manual registration only for
+        // a listener living outside app/Listeners.
     }
 
     /**
