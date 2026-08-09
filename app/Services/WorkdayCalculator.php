@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Enums\AnomalyFlagReason;
+use App\Enums\GeoStatus;
 use App\Enums\OvertimeCalculationState;
 use App\Enums\WorkdayStatus;
 use App\Jobs\CalculateOvertime;
 use App\Models\Workday;
 use App\Services\Overtime\OvertimeExcessPolicyResolver;
 use App\Services\Overtime\ShiftExcess;
+use App\Support\Duration;
 use DateTimeInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
@@ -39,12 +42,22 @@ use Illuminate\Support\Facades\DB;
  * not among them — so no recalculation, however triggered, can erase or
  * fabricate a decision. The engine's own verdict is an
  * {@see OvertimeCalculationState}, an enum with no approved case (PRD §7.2).
+ *
+ * **Anomaly flags are computed the same way (PRD §7.4).** Every pass derives
+ * {@see AnomalyFlagReason}s from the same row this class already read, and
+ * because they are recomputed rather than stored independently, a flag whose
+ * cause is corrected disappears on the next recalculation with nobody having
+ * to clear it. The one exception to the per-row shape is the weekly-volume
+ * flag, which weighs this day's own newly derived figure against the other
+ * days of its week already persisted — see
+ * {@see WorkdayCalculator::weeklyOtherDaysSecondsByUser()}.
  */
 class WorkdayCalculator
 {
     public function __construct(
         private LegalHourLimits $legalHourLimits,
         private OvertimeExcessPolicyResolver $excessPolicyResolver,
+        private OrganizationSettings $organizationSettings,
     ) {}
 
     /**
@@ -88,6 +101,7 @@ class WorkdayCalculator
         // onto every row so the rule each day was judged against stays
         // readable after the law moves on.
         $legalHourLimitId = $this->legalHourLimits->on(Carbon::parse($date))->id;
+        $dateString = Carbon::parse($date)->toDateString();
 
         $query = $this->getWorkdayQuery($date, organizationId: $organizationId, userIds: $userIds);
 
@@ -95,13 +109,19 @@ class WorkdayCalculator
             $query->whereNotNull('workdays.id');
         }
 
-        $query->chunk(100, function ($workdays) use (&$success, $legalHourLimitId): void {
+        $query->chunk(100, function ($workdays) use (&$success, $legalHourLimitId, $date, $dateString): void {
+            $weeklyOtherDaysSeconds = $this->weeklyOtherDaysSecondsByUser(
+                $workdays->pluck('user_id')->unique()->all(),
+                $date,
+                $dateString,
+            );
+
             $rows = $workdays->map(fn ($workday): array => [
                 'date' => $workday->date,
                 'user_id' => $workday->user_id,
                 'organization_id' => $workday->organization_id,
                 'company_id' => $workday->company_id,
-                ...$this->calculatedAttributes($workday, $legalHourLimitId),
+                ...$this->calculatedAttributes($workday, $legalHourLimitId, $weeklyOtherDaysSeconds[$workday->user_id] ?? 0),
                 'created_at' => now(),
                 'updated_at' => now(),
             ])->all();
@@ -136,10 +156,13 @@ class WorkdayCalculator
     public function recalculateWorkday(Workday $workday): bool
     {
         $legalHourLimitId = $this->legalHourLimits->on(Carbon::parse($workday->date))->id;
+        $dateString = Carbon::parse($workday->date)->toDateString();
+
+        $weeklyOtherDaysSeconds = $this->weeklyOtherDaysSecondsByUser([$workday->user_id], $workday->date, $dateString);
 
         $data = $this->getWorkdayQuery($workday->date, workdayId: $workday->id)
             ->get()
-            ->map(fn ($row): array => $this->calculatedAttributes($row, $legalHourLimitId))
+            ->map(fn ($row): array => $this->calculatedAttributes($row, $legalHourLimitId, $weeklyOtherDaysSeconds[$workday->user_id] ?? 0))
             ->first();
 
         if ($data === null) {
@@ -163,9 +186,10 @@ class WorkdayCalculator
      *
      * @return array<string, mixed>
      */
-    protected function calculatedAttributes(\stdClass $row, ?int $legalHourLimitId): array
+    protected function calculatedAttributes(\stdClass $row, ?int $legalHourLimitId, int $weeklyOtherDaysSeconds = 0): array
     {
         $excess = $this->calculateShiftExcess($row);
+        $status = $this->getStatus($row);
 
         return [
             'premise_id' => $row->premise_id,
@@ -181,12 +205,15 @@ class WorkdayCalculator
             'in_time_difference' => $row->in_time_difference,
             'out_time_difference' => $row->out_time_difference,
             'worked_time' => $this->calculateWorkedTime($row),
-            'status' => $this->getStatus($row),
+            'status' => $status,
             'extra_time' => $row->extra_time,
             'missing_time' => $row->missing_time,
             ...$excess,
             'overtime_state' => OvertimeCalculationState::forCalculatedOvertime($excess['calculated_overtime'])->value,
             'overtime_calculated_at' => now(),
+            'anomaly_flags' => $this->encodeAnomalyFlags(
+                $this->calculateAnomalyFlags($row, $status, $excess['calculated_overtime'], $weeklyOtherDaysSeconds),
+            ),
         ];
     }
 
@@ -255,10 +282,14 @@ class WorkdayCalculator
                 'users.company_id as company_id',
                 'users.organization_id as organization_id',
                 'users.premise_id as premise_id',
+                'users.contract_start_date as contract_start_date',
+                'users.contract_end_date as contract_end_date',
                 'mark_in.date_time as mark_in_at',
                 'mark_out.date_time as mark_out_at',
                 'mark_in.id as mark_in_id',
                 'mark_out.id as mark_out_id',
+                'mark_in.geo_status as mark_in_geo_status',
+                'mark_out.geo_status as mark_out_geo_status',
                 'shift_days.start_time as shift_start_time',
                 'shift_days.end_time as shift_end_time',
                 'shift_days.shift_id',
@@ -382,6 +413,122 @@ class WorkdayCalculator
                 $this->excessPolicyResolver->for($workday),
             ),
         ];
+    }
+
+    /**
+     * The anomaly flags for the day (PRD §7.4): reasons the underlying data is
+     * not trustworthy enough to pay from, which block the day from reaching
+     * approved until a human has looked at it. Never blocks this calculation
+     * or the marks/shifts it reads (Resolución 38 art. 45.2) — the flags are
+     * only ever a value written alongside the rest of the row.
+     *
+     * The first two are read straight off the status already computed for the
+     * day rather than re-deriving the same condition a second way.
+     *
+     * @return array<int, AnomalyFlagReason>
+     */
+    protected function calculateAnomalyFlags(\stdClass $row, ?string $status, ?string $calculatedOvertime, int $weeklyOtherDaysSeconds): array
+    {
+        $reasons = [];
+
+        if ($status === WorkdayStatus::Irregular->value) {
+            $reasons[] = AnomalyFlagReason::NoAssignedShift;
+        }
+
+        if ($status === WorkdayStatus::Incomplete->value) {
+            $reasons[] = AnomalyFlagReason::IncompleteMarks;
+        }
+
+        if ($this->contractNotActive($row)) {
+            $reasons[] = AnomalyFlagReason::ContractNotActive;
+        }
+
+        if ($row->mark_in_geo_status === GeoStatus::Outside->value || $row->mark_out_geo_status === GeoStatus::Outside->value) {
+            $reasons[] = AnomalyFlagReason::OutsideGeofence;
+        }
+
+        $weeklyTotalSeconds = $weeklyOtherDaysSeconds + (Duration::tryFrom($calculatedOvertime)?->seconds ?? 0);
+        $thresholdSeconds = (int) round($this->organizationSettings->overtimeWeeklyAnomalyThresholdHours($row->organization_id) * 3600);
+
+        if ($weeklyTotalSeconds > $thresholdSeconds) {
+            $reasons[] = AnomalyFlagReason::PeriodVolumeExceeded;
+        }
+
+        return $reasons;
+    }
+
+    /**
+     * Whether the employee's contract does not cover the day's own date. Only
+     * asserted when a boundary is actually set — a contract with neither date
+     * recorded gives no basis to call it inactive, so it is left unflagged
+     * rather than treated as a missing-data anomaly.
+     */
+    private function contractNotActive(\stdClass $row): bool
+    {
+        if ($row->contract_start_date === null && $row->contract_end_date === null) {
+            return false;
+        }
+
+        $date = Carbon::parse($row->date);
+
+        if ($row->contract_start_date !== null && $date->lt(Carbon::parse($row->contract_start_date))) {
+            return true;
+        }
+
+        if ($row->contract_end_date !== null && $date->gt(Carbon::parse($row->contract_end_date))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<int, AnomalyFlagReason>  $reasons
+     */
+    private function encodeAnomalyFlags(array $reasons): ?string
+    {
+        if ($reasons === []) {
+            return null;
+        }
+
+        return json_encode(array_map(fn (AnomalyFlagReason $reason): string => $reason->value, $reasons));
+    }
+
+    /**
+     * Each given user's total calculated overtime (in seconds) for the ISO
+     * week containing $date, over every other already-computed day in that
+     * week. The date being computed is excluded because its own contribution
+     * is added by the caller from the figure this same pass just derived,
+     * never from a stale persisted value.
+     *
+     * Batched per chunk rather than queried per row, matching the set-based
+     * shape of the rest of this class: every row in a chunk shares the same
+     * $date and therefore the same week.
+     *
+     * @param  array<int, int>  $userIds
+     * @return array<int, int>
+     */
+    private function weeklyOtherDaysSecondsByUser(array $userIds, DateTimeInterface $date, string $excludeDateString): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $week = Carbon::parse($date);
+
+        return DB::table('workdays')
+            ->select('user_id', DB::raw('SUM(TIME_TO_SEC(calculated_overtime)) as total_seconds'))
+            ->whereIn('user_id', $userIds)
+            ->whereBetween('date', [
+                $week->clone()->startOfWeek(Carbon::MONDAY)->toDateString(),
+                $week->clone()->endOfWeek(Carbon::SUNDAY)->toDateString(),
+            ])
+            ->where('date', '!=', $excludeDateString)
+            ->whereNotNull('calculated_overtime')
+            ->groupBy('user_id')
+            ->pluck('total_seconds', 'user_id')
+            ->map(fn ($seconds): int => (int) $seconds)
+            ->all();
     }
 
     /**

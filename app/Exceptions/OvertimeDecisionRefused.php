@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Enums\AnomalyFlagReason;
 use App\Models\OvertimeAuthorization;
 use RuntimeException;
 
@@ -42,6 +43,23 @@ class OvertimeDecisionRefused extends RuntimeException
     {
         return new self(
             'An overtime authorisation can only be decided by a user of the same organization.'
+        );
+    }
+
+    /**
+     * PRD §7.4: an anomaly means the day's underlying data is not trustworthy
+     * enough to pay from, and it blocks the record from reaching `approved`
+     * until a human has looked at it. Objecting a flagged day is unaffected —
+     * refusing hours nobody can vouch for is exactly what that path is for.
+     *
+     * @param  array<int, AnomalyFlagReason>  $reasons
+     */
+    public static function withUnresolvedAnomalies(array $reasons): self
+    {
+        $labels = implode(', ', array_map(fn (AnomalyFlagReason $reason): string => $reason->label(), $reasons));
+
+        return new self(
+            "An overtime authorisation cannot be approved while its workday carries unresolved anomaly flags: {$labels}. Correcting the underlying data clears the flag and unblocks approval."
         );
     }
 }

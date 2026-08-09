@@ -73,8 +73,8 @@ class OvertimeAuthorization extends Model
     }
 
     /**
-     * The guarantee of PRD §7.5, enforced where every write has to pass rather
-     * than at the call sites that remember to ask.
+     * The guarantees of PRD §7.5 and §7.4, enforced where every write has to
+     * pass rather than at the call sites that remember to ask.
      */
     protected static function booted(): void
     {
@@ -86,6 +86,17 @@ class OvertimeAuthorization extends Model
 
             if ($status->requiresReviewer() && ($authorization->reviewed_by === null || $authorization->reviewed_at === null)) {
                 throw OvertimeDecisionRefused::withoutAReviewer();
+            }
+
+            // PRD §7.4: a flagged day's data is not trustworthy enough to pay
+            // from. Only approval is blocked — an objection stays reachable, so
+            // a supervisor can still refuse hours nobody can vouch for.
+            if ($status === OvertimeAuthorizationStatus::Approved) {
+                $flags = $authorization->workday?->anomalyFlags() ?? [];
+
+                if ($flags !== []) {
+                    throw OvertimeDecisionRefused::withUnresolvedAnomalies($flags);
+                }
             }
         });
     }
