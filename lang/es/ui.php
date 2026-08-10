@@ -979,7 +979,6 @@ return [
         ],
 
         'validation' => [
-            'exceeds_weekly' => 'El total semanal (:total h) supera el máximo legal de :max horas.',
             'negative_hours' => 'La hora de término debe ser posterior a la de inicio (y la colación debe caber en la jornada).',
             'incomplete_days' => 'Cada día laborable necesita hora de inicio, término y colación.',
         ],

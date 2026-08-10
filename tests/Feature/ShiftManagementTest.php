@@ -191,7 +191,11 @@ test('creating a shift validates required fields server-side', function () {
         ->assertSessionHasErrors(['name', 'type', 'days']);
 });
 
-test('creating a shift rejects a weekly total over the legal maximum', function () {
+// Resolución 38 art. 45.2: a legal-cap alert is advisory and never blocks the
+// entry, so a shift over the weekly maximum still saves - the excess is
+// merely surfaced to the user (KOL-41). The client already renders that
+// warning from the same maxWeeklyHours the create/edit screens carry.
+test('creating a shift over the legal weekly maximum is allowed, not blocked', function () {
     $admin = shiftAdmin();
 
     // Make every day a working day: 7 * 8h = 56h, over any version of the cap.
@@ -203,46 +207,10 @@ test('creating a shift rejects a weekly total over the legal maximum', function 
 
     $this->actingAs($admin)
         ->post(route('shifts.store'), shiftPayload(['days' => $days]))
-        ->assertSessionHasErrors('days');
-
-    expect(Shift::query()->count())->toBe(0);
-});
-
-// The cap is no longer the stale 45 from config: it is resolved from the legal
-// limit version in force today, which Ley 21.561 put at 42 hours on
-// 26 April 2026. A 44-hour week was lawful before that date and is not now.
-test('the weekly cap is the versioned legal limit in force today, not the old 45', function () {
-    // Frozen inside the 42-hour window so the assertion still means the same
-    // thing after the 40-hour step in April 2028.
-    Carbon::setTestNow('2026-08-06 12:00:00');
-
-    $admin = shiftAdmin();
-
-    // 08:00–17:48 with a one-hour lunch is 8.8h a day; five of them is 44h.
-    $days = array_map(function (array $day): array {
-        $day['end_time'] = '17:48';
-
-        return $day;
-    }, shiftDays());
-
-    $this->actingAs($admin)
-        ->post(route('shifts.store'), shiftPayload(['days' => $days]))
-        ->assertSessionHasErrors('days');
-
-    expect(Shift::query()->count())->toBe(0);
-
-    // 08:00–17:24 is 8.4h a day, so exactly the 42 hours now in force.
-    $days = array_map(function (array $day): array {
-        $day['end_time'] = '17:24';
-
-        return $day;
-    }, shiftDays());
-
-    $this->actingAs($admin)
-        ->post(route('shifts.store'), shiftPayload(['days' => $days]))
         ->assertSessionHasNoErrors();
 
-    expect(Shift::query()->count())->toBe(1);
+    expect(Shift::query()->count())->toBe(1)
+        ->and(Shift::query()->first()->total_week_hours)->toBe(56.0);
 });
 
 test('the shift screens carry the resolved legal limits, not config constants', function () {

@@ -227,7 +227,7 @@ class ShiftController extends Controller
             return $day;
         }, $validated['days']);
 
-        $this->assertWithinLegalHours($validated['days']);
+        $this->assertNoNegativeDurations($validated['days']);
 
         return $validated;
     }
@@ -246,38 +246,25 @@ class ShiftController extends Controller
     }
 
     /**
-     * Guard the legal weekly maximum and reject days with negative duration.
+     * Reject days with negative duration. The legal weekly maximum is
+     * deliberately not enforced here: Resolución 38 art. 45.2 makes a
+     * legal-cap alert advisory only, never blocking, and the schedule table
+     * already surfaces the excess to the user as it is edited (KOL-41).
      *
      * @param  array<int, array<string, mixed>>  $days
      */
-    private function assertWithinLegalHours(array $days): void
+    private function assertNoNegativeDurations(array $days): void
     {
-        $maxWeeklyHours = $this->limitsForToday()->ordinary_weekly_hours;
-        $weeklyHours = 0.0;
-
         foreach ($days as $index => $day) {
             if ($day['is_free']) {
                 continue;
             }
 
-            $dailyHours = $this->dailyHours($day);
-
-            if ($dailyHours < 0) {
+            if ($this->dailyHours($day) < 0) {
                 throw ValidationException::withMessages([
                     "days.{$index}.end_time" => __('ui.shifts.validation.negative_hours'),
                 ]);
             }
-
-            $weeklyHours += $dailyHours;
-        }
-
-        if ($weeklyHours > $maxWeeklyHours) {
-            throw ValidationException::withMessages([
-                'days' => __('ui.shifts.validation.exceeds_weekly', [
-                    'max' => (int) $maxWeeklyHours,
-                    'total' => rtrim(rtrim(number_format($weeklyHours, 2), '0'), '.'),
-                ]),
-            ]);
         }
     }
 

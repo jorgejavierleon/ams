@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\OvertimeAuthorizationStatus;
 use App\Exceptions\OvertimeDecisionRefused;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Services\Overtime\OvertimeCapEvaluator;
 use App\Support\Duration;
 use Carbon\CarbonInterface;
 use Database\Factories\OvertimeAuthorizationFactory;
@@ -96,6 +97,15 @@ class OvertimeAuthorization extends Model
 
                 if ($flags !== []) {
                     throw OvertimeDecisionRefused::withUnresolvedAnomalies($flags);
+                }
+
+                // PRD §7.3, Resolución 38 art. 45.2: a legal cap never blocks the
+                // excess, but approving beyond one is only defensible on audit
+                // with a reason attached.
+                $breach = app(OvertimeCapEvaluator::class)->evaluate($authorization);
+
+                if ($breach->any() && trim((string) $authorization->reason) === '') {
+                    throw OvertimeDecisionRefused::withoutJustification($breach);
                 }
             }
         });
