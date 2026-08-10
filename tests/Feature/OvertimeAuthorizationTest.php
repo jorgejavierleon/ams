@@ -64,7 +64,10 @@ test('a day has exactly one authorisation record', function () {
 test('a fully authorised day pays everything that was calculated', function () {
     [$workday, $supervisor] = overtimeDay('03:00:00');
 
-    $authorization = OvertimeAuthorization::openFor($workday)->approve($supervisor);
+    // 3h exceeds the 2h daily overtime cap in force on 2026-08-03 (KOL-41), so
+    // the approval needs a justification.
+    $authorization = OvertimeAuthorization::openFor($workday)
+        ->approve($supervisor, reason: 'Continuidad de servicio crítico.');
 
     expect($authorization->isApproved())->toBeTrue()
         ->and($authorization->authorized_hours)->toBe('03:00:00')

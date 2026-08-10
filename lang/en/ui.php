@@ -976,7 +976,6 @@ return [
         ],
 
         'validation' => [
-            'exceeds_weekly' => 'The weekly total (:total h) exceeds the legal maximum of :max hours.',
             'negative_hours' => 'End time must be after start time (and lunch must fit within the day).',
             'incomplete_days' => 'Every working day needs a start, end and lunch time.',
         ],

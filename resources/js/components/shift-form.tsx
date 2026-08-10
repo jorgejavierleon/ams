@@ -436,8 +436,8 @@ export default function ShiftForm({
                 <p
                     className={
                         exceedsWeekly
-                            ? 'text-xs text-amber-600 dark:text-amber-500'
-                            : 'text-xs text-muted-foreground'
+                            ? 'text-sm font-medium text-amber-600 dark:text-amber-500'
+                            : 'text-sm text-muted-foreground'
                     }
                 >
                     {exceedsWeekly

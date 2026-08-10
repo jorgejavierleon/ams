@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use App\Enums\AnomalyFlagReason;
 use App\Models\OvertimeAuthorization;
+use App\Services\Overtime\OvertimeCapBreach;
 use RuntimeException;
 
 /**
@@ -60,6 +61,20 @@ class OvertimeDecisionRefused extends RuntimeException
 
         return new self(
             "An overtime authorisation cannot be approved while its workday carries unresolved anomaly flags: {$labels}. Correcting the underlying data clears the flag and unblocks approval."
+        );
+    }
+
+    /**
+     * PRD §7.3, Resolución 38 art. 45.2: a legal cap never blocks the excess
+     * itself, but approving beyond one is only defensible on audit with a
+     * reason attached. No justification, no approval.
+     */
+    public static function withoutJustification(OvertimeCapBreach $breach): self
+    {
+        $labels = implode(', ', $breach->labels());
+
+        return new self(
+            "An overtime authorisation exceeding a legal cap ({$labels}) cannot be approved without a written justification. The excess itself is allowed; approving it unexplained is not."
         );
     }
 }
