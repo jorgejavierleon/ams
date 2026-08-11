@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-06 02:54'
-updated_date: '2026-08-08 11:33'
+updated_date: '2026-08-11 00:09'
 labels:
   - overtime
   - backend
@@ -70,5 +70,10 @@ author: @jorge
 created: 2026-08-08 11:33
 ---
 Amended after the KOL-38 review: the original AC #1 derived the compensation type from the per-tenant setting KOL-37 added, and that setting is being removed in KOL-56. Resolución 38 art. 43 requires systems to *offer* both modes but states the fallback as law — 'si no hubiere pacto escrito que indique lo contrario, las horas extraordinarias se entenderán efectuadas de acuerdo con lo indicado en la letra a)', i.e. payment. It is not an employer preference. Art. 45.3 ('la cantidad de horas compensables de cada dependiente') and art. 41 i) both treat the agreement as per worker, so the compensation type belongs to the pacto this task builds on, not to the organization. The OvertimeCompensationType enum removed in KOL-56 is the vocabulary to reintroduce here, on the agreement.
+---
+
+created: 2026-08-11 00:09
+---
+Cross-reference with KOL-42: the pacto this task reads (AC #8, compensation type resolved from the worker written agreement in force on the day) is the only thing that makes a pacto functionally different from not having one. KOL-42's approval flow itself treats a valid pacto and a missing one (flagged per decision-1) the same way — both reach approval via the supervisor decision, missing/exceeded cases just require a written justification. It's this task's rest-day-vs-payment gating, not KOL-42's approval path, that gives a pacto its real effect.
 ---
 <!-- COMMENTS:END -->

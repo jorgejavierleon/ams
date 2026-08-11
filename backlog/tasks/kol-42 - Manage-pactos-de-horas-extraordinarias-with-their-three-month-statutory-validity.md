@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-06 02:52'
-updated_date: '2026-08-08 15:27'
+updated_date: '2026-08-11 00:09'
 labels:
   - overtime
   - backend
@@ -72,5 +72,10 @@ Art. 32 requires overtime to be agreed in writing, but the absence of that agree
 The correct shape is already in the source: Res. 38 art. 45.2 says of the excessive-shift alert that it 'no impedirá la carga de la jornada, sino que sólo constituirá un aviso para el empleador'. KOL-41 implements exactly that for legal caps. A missing pacto is a flag demanding a written justification, never a bar. See decision-1.
 
 Everything else in this task stands: the three-month ceiling, renewal creating a new record rather than extending, validity judged by the date worked, and the expiry alert. Caveat carried from decision-1: the Código del Trabajo text is not in the repo, so the art. 32 reading here must be confirmed with the labor advisor before this task is finalised.
+---
+
+created: 2026-08-11 00:09
+---
+The pacto has no effect on whether overtime gets approved — both a valid pacto and a missing one (flagged, per decision-1) end at the same supervisor decision, requiring a written justification only in the missing/exceeded case. The actual payoff is in KOL-47: per its AC #8, compensation type (payment vs. rest days) is resolved from the worker's written agreement in force on the day, and with no valid agreement the hours are payment-compensated with that fallback not configurable by anyone. So a pacto's functional benefit is unlocking rest-day compensation, not gating approval. Make sure this dependency stays explicit when KOL-47 is picked up.
 ---
 <!-- COMMENTS:END -->
