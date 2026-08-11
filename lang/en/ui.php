@@ -39,6 +39,7 @@ return [
         'my_workdays' => 'My workdays',
         'my_documents' => 'My documents',
         'team_leaves' => 'Team leaves',
+        'overtime' => 'Overtime',
     ],
 
     'user_menu' => [
@@ -407,6 +408,7 @@ return [
             'Leave' => 'Leave & absences',
             'Document' => 'Documents',
             'MarkModification' => 'Mark corrections',
+            'OvertimeAuthorization' => 'Overtime',
         ],
 
         'permissions' => [
@@ -421,6 +423,11 @@ return [
             'SignOwn:Document' => 'Sign own documents',
             'ViewTeam:Leave' => 'View team leave',
             'ApproveTeam:Leave' => 'Approve team leave',
+            'RequestOwn:OvertimeAuthorization' => 'Request own overtime',
+            'ViewOwn:OvertimeAuthorization' => 'View own overtime',
+            'ViewTeam:OvertimeAuthorization' => 'View team overtime',
+            'ApproveTeam:OvertimeAuthorization' => 'Approve team overtime',
+            'Manage:OvertimeAuthorization' => 'Manage overtime policy and pactos',
         ],
     ],
 
@@ -1574,6 +1581,12 @@ return [
     ],
 
     'overtime' => [
+        'index' => [
+            'title' => 'Overtime',
+            'description' => 'Manage overtime authorizations and pactos.',
+            'coming_soon' => 'The screens in this section will be enabled progressively.',
+        ],
+
         'calculation_states' => [
             'not_applicable' => 'No overtime',
             'pending_review' => 'Pending review',

@@ -39,10 +39,10 @@ test('an authenticated employee receives their identity and effective permission
         ->assertJsonPath('email', $employee->email)
         ->assertJsonPath('avatar', null);
 
-    // The nine self-service permissions the `employee` role carries.
+    // The eleven self-service permissions the `employee` role carries.
     expect($response->json('permissions'))
         ->toBeArray()
-        ->toHaveCount(9)
+        ->toHaveCount(11)
         ->each->toBeString();
 
     expect($response->json('permissions'))->toEqualCanonicalizing([
@@ -55,6 +55,8 @@ test('an authenticated employee receives their identity and effective permission
         'ReviewOwn:MarkModification',
         'ViewOwn:Document',
         'SignOwn:Document',
+        'RequestOwn:OvertimeAuthorization',
+        'ViewOwn:OvertimeAuthorization',
     ]);
 });
 
@@ -103,7 +105,7 @@ test('permissions granted directly to the user are included alongside role permi
 
     $permissions = $this->getJson('/api/v1/user')->assertOk()->json('permissions');
 
-    expect($permissions)->toHaveCount(10)
+    expect($permissions)->toHaveCount(12)
         ->toContain('ViewOwn:Payslip')
         ->toContain('ClockOwn:Mark');
 });

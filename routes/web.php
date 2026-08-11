@@ -24,6 +24,7 @@ use App\Http\Controllers\My\DocumentController as MyDocumentController;
 use App\Http\Controllers\My\LeaveController as MyLeaveController;
 use App\Http\Controllers\My\MarkController as MyMarkController;
 use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
+use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -156,6 +157,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('leaves.approve');
     Route::post('leaves/{leave}/reject', [LeaveController::class, 'reject'])
         ->name('leaves.reject');
+});
+
+// Overtime section (KOL-43). Shared by every role that holds one of its
+// permissions — the queue (KOL-44), request flow (KOL-45) and pactos (KOL-42)
+// add their own routes under this same gate as they land.
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('overtime', [OvertimeController::class, 'index'])
+        ->middleware('permission:RequestOwn:OvertimeAuthorization|ViewOwn:OvertimeAuthorization|ViewTeam:OvertimeAuthorization|ApproveTeam:OvertimeAuthorization|Manage:OvertimeAuthorization')
+        ->name('overtime.index');
 });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)

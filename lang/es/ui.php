@@ -39,6 +39,7 @@ return [
         'my_workdays' => 'Mis jornadas',
         'my_documents' => 'Mis documentos',
         'team_leaves' => 'Permisos del equipo',
+        'overtime' => 'Horas extra',
     ],
 
     'user_menu' => [
@@ -410,6 +411,7 @@ return [
             'Leave' => 'Permisos y ausencias',
             'Document' => 'Documentos',
             'MarkModification' => 'Correcciones de marca',
+            'OvertimeAuthorization' => 'Horas extraordinarias',
         ],
 
         'permissions' => [
@@ -424,6 +426,11 @@ return [
             'SignOwn:Document' => 'Firmar documentos propios',
             'ViewTeam:Leave' => 'Ver permisos del equipo',
             'ApproveTeam:Leave' => 'Aprobar permisos del equipo',
+            'RequestOwn:OvertimeAuthorization' => 'Solicitar horas extra propias',
+            'ViewOwn:OvertimeAuthorization' => 'Ver horas extra propias',
+            'ViewTeam:OvertimeAuthorization' => 'Ver horas extra del equipo',
+            'ApproveTeam:OvertimeAuthorization' => 'Aprobar horas extra del equipo',
+            'Manage:OvertimeAuthorization' => 'Administrar política y pactos de horas extra',
         ],
     ],
 
@@ -1577,6 +1584,12 @@ return [
     ],
 
     'overtime' => [
+        'index' => [
+            'title' => 'Horas extra',
+            'description' => 'Gestión de horas extraordinarias, sus autorizaciones y pactos.',
+            'coming_soon' => 'Las pantallas de esta sección se irán habilitando próximamente.',
+        ],
+
         'calculation_states' => [
             'not_applicable' => 'Sin horas extra',
             'pending_review' => 'Pendiente de revisión',
