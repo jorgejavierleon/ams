@@ -25,20 +25,23 @@ class RoleSeeder extends Seeder
         'ReviewOwn:MarkModification',
         'ViewOwn:Document',
         'SignOwn:Document',
+        'RequestOwn:OvertimeAuthorization',
+        'ViewOwn:OvertimeAuthorization',
     ];
 
     /**
      * Self-service permissions granted to the `admin` role directly. Admins get
-     * their policy abilities through the super-admin gate, but the attendance
-     * widget's store route is guarded by Spatie's `permission:` middleware,
-     * which the gate does not bypass — so an admin who clocks in/out must hold
-     * these permissions explicitly.
+     * their policy abilities through the super-admin gate, but routes guarded by
+     * Spatie's `permission:` middleware — the attendance widget's store route,
+     * and `overtime.index` (KOL-43) — are not covered by that gate, so an admin
+     * must hold these permissions explicitly to reach them.
      *
      * @var array<int, string>
      */
     private const ADMIN_PERMISSIONS = [
         'ClockOwn:Mark',
         'ViewOwn:Mark',
+        'Manage:OvertimeAuthorization',
     ];
 
     /**
@@ -46,11 +49,18 @@ class RoleSeeder extends Seeder
      * default. Admins can revoke these in the Roles screen to keep leave
      * approval centralized; team scoping itself is enforced in the LeavePolicy.
      *
+     * `OvertimeAuthorization` follows the same shape: `ViewTeam`/`ApproveTeam`
+     * grant the queue and the decision, and `OvertimeAuthorizationPolicy`
+     * (KOL-43) enforces that a supervisor only decides their own reports'
+     * records, exactly as `LeavePolicy` does for leaves.
+     *
      * @var array<int, string>
      */
     private const SUPERVISOR_PERMISSIONS = [
         'ViewTeam:Leave',
         'ApproveTeam:Leave',
+        'ViewTeam:OvertimeAuthorization',
+        'ApproveTeam:OvertimeAuthorization',
     ];
 
     public function run(): void

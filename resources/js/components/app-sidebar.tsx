@@ -13,6 +13,7 @@ import {
     ShieldCheck,
     SlidersHorizontal,
     Sun,
+    Timer,
     Users,
     Wallet,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ import { index as myDocumentsIndex } from '@/routes/my/documents';
 import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
+import { index as overtimeIndex } from '@/routes/overtime';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
@@ -62,6 +64,13 @@ export function AppSidebar() {
     const canReviewTeamLeaves = auth.permissions.includes('ViewTeam:Leave');
     const canViewOwnWorkdays = auth.permissions.includes('ViewOwn:Workday');
     const canViewOwnDocuments = auth.permissions.includes('ViewOwn:Document');
+    const canViewOwnOvertime = auth.permissions.includes(
+        'ViewOwn:OvertimeAuthorization',
+    );
+    const canManageOvertime =
+        auth.permissions.includes('ViewTeam:OvertimeAuthorization') ||
+        auth.permissions.includes('ApproveTeam:OvertimeAuthorization') ||
+        auth.permissions.includes('Manage:OvertimeAuthorization');
 
     const employeeNavGroups: Array<{ label: string; items: NavItem[] }> = [
         {
@@ -94,6 +103,15 @@ export function AppSidebar() {
                               href: myDocumentsIndex(),
                               icon: FileText,
                               badge: auth.pendingSignaturesCount,
+                          },
+                      ]
+                    : []),
+                ...(canViewOwnOvertime
+                    ? [
+                          {
+                              title: t('ui.nav.overtime'),
+                              href: overtimeIndex(),
+                              icon: Timer,
                           },
                       ]
                     : []),
@@ -184,6 +202,15 @@ export function AppSidebar() {
                     href: leavesCalendar(),
                     icon: CalendarRange,
                 },
+                ...(canManageOvertime
+                    ? [
+                          {
+                              title: t('ui.nav.overtime'),
+                              href: overtimeIndex(),
+                              icon: Timer,
+                          },
+                      ]
+                    : []),
             ],
         },
         {
