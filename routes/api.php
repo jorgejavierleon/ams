@@ -45,6 +45,7 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         Route::get('user', function (Request $request): UserResource {
             /** @var User $user */
             $user = $request->user();
+            $user->loadMissing(['position', 'premise']);
 
             return new UserResource($user);
         })->name('user.show');
