@@ -75,7 +75,8 @@ test('the payload exposes only the agreed fields and no sensitive columns', func
     $response = $this->getJson('/api/v1/user')->assertOk();
 
     expect(array_keys($response->json()))->toEqualCanonicalizing([
-        'id', 'name', 'first_name', 'last_name', 'rut', 'email', 'avatar', 'position', 'premise', 'permissions',
+        'id', 'name', 'first_name', 'last_name', 'rut', 'email', 'personal_email', 'phone', 'avatar',
+        'position', 'premise', 'supervisor', 'contract_start_date', 'permissions',
     ]);
 
     $response
@@ -110,12 +111,56 @@ test('position and premise carry the related models\' names', function () {
         ->assertJsonPath('premise', 'Sucursal Ñuñoa');
 });
 
-test('the request eager-loads position and premise rather than lazy-loading each', function () {
+test('personal_email, phone, supervisor and contract_start_date carry their values', function () {
+    $organization = Organization::factory()->create();
+    $supervisor = User::factory()->employee()->create([
+        'organization_id' => $organization->id,
+        'name' => 'Supervisor Demo',
+    ]);
+    $employee = User::factory()->employee()->create([
+        'organization_id' => $organization->id,
+        'personal_email' => 'empleado.personal@example.com',
+        'phone' => '+56 9 1234 5678',
+        'supervisor_id' => $supervisor->id,
+        'contract_start_date' => '2024-03-01',
+    ]);
+
+    Sanctum::actingAs($employee);
+
+    $this->getJson('/api/v1/user')
+        ->assertOk()
+        ->assertJsonPath('personal_email', 'empleado.personal@example.com')
+        ->assertJsonPath('phone', '+56 9 1234 5678')
+        ->assertJsonPath('supervisor', 'Supervisor Demo')
+        ->assertJsonPath('contract_start_date', '2024-03-01');
+});
+
+test('personal_email, phone, supervisor and contract_start_date read as null rather than an error when unset', function () {
+    $employee = User::factory()->employee()->create([
+        'organization_id' => Organization::factory()->create()->id,
+        'personal_email' => null,
+        'phone' => null,
+        'supervisor_id' => null,
+        'contract_start_date' => null,
+    ]);
+
+    Sanctum::actingAs($employee);
+
+    $this->getJson('/api/v1/user')
+        ->assertOk()
+        ->assertJsonPath('personal_email', null)
+        ->assertJsonPath('phone', null)
+        ->assertJsonPath('supervisor', null)
+        ->assertJsonPath('contract_start_date', null);
+});
+
+test('the request eager-loads position, premise and supervisor rather than lazy-loading each', function () {
     $organization = Organization::factory()->create();
     $employee = User::factory()->employee()->create([
         'organization_id' => $organization->id,
         'position_id' => Position::factory()->create(['organization_id' => $organization->id])->id,
         'premise_id' => Premise::factory()->create(['organization_id' => $organization->id])->id,
+        'supervisor_id' => User::factory()->employee()->create(['organization_id' => $organization->id])->id,
     ]);
 
     Sanctum::actingAs($employee);
@@ -126,8 +171,9 @@ test('the request eager-loads position and premise rather than lazy-loading each
 
     // Loose upper bound rather than an exact count, so it stays meaningful
     // through unrelated middleware/auth changes while still catching a
-    // regression to per-relation lazy loads on a hot path.
-    expect(count(DB::getQueryLog()))->toBeLessThanOrEqual(6);
+    // regression to per-relation lazy loads on a hot path. Raised from 6 to 7
+    // for the third eager-loaded relation (supervisor).
+    expect(count(DB::getQueryLog()))->toBeLessThanOrEqual(7);
 
     DB::disableQueryLog();
 });
