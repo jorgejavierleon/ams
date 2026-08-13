@@ -1605,6 +1605,69 @@ return [
             'outside_geofence' => 'A mark fell outside the expected geofence',
             'period_volume_exceeded' => 'The period\'s total overtime exceeds the configured threshold',
         ],
+
+        'pact_statuses' => [
+            'active' => 'Active',
+            'revoked' => 'Revoked',
+        ],
+
+        'pacts' => [
+            'title' => 'Overtime pactos',
+            'description' => 'Written overtime agreements, transitory and capped at three months (Código del Trabajo art. 32).',
+            'new' => 'New pacto',
+            'back' => 'Back to overtime',
+            'search_placeholder' => 'Search by employee...',
+            'empty' => 'No pactos found.',
+
+            'columns' => [
+                'employee' => 'Employee',
+                'start_date' => 'Start',
+                'end_date' => 'End',
+                'status' => 'Status',
+            ],
+
+            'actions' => [
+                'edit' => 'Edit',
+                'revoke' => 'Revoke',
+                'activate' => 'Reactivate',
+            ],
+
+            'create_dialog' => [
+                'title' => 'New pacto',
+                'submit' => 'Create pacto',
+            ],
+
+            'edit_dialog' => [
+                'title' => 'Edit pacto',
+                'submit' => 'Save changes',
+            ],
+
+            'form' => [
+                'employee' => 'Employee',
+                'employee_placeholder' => 'Select an employee',
+                'employee_search' => 'Search employee...',
+                'employee_empty' => 'No employees found.',
+                'start_date' => 'Start date',
+                'end_date' => 'End date',
+            ],
+
+            'revoke_dialog' => [
+                'title' => 'Revoke pacto',
+                'description' => ':employee\'s pacto will be revoked. The record is kept as evidence of what was agreed.',
+                'confirm' => 'Revoke',
+            ],
+
+            'validation' => [
+                'exceeds_three_months' => 'A pacto cannot run longer than three months (Código del Trabajo art. 32).',
+            ],
+
+            'flash' => [
+                'created' => 'Pacto created successfully.',
+                'updated' => 'Pacto updated successfully.',
+                'revoked' => 'Pacto revoked successfully.',
+                'activated' => 'Pacto reactivated successfully.',
+            ],
+        ],
     ],
 
     'mark_modifications' => [

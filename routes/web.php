@@ -25,6 +25,7 @@ use App\Http\Controllers\My\LeaveController as MyLeaveController;
 use App\Http\Controllers\My\MarkController as MyMarkController;
 use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\OvertimeController;
+use App\Http\Controllers\OvertimePactController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -160,12 +161,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Overtime section (KOL-43). Shared by every role that holds one of its
-// permissions — the queue (KOL-44), request flow (KOL-45) and pactos (KOL-42)
-// add their own routes under this same gate as they land.
+// permissions — the queue (KOL-44) and request flow (KOL-45) add their own
+// routes under this same gate as they land.
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('overtime', [OvertimeController::class, 'index'])
         ->middleware('permission:RequestOwn:OvertimeAuthorization|ViewOwn:OvertimeAuthorization|ViewTeam:OvertimeAuthorization|ApproveTeam:OvertimeAuthorization|Manage:OvertimeAuthorization')
         ->name('overtime.index');
+
+    // Pactos de horas extraordinarias (KOL-42): managed only by whoever holds
+    // Manage:OvertimeAuthorization (KOL-43), the same permission that gates
+    // the section's admin-only actions.
+    Route::middleware('permission:Manage:OvertimeAuthorization')
+        ->prefix('overtime/pacts')
+        ->name('overtime.pacts.')
+        ->group(function () {
+            Route::get('/', [OvertimePactController::class, 'index'])->name('index');
+            Route::post('/', [OvertimePactController::class, 'store'])->name('store');
+            Route::put('/{overtimePact}', [OvertimePactController::class, 'update'])->name('update');
+            Route::patch('/{overtimePact}/revoke', [OvertimePactController::class, 'revoke'])->name('revoke');
+            Route::patch('/{overtimePact}/activate', [OvertimePactController::class, 'activate'])->name('activate');
+        });
 });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)
