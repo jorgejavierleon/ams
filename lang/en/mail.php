@@ -41,6 +41,18 @@ return [
         'action' => 'Review request',
     ],
 
+    'overtime_pact' => [
+        'employee' => 'Employee',
+        'end_date' => 'End date',
+    ],
+
+    'overtime_pact_nearing_expiry' => [
+        'subject' => 'An overtime pacto is about to expire',
+        'heading' => 'Pacto nearing expiry',
+        'body' => ":employee's overtime pacto expires on :date. If it should be renewed, create the new agreement ahead of time so the period is not left uncovered.",
+        'action' => 'View pactos',
+    ],
+
     'leave_approved' => [
         'subject' => 'Your leave request was approved',
         'heading' => 'Leave request approved',

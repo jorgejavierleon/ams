@@ -41,6 +41,18 @@ return [
         'action' => 'Revisar solicitud',
     ],
 
+    'overtime_pact' => [
+        'employee' => 'Empleado',
+        'end_date' => 'Fecha de término',
+    ],
+
+    'overtime_pact_nearing_expiry' => [
+        'subject' => 'Un pacto de horas extraordinarias está por vencer',
+        'heading' => 'Pacto próximo a vencer',
+        'body' => 'El pacto de horas extraordinarias de :employee vence el :date. Si corresponde renovarlo, créalo con anticipación para no dejar el período sin cobertura.',
+        'action' => 'Ver pactos',
+    ],
+
     'leave_approved' => [
         'subject' => 'Tu solicitud de permiso fue aprobada',
         'heading' => 'Solicitud de permiso aprobada',

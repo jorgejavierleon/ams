@@ -1608,6 +1608,69 @@ return [
             'outside_geofence' => 'La marca quedó fuera del geocerco esperado',
             'period_volume_exceeded' => 'El total de horas extra del período supera el umbral configurado',
         ],
+
+        'pact_statuses' => [
+            'active' => 'Activo',
+            'revoked' => 'Revocado',
+        ],
+
+        'pacts' => [
+            'title' => 'Pactos de horas extraordinarias',
+            'description' => 'Acuerdos escritos de horas extraordinarias, con vigencia transitoria de hasta tres meses (art. 32 del Código del Trabajo).',
+            'new' => 'Nuevo pacto',
+            'back' => 'Volver a horas extra',
+            'search_placeholder' => 'Buscar por empleado...',
+            'empty' => 'No se encontraron pactos.',
+
+            'columns' => [
+                'employee' => 'Empleado',
+                'start_date' => 'Inicio',
+                'end_date' => 'Término',
+                'status' => 'Estado',
+            ],
+
+            'actions' => [
+                'edit' => 'Editar',
+                'revoke' => 'Revocar',
+                'activate' => 'Reactivar',
+            ],
+
+            'create_dialog' => [
+                'title' => 'Nuevo pacto',
+                'submit' => 'Crear pacto',
+            ],
+
+            'edit_dialog' => [
+                'title' => 'Editar pacto',
+                'submit' => 'Guardar cambios',
+            ],
+
+            'form' => [
+                'employee' => 'Empleado',
+                'employee_placeholder' => 'Selecciona un empleado',
+                'employee_search' => 'Buscar empleado...',
+                'employee_empty' => 'No se encontraron empleados.',
+                'start_date' => 'Fecha de inicio',
+                'end_date' => 'Fecha de término',
+            ],
+
+            'revoke_dialog' => [
+                'title' => 'Revocar pacto',
+                'description' => 'El pacto de :employee quedará revocado. El registro se conserva como evidencia de lo acordado.',
+                'confirm' => 'Revocar',
+            ],
+
+            'validation' => [
+                'exceeds_three_months' => 'El pacto no puede tener una vigencia superior a tres meses (art. 32 del Código del Trabajo).',
+            ],
+
+            'flash' => [
+                'created' => 'Pacto creado correctamente.',
+                'updated' => 'Pacto actualizado correctamente.',
+                'revoked' => 'Pacto revocado correctamente.',
+                'activated' => 'Pacto reactivado correctamente.',
+            ],
+        ],
     ],
 
     'mark_modifications' => [

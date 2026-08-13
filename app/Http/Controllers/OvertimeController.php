@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -9,12 +10,18 @@ class OvertimeController extends Controller
 {
     /**
      * The overtime section's landing page (KOL-43). Reachable by anyone
-     * holding one of the section's permissions; the queue (KOL-44), the
-     * request flow (KOL-45) and pactos (KOL-42) each add their own screens
-     * here as they land.
+     * holding one of the section's permissions; the queue (KOL-44) and the
+     * request flow (KOL-45) each add their own screens here as they land.
+     * Pactos (KOL-42) are reachable only by whoever holds
+     * `Manage:OvertimeAuthorization`, the same permission that gates the
+     * pactos routes themselves.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return Inertia::render('overtime/index');
+        return Inertia::render('overtime/index', [
+            'can' => [
+                'managePacts' => $request->user()->can('Manage:OvertimeAuthorization'),
+            ],
+        ]);
     }
 }

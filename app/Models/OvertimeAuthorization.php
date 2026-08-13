@@ -107,6 +107,14 @@ class OvertimeAuthorization extends Model
                 if ($breach->any() && trim((string) $authorization->reason) === '') {
                     throw OvertimeDecisionRefused::withoutJustification($breach);
                 }
+
+                // Art. 32, decision-1: the DT reality criterion holds these
+                // hours are overtime whether or not a written pacto covers
+                // them, so a missing pacto never blocks approval — it only
+                // demands the same audit trail a legal-cap breach does.
+                if ($authorization->overtime_pact_id === null && trim((string) $authorization->reason) === '') {
+                    throw OvertimeDecisionRefused::withoutAuditTrail();
+                }
             }
         });
     }
@@ -143,6 +151,10 @@ class OvertimeAuthorization extends Model
     /**
      * Authorise this day's overtime.
      *
+     * Resolves and snapshots the pacto covering this record's worked `date`
+     * (KOL-42 AC #4) — not today's — so a decision made long after the fact is
+     * still judged against the agreement in force when the hours were worked.
+     *
      * @param  User  $reviewer  The person deciding. Required — there is no other signature.
      * @param  string|null  $authorizedHours  The OHA as `HH:MM:SS`; defaults to authorising the calculated figure in full.
      * @param  string|null  $reason  Mandatory over a legal cap (KOL-41) or without a covering pacto (KOL-42).
@@ -152,6 +164,7 @@ class OvertimeAuthorization extends Model
         $this->assertSameOrganizationAs($reviewer);
 
         $authorized = Duration::tryFrom($authorizedHours ?? $this->calculated_hours) ?? Duration::zero();
+        $pact = OvertimePact::coveringDateFor($this->user_id, $this->date, $this->organization_id);
 
         $this->forceFill([
             'status' => OvertimeAuthorizationStatus::Approved,
@@ -160,6 +173,7 @@ class OvertimeAuthorization extends Model
             'reviewed_by' => $reviewer->id,
             'reviewed_at' => now(),
             'reason' => $reason,
+            'overtime_pact_id' => $pact?->id,
         ])->save();
 
         return $this;

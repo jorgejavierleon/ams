@@ -5,6 +5,7 @@ use App\Enums\OvertimeCalculationState;
 use App\Exceptions\OvertimeDecisionRefused;
 use App\Models\Organization;
 use App\Models\OvertimeAuthorization;
+use App\Models\OvertimePact;
 use App\Models\User;
 use App\Models\Workday;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -103,7 +104,7 @@ test('authorising more hours than were worked pays only what was calculated', fu
     [$workday, $supervisor] = overtimeDay('01:00:00');
 
     $authorization = OvertimeAuthorization::openFor($workday)
-        ->approve($supervisor, authorizedHours: '04:00:00');
+        ->approve($supervisor, authorizedHours: '04:00:00', reason: 'Autorización de prueba.');
 
     expect($authorization->authorized_hours)->toBe('04:00:00')
         ->and($authorization->final_hours)->toBe('01:00:00');
@@ -198,15 +199,19 @@ test('an enum with no lapsed case is what makes the timeout impossible', functio
 });
 
 test('the record is optionally linked to the pacto covering its worked date', function () {
-    [$workday] = overtimeDay();
+    [$workday, , $organization] = overtimeDay();
 
     $authorization = OvertimeAuthorization::openFor($workday);
 
     expect($authorization->overtime_pact_id)->toBeNull();
 
-    $authorization->update(['overtime_pact_id' => 42]);
+    $pact = OvertimePact::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $workday->user_id,
+    ]);
+    $authorization->update(['overtime_pact_id' => $pact->id]);
 
-    expect($authorization->fresh()->overtime_pact_id)->toBe(42);
+    expect($authorization->fresh()->overtime_pact_id)->toBe($pact->id);
 });
 
 test('the scopes separate a period into what payroll may read and what it may not', function () {
@@ -217,6 +222,7 @@ test('the scopes separate a period into what payroll may read and what it may no
         'workday_id' => $workday->id,
         'user_id' => $workday->user_id,
         'date' => $workday->date,
+        'reason' => 'Autorización de prueba.',
     ]);
 
     [$objectedWorkday] = overtimeDay('01:00:00', $organization);

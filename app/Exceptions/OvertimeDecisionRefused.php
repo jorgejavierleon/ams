@@ -77,4 +77,17 @@ class OvertimeDecisionRefused extends RuntimeException
             "An overtime authorisation exceeding a legal cap ({$labels}) cannot be approved without a written justification. The excess itself is allowed; approving it unexplained is not."
         );
     }
+
+    /**
+     * Código del Trabajo art. 32, decision-1: the DT reality criterion holds
+     * that hours worked with the employer's knowledge are overtime whether or
+     * not a written pacto covers them, so a missing pacto is never a bar to
+     * approval — it only demands the same audit trail a legal-cap breach does.
+     */
+    public static function withoutAuditTrail(): self
+    {
+        return new self(
+            'An overtime authorisation with no pacto covering its worked date cannot be approved without a written justification. The absence of a pacto never blocks payment; approving it unexplained does.'
+        );
+    }
 }

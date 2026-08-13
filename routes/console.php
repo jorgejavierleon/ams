@@ -18,3 +18,8 @@ Schedule::command('mark-modifications:approve-overdue')->everyTenMinutes();
 // re-running it costs nothing, since every date is upserted rather than
 // re-inserted.
 Schedule::command('overtime:calculate')->dailyAt('04:00');
+
+// The near-expiry alert of KOL-42 AC #3. Once a day is enough: the window is
+// measured in days, not hours, and every pacto is only ever notified about
+// once (idempotent on `expiry_notified_at`).
+Schedule::command('overtime:pacts:notify-expiring')->dailyAt('07:00');

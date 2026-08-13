@@ -4,6 +4,7 @@ use App\Enums\OvertimeCalculationState;
 use App\Exceptions\OvertimeDecisionRefused;
 use App\Models\Organization;
 use App\Models\OvertimeAuthorization;
+use App\Models\OvertimePact;
 use App\Models\User;
 use App\Models\Workday;
 use App\Services\LegalHourLimitVersions;
@@ -11,6 +12,21 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 
 uses(RefreshDatabase::class);
+
+/**
+ * A pacto covering the employee for the given range, so these cap-focused
+ * tests are not also tripped by KOL-42's missing-pacto justification
+ * requirement — that requirement is exercised in its own tests.
+ */
+function coveringPact(int $userId, Organization $organization, string $start, string $end): OvertimePact
+{
+    return OvertimePact::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $userId,
+        'start_date' => $start,
+        'end_date' => $end,
+    ]);
+}
 
 /**
  * A computed day for one employee, with the worked and calculated-overtime
@@ -49,7 +65,8 @@ function capDay(
 // every version, so every date in these tests resolves to the same overtime
 // ceiling regardless of which version is in force.
 test('a day within every cap approves without a justification', function () {
-    [$workday, $supervisor] = capDay('2026-08-03', calculatedOvertime: '01:00:00', workedTime: '09:00:00');
+    [$workday, $supervisor, $organization] = capDay('2026-08-03', calculatedOvertime: '01:00:00', workedTime: '09:00:00');
+    coveringPact($workday->user_id, $organization, '2026-08-01', '2026-08-31');
 
     $authorization = OvertimeAuthorization::openFor($workday)->approve($supervisor);
 
@@ -77,6 +94,7 @@ test('a day over the daily overtime cap is refused without a justification and a
 test('a week pushed over the weekly overtime cap by an individually valid day is refused without a justification', function () {
     $organization = Organization::factory()->create();
     $employee = User::factory()->create(['organization_id' => $organization->id]);
+    coveringPact($employee->id, $organization, '2026-08-01', '2026-08-31');
 
     // Six prior weekdays (Mon 3 Aug – Sat 8 Aug 2026), each approved for
     // exactly the 2h daily cap - individually valid, none needing a
@@ -126,7 +144,8 @@ test('a cap change between the worked date and the approval date is judged by th
     Carbon::setTestNow('2026-08-09 10:00:00');
 
     // Worked on 3 Aug, while the 2h/12h overtime ceiling was in force.
-    [$workday, $supervisor] = capDay('2026-08-03', calculatedOvertime: '02:00:00');
+    [$workday, $supervisor, $organization] = capDay('2026-08-03', calculatedOvertime: '02:00:00');
+    coveringPact($workday->user_id, $organization, '2026-08-01', '2026-08-31');
 
     // A stricter ceiling takes effect from 5 Aug - after the day was worked,
     // before it is approved "today".
