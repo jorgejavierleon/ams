@@ -21,6 +21,8 @@ class OvertimeController extends Controller
         return Inertia::render('overtime/index', [
             'can' => [
                 'managePacts' => $request->user()->can('Manage:OvertimeAuthorization'),
+                'viewQueue' => $request->user()->can('ViewTeam:OvertimeAuthorization')
+                    || $request->user()->can('Manage:OvertimeAuthorization'),
             ],
         ]);
     }

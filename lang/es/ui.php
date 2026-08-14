@@ -1671,6 +1671,85 @@ return [
                 'activated' => 'Pacto reactivado correctamente.',
             ],
         ],
+
+        'queue' => [
+            'title' => 'Horas extra pendientes',
+            'description' => 'Aprueba u objeta las jornadas con horas extraordinarias, individualmente o en bloque.',
+            'back' => 'Volver a horas extra',
+            'empty' => 'No hay jornadas de horas extra para este filtro.',
+            'select_all' => 'Seleccionar todas las filas',
+            'select_row' => 'Seleccionar fila',
+            'selected' => ':count seleccionadas',
+
+            'tabs' => [
+                'all' => 'Todas',
+            ],
+
+            'columns' => [
+                'employee' => 'Empleado',
+                'date' => 'Fecha',
+                'calculated_hours' => 'Calculadas (OHC)',
+                'authorized_hours' => 'Autorizadas (OHA)',
+                'final_hours' => 'Pagables',
+                'status' => 'Estado',
+                'reviewed_by' => 'Decidido por',
+                'reason' => 'Motivo',
+            ],
+
+            'flags' => [
+                'label' => 'Con anomalías',
+                'tooltip' => 'Anomalías sin revisar, bloquean la aprobación: :reasons',
+            ],
+
+            'filters' => [
+                'employee' => 'Empleado',
+                'from' => 'Desde',
+                'to' => 'Hasta',
+            ],
+
+            'actions' => [
+                'approve' => 'Aprobar',
+                'object' => 'Objetar',
+            ],
+
+            'approve_dialog' => [
+                'title' => 'Aprobar horas extra',
+                'description' => 'Jornada de :employee del :date. Puedes autorizar menos horas de las calculadas.',
+                'authorized_hours' => 'Horas autorizadas',
+                'reason' => 'Motivo',
+                'reason_hint' => 'Opcional, salvo que la jornada exceda un tope legal o no cuente con un pacto vigente.',
+                'submit' => 'Aprobar',
+            ],
+
+            'object_dialog' => [
+                'title' => 'Objetar horas extra',
+                'description' => 'Jornada de :employee del :date. Las marcas originales no se modifican.',
+                'reason' => 'Motivo',
+                'submit' => 'Objetar',
+            ],
+
+            'bulk' => [
+                'trigger_approve' => 'Aprobar seleccionadas',
+                'trigger_object' => 'Objetar seleccionadas',
+                'approve_title' => 'Aprobar horas extra en bloque',
+                'object_title' => 'Objetar horas extra en bloque',
+                'approve_description' => 'Se aprobarán íntegramente las :count jornadas seleccionadas. Una jornada con anomalías sin revisar, o que exceda un tope legal sin motivo, quedará pendiente.',
+                'object_description' => 'Se objetarán las :count jornadas seleccionadas.',
+                'reason' => 'Motivo',
+                'submit' => 'Confirmar',
+            ],
+
+            'errors' => [
+                'unresolved_anomalies' => 'No se puede aprobar: la jornada tiene anomalías sin revisar (:reasons). Corrige el dato de origen para desbloquear la aprobación.',
+                'reason_required' => 'Debes indicar un motivo: la jornada excede un tope legal o no cuenta con un pacto vigente.',
+            ],
+
+            'flash' => [
+                'approved' => 'Horas extra aprobadas correctamente.',
+                'objected' => 'Horas extra objetadas correctamente.',
+                'bulk_decided' => ':decided de :total jornadas decididas. Las demás quedaron pendientes por anomalías o topes sin justificar.',
+            ],
+        ],
     ],
 
     'mark_modifications' => [

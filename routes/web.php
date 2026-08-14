@@ -26,6 +26,7 @@ use App\Http\Controllers\My\MarkController as MyMarkController;
 use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OvertimePactController;
+use App\Http\Controllers\OvertimeQueueController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -180,6 +181,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/{overtimePact}', [OvertimePactController::class, 'update'])->name('update');
             Route::patch('/{overtimePact}/revoke', [OvertimePactController::class, 'revoke'])->name('revoke');
             Route::patch('/{overtimePact}/activate', [OvertimePactController::class, 'activate'])->name('activate');
+        });
+
+    // Pending-overtime queue (KOL-44, PRD §7.5): reachable by whoever can see a
+    // team's overtime; deciding it further requires ApproveTeam, enforced in
+    // OvertimeQueueController/OvertimeAuthorizationPolicy per request.
+    Route::middleware('permission:ViewTeam:OvertimeAuthorization|Manage:OvertimeAuthorization')
+        ->prefix('overtime/queue')
+        ->name('overtime.queue.')
+        ->group(function () {
+            Route::get('/', [OvertimeQueueController::class, 'index'])->name('index');
+            Route::post('/decide-bulk', [OvertimeQueueController::class, 'bulkDecide'])->name('bulk-decide');
+            Route::post('/{overtimeAuthorization}/approve', [OvertimeQueueController::class, 'approve'])->name('approve');
+            Route::post('/{overtimeAuthorization}/object', [OvertimeQueueController::class, 'object'])->name('object');
         });
 });
 
