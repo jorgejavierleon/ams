@@ -1,13 +1,15 @@
 import { Head, Link } from '@inertiajs/react';
-import { FileText, Timer } from 'lucide-react';
+import { FileText, ListChecks, Timer } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
 import { index as pactsIndex } from '@/routes/overtime/pacts';
+import { index as queueIndex } from '@/routes/overtime/queue';
 
 type Props = {
     can: {
         managePacts: boolean;
+        viewQueue: boolean;
     };
 };
 
@@ -19,19 +21,29 @@ export default function OvertimeIndex({ can }: Props) {
             <Head title={t('ui.overtime.index.title')} />
 
             <div className="space-y-6 p-6">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                     <Heading
                         title={t('ui.overtime.index.title')}
                         description={t('ui.overtime.index.description')}
                     />
-                    {can.managePacts && (
-                        <Button variant="outline" asChild>
-                            <Link href={pactsIndex()}>
-                                <FileText className="size-4" />
-                                {t('ui.overtime.pacts.title')}
-                            </Link>
-                        </Button>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {can.viewQueue && (
+                            <Button variant="outline" asChild>
+                                <Link href={queueIndex()}>
+                                    <ListChecks className="size-4" />
+                                    {t('ui.overtime.queue.title')}
+                                </Link>
+                            </Button>
+                        )}
+                        {can.managePacts && (
+                            <Button variant="outline" asChild>
+                                <Link href={pactsIndex()}>
+                                    <FileText className="size-4" />
+                                    {t('ui.overtime.pacts.title')}
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-12 text-center text-muted-foreground">
