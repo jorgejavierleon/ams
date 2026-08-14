@@ -557,8 +557,9 @@ test('a pacto revoked from the employee page keeps the record and reflects on th
     ]);
 
     $this->actingAs($admin)
+        ->from(route('employees.show', $employee))
         ->patch(route('overtime.pacts.revoke', $pact))
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect(route('employees.show', $employee));
 
     expect($pact->fresh()->status)->toBe(OvertimePactStatus::Revoked);
 
@@ -580,12 +581,13 @@ test('a pacto edited from the employee page reflects its new range on the Turnos
     ]);
 
     $this->actingAs($admin)
+        ->from(route('employees.show', $employee))
         ->put(route('overtime.pacts.update', $pact), [
             'user_id' => $employee->id,
             'start_date' => '2026-08-01',
             'end_date' => '2026-09-30',
         ])
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect(route('employees.show', $employee));
 
     $this->actingAs($admin)
         ->get(route('employees.show', $employee))
@@ -604,8 +606,9 @@ test('a revoked pacto reactivated from the employee page reflects as active on t
     ]);
 
     $this->actingAs($admin)
+        ->from(route('employees.show', $employee))
         ->patch(route('overtime.pacts.activate', $pact))
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect(route('employees.show', $employee));
 
     $this->actingAs($admin)
         ->get(route('employees.show', $employee))
@@ -619,12 +622,13 @@ test('a pacto created for the employee from their page appears on the Turnos tab
     $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
 
     $this->actingAs($admin)
+        ->from(route('employees.show', $employee))
         ->post(route('overtime.pacts.store'), [
             'user_id' => $employee->id,
             'start_date' => '2026-08-01',
             'end_date' => '2026-10-31',
         ])
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect(route('employees.show', $employee));
 
     $this->actingAs($admin)
         ->get(route('employees.show', $employee))

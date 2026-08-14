@@ -92,7 +92,7 @@ test('admin can create a pacto for an employee over a date range', function () {
             'start_date' => '2026-08-01',
             'end_date' => '2026-10-31',
         ])
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect();
 
     $this->assertDatabaseHas('overtime_pacts', [
         'organization_id' => $admin->organization_id,
@@ -111,7 +111,7 @@ test('a range exactly three months long is accepted', function () {
             'start_date' => '2026-08-01',
             'end_date' => '2026-11-01',
         ])
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect();
 
     $this->assertDatabaseHas('overtime_pacts', ['user_id' => $employee->id]);
 });
@@ -165,7 +165,7 @@ test('renewal creates a new agreement rather than extending the existing one', f
             'start_date' => '2026-08-01',
             'end_date' => '2026-10-31',
         ])
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect();
 
     expect(OvertimePact::where('user_id', $employee->id)->count())->toBe(2);
     expect($original->fresh()->start_date->toDateString())->toBe('2026-05-01')
@@ -190,7 +190,7 @@ test('admin can edit a pacto date range', function () {
             'start_date' => '2026-08-01',
             'end_date' => '2026-09-30',
         ])
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect();
 
     expect($pact->fresh()->end_date->toDateString())->toBe('2026-09-30');
 });
@@ -216,7 +216,7 @@ test('admin can revoke a pacto and the record is kept, not deleted', function ()
 
     $this->actingAs($admin)
         ->patch(route('overtime.pacts.revoke', $pact))
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect();
 
     expect($pact->fresh()->status)->toBe(OvertimePactStatus::Revoked);
     $this->assertDatabaseHas('overtime_pacts', ['id' => $pact->id]);
@@ -233,7 +233,7 @@ test('admin can reactivate a revoked pacto', function () {
 
     $this->actingAs($admin)
         ->patch(route('overtime.pacts.activate', $pact))
-        ->assertRedirect(route('overtime.pacts.index'));
+        ->assertRedirect();
 
     expect($pact->fresh()->status)->toBe(OvertimePactStatus::Active);
 });

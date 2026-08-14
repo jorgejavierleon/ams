@@ -70,7 +70,7 @@ class OvertimePactController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.overtime.pacts.flash.created')]);
 
-        return to_route('overtime.pacts.index');
+        return back();
     }
 
     public function update(Request $request, OvertimePact $overtimePact): RedirectResponse
@@ -79,7 +79,7 @@ class OvertimePactController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.overtime.pacts.flash.updated')]);
 
-        return to_route('overtime.pacts.index');
+        return back();
     }
 
     public function revoke(OvertimePact $overtimePact): RedirectResponse
@@ -88,7 +88,7 @@ class OvertimePactController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.overtime.pacts.flash.revoked')]);
 
-        return to_route('overtime.pacts.index');
+        return back();
     }
 
     public function activate(OvertimePact $overtimePact): RedirectResponse
@@ -97,7 +97,7 @@ class OvertimePactController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.overtime.pacts.flash.activated')]);
 
-        return to_route('overtime.pacts.index');
+        return back();
     }
 
     /**
