@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\ContractType;
+use App\Enums\OvertimePactStatus;
 use App\Mail\AuthProfileUpdated;
 use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Organization;
+use App\Models\OvertimePact;
 use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
@@ -511,6 +513,131 @@ test('admin cannot view an employee from another organization', function () {
     $this->actingAs($admin)
         ->get(route('employees.show', $foreign))
         ->assertNotFound();
+});
+
+// --- Overtime pactos (KOL-63) ---
+
+test('the Turnos tab lists the employee own pactos, newest first, excluding other employees', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $otherEmployee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $older = OvertimePact::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $employee->id,
+        'start_date' => '2026-04-01',
+        'end_date' => '2026-06-30',
+    ]);
+    $newer = OvertimePact::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $employee->id,
+        'start_date' => '2026-07-01',
+        'end_date' => '2026-09-30',
+    ]);
+    OvertimePact::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $otherEmployee->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.show', $employee))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('overtimePacts', 2)
+            ->where('overtimePacts.0.id', $newer->id)
+            ->where('overtimePacts.1.id', $older->id));
+});
+
+test('a pacto revoked from the employee page keeps the record and reflects on the list', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $pact = OvertimePact::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $employee->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('overtime.pacts.revoke', $pact))
+        ->assertRedirect(route('overtime.pacts.index'));
+
+    expect($pact->fresh()->status)->toBe(OvertimePactStatus::Revoked);
+
+    $this->actingAs($admin)
+        ->get(route('employees.show', $employee))
+        ->assertInertia(fn ($page) => $page
+            ->where('overtimePacts.0.id', $pact->id)
+            ->where('overtimePacts.0.status.value', 'revoked'));
+});
+
+test('a pacto edited from the employee page reflects its new range on the Turnos tab', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $pact = OvertimePact::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $employee->id,
+        'start_date' => '2026-08-01',
+        'end_date' => '2026-08-31',
+    ]);
+
+    $this->actingAs($admin)
+        ->put(route('overtime.pacts.update', $pact), [
+            'user_id' => $employee->id,
+            'start_date' => '2026-08-01',
+            'end_date' => '2026-09-30',
+        ])
+        ->assertRedirect(route('overtime.pacts.index'));
+
+    $this->actingAs($admin)
+        ->get(route('employees.show', $employee))
+        ->assertInertia(fn ($page) => $page
+            ->where('overtimePacts.0.id', $pact->id)
+            ->where('overtimePacts.0.end_date', '2026-09-30'));
+});
+
+test('a revoked pacto reactivated from the employee page reflects as active on the Turnos tab', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $pact = OvertimePact::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $employee->id,
+        'status' => OvertimePactStatus::Revoked,
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('overtime.pacts.activate', $pact))
+        ->assertRedirect(route('overtime.pacts.index'));
+
+    $this->actingAs($admin)
+        ->get(route('employees.show', $employee))
+        ->assertInertia(fn ($page) => $page
+            ->where('overtimePacts.0.id', $pact->id)
+            ->where('overtimePacts.0.status.value', 'active'));
+});
+
+test('a pacto created for the employee from their page appears on the Turnos tab', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->post(route('overtime.pacts.store'), [
+            'user_id' => $employee->id,
+            'start_date' => '2026-08-01',
+            'end_date' => '2026-10-31',
+        ])
+        ->assertRedirect(route('overtime.pacts.index'));
+
+    $this->actingAs($admin)
+        ->get(route('employees.show', $employee))
+        ->assertInertia(fn ($page) => $page->has('overtimePacts', 1));
+});
+
+test('an admin viewing an employee page is granted manageOvertimePacts', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.show', $employee))
+        ->assertInertia(fn ($page) => $page->where('can.manageOvertimePacts', true));
 });
 
 // --- Delete ---

@@ -9,6 +9,7 @@ use App\Enums\LeaveType;
 use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Leave;
+use App\Models\OvertimePact;
 use App\Models\Position;
 use App\Models\Premise;
 use App\Models\Shift;
@@ -122,7 +123,7 @@ class EmployeeController extends Controller
         return to_route('employees.index');
     }
 
-    public function show(User $employee): Response
+    public function show(Request $request, User $employee): Response
     {
         $this->assertEmployee($employee);
 
@@ -164,6 +165,12 @@ class EmployeeController extends Controller
             // stateful add/edit form, so it must not sit behind a deferred prop
             // that resets (and unmounts the form) on every redirect-back.
             'shifts' => $this->shiftAssignments($employee),
+            // Loaded with the page for the same reason as shifts: the Pactos
+            // widget in the Turnos tab hosts its own stateful add/edit form.
+            'overtimePacts' => $this->overtimePacts($employee),
+            'can' => [
+                'manageOvertimePacts' => $request->user()->can('Manage:OvertimeAuthorization'),
+            ],
             'vacationBalance' => $this->vacationBalance($employee),
             // Documents are still deferred — wired up by #35.
             'documents' => Inertia::defer(fn () => []),
@@ -427,6 +434,33 @@ class EmployeeController extends Controller
                 ->map(fn (Shift $shift) => ['value' => (string) $shift->id, 'label' => $shift->name])
                 ->all(),
         ];
+    }
+
+    /**
+     * The employee's overtime pactos (newest first), feeding the Pactos widget
+     * in the Turnos tab. Same shape as {@see OvertimePactController::index()}
+     * minus the employee name, which is already implicit on this page.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function overtimePacts(User $employee): array
+    {
+        return OvertimePact::query()
+            ->where('user_id', $employee->id)
+            ->orderByDesc('start_date')
+            ->get()
+            ->map(fn (OvertimePact $pact) => [
+                'id' => $pact->id,
+                'user_id' => $pact->user_id,
+                'start_date' => $pact->start_date->format('Y-m-d'),
+                'end_date' => $pact->end_date->format('Y-m-d'),
+                'status' => [
+                    'value' => $pact->status->value,
+                    'label' => $pact->status->label(),
+                    'variant' => $pact->status->badgeVariant(),
+                ],
+            ])
+            ->all();
     }
 
     /**

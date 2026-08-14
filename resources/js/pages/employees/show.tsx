@@ -2,6 +2,8 @@ import { Deferred, Head, Link } from '@inertiajs/react';
 import { Pencil } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { ComboboxOption } from '@/components/combobox';
+import { EmployeeOvertimePacts } from '@/components/employee-overtime-pacts';
+import type { EmployeeOvertimePact } from '@/components/employee-overtime-pacts';
 import Heading from '@/components/heading';
 import { ShiftAssignments } from '@/components/shift-assignments';
 import type { ShiftAssignment } from '@/components/shift-assignments';
@@ -57,9 +59,15 @@ type VacationBalance = {
     total: number;
 };
 
+type Can = {
+    manageOvertimePacts: boolean;
+};
+
 type Props = {
     employee: Employee;
     shifts?: Shifts;
+    overtimePacts?: EmployeeOvertimePact[];
+    can: Can;
     vacationBalance: VacationBalance;
 };
 
@@ -77,6 +85,8 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
 export default function ShowEmployee({
     employee,
     shifts,
+    overtimePacts,
+    can,
     vacationBalance,
 }: Props) {
     const { t } = useTranslations();
@@ -301,11 +311,17 @@ export default function ShowEmployee({
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="shifts">
+                    <TabsContent value="shifts" className="space-y-6">
                         <ShiftAssignments
                             employeeId={employee.id}
                             assignments={shifts?.assignments ?? []}
                             shiftOptions={shifts?.shiftOptions ?? []}
+                        />
+                        <EmployeeOvertimePacts
+                            employeeId={employee.id}
+                            employeeName={employee.name}
+                            pacts={overtimePacts ?? []}
+                            canManage={can.manageOvertimePacts}
                         />
                     </TabsContent>
 

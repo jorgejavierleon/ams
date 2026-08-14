@@ -31,7 +31,14 @@ type Props = {
     onOpenChange: (open: boolean) => void;
     /** When set, the dialog edits this pacto; otherwise it creates one. */
     pact?: OvertimePactFormTarget;
-    employeeOptions: ComboboxOption[];
+    /**
+     * The employee combobox, for the standalone pactos list where any
+     * employee can be picked. Omit it and pass `employeeId` instead when the
+     * dialog is already scoped to one employee (e.g. embedded in their
+     * profile), and the field is hidden entirely.
+     */
+    employeeOptions?: ComboboxOption[];
+    employeeId?: number;
 };
 
 export default function OvertimePactFormDialog({
@@ -39,6 +46,7 @@ export default function OvertimePactFormDialog({
     onOpenChange,
     pact,
     employeeOptions,
+    employeeId,
 }: Props) {
     const { t } = useTranslations();
     const isEdit = Boolean(pact);
@@ -57,7 +65,11 @@ export default function OvertimePactFormDialog({
     useEffect(() => {
         if (open) {
             setData({
-                user_id: pact ? String(pact.user_id) : '',
+                user_id: pact
+                    ? String(pact.user_id)
+                    : employeeId
+                      ? String(employeeId)
+                      : '',
                 start_date: pact?.start_date ?? '',
                 end_date: pact?.end_date ?? '',
             });
@@ -98,29 +110,33 @@ export default function OvertimePactFormDialog({
                         </DialogTitle>
                     </DialogHeader>
 
-                    <FormField
-                        label={t('ui.overtime.pacts.form.employee')}
-                        htmlFor="user_id"
-                        required
-                        error={errors.user_id}
-                    >
-                        <Combobox
-                            id="user_id"
-                            options={employeeOptions}
-                            value={data.user_id}
-                            onChange={(value) => setData('user_id', value)}
-                            placeholder={t(
-                                'ui.overtime.pacts.form.employee_placeholder',
-                            )}
-                            searchPlaceholder={t(
-                                'ui.overtime.pacts.form.employee_search',
-                            )}
-                            emptyLabel={t(
-                                'ui.overtime.pacts.form.employee_empty',
-                            )}
-                            modal
-                        />
-                    </FormField>
+                    {!employeeId && (
+                        <FormField
+                            label={t('ui.overtime.pacts.form.employee')}
+                            htmlFor="user_id"
+                            required
+                            error={errors.user_id}
+                        >
+                            <Combobox
+                                id="user_id"
+                                options={employeeOptions ?? []}
+                                value={data.user_id}
+                                onChange={(value) =>
+                                    setData('user_id', value)
+                                }
+                                placeholder={t(
+                                    'ui.overtime.pacts.form.employee_placeholder',
+                                )}
+                                searchPlaceholder={t(
+                                    'ui.overtime.pacts.form.employee_search',
+                                )}
+                                emptyLabel={t(
+                                    'ui.overtime.pacts.form.employee_empty',
+                                )}
+                                modal
+                            />
+                        </FormField>
+                    )}
 
                     <FormField
                         label={t('ui.overtime.pacts.form.start_date')}
