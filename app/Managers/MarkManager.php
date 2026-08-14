@@ -3,6 +3,7 @@
 namespace App\Managers;
 
 use App\Enums\MarkType;
+use App\Enums\PunchState;
 use App\Models\Mark;
 use App\Models\ShiftAssignment;
 use App\Models\ShiftDay;
@@ -124,6 +125,27 @@ class MarkManager
             ->first();
 
         return $shiftDay === null || $shiftDay->is_free ? null : $shiftDay;
+    }
+
+    /**
+     * Where the user is in their day, from the marks already on record for it.
+     *
+     * Unconditional — it does not ask whether the user holds `ClockOwn:Mark`,
+     * because that answer belongs to the caller: {@see TodayController} and
+     * `UpcomingShiftsController` both gate the mobile app's punch surface on it,
+     * and they are the two places that decide whether to call this at all.
+     */
+    public function punchStateForDate(User $user, CarbonInterface $date): PunchState
+    {
+        $marks = Mark::query()
+            ->where('user_id', $user->id)
+            ->whereDate('date_time', $date)
+            ->get(['id', 'type']);
+
+        return PunchState::fromTodaysMarks(
+            $marks->contains(fn (Mark $mark): bool => $mark->type === MarkType::In),
+            $marks->contains(fn (Mark $mark): bool => $mark->type === MarkType::Out),
+        );
     }
 
     /**

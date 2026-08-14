@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\MarkType;
 use App\Enums\PunchState;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TodayResource;
 use App\Managers\MarkManager;
-use App\Models\Mark;
 use App\Models\Premise;
 use App\Models\ShiftDay;
 use App\Models\User;
@@ -61,7 +59,7 @@ class TodayController extends Controller
             shiftDay: $shiftDay,
             premiseLabel: $shiftDay === null ? null : $this->premiseLabel($premise, $shiftDay),
             geofence: Geofence::fromPremise($premise),
-            punchState: $this->punchState($user, $today),
+            punchState: $this->punchState($user, $today, $marks),
             workedHours: $this->weekWorkedHours($user, $today),
             contractedHours: $this->nonNegativeHours($assignment?->shift?->total_week_hours),
         ));
@@ -86,21 +84,13 @@ class TodayController extends Controller
      * dashboard's clock widget and the `permission:` middleware on the punch
      * route use, so all three agree about who has a punch surface.
      */
-    private function punchState(User $user, CarbonInterface $today): ?PunchState
+    private function punchState(User $user, CarbonInterface $today, MarkManager $marks): ?PunchState
     {
         if (! $user->getAllPermissions()->pluck('name')->contains('ClockOwn:Mark')) {
             return null;
         }
 
-        $todaysMarks = Mark::query()
-            ->where('user_id', $user->id)
-            ->whereDate('date_time', $today)
-            ->get(['id', 'type']);
-
-        return PunchState::fromTodaysMarks(
-            $todaysMarks->contains(fn (Mark $mark): bool => $mark->type === MarkType::In),
-            $todaysMarks->contains(fn (Mark $mark): bool => $mark->type === MarkType::Out),
-        );
+        return $marks->punchStateForDate($user, $today);
     }
 
     /**
