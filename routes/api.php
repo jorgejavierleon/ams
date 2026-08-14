@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\MarkController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\TodayController;
 use App\Http\Controllers\Api\TokenController;
+use App\Http\Controllers\Api\UpcomingShiftsController;
 use App\Http\Middleware\ThrottleTokenIssuance;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -67,6 +68,13 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         // punch still gets the tab, with the punch block omitted rather than a
         // 403 that would break the screen for them.
         Route::get('me/today', TodayController::class)->name('me.today');
+
+        // The Jornada tab's Próximos screen: today's shift again plus the
+        // schedule after it. Gated, unlike me/today above — there is nothing on
+        // this screen for an employee who cannot view their own workday.
+        Route::get('me/shifts/upcoming', UpcomingShiftsController::class)
+            ->middleware('permission:ViewOwn:Workday')
+            ->name('me.shifts.upcoming');
 
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
