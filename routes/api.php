@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\TodayController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UpcomingShiftsController;
+use App\Http\Controllers\Api\WorkdaysController;
 use App\Http\Middleware\ThrottleTokenIssuance;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -75,6 +76,13 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         Route::get('me/shifts/upcoming', UpcomingShiftsController::class)
             ->middleware('permission:ViewOwn:Workday')
             ->name('me.shifts.upcoming');
+
+        // The Jornada tab's Historial screen: the employee's own computed
+        // workdays over a date range (Res. 38 Art. 22.1 — 5 years, paged back
+        // a month at a time by the client rather than a fixed window).
+        Route::get('me/workdays', [WorkdaysController::class, 'index'])
+            ->middleware('permission:ViewOwn:Workday')
+            ->name('me.workdays.index');
 
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
