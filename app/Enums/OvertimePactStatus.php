@@ -42,7 +42,7 @@ enum OvertimePactStatus: string
     {
         return match ($this) {
             self::Active => 'default',
-            self::Revoked => 'destructive',
+            self::Revoked => 'outline',
         };
     }
 }
