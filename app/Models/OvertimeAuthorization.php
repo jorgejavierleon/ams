@@ -176,6 +176,8 @@ class OvertimeAuthorization extends Model
             'overtime_pact_id' => $pact?->id,
         ])->save();
 
+        $this->stampWorkdayDecision();
+
         return $this;
     }
 
@@ -200,6 +202,8 @@ class OvertimeAuthorization extends Model
             'reason' => $reason,
         ])->save();
 
+        $this->stampWorkdayDecision();
+
         return $this;
     }
 
@@ -210,12 +214,29 @@ class OvertimeAuthorization extends Model
      *
      * The requested figure (OHR) is recorded but deliberately absent from the
      * comparison — a day authorised for more than the employee asked for, and
-     * worked in full, pays the authorised amount. KOL-46 owns the rest of this
-     * rule, including the legal-cap ceiling of KOL-41.
+     * worked in full, pays the authorised amount. A missing calculated figure
+     * is excluded rather than treated as zero, via {@see Duration::min()}, so
+     * a day decided before the engine ever ran is not floored to nothing.
      */
     private function finalHoursFor(Duration $authorized): Duration
     {
         return Duration::min($authorized, Duration::tryFrom($this->calculated_hours)) ?? Duration::zero();
+    }
+
+    /**
+     * Freeze the OHC this decision was made against onto the day's
+     * {@see Workday}, so a later recalculation that moves the engine's figure
+     * is visible through {@see Workday::overtimeNeedsReReview()} instead of
+     * silently repricing an already-decided day. The columns exist for
+     * exactly this (KOL-39) but stay untouched by the engine itself — this is
+     * the one write path allowed to set them.
+     */
+    private function stampWorkdayDecision(): void
+    {
+        $this->workday()->update([
+            'overtime_decided_at' => $this->reviewed_at,
+            'overtime_decided_value' => $this->calculated_hours,
+        ]);
     }
 
     /**

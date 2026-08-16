@@ -110,6 +110,79 @@ test('authorising more hours than were worked pays only what was calculated', fu
         ->and($authorization->final_hours)->toBe('01:00:00');
 });
 
+test('authorising more than was requested pays the full authorised amount when it was all worked', function () {
+    // The requested figure (OHR) is recorded but stays outside the MIN
+    // comparison: an employee who asked for one hour but was authorised and
+    // worked three is paid three, not capped back down to the request.
+    [$workday, $supervisor] = overtimeDay('03:00:00');
+
+    $authorization = OvertimeAuthorization::openFor($workday, requestedHours: '01:00:00')
+        ->approve($supervisor, authorizedHours: '03:00:00', reason: 'Se autorizan las tres horas trabajadas.');
+
+    expect($authorization->requested_hours)->toBe('01:00:00')
+        ->and($authorization->authorized_hours)->toBe('03:00:00')
+        ->and($authorization->final_hours)->toBe('03:00:00');
+});
+
+test('a missing calculated figure is excluded from the comparison rather than flooring the payable amount to zero', function () {
+    [$workday, $supervisor] = overtimeDay('03:00:00');
+
+    $authorization = OvertimeAuthorization::openFor($workday);
+    $authorization->forceFill(['calculated_hours' => null])->save();
+
+    $authorization->approve($supervisor, authorizedHours: '02:00:00', reason: 'Autorización sin cifra calculada.');
+
+    expect($authorization->final_hours)->toBe('02:00:00');
+});
+
+test('pure post-hoc mode with no request stays pending until a human confirms it, and a cap breach demands justification', function () {
+    // No OHR anywhere on the record — the fallback of PRD §7.1 for pure Mode
+    // B. The figure is the calculated one, subject to the same legal-cap
+    // validation (KOL-41) as every other day, and never auto-approved.
+    [$workday, $supervisor] = overtimeDay('03:00:00');
+
+    $authorization = OvertimeAuthorization::openFor($workday);
+
+    expect($authorization->requested_hours)->toBeNull()
+        ->and($authorization->isPending())->toBeTrue();
+
+    // 3h exceeds the 2h daily overtime cap in force on 2026-08-03, so
+    // approving without a reason is refused rather than silently blocked or
+    // silently waved through (decision-1: a flag, never a bar).
+    expect(fn () => $authorization->approve($supervisor))
+        ->toThrow(OvertimeDecisionRefused::class);
+
+    $authorization->refresh();
+    expect($authorization->isPending())->toBeTrue();
+
+    $authorization->approve($supervisor, reason: 'Continuidad de servicio crítico.');
+
+    expect($authorization->isApproved())->toBeTrue()
+        ->and($authorization->final_hours)->toBe('03:00:00');
+});
+
+test('a recalculation that raises the figure after approval does not raise the payable amount, and surfaces the day for re-review', function () {
+    [$workday, $supervisor] = overtimeDay('02:00:00');
+
+    $authorization = OvertimeAuthorization::openFor($workday)
+        ->approve($supervisor, reason: 'Autorización de prueba.');
+
+    expect($authorization->final_hours)->toBe('02:00:00');
+
+    $decided = $workday->fresh();
+    expect($decided->overtime_decided_at)->not->toBeNull()
+        ->and($decided->overtime_decided_value)->toBe('02:00:00')
+        ->and($decided->overtimeNeedsReReview())->toBeFalse();
+
+    // A mark correction lets the engine recompute a bigger figure. The engine
+    // never touches the authorisation (KOL-39), so the approved record keeps
+    // paying what it already decided.
+    $workday->update(['calculated_overtime' => '03:00:00']);
+
+    expect($authorization->fresh()->final_hours)->toBe('02:00:00')
+        ->and($workday->fresh()->overtimeNeedsReReview())->toBeTrue();
+});
+
 test('an objected day pays nothing and leaves every worked hour visible as unauthorised', function () {
     [$workday, $supervisor] = overtimeDay('02:30:00');
 
