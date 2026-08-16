@@ -9,6 +9,7 @@ import {
     IdCard,
     LayoutGrid,
     LayoutTemplate,
+    ListChecks,
     MapPin,
     ShieldCheck,
     SlidersHorizontal,
@@ -46,6 +47,7 @@ import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { index as overtimeIndex } from '@/routes/overtime';
+import { index as overtimeQueueIndex } from '@/routes/overtime/queue';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
@@ -208,6 +210,12 @@ export function AppSidebar() {
                               title: t('ui.nav.overtime'),
                               href: overtimeIndex(),
                               icon: Timer,
+                          },
+                          {
+                              title: t('ui.nav.overtime_queue'),
+                              href: overtimeQueueIndex(),
+                              icon: ListChecks,
+                              badge: auth.pendingOvertimeCount,
                           },
                       ]
                     : []),

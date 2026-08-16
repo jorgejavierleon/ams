@@ -40,6 +40,7 @@ return [
         'my_documents' => 'My documents',
         'team_leaves' => 'Team leaves',
         'overtime' => 'Overtime',
+        'overtime_queue' => 'Overtime queue',
     ],
 
     'user_menu' => [

@@ -40,6 +40,7 @@ return [
         'my_documents' => 'Mis documentos',
         'team_leaves' => 'Permisos del equipo',
         'overtime' => 'Horas extra',
+        'overtime_queue' => 'Cola de horas extra',
     ],
 
     'user_menu' => [
