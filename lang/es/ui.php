@@ -1588,6 +1588,8 @@ return [
             'title' => 'Horas extra',
             'description' => 'Gestión de horas extraordinarias, sus autorizaciones y pactos.',
             'coming_soon' => 'Las pantallas de esta sección se irán habilitando próximamente.',
+            'new_request' => 'Solicitar horas extra',
+            'my_requests' => 'Mis solicitudes',
         ],
 
         'calculation_states' => [
@@ -1599,6 +1601,69 @@ return [
             'pending' => 'Pendiente',
             'approved' => 'Autorizada',
             'objected' => 'Objetada',
+        ],
+
+        'requests' => [
+            'statuses' => [
+                'pending' => 'Pendiente',
+                'approved' => 'Aprobada',
+                'rejected' => 'Rechazada',
+            ],
+
+            'validation' => [
+                'retroactive_window' => 'Solo puedes solicitar horas extra retroactivas dentro de los últimos :days días.',
+                'positive_hours' => 'Las horas solicitadas deben ser mayores a 0.',
+            ],
+
+            'flash' => [
+                'created' => 'Solicitud de horas extra enviada.',
+            ],
+
+            'my' => [
+                'title' => 'Mis solicitudes de horas extra',
+                'description' => 'Solicita horas extra y revisa el estado de tus solicitudes.',
+                'new' => 'Solicitar horas extra',
+                'empty' => 'Aún no tienes solicitudes de horas extra.',
+
+                'tabs' => [
+                    'all' => 'Todas',
+                ],
+
+                'columns' => [
+                    'date' => 'Fecha',
+                    'requested_hours' => 'Horas solicitadas',
+                    'reason' => 'Motivo',
+                    'status' => 'Estado',
+                    'reviewed_by' => 'Decidido por',
+                ],
+
+                'detail' => [
+                    'title' => 'Detalle de la solicitud',
+                    'date' => 'Fecha',
+                    'requested_hours' => 'Horas solicitadas',
+                    'status' => 'Estado',
+                    'reason' => 'Motivo de la solicitud',
+                    'decision_reason' => 'Motivo de la decisión',
+                    'reviewed_by' => 'Decidido por',
+                    'created_at' => 'Solicitada el',
+                    'none' => '—',
+                    'no_reason' => 'Sin motivo indicado.',
+                ],
+
+                'create' => [
+                    'title' => 'Solicitar horas extra',
+                    'description' => 'Envía una solicitud de horas extra para su aprobación.',
+                    'submit' => 'Enviar solicitud',
+                ],
+
+                'form' => [
+                    'date' => 'Fecha',
+                    'requested_hours' => 'Horas solicitadas',
+                    'requested_hours_hint' => 'Usa decimales, por ejemplo 1.5 para una hora y media.',
+                    'reason' => 'Motivo',
+                    'retroactive_hint' => 'Puedes solicitar fechas pasadas hasta :days días atrás.',
+                ],
+            ],
         ],
 
         'anomaly_reasons' => [
@@ -1683,6 +1748,44 @@ return [
 
             'tabs' => [
                 'all' => 'Todas',
+                'excess' => 'Jornadas',
+                'requests' => 'Solicitudes',
+            ],
+
+            'requests' => [
+                'empty' => 'No hay solicitudes de horas extra pendientes.',
+
+                'columns' => [
+                    'employee' => 'Empleado',
+                    'date' => 'Fecha',
+                    'requested_hours' => 'Horas solicitadas',
+                    'reason' => 'Motivo',
+                    'status' => 'Estado',
+                    'reviewed_by' => 'Decidido por',
+                ],
+
+                'actions' => [
+                    'approve' => 'Aprobar',
+                    'reject' => 'Rechazar',
+                ],
+
+                'approve_dialog' => [
+                    'title' => 'Aprobar solicitud',
+                    'description' => 'Solicitud de :employee para el :date. Aprobarla no genera horas pagables por sí sola; las horas trabajadas seguirán pasando por esta misma cola una vez calculadas.',
+                    'submit' => 'Aprobar',
+                ],
+
+                'reject_dialog' => [
+                    'title' => 'Rechazar solicitud',
+                    'description' => 'Solicitud de :employee para el :date. Rechazarla no le impide trabajar ese día.',
+                    'reason' => 'Motivo',
+                    'submit' => 'Rechazar',
+                ],
+
+                'flash' => [
+                    'approved' => 'Solicitud aprobada correctamente.',
+                    'rejected' => 'Solicitud rechazada correctamente.',
+                ],
             ],
 
             'columns' => [

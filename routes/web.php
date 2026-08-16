@@ -23,6 +23,7 @@ use App\Http\Controllers\MarkModificationReviewController;
 use App\Http\Controllers\My\DocumentController as MyDocumentController;
 use App\Http\Controllers\My\LeaveController as MyLeaveController;
 use App\Http\Controllers\My\MarkController as MyMarkController;
+use App\Http\Controllers\My\OvertimeRequestController as MyOvertimeRequestController;
 use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OvertimePactController;
@@ -194,6 +195,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/decide-bulk', [OvertimeQueueController::class, 'bulkDecide'])->name('bulk-decide');
             Route::post('/{overtimeAuthorization}/approve', [OvertimeQueueController::class, 'approve'])->name('approve');
             Route::post('/{overtimeAuthorization}/object', [OvertimeQueueController::class, 'object'])->name('object');
+
+            // Mode A requests (KOL-45): decided in this same queue rather than
+            // a separate inbox.
+            Route::post('/requests/{overtimeRequest}/approve', [OvertimeQueueController::class, 'approveRequest'])->name('requests.approve');
+            Route::post('/requests/{overtimeRequest}/reject', [OvertimeQueueController::class, 'rejectRequest'])->name('requests.reject');
         });
 });
 
@@ -214,6 +220,16 @@ Route::middleware(['auth', 'verified'])->prefix('my')->name('my.')->group(functi
     Route::delete('leaves/{leave}', [MyLeaveController::class, 'destroy'])
         ->middleware('permission:CancelOwn:Leave')
         ->name('leaves.destroy');
+
+    Route::get('overtime-requests', [MyOvertimeRequestController::class, 'index'])
+        ->middleware('permission:ViewOwn:OvertimeAuthorization')
+        ->name('overtime-requests.index');
+    Route::get('overtime-requests/create', [MyOvertimeRequestController::class, 'create'])
+        ->middleware('permission:RequestOwn:OvertimeAuthorization')
+        ->name('overtime-requests.create');
+    Route::post('overtime-requests', [MyOvertimeRequestController::class, 'store'])
+        ->middleware('permission:RequestOwn:OvertimeAuthorization')
+        ->name('overtime-requests.store');
 
     Route::post('marks', [MyMarkController::class, 'store'])
         ->middleware('permission:ClockOwn:Mark')

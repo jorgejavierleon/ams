@@ -109,6 +109,16 @@ class OrganizationSettings
     }
 
     /**
+     * How many days into the past an employee may still request overtime for
+     * (Mode A, KOL-45). A request for a date older than this is refused with a
+     * Spanish message naming the window.
+     */
+    public function overtimeRetroactiveRequestDays(?int $organizationId = null): int
+    {
+        return (int) $this->get('overtime_retroactive_request_days', 7, $organizationId);
+    }
+
+    /**
      * Drop the cached settings for an organization so the next read reloads it.
      * Called by the observer on every change.
      */

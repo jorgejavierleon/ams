@@ -21,9 +21,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
+import {
+    decimalHoursToTime,
+    timeToDecimalHours,
+} from '@/lib/overtime-duration';
+import { toneChip } from '@/lib/status-tone';
 import { cn } from '@/lib/utils';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { approve, bulkDecide, index, object } from '@/routes/overtime/queue';
+import {
+    approve as approveRequest,
+    reject as rejectRequest,
+} from '@/routes/overtime/queue/requests';
 import type { Paginated } from '@/types/ui';
 
 type OvertimeAuthorizationRow = {
@@ -44,6 +53,18 @@ type OvertimeAuthorizationRow = {
     anomaly_reasons: string[];
 };
 
+type OvertimeRequestRow = {
+    id: number;
+    employee: string | null;
+    date: string;
+    requested_hours: string;
+    reason: string | null;
+    status: string;
+    status_label: string;
+    status_badge: string;
+    reviewed_by: string | null;
+};
+
 type Option = { value: string; label: string };
 
 type Props = {
@@ -55,21 +76,17 @@ type Props = {
         to: string | null;
         sort: string | null;
         direction: 'asc' | 'desc' | null;
+        request_status: string | null;
     };
     employeeOptions: FacetedOption[];
     statusOptions: Option[];
+    requestStatusOptions: Option[];
+    requests: Paginated<OvertimeRequestRow>;
+    pendingRequestsCount: number;
     can: {
         decide: boolean;
+        requests: boolean;
     };
-};
-
-const STATUS_VARIANT: Record<
-    string,
-    'default' | 'secondary' | 'destructive' | 'outline'
-> = {
-    success: 'default',
-    warning: 'secondary',
-    destructive: 'destructive',
 };
 
 /** Drop the seconds from a stored `HH:MM:SS` figure for compact display. */
@@ -82,9 +99,14 @@ export default function OvertimeQueueIndex({
     filters,
     employeeOptions,
     statusOptions,
+    requestStatusOptions,
+    requests,
+    pendingRequestsCount,
     can,
 }: Props) {
     const { t } = useTranslations();
+
+    const [view, setView] = useState<'excess' | 'requests'>('excess');
 
     const [status, setStatus] = useState(filters.status ?? 'pending');
     const [employees, setEmployees] = useState<string[]>(
@@ -92,6 +114,9 @@ export default function OvertimeQueueIndex({
     );
     const [from, setFrom] = useState(filters.from ?? '');
     const [to, setTo] = useState(filters.to ?? '');
+    const [requestStatus, setRequestStatus] = useState(
+        filters.request_status ?? 'pending',
+    );
 
     const [approveTarget, setApproveTarget] =
         useState<OvertimeAuthorizationRow | null>(null);
@@ -107,6 +132,11 @@ export default function OvertimeQueueIndex({
         () => () => {},
     );
 
+    const [approveRequestTarget, setApproveRequestTarget] =
+        useState<OvertimeRequestRow | null>(null);
+    const [rejectRequestTarget, setRejectRequestTarget] =
+        useState<OvertimeRequestRow | null>(null);
+
     const approveForm = useForm({ authorized_hours: '', reason: '' });
     const objectForm = useForm({ reason: '' });
     const bulkForm = useForm({
@@ -114,10 +144,15 @@ export default function OvertimeQueueIndex({
         action: 'approve' as 'approve' | 'object',
         reason: '',
     });
+    const approveRequestForm = useForm({});
+    const rejectRequestForm = useForm({ reason: '' });
 
     const extraParams = useMemo(
         () => ({
-            status: status === 'all' ? undefined : status,
+            // Sent as the literal "all" (not `undefined`) — an omitted param
+            // reads server-side as "no filter chosen yet", which defaults
+            // back to Pendiente rather than clearing the filter.
+            status,
             employees: employees.length > 0 ? employees : undefined,
             from: from || undefined,
             to: to || undefined,
@@ -133,10 +168,25 @@ export default function OvertimeQueueIndex({
         [statusOptions, t],
     );
 
+    const requestExtraParams = useMemo(
+        () => ({ request_status: requestStatus }),
+        [requestStatus],
+    );
+
+    const requestStatusTabs = useMemo(
+        () => [
+            ...requestStatusOptions,
+            { value: 'all', label: t('ui.overtime.queue.tabs.all') },
+        ],
+        [requestStatusOptions, t],
+    );
+
     function openApprove(row: OvertimeAuthorizationRow) {
         approveForm.clearErrors();
         approveForm.setData({
-            authorized_hours: hm(row.authorized_hours ?? row.calculated_hours),
+            authorized_hours: timeToDecimalHours(
+                row.authorized_hours ?? row.calculated_hours,
+            ),
             reason: '',
         });
         setApproveTarget(row);
@@ -147,6 +197,10 @@ export default function OvertimeQueueIndex({
             return;
         }
 
+        approveForm.transform((data) => ({
+            ...data,
+            authorized_hours: decimalHoursToTime(data.authorized_hours),
+        }));
         approveForm.post(approve(approveTarget.id).url, {
             preserveScroll: true,
             onSuccess: () => {
@@ -172,6 +226,37 @@ export default function OvertimeQueueIndex({
             onSuccess: () => {
                 objectForm.reset();
                 setObjectTarget(null);
+            },
+        });
+    }
+
+    function submitApproveRequest() {
+        if (!approveRequestTarget) {
+            return;
+        }
+
+        approveRequestForm.post(approveRequest(approveRequestTarget.id).url, {
+            preserveScroll: true,
+            onSuccess: () => setApproveRequestTarget(null),
+        });
+    }
+
+    function openRejectRequest(row: OvertimeRequestRow) {
+        rejectRequestForm.clearErrors();
+        rejectRequestForm.setData('reason', '');
+        setRejectRequestTarget(row);
+    }
+
+    function submitRejectRequest() {
+        if (!rejectRequestTarget) {
+            return;
+        }
+
+        rejectRequestForm.post(rejectRequest(rejectRequestTarget.id).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                rejectRequestForm.reset();
+                setRejectRequestTarget(null);
             },
         });
     }
@@ -257,9 +342,7 @@ export default function OvertimeQueueIndex({
                                 className="gap-1 border-amber-500/50 text-amber-600 dark:text-amber-400"
                                 title={t('ui.overtime.queue.flags.tooltip', {
                                     reasons:
-                                        row.original.anomaly_reasons.join(
-                                            ', ',
-                                        ),
+                                        row.original.anomaly_reasons.join(', '),
                                 })}
                             >
                                 <AlertTriangle className="size-3" />
@@ -304,14 +387,14 @@ export default function OvertimeQueueIndex({
                 meta: { title: t('ui.overtime.queue.columns.status') },
                 header: () => t('ui.overtime.queue.columns.status'),
                 cell: ({ row }) => (
-                    <Badge
-                        variant={
-                            STATUS_VARIANT[row.original.status_badge] ??
-                            'outline'
-                        }
+                    <span
+                        className={cn(
+                            'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
+                            toneChip(row.original.status_badge),
+                        )}
                     >
                         {row.original.status_label}
-                    </Badge>
+                    </span>
                 ),
             },
             {
@@ -363,6 +446,113 @@ export default function OvertimeQueueIndex({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [t, can.decide]);
 
+    const requestColumns = useMemo<ColumnDef<OvertimeRequestRow>[]>(
+        () => [
+            {
+                id: 'employee',
+                enableSorting: false,
+                meta: {
+                    title: t('ui.overtime.queue.requests.columns.employee'),
+                },
+                header: () => t('ui.overtime.queue.requests.columns.employee'),
+                cell: ({ row }) => row.original.employee ?? '—',
+            },
+            {
+                id: 'date',
+                enableSorting: false,
+                meta: { title: t('ui.overtime.queue.requests.columns.date') },
+                header: () => t('ui.overtime.queue.requests.columns.date'),
+                cell: ({ row }) => row.original.date,
+            },
+            {
+                id: 'requested_hours',
+                enableSorting: false,
+                meta: {
+                    title: t(
+                        'ui.overtime.queue.requests.columns.requested_hours',
+                    ),
+                    cellClassName: 'tabular-nums',
+                },
+                header: () =>
+                    t('ui.overtime.queue.requests.columns.requested_hours'),
+                cell: ({ row }) => hm(row.original.requested_hours),
+            },
+            {
+                id: 'reason',
+                enableSorting: false,
+                meta: { title: t('ui.overtime.queue.requests.columns.reason') },
+                header: () => t('ui.overtime.queue.requests.columns.reason'),
+                cell: ({ row }) => row.original.reason ?? '—',
+            },
+            {
+                id: 'status',
+                enableSorting: false,
+                meta: { title: t('ui.overtime.queue.requests.columns.status') },
+                header: () => t('ui.overtime.queue.requests.columns.status'),
+                cell: ({ row }) => (
+                    <span
+                        className={cn(
+                            'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
+                            toneChip(row.original.status_badge),
+                        )}
+                    >
+                        {row.original.status_label}
+                    </span>
+                ),
+            },
+            {
+                id: 'reviewed_by',
+                enableSorting: false,
+                meta: {
+                    title: t('ui.overtime.queue.requests.columns.reviewed_by'),
+                },
+                header: () =>
+                    t('ui.overtime.queue.requests.columns.reviewed_by'),
+                cell: ({ row }) => row.original.reviewed_by ?? '—',
+            },
+            {
+                id: 'actions',
+                enableHiding: false,
+                meta: {
+                    headClassName: 'text-right',
+                    cellClassName: 'text-right',
+                },
+                header: () => null,
+                cell: ({ row }) =>
+                    can.decide && row.original.status === 'pending' ? (
+                        <div className="flex items-center justify-end gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-green-600 hover:text-green-700 dark:text-green-500"
+                                onClick={() =>
+                                    setApproveRequestTarget(row.original)
+                                }
+                                aria-label={t(
+                                    'ui.overtime.queue.requests.actions.approve',
+                                )}
+                            >
+                                <Check className="size-4" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => openRejectRequest(row.original)}
+                                aria-label={t(
+                                    'ui.overtime.queue.requests.actions.reject',
+                                )}
+                            >
+                                <X className="size-4" />
+                            </Button>
+                        </div>
+                    ) : null,
+            },
+        ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [t, can.decide],
+    );
+
     return (
         <>
             <Head title={t('ui.overtime.queue.title')} />
@@ -381,100 +571,186 @@ export default function OvertimeQueueIndex({
                     </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
-                    {statusTabs.map((tab) => (
+                {can.requests && (
+                    <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
                         <button
-                            key={tab.value}
                             type="button"
-                            onClick={() => setStatus(tab.value)}
+                            onClick={() => setView('excess')}
                             className={cn(
                                 'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                                status === tab.value
+                                view === 'excess'
                                     ? 'bg-background text-foreground shadow-xs'
                                     : 'text-muted-foreground hover:text-foreground',
                             )}
                         >
-                            {tab.label}
+                            {t('ui.overtime.queue.tabs.excess')}
                         </button>
-                    ))}
-                </div>
+                        <button
+                            type="button"
+                            onClick={() => setView('requests')}
+                            className={cn(
+                                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                view === 'requests'
+                                    ? 'bg-background text-foreground shadow-xs'
+                                    : 'text-muted-foreground hover:text-foreground',
+                            )}
+                        >
+                            {t('ui.overtime.queue.tabs.requests')}
+                            {pendingRequestsCount > 0 && (
+                                <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                                    {pendingRequestsCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+                )}
 
-                <DataTable
-                    data={authorizations}
-                    columns={columns}
-                    routeUrl={index().url}
-                    filters={filters}
-                    extraParams={extraParams}
-                    only={['authorizations', 'filters']}
-                    emptyLabel={t('ui.overtime.queue.empty')}
-                    enableRowSelection={can.decide}
-                    getRowId={(row) => String(row.id)}
-                    renderSelectionActions={
-                        can.decide
-                            ? (rows, reset) => (
-                                  <>
-                                      <span className="text-sm font-medium">
-                                          {t('ui.overtime.queue.selected', {
-                                              count: rows.length,
-                                          })}
-                                      </span>
-                                      <Button
-                                          size="sm"
-                                          onClick={() =>
-                                              openBulk(
-                                                  'approve',
-                                                  rows,
-                                                  reset,
-                                              )
-                                          }
-                                      >
-                                          {t(
-                                              'ui.overtime.queue.bulk.trigger_approve',
-                                          )}
-                                      </Button>
-                                      <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="text-destructive hover:text-destructive"
-                                          onClick={() =>
-                                              openBulk('object', rows, reset)
-                                          }
-                                      >
-                                          {t(
-                                              'ui.overtime.queue.bulk.trigger_object',
-                                          )}
-                                      </Button>
-                                  </>
-                              )
-                            : undefined
-                    }
-                    toolbar={
-                        <div className="flex flex-wrap items-center gap-2">
-                            <DataTableFacetedFilter
-                                title={t('ui.overtime.queue.filters.employee')}
-                                options={employeeOptions}
-                                selected={employees}
-                                onChange={setEmployees}
-                            />
-                            <Input
-                                type="date"
-                                value={from}
-                                onChange={(event) =>
-                                    setFrom(event.target.value)
-                                }
-                                aria-label={t('ui.overtime.queue.filters.from')}
-                                className="w-[150px]"
-                            />
-                            <Input
-                                type="date"
-                                value={to}
-                                onChange={(event) => setTo(event.target.value)}
-                                aria-label={t('ui.overtime.queue.filters.to')}
-                                className="w-[150px]"
-                            />
+                {view === 'requests' ? (
+                    <>
+                        <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
+                            {requestStatusTabs.map((tab) => (
+                                <button
+                                    key={tab.value}
+                                    type="button"
+                                    onClick={() => setRequestStatus(tab.value)}
+                                    className={cn(
+                                        'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                        requestStatus === tab.value
+                                            ? 'bg-background text-foreground shadow-xs'
+                                            : 'text-muted-foreground hover:text-foreground',
+                                    )}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
                         </div>
-                    }
-                />
+
+                        <DataTable
+                            data={requests}
+                            columns={requestColumns}
+                            routeUrl={index().url}
+                            extraParams={requestExtraParams}
+                            only={[
+                                'requests',
+                                'filters',
+                                'pendingRequestsCount',
+                            ]}
+                            emptyLabel={t('ui.overtime.queue.requests.empty')}
+                        />
+                    </>
+                ) : (
+                    <>
+                        <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
+                            {statusTabs.map((tab) => (
+                                <button
+                                    key={tab.value}
+                                    type="button"
+                                    onClick={() => setStatus(tab.value)}
+                                    className={cn(
+                                        'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                        status === tab.value
+                                            ? 'bg-background text-foreground shadow-xs'
+                                            : 'text-muted-foreground hover:text-foreground',
+                                    )}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <DataTable
+                            data={authorizations}
+                            columns={columns}
+                            routeUrl={index().url}
+                            filters={filters}
+                            extraParams={extraParams}
+                            only={['authorizations', 'filters']}
+                            emptyLabel={t('ui.overtime.queue.empty')}
+                            enableRowSelection={can.decide}
+                            getRowId={(row) => String(row.id)}
+                            renderSelectionActions={
+                                can.decide
+                                    ? (rows, reset) => (
+                                          <>
+                                              <span className="text-sm font-medium">
+                                                  {t(
+                                                      'ui.overtime.queue.selected',
+                                                      {
+                                                          count: rows.length,
+                                                      },
+                                                  )}
+                                              </span>
+                                              <Button
+                                                  size="sm"
+                                                  onClick={() =>
+                                                      openBulk(
+                                                          'approve',
+                                                          rows,
+                                                          reset,
+                                                      )
+                                                  }
+                                              >
+                                                  {t(
+                                                      'ui.overtime.queue.bulk.trigger_approve',
+                                                  )}
+                                              </Button>
+                                              <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  className="text-destructive hover:text-destructive"
+                                                  onClick={() =>
+                                                      openBulk(
+                                                          'object',
+                                                          rows,
+                                                          reset,
+                                                      )
+                                                  }
+                                              >
+                                                  {t(
+                                                      'ui.overtime.queue.bulk.trigger_object',
+                                                  )}
+                                              </Button>
+                                          </>
+                                      )
+                                    : undefined
+                            }
+                            toolbar={
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <DataTableFacetedFilter
+                                        title={t(
+                                            'ui.overtime.queue.filters.employee',
+                                        )}
+                                        options={employeeOptions}
+                                        selected={employees}
+                                        onChange={setEmployees}
+                                    />
+                                    <Input
+                                        type="date"
+                                        value={from}
+                                        onChange={(event) =>
+                                            setFrom(event.target.value)
+                                        }
+                                        aria-label={t(
+                                            'ui.overtime.queue.filters.from',
+                                        )}
+                                        className="w-[150px]"
+                                    />
+                                    <Input
+                                        type="date"
+                                        value={to}
+                                        onChange={(event) =>
+                                            setTo(event.target.value)
+                                        }
+                                        aria-label={t(
+                                            'ui.overtime.queue.filters.to',
+                                        )}
+                                        className="w-[150px]"
+                                    />
+                                </div>
+                            }
+                        />
+                    </>
+                )}
             </div>
 
             <Dialog
@@ -504,7 +780,10 @@ export default function OvertimeQueueIndex({
                         >
                             <Input
                                 id="approve_authorized_hours"
-                                type="time"
+                                type="number"
+                                min="0"
+                                step="0.25"
+                                className="w-28"
                                 value={approveForm.data.authorized_hours}
                                 onChange={(event) =>
                                     approveForm.setData(
@@ -683,6 +962,115 @@ export default function OvertimeQueueIndex({
                             disabled={bulkForm.processing}
                         >
                             {t('ui.overtime.queue.bulk.submit')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={approveRequestTarget !== null}
+                onOpenChange={(open) => !open && setApproveRequestTarget(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t(
+                                'ui.overtime.queue.requests.approve_dialog.title',
+                            )}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t(
+                                'ui.overtime.queue.requests.approve_dialog.description',
+                                {
+                                    employee:
+                                        approveRequestTarget?.employee ?? '',
+                                    date: approveRequestTarget?.date ?? '',
+                                },
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setApproveRequestTarget(null)}
+                        >
+                            {t('ui.common.cancel')}
+                        </Button>
+                        <Button
+                            onClick={submitApproveRequest}
+                            disabled={approveRequestForm.processing}
+                        >
+                            {t(
+                                'ui.overtime.queue.requests.approve_dialog.submit',
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={rejectRequestTarget !== null}
+                onOpenChange={(open) => !open && setRejectRequestTarget(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t(
+                                'ui.overtime.queue.requests.reject_dialog.title',
+                            )}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t(
+                                'ui.overtime.queue.requests.reject_dialog.description',
+                                {
+                                    employee:
+                                        rejectRequestTarget?.employee ?? '',
+                                    date: rejectRequestTarget?.date ?? '',
+                                },
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-2">
+                        <FormField
+                            label={t(
+                                'ui.overtime.queue.requests.reject_dialog.reason',
+                            )}
+                            htmlFor="reject_request_reason"
+                            required
+                            error={rejectRequestForm.errors.reason}
+                        >
+                            <textarea
+                                id="reject_request_reason"
+                                rows={3}
+                                value={rejectRequestForm.data.reason}
+                                onChange={(event) =>
+                                    rejectRequestForm.setData(
+                                        'reason',
+                                        event.target.value,
+                                    )
+                                }
+                                className="flex min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </FormField>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setRejectRequestTarget(null)}
+                        >
+                            {t('ui.common.cancel')}
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={submitRejectRequest}
+                            disabled={rejectRequestForm.processing}
+                        >
+                            {t(
+                                'ui.overtime.queue.requests.reject_dialog.submit',
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

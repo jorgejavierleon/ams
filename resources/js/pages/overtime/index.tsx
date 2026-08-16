@@ -1,8 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
-import { FileText, ListChecks, Timer } from 'lucide-react';
+import { FileText, ListChecks, Plus, Timer } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
+import {
+    create as createRequest,
+    index as myRequestsIndex,
+} from '@/routes/my/overtime-requests';
 import { index as pactsIndex } from '@/routes/overtime/pacts';
 import { index as queueIndex } from '@/routes/overtime/queue';
 
@@ -10,6 +14,7 @@ type Props = {
     can: {
         managePacts: boolean;
         viewQueue: boolean;
+        request: boolean;
     };
 };
 
@@ -27,6 +32,22 @@ export default function OvertimeIndex({ can }: Props) {
                         description={t('ui.overtime.index.description')}
                     />
                     <div className="flex flex-wrap items-center gap-2">
+                        {can.request && (
+                            <>
+                                <Button variant="outline" asChild>
+                                    <Link href={myRequestsIndex()}>
+                                        <ListChecks className="size-4" />
+                                        {t('ui.overtime.index.my_requests')}
+                                    </Link>
+                                </Button>
+                                <Button asChild>
+                                    <Link href={createRequest()}>
+                                        <Plus className="size-4" />
+                                        {t('ui.overtime.index.new_request')}
+                                    </Link>
+                                </Button>
+                            </>
+                        )}
                         {can.viewQueue && (
                             <Button variant="outline" asChild>
                                 <Link href={queueIndex()}>
