@@ -84,6 +84,14 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             ->middleware('permission:ViewOwn:Workday')
             ->name('me.workdays.index');
 
+        // The Jornada tab's day-detail screen (KMO-34): one workday's shift
+        // window and each punch's own mark_id, for the attendance strip and
+        // its comprobante links.
+        Route::get('me/workdays/{date}', [WorkdaysController::class, 'show'])
+            ->middleware('permission:ViewOwn:Workday')
+            ->where('date', '\d{4}-\d{2}-\d{2}')
+            ->name('me.workdays.show');
+
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
         Route::post('marks', [MarkController::class, 'store'])
