@@ -82,7 +82,7 @@ class OrganizationSettings
     {
         $value = $this->get('overtime_authorization_mode', organizationId: $organizationId);
 
-        return OvertimeAuthorizationMode::tryFrom((string) $value) ?? OvertimeAuthorizationMode::PostHoc;
+        return OvertimeAuthorizationMode::tryFrom((string) $value) ?? OvertimeAuthorizationMode::Combined;
     }
 
     /**

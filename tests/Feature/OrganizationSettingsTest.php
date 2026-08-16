@@ -188,7 +188,7 @@ test('a brand-new organization gets the legal overtime defaults', function () {
         ->get(route('organization-settings.edit'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('settings.overtime_authorization_mode', OvertimeAuthorizationMode::PostHoc->value)
+            ->where('settings.overtime_authorization_mode', OvertimeAuthorizationMode::Combined->value)
             // JSON has no float/int distinction, so compare numerically.
             ->where('settings.overtime_weekly_anomaly_threshold_hours', fn ($hours) => (float) $hours === 10.0)
             ->where('settings.overtime_retroactive_request_days', 7)
@@ -196,7 +196,7 @@ test('a brand-new organization gets the legal overtime defaults', function () {
 
     $setting = Setting::query()->where('organization_id', $admin->organization_id)->firstOrFail();
 
-    expect($setting->overtime_authorization_mode)->toBe(OvertimeAuthorizationMode::PostHoc)
+    expect($setting->overtime_authorization_mode)->toBe(OvertimeAuthorizationMode::Combined)
         ->and($setting->overtime_weekly_anomaly_threshold_hours)->toBe(10.0)
         ->and($setting->overtime_retroactive_request_days)->toBe(7);
 });
@@ -207,11 +207,11 @@ test('the defaults are readable through the settings service without a query per
     $settings = app(OrganizationSettings::class);
 
     // First read creates the row and warms the cache; the rest never hit the database.
-    expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::PostHoc);
+    expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::Combined);
 
     DB::enableQueryLog();
 
-    expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::PostHoc)
+    expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::Combined)
         ->and($settings->get('overtime_weekly_anomaly_threshold_hours'))->toEqual(10.0)
         ->and($settings->get('overtime_retroactive_request_days'))->toEqual(7)
         ->and(DB::getQueryLog())->toBeEmpty();
@@ -225,7 +225,7 @@ test('each authorization mode round-trips through the settings service', functio
     $settings = app(OrganizationSettings::class);
 
     // Warm the cache with the default so the update has something to invalidate.
-    expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::PostHoc);
+    expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::Combined);
 
     $this->patch(route('organization-settings.update'), settingsPayload([
         'overtime_authorization_mode' => $mode->value,
@@ -344,7 +344,7 @@ test('a write invalidates only the acting organization cache', function () {
     $this->actingAs($adminB);
     expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::PreAuthorization);
     $this->actingAs($adminA);
-    expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::PostHoc);
+    expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::Combined);
 
     $this->patch(route('organization-settings.update'), settingsPayload([
         'overtime_authorization_mode' => OvertimeAuthorizationMode::Combined->value,

@@ -106,7 +106,9 @@ export default function OvertimeQueueIndex({
 }: Props) {
     const { t } = useTranslations();
 
-    const [view, setView] = useState<'excess' | 'requests'>('excess');
+    const [view, setView] = useState<'excess' | 'requests'>(
+        can.requests ? 'requests' : 'excess',
+    );
 
     const [status, setStatus] = useState(filters.status ?? 'pending');
     const [employees, setEmployees] = useState<string[]>(

@@ -67,7 +67,7 @@ class Setting extends Model
         'leave_approval_notification' => true,
         'documents_signature_enabled' => false,
         'documents_require_ordered_signing' => false,
-        'overtime_authorization_mode' => OvertimeAuthorizationMode::PostHoc->value,
+        'overtime_authorization_mode' => OvertimeAuthorizationMode::Combined->value,
         'overtime_weekly_anomaly_threshold_hours' => 10,
         'overtime_retroactive_request_days' => 7,
         'overtime_counts_pre_shift_excess' => false,
