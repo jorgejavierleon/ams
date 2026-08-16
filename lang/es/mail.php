@@ -46,6 +46,31 @@ return [
         'end_date' => 'Fecha de término',
     ],
 
+    'overtime_request' => [
+        'date' => 'Fecha',
+        'hours' => 'Horas solicitadas',
+        'action_my_requests' => 'Ver mis solicitudes',
+    ],
+
+    'overtime_request_submitted' => [
+        'subject' => 'Nueva solicitud de horas extra pendiente de revisión',
+        'heading' => 'Solicitud de horas extra enviada',
+        'body' => ':employee ha enviado una solicitud de horas extra que requiere tu revisión.',
+        'action' => 'Revisar solicitud',
+    ],
+
+    'overtime_request_approved' => [
+        'subject' => 'Tu solicitud de horas extra fue aprobada',
+        'heading' => 'Solicitud de horas extra aprobada',
+        'body' => 'Buenas noticias: tu solicitud de horas extra ha sido aprobada.',
+    ],
+
+    'overtime_request_rejected' => [
+        'subject' => 'Tu solicitud de horas extra fue rechazada',
+        'heading' => 'Solicitud de horas extra rechazada',
+        'body' => 'Tu solicitud de horas extra ha sido rechazada. Esto no te impide trabajar el día solicitado, pero esas horas no llegarán con una solicitud previa a la cola de revisión.',
+    ],
+
     'overtime_pact_nearing_expiry' => [
         'subject' => 'Un pacto de horas extraordinarias está por vencer',
         'heading' => 'Pacto próximo a vencer',

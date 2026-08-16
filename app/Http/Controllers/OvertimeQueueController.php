@@ -4,12 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesTableSort;
 use App\Enums\OvertimeAuthorizationStatus;
+use App\Enums\OvertimeRequestStatus;
 use App\Exceptions\OvertimeDecisionRefused;
 use App\Models\Company;
 use App\Models\OvertimeAuthorization;
+use App\Models\OvertimeRequest;
 use App\Models\User;
+use App\Notifications\OvertimeRequestApproved;
+use App\Notifications\OvertimeRequestRejected;
+use App\Services\OrganizationSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -29,12 +35,14 @@ class OvertimeQueueController extends Controller
 {
     use ResolvesTableSort;
 
-    public function index(Request $request): Response
+    public function index(Request $request, OrganizationSettings $settings): Response
     {
         Gate::authorize('viewTeam', OvertimeAuthorization::class);
 
         $isAdmin = $request->user()->hasRole('admin');
         $supervisorId = $isAdmin ? null : $request->user()->id;
+        $canDecide = $isAdmin || $request->user()->can('ApproveTeam:OvertimeAuthorization');
+        $showRequests = $settings->overtimeAuthorizationMode()->allowsRequests();
 
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
@@ -47,6 +55,7 @@ class OvertimeQueueController extends Controller
         $employeeIds = $this->idListFilter($request, 'employees');
         $from = $request->date('from');
         $to = $request->date('to');
+        $requestStatus = $this->requestStatusFilter($request);
 
         $authorizations = OvertimeAuthorization::query()
             ->with(['user:id,name,supervisor_id', 'workday:id,anomaly_flags', 'reviewedBy:id,name'])
@@ -61,6 +70,26 @@ class OvertimeQueueController extends Controller
             ->orderBy($sort, $direction)
             ->paginate(20)
             ->withQueryString();
+
+        $requestsQuery = OvertimeRequest::query()
+            ->with(['user:id,name,supervisor_id', 'reviewedBy:id,name'])
+            ->when($supervisorId, fn ($query) => $query->whereHas(
+                'user',
+                fn ($user) => $user->where('supervisor_id', $supervisorId),
+            ));
+
+        // Always known regardless of the history filter below, so the tab
+        // badge keeps showing "how many need a decision", not "how many rows
+        // match the current filter".
+        $pendingRequestsCount = $showRequests ? (clone $requestsQuery)->pending()->count() : 0;
+
+        $requests = $showRequests
+            ? $requestsQuery
+                ->when($requestStatus, fn ($query) => $query->where('status', $requestStatus))
+                ->orderBy('date', 'desc')
+                ->paginate(20, pageName: 'requests_page')
+                ->withQueryString()
+            : new LengthAwarePaginator([], 0, 20, 1, ['pageName' => 'requests_page']);
 
         return Inertia::render('overtime/queue/index', [
             'authorizations' => $authorizations->through(fn (OvertimeAuthorization $authorization) => [
@@ -89,11 +118,26 @@ class OvertimeQueueController extends Controller
                 'to' => $to?->format('Y-m-d'),
                 'sort' => $sort,
                 'direction' => $direction,
+                'request_status' => $requestStatus?->value,
             ],
             'employeeOptions' => $this->employeeOptions($supervisorId),
             'statusOptions' => OvertimeAuthorizationStatus::options(),
+            'requestStatusOptions' => OvertimeRequestStatus::options(),
+            'requests' => $requests->through(fn (OvertimeRequest $overtimeRequest): array => [
+                'id' => $overtimeRequest->id,
+                'employee' => $overtimeRequest->user?->name,
+                'date' => $overtimeRequest->date->format('Y-m-d'),
+                'requested_hours' => $overtimeRequest->requested_hours,
+                'reason' => $overtimeRequest->reason,
+                'status' => $overtimeRequest->status->value,
+                'status_label' => $overtimeRequest->status->label(),
+                'status_badge' => $overtimeRequest->status->badge(),
+                'reviewed_by' => $overtimeRequest->reviewedBy?->name,
+            ]),
+            'pendingRequestsCount' => $pendingRequestsCount,
             'can' => [
-                'decide' => $isAdmin || $request->user()->can('ApproveTeam:OvertimeAuthorization'),
+                'decide' => $canDecide,
+                'requests' => $showRequests,
             ],
         ]);
     }
@@ -160,6 +204,50 @@ class OvertimeQueueController extends Controller
         $overtimeAuthorization->object($request->user(), $data['reason']);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.overtime.queue.flash.objected')]);
+
+        return back();
+    }
+
+    /**
+     * Approve an employee's overtime request (KOL-45, Mode A). A green light
+     * to work the hours, never itself a payable one — the eventual worked day
+     * still goes through {@see OvertimeAuthorization} once calculated.
+     */
+    public function approveRequest(Request $request, OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        Gate::authorize('approve', $overtimeRequest);
+
+        abort_if(! $overtimeRequest->isPending(), 403);
+
+        $overtimeRequest->approve($request->user());
+
+        $overtimeRequest->user->notify(new OvertimeRequestApproved($overtimeRequest));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.overtime.queue.requests.flash.approved')]);
+
+        return back();
+    }
+
+    /**
+     * Reject an employee's overtime request. Does not stop them from working
+     * the day — it only means the hours, if worked, arrive at this queue
+     * without a prior request behind them (KOL-45 AC #5).
+     */
+    public function rejectRequest(Request $request, OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        Gate::authorize('reject', $overtimeRequest);
+
+        abort_if(! $overtimeRequest->isPending(), 403);
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $overtimeRequest->reject($request->user(), $data['reason']);
+
+        $overtimeRequest->user->notify(new OvertimeRequestRejected($overtimeRequest));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.overtime.queue.requests.flash.rejected')]);
 
         return back();
     }
@@ -245,6 +333,22 @@ class OvertimeQueueController extends Controller
         $value = $request->string('status')->trim()->value();
 
         return $value === '' || $value === 'all' ? null : OvertimeAuthorizationStatus::tryFrom($value);
+    }
+
+    /**
+     * Resolve the Solicitudes tab's own status filter, independent of
+     * {@see statusFilter()} above — defaults to `pending` for the same
+     * reason, `all` clears it so a decided request stays reachable.
+     */
+    private function requestStatusFilter(Request $request): ?OvertimeRequestStatus
+    {
+        if (! $request->has('request_status')) {
+            return OvertimeRequestStatus::Pending;
+        }
+
+        $value = $request->string('request_status')->trim()->value();
+
+        return $value === '' || $value === 'all' ? null : OvertimeRequestStatus::tryFrom($value);
     }
 
     /**

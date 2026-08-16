@@ -46,6 +46,31 @@ return [
         'end_date' => 'End date',
     ],
 
+    'overtime_request' => [
+        'date' => 'Date',
+        'hours' => 'Requested hours',
+        'action_my_requests' => 'View my requests',
+    ],
+
+    'overtime_request_submitted' => [
+        'subject' => 'New overtime request pending review',
+        'heading' => 'Overtime request submitted',
+        'body' => ':employee has submitted an overtime request that needs your review.',
+        'action' => 'Review request',
+    ],
+
+    'overtime_request_approved' => [
+        'subject' => 'Your overtime request was approved',
+        'heading' => 'Overtime request approved',
+        'body' => 'Good news: your overtime request has been approved.',
+    ],
+
+    'overtime_request_rejected' => [
+        'subject' => 'Your overtime request was rejected',
+        'heading' => 'Overtime request rejected',
+        'body' => 'Your overtime request has been rejected. This does not stop you from working that day, but those hours will not arrive at the review queue with a prior request behind them.',
+    ],
+
     'overtime_pact_nearing_expiry' => [
         'subject' => 'An overtime pacto is about to expire',
         'heading' => 'Pacto nearing expiry',
