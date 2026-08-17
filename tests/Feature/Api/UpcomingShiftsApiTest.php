@@ -80,6 +80,24 @@ function nextWorkingDate(): Carbon
     return $date;
 }
 
+/**
+ * The last date within an N-day horizon the default Mon–Fri shift actually
+ * works: the resolver drops free (weekend) days entirely (see
+ * ShiftScheduleResolver::resolveDate), so when the horizon's own end date
+ * lands on a weekend the days list's last entry is the working day before it,
+ * not the weekend date itself.
+ */
+function lastWorkingDateWithinHorizon(int $days): Carbon
+{
+    $date = upcomingToday()->copy()->addDays($days);
+
+    while ($date->isWeekend()) {
+        $date->subDay();
+    }
+
+    return $date;
+}
+
 // --- Authentication and authorization ---
 
 test('an unauthenticated request for upcoming shifts returns 401', function () {
@@ -103,7 +121,7 @@ test('the days param controls the horizon and defaults to 14', function () {
     $response = $this->getJson('/api/v1/me/shifts/upcoming')->assertOk();
     $lastDate = Carbon::parse(collect($response->json('days'))->last()['date']);
 
-    expect($lastDate->toDateString())->toBe(upcomingToday()->copy()->addDays(14)->toDateString());
+    expect($lastDate->toDateString())->toBe(lastWorkingDateWithinHorizon(14)->toDateString());
 });
 
 test('the days param is capped at 30', function () {

@@ -1,10 +1,10 @@
 ---
 id: KOL-68
 title: Workday detail with punches for the mobile day-detail screen
-status: In Review
+status: Done
 assignee: []
 created_date: '2026-08-16 15:37'
-updated_date: '2026-08-16 16:01'
+updated_date: '2026-08-16 19:34'
 labels: []
 dependencies: []
 priority: medium
@@ -38,6 +38,8 @@ kolvi-mobile KMO-34 needs the shift window and each punch's mark_id for one of t
 
 <!-- SECTION:NOTES:BEGIN -->
 GET /api/v1/me/workdays/{date} added to Api\\WorkdaysController alongside index(), scoped to the authenticated employee via where('user_id', ...) the same way index() already is (marks/{mark} uses the same abort-on-mismatch pattern rather than route-model-binding scoping). shift_start/shift_end and each mark's time carry seconds (H:i:s) rather than WorkdayResource's display-trimmed H:i, matching kolvi-mobile's NaiveTime wire format (HH:mm:ss) since the client does real minute arithmetic on these, not just display.
+
+Rebased onto master (past KOL-66, KOL-46) and merged: master..e7e21fd, pushed to origin. Full suite re-run after rebase: 1042/1051 passing — the 2 failures (a hardcoded-date UpcomingShiftsApiTest, an OvertimeQueueTest query-count bound) predate this branch and are outside its 5-file diff.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
