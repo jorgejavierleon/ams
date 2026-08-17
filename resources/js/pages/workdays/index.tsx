@@ -91,6 +91,7 @@ type Props = {
         employees: string[];
         positions: string[];
         premises: string[];
+        overtime_statuses: string[];
         sort: string | null;
         direction: 'asc' | 'desc' | null;
     };
@@ -98,6 +99,7 @@ type Props = {
     employeeOptions: FacetedOption[];
     positionOptions: FacetedOption[];
     premiseOptions: FacetedOption[];
+    overtimeStatusOptions: FacetedOption[];
     reasonOptions: Option[];
     markTypeOptions: Option[];
     compensationTypeOptions: Option[];
@@ -127,6 +129,7 @@ export default function WorkdaysIndex({
     employeeOptions,
     positionOptions,
     premiseOptions,
+    overtimeStatusOptions,
     reasonOptions,
     markTypeOptions,
     compensationTypeOptions,
@@ -144,6 +147,9 @@ export default function WorkdaysIndex({
         filters.positions ?? [],
     );
     const [premises, setPremises] = useState<string[]>(filters.premises ?? []);
+    const [overtimeStatuses, setOvertimeStatuses] = useState<string[]>(
+        filters.overtime_statuses ?? [],
+    );
 
     const [bulkTargets, setBulkTargets] = useState<Workday[]>([]);
     const [modifyTarget, setModifyTarget] = useState<Workday | null>(null);
@@ -184,8 +190,10 @@ export default function WorkdaysIndex({
             employees: employees.length > 0 ? employees : undefined,
             positions: positions.length > 0 ? positions : undefined,
             premises: premises.length > 0 ? premises : undefined,
+            overtime_statuses:
+                overtimeStatuses.length > 0 ? overtimeStatuses : undefined,
         }),
-        [from, to, statuses, employees, positions, premises],
+        [from, to, statuses, employees, positions, premises, overtimeStatuses],
     );
 
     const quickRanges = useMemo(() => {
@@ -747,6 +755,12 @@ export default function WorkdaysIndex({
                                 options={premiseOptions}
                                 selected={premises}
                                 onChange={setPremises}
+                            />
+                            <DataTableFacetedFilter
+                                title={t('ui.workdays.filters.overtime_status')}
+                                options={overtimeStatusOptions}
+                                selected={overtimeStatuses}
+                                onChange={setOvertimeStatuses}
                             />
                         </div>
                     }

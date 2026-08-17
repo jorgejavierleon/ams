@@ -1402,6 +1402,7 @@ return [
             'employee' => 'Empleado',
             'position' => 'Cargo',
             'premise' => 'Sucursal',
+            'overtime_status' => 'Horas extra',
             'from' => 'Desde',
             'to' => 'Hasta',
         ],
