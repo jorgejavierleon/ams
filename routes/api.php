@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\MarkController;
 use App\Http\Controllers\Api\PasswordController;
+use App\Http\Controllers\Api\PendingMarkModificationsController;
 use App\Http\Controllers\Api\TodayController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UpcomingShiftsController;
@@ -91,6 +92,22 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             ->middleware('permission:ViewOwn:Workday')
             ->where('date', '\d{4}-\d{2}-\d{2}')
             ->name('me.workdays.show');
+
+        // The Jornada tab's pending-correction card (KMO-35): admin-requested
+        // mark corrections awaiting the employee's approve/decline, across
+        // every workday rather than one date at a time — the same scope
+        // My\WorkdayController::index already surfaces on the web list.
+        Route::get('me/mark-modifications', [PendingMarkModificationsController::class, 'index'])
+            ->middleware('permission:ReviewOwn:MarkModification')
+            ->name('me.mark-modifications.index');
+        Route::post('me/workdays/{workday}/modifications/{markModification}/approve', [PendingMarkModificationsController::class, 'approve'])
+            ->scopeBindings()
+            ->middleware('permission:ReviewOwn:MarkModification')
+            ->name('me.workdays.modifications.approve');
+        Route::post('me/workdays/{workday}/modifications/{markModification}/decline', [PendingMarkModificationsController::class, 'decline'])
+            ->scopeBindings()
+            ->middleware('permission:ReviewOwn:MarkModification')
+            ->name('me.workdays.modifications.decline');
 
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
