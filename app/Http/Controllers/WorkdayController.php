@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\MarkModificationReason;
 use App\Enums\MarkType;
+use App\Enums\OvertimeAuthorizationStatus;
 use App\Enums\OvertimeCompensationType;
 use App\Enums\WorkdayStatus;
 use App\Exceptions\OvertimeDecisionRefused;
@@ -71,6 +72,7 @@ class WorkdayController extends Controller
         $employeeIds = $this->idListFilter($request, 'employees');
         $positionIds = $this->idListFilter($request, 'positions');
         $premiseIds = $this->idListFilter($request, 'premises');
+        $overtimeStatuses = $this->enumListFilter($request, 'overtime_statuses', OvertimeAuthorizationStatus::class);
 
         $workdays = Workday::query()
             ->with([
@@ -91,6 +93,10 @@ class WorkdayController extends Controller
             ->when($positionIds, fn ($query) => $query->whereHas(
                 'user',
                 fn ($user) => $user->whereIn('position_id', $positionIds),
+            ))
+            ->when($overtimeStatuses, fn ($query) => $query->whereHas(
+                'overtimeAuthorization',
+                fn ($authorization) => $authorization->whereIn('status', $overtimeStatuses),
             ))
             ->orderBy($sort, $direction)
             ->paginate(20)
@@ -121,6 +127,7 @@ class WorkdayController extends Controller
                 'employees' => array_map('strval', $employeeIds),
                 'positions' => array_map('strval', $positionIds),
                 'premises' => array_map('strval', $premiseIds),
+                'overtime_statuses' => array_map(fn (OvertimeAuthorizationStatus $status) => $status->value, $overtimeStatuses),
                 'sort' => $sort,
                 'direction' => $direction,
             ],
@@ -128,6 +135,7 @@ class WorkdayController extends Controller
             'employeeOptions' => $this->employeeOptions(),
             'positionOptions' => $this->options(Position::query()),
             'premiseOptions' => $this->options(Premise::query()),
+            'overtimeStatusOptions' => OvertimeAuthorizationStatus::options(),
             'reasonOptions' => MarkModificationReason::options(),
             'markTypeOptions' => MarkType::options(),
             'compensationTypeOptions' => OvertimeCompensationType::options(),

@@ -1399,6 +1399,7 @@ return [
             'employee' => 'Employee',
             'position' => 'Position',
             'premise' => 'Premise',
+            'overtime_status' => 'Overtime',
             'from' => 'From',
             'to' => 'To',
         ],

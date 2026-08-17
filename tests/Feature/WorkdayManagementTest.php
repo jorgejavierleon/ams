@@ -8,6 +8,7 @@ use App\Managers\MarkModificationManager;
 use App\Models\Mark;
 use App\Models\MarkModification;
 use App\Models\Organization;
+use App\Models\OvertimeAuthorization;
 use App\Models\User;
 use App\Models\Workday;
 use App\Notifications\MarkModificationRequested;
@@ -111,6 +112,64 @@ test('the status filter narrows the list', function () {
         ->assertInertia(fn ($page) => $page
             ->has('workdays.data', 1)
             ->where('workdays.data.0.status', 'absent'));
+});
+
+test('the overtime status filter narrows the list', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $other = User::factory()->employee()->create(['organization_id' => $organization->id]);
+
+    $pendingWorkday = makeWorkday($organization, $employee, ['date' => Carbon::today()]);
+    $approvedWorkday = makeWorkday($organization, $other, ['date' => Carbon::today()]);
+
+    OvertimeAuthorization::factory()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $pendingWorkday->id,
+        'user_id' => $employee->id,
+    ]);
+    OvertimeAuthorization::factory()->approved()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $approvedWorkday->id,
+        'user_id' => $other->id,
+        'reason' => 'Autorización de prueba.',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('workdays.index', ['overtime_statuses' => ['approved']]))
+        ->assertInertia(fn ($page) => $page
+            ->has('workdays.data', 1)
+            ->where('workdays.data.0.id', $approvedWorkday->id)
+            ->where('filters.overtime_statuses', ['approved']));
+});
+
+test('the overtime status filter combines with the status filter', function () {
+    $admin = workdayAdmin();
+    $organization = $admin->organization;
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $other = User::factory()->employee()->create(['organization_id' => $organization->id]);
+
+    $regularApproved = makeWorkday($organization, $employee, ['date' => Carbon::today(), 'status' => WorkdayStatus::Regular]);
+    $absentApproved = makeWorkday($organization, $other, ['date' => Carbon::today(), 'status' => WorkdayStatus::Absent]);
+
+    OvertimeAuthorization::factory()->approved()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $regularApproved->id,
+        'user_id' => $employee->id,
+        'reason' => 'Autorización de prueba.',
+    ]);
+    OvertimeAuthorization::factory()->approved()->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $absentApproved->id,
+        'user_id' => $other->id,
+        'reason' => 'Autorización de prueba.',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('workdays.index', ['overtime_statuses' => ['approved'], 'statuses' => ['regular']]))
+        ->assertInertia(fn ($page) => $page
+            ->has('workdays.data', 1)
+            ->where('workdays.data.0.id', $regularApproved->id));
 });
 
 test('the date range filter narrows the list', function () {
