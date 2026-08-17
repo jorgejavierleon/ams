@@ -155,6 +155,7 @@ class EmployeeController extends Controller
                 'additional_vacation_days' => $employee->additional_vacation_days,
                 'administrative_days' => $employee->administrative_days,
                 'has_additional_sundays' => $employee->has_additional_sundays,
+                'overtime_rest_day_eligible' => $employee->overtime_rest_day_eligible,
                 'is_active' => $employee->is_active,
                 'is_admin' => $employee->is_admin,
                 'timezone' => $employee->timezone,
@@ -206,6 +207,7 @@ class EmployeeController extends Controller
                 'additional_vacation_days' => $employee->additional_vacation_days,
                 'administrative_days' => $employee->administrative_days,
                 'has_additional_sundays' => $employee->has_additional_sundays,
+                'overtime_rest_day_eligible' => $employee->overtime_rest_day_eligible,
                 'phone' => $employee->phone,
                 'emergency_contact_name' => $employee->emergency_contact_name,
                 'emergency_contact_phone' => $employee->emergency_contact_phone,
@@ -350,6 +352,7 @@ class EmployeeController extends Controller
             'is_active' => $request->boolean('is_active'),
             'is_admin' => $request->boolean('is_admin'),
             'has_additional_sundays' => $request->boolean('has_additional_sundays'),
+            'overtime_rest_day_eligible' => $request->boolean('overtime_rest_day_eligible'),
         ]);
 
         return $request->validate([
@@ -391,6 +394,7 @@ class EmployeeController extends Controller
             'additional_vacation_days' => ['nullable', 'numeric', 'min:0'],
             'administrative_days' => ['nullable', 'numeric', 'min:0'],
             'has_additional_sundays' => ['boolean'],
+            'overtime_rest_day_eligible' => ['boolean'],
             'phone' => ['nullable', 'string', 'max:255'],
             'emergency_contact_name' => ['nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:255'],

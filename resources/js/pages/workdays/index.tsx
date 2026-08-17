@@ -1,6 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { AlertTriangle, Eye, PencilLine } from 'lucide-react';
+import { AlertTriangle, Check, Eye, PencilLine, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
@@ -8,6 +8,10 @@ import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import type { FacetedOption } from '@/components/data-table-faceted-filter';
 import { FormField } from '@/components/form-field';
 import Heading from '@/components/heading';
+import OvertimeApproveDialog from '@/components/overtime-approve-dialog';
+import type { OvertimeApproveTarget } from '@/components/overtime-approve-dialog';
+import OvertimeObjectDialog from '@/components/overtime-object-dialog';
+import type { OvertimeObjectTarget } from '@/components/overtime-object-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -30,7 +34,19 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { bulkModify, index, modify, show } from '@/routes/workdays';
+import { bulkDecide as bulkDecideOvertime } from '@/routes/workdays/overtime';
 import type { Paginated } from '@/types/ui';
+
+type WorkdayOvertime = {
+    calculated_hours: string | null;
+    authorized_hours: string | null;
+    final_hours: string | null;
+    status: string;
+    status_label: string;
+    status_badge: string;
+    compensation_eligible: boolean;
+    can_decide: boolean;
+};
 
 type Workday = {
     id: number;
@@ -47,6 +63,7 @@ type Workday = {
     shift: string | null;
     leave_type: string | null;
     pending_modifications: number;
+    overtime: WorkdayOvertime | null;
 };
 
 type Option = { value: string; label: string };
@@ -69,6 +86,10 @@ type Props = {
     premiseOptions: FacetedOption[];
     reasonOptions: Option[];
     markTypeOptions: Option[];
+    compensationTypeOptions: Option[];
+    can: {
+        decideOvertime: boolean;
+    };
 };
 
 const STATUS_BADGE: Record<
@@ -94,6 +115,8 @@ export default function WorkdaysIndex({
     premiseOptions,
     reasonOptions,
     markTypeOptions,
+    compensationTypeOptions,
+    can,
 }: Props) {
     const { t } = useTranslations();
 
@@ -110,6 +133,10 @@ export default function WorkdaysIndex({
 
     const [bulkTargets, setBulkTargets] = useState<Workday[]>([]);
     const [modifyTarget, setModifyTarget] = useState<Workday | null>(null);
+    const [approveOvertimeTarget, setApproveOvertimeTarget] =
+        useState<OvertimeApproveTarget>(null);
+    const [objectOvertimeTarget, setObjectOvertimeTarget] =
+        useState<OvertimeObjectTarget>(null);
     const [resetSelection, setResetSelection] = useState<() => void>(
         () => () => {},
     );
@@ -120,6 +147,12 @@ export default function WorkdaysIndex({
         time: '',
         reason: reasonOptions[0]?.value ?? '',
         notes: '',
+    });
+
+    const bulkOvertimeForm = useForm({
+        workdays: [] as number[],
+        action: 'approve' as 'approve' | 'object',
+        reason: '',
     });
 
     const modifyForm = useForm({
@@ -203,6 +236,62 @@ export default function WorkdaysIndex({
                 bulkForm.reset('notes', 'time');
                 resetSelection();
                 setBulkTargets([]);
+            },
+        });
+    }
+
+    function openApproveOvertime(row: Workday) {
+        if (!row.overtime) {
+            return;
+        }
+
+        setApproveOvertimeTarget({
+            workday_id: row.id,
+            employee: row.employee,
+            date: row.date,
+            calculated_hours: row.overtime.calculated_hours,
+            authorized_hours: row.overtime.authorized_hours,
+            compensation_eligible: row.overtime.compensation_eligible,
+        });
+    }
+
+    function openObjectOvertime(row: Workday) {
+        setObjectOvertimeTarget({
+            workday_id: row.id,
+            employee: row.employee,
+            date: row.date,
+        });
+    }
+
+    const [bulkOvertimeTargets, setBulkOvertimeTargets] = useState<Workday[]>(
+        [],
+    );
+
+    function openBulkOvertime(
+        action: 'approve' | 'object',
+        rows: Workday[],
+        reset: () => void,
+    ) {
+        const decidable = rows.filter((row) => row.overtime?.can_decide);
+
+        setBulkOvertimeTargets(decidable);
+        setResetSelection(() => reset);
+        bulkOvertimeForm.clearErrors();
+        bulkOvertimeForm.setData({
+            workdays: decidable.map((row) => row.id),
+            action,
+            reason: '',
+        });
+    }
+
+    function submitBulkOvertime() {
+        bulkOvertimeForm.post(bulkDecideOvertime().url, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                bulkOvertimeForm.reset('reason');
+                resetSelection();
+                setBulkOvertimeTargets([]);
             },
         });
     }
@@ -397,6 +486,36 @@ export default function WorkdaysIndex({
                     ),
             },
             {
+                id: 'overtime',
+                enableSorting: false,
+                meta: { title: t('ui.workdays.columns.overtime') },
+                header: () => t('ui.workdays.columns.overtime'),
+                cell: ({ row }) => {
+                    const overtime = row.original.overtime;
+
+                    if (!overtime) {
+                        return '—';
+                    }
+
+                    return (
+                        <div className="flex items-center gap-1.5">
+                            <Badge
+                                variant={
+                                    STATUS_BADGE[overtime.status_badge] ??
+                                    'outline'
+                                }
+                            >
+                                {(overtime.final_hours ??
+                                    overtime.calculated_hours)?.slice(0, 5)}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                                {overtime.status_label}
+                            </span>
+                        </div>
+                    );
+                },
+            },
+            {
                 id: 'actions',
                 enableHiding: false,
                 meta: {
@@ -406,6 +525,37 @@ export default function WorkdaysIndex({
                 header: () => null,
                 cell: ({ row }) => (
                     <div className="flex items-center justify-end gap-1">
+                        {can.decideOvertime &&
+                            row.original.overtime?.can_decide && (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() =>
+                                            openApproveOvertime(row.original)
+                                        }
+                                        aria-label={t(
+                                            'ui.workdays.overtime.actions.approve',
+                                        )}
+                                        className="text-emerald-700 hover:text-emerald-700 dark:text-emerald-400"
+                                    >
+                                        <Check className="size-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() =>
+                                            openObjectOvertime(row.original)
+                                        }
+                                        aria-label={t(
+                                            'ui.workdays.overtime.actions.object',
+                                        )}
+                                        className="text-destructive hover:text-destructive"
+                                    >
+                                        <X className="size-4" />
+                                    </Button>
+                                </>
+                            )}
                         <Button
                             variant="ghost"
                             size="icon"
@@ -428,7 +578,8 @@ export default function WorkdaysIndex({
                 ),
             },
         ],
-        [t, openModify],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [t, openModify, can.decideOvertime],
     );
 
     return (
@@ -507,6 +658,42 @@ export default function WorkdaysIndex({
                             >
                                 {t('ui.workdays.bulk.trigger')}
                             </Button>
+                            {can.decideOvertime &&
+                                rows.some((row) => row.overtime?.can_decide) && (
+                                    <>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                                            onClick={() =>
+                                                openBulkOvertime(
+                                                    'approve',
+                                                    rows,
+                                                    reset,
+                                                )
+                                            }
+                                        >
+                                            {t(
+                                                'ui.workdays.overtime.bulk.trigger_approve',
+                                            )}
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                openBulkOvertime(
+                                                    'object',
+                                                    rows,
+                                                    reset,
+                                                )
+                                            }
+                                        >
+                                            {t(
+                                                'ui.workdays.overtime.bulk.trigger_object',
+                                            )}
+                                        </Button>
+                                    </>
+                                )}
                         </>
                     )}
                     toolbar={
@@ -780,6 +967,82 @@ export default function WorkdaysIndex({
                             disabled={modifyForm.processing}
                         >
                             {t('ui.workdays.modify.submit')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <OvertimeApproveDialog
+                open={approveOvertimeTarget !== null}
+                onOpenChange={(open) => !open && setApproveOvertimeTarget(null)}
+                target={approveOvertimeTarget}
+                compensationTypeOptions={compensationTypeOptions}
+            />
+
+            <OvertimeObjectDialog
+                open={objectOvertimeTarget !== null}
+                onOpenChange={(open) => !open && setObjectOvertimeTarget(null)}
+                target={objectOvertimeTarget}
+            />
+
+            <Dialog
+                open={bulkOvertimeTargets.length > 0}
+                onOpenChange={(open) => !open && setBulkOvertimeTargets([])}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {bulkOvertimeForm.data.action === 'object'
+                                ? t('ui.workdays.overtime.bulk.object_title')
+                                : t('ui.workdays.overtime.bulk.approve_title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {bulkOvertimeForm.data.action === 'object'
+                                ? t(
+                                      'ui.workdays.overtime.bulk.object_description',
+                                      { count: bulkOvertimeTargets.length },
+                                  )
+                                : t(
+                                      'ui.workdays.overtime.bulk.approve_description',
+                                      { count: bulkOvertimeTargets.length },
+                                  )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-2">
+                        <FormField
+                            label={t('ui.workdays.overtime.bulk.reason')}
+                            htmlFor="bulk_overtime_reason"
+                            required={bulkOvertimeForm.data.action === 'object'}
+                            error={bulkOvertimeForm.errors.reason}
+                        >
+                            <textarea
+                                id="bulk_overtime_reason"
+                                rows={3}
+                                value={bulkOvertimeForm.data.reason}
+                                onChange={(event) =>
+                                    bulkOvertimeForm.setData(
+                                        'reason',
+                                        event.target.value,
+                                    )
+                                }
+                                className="flex min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </FormField>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setBulkOvertimeTargets([])}
+                        >
+                            {t('ui.common.cancel')}
+                        </Button>
+                        <Button
+                            onClick={submitBulkOvertime}
+                            disabled={bulkOvertimeForm.processing}
+                        >
+                            {t('ui.workdays.overtime.bulk.submit')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

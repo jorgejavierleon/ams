@@ -21,7 +21,8 @@ import {
 } from '@/components/ui/select';
 import WorkdayDetail, { hm } from '@/components/workday-detail';
 import type {
-    Modification,
+    OvertimeSummary,
+    TimelineEntry,
     WorkdayDetailData,
 } from '@/components/workday-detail';
 import { useTranslations } from '@/hooks/use-translations';
@@ -33,14 +34,18 @@ type Option = { value: string; label: string };
 
 type Props = {
     workday: WorkdayDetailData;
-    modifications: Modification[];
+    timeline: TimelineEntry[];
+    overtime: OvertimeSummary | null;
     reasonOptions: Option[];
+    compensationTypeOptions: Option[];
 };
 
 export default function WorkdayShow({
     workday,
-    modifications,
+    timeline,
+    overtime,
     reasonOptions,
+    compensationTypeOptions,
 }: Props) {
     const { t } = useTranslations();
 
@@ -77,7 +82,9 @@ export default function WorkdayShow({
 
             <WorkdayDetail
                 workday={workday}
-                modifications={modifications}
+                modifications={timeline}
+                overtime={overtime}
+                compensationTypeOptions={compensationTypeOptions}
                 backHref={index().url}
                 backLabel={t('ui.workdays.show.back')}
                 employeeHref={showEmployee(workday.employee.id).url}

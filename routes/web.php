@@ -24,10 +24,12 @@ use App\Http\Controllers\My\DocumentController as MyDocumentController;
 use App\Http\Controllers\My\LeaveController as MyLeaveController;
 use App\Http\Controllers\My\MarkController as MyMarkController;
 use App\Http\Controllers\My\OvertimeRequestController as MyOvertimeRequestController;
+use App\Http\Controllers\My\OvertimeRestDayBalanceController as MyOvertimeRestDayBalanceController;
 use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OvertimePactController;
 use App\Http\Controllers\OvertimeQueueController;
+use App\Http\Controllers\OvertimeRestDayBalanceController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -90,19 +92,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('shifts', ShiftController::class)
         ->except(['show']);
 
-    Route::get('workdays', [WorkdayController::class, 'index'])->name('workdays.index');
-    Route::get('workdays/{workday}', [WorkdayController::class, 'show'])->name('workdays.show');
-    Route::post('workdays/bulk-modify', [WorkdayController::class, 'bulkModify'])
-        ->name('workdays.bulk-modify');
-    Route::post('workdays/{workday}/modify', [WorkdayController::class, 'modify'])
-        ->name('workdays.modify');
-    Route::post('workdays/{workday}/modifications/{markModification}/approve', [WorkdayController::class, 'approveModification'])
-        ->scopeBindings()
-        ->name('workdays.modifications.approve');
-    Route::post('workdays/{workday}/modifications/{markModification}/decline', [WorkdayController::class, 'declineModification'])
-        ->scopeBindings()
-        ->name('workdays.modifications.decline');
-
     Route::resource('holidays', HolidayController::class)
         ->only(['index', 'store', 'update', 'destroy']);
 
@@ -144,6 +133,37 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
         ->name('regions.communes');
+});
+
+// Jornadas (KOL-71). Shared by admins and supervisors, same shape as the leave
+// review routes below: authorization is enforced per request in
+// WorkdayController/WorkdayPolicy (ViewAny/Update:Workday org-wide,
+// ViewTeam/ApproveTeam:Workday scoped to a supervisor's own direct reports),
+// not by a route-level permission gate — admins reach every action through
+// the super-admin Gate::before bypass without needing either permission
+// granted explicitly.
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('workdays', [WorkdayController::class, 'index'])->name('workdays.index');
+    Route::get('workdays/{workday}', [WorkdayController::class, 'show'])->name('workdays.show');
+    Route::post('workdays/bulk-modify', [WorkdayController::class, 'bulkModify'])
+        ->name('workdays.bulk-modify');
+    Route::post('workdays/{workday}/modify', [WorkdayController::class, 'modify'])
+        ->name('workdays.modify');
+    Route::post('workdays/{workday}/modifications/{markModification}/approve', [WorkdayController::class, 'approveModification'])
+        ->scopeBindings()
+        ->name('workdays.modifications.approve');
+    Route::post('workdays/{workday}/modifications/{markModification}/decline', [WorkdayController::class, 'declineModification'])
+        ->scopeBindings()
+        ->name('workdays.modifications.decline');
+
+    // KOL-71: overtime approval lives on Jornadas, next to mark-modification
+    // review, rather than on the separate overtime queue.
+    Route::post('workdays/overtime/bulk-decide', [WorkdayController::class, 'bulkDecideOvertime'])
+        ->name('workdays.overtime.bulk-decide');
+    Route::post('workdays/{workday}/overtime/approve', [WorkdayController::class, 'approveOvertime'])
+        ->name('workdays.overtime.approve');
+    Route::post('workdays/{workday}/overtime/object', [WorkdayController::class, 'objectOvertime'])
+        ->name('workdays.overtime.object');
 });
 
 // Leave review routes shared by admins and supervisors. Authorization is
@@ -201,6 +221,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/requests/{overtimeRequest}/approve', [OvertimeQueueController::class, 'approveRequest'])->name('requests.approve');
             Route::post('/requests/{overtimeRequest}/reject', [OvertimeQueueController::class, 'rejectRequest'])->name('requests.reject');
         });
+
+    // Rest-day compensation balances (KOL-47): HR/admin view and consumption,
+    // gated by the same permission as pactos since the two are managed by the
+    // same people.
+    Route::middleware('permission:Manage:OvertimeAuthorization')
+        ->prefix('overtime/rest-day-balances')
+        ->name('overtime.rest-day-balances.')
+        ->group(function () {
+            Route::get('/', [OvertimeRestDayBalanceController::class, 'index'])->name('index');
+            Route::post('/consume', [OvertimeRestDayBalanceController::class, 'consume'])->name('consume');
+        });
 });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)
@@ -230,6 +261,10 @@ Route::middleware(['auth', 'verified'])->prefix('my')->name('my.')->group(functi
     Route::post('overtime-requests', [MyOvertimeRequestController::class, 'store'])
         ->middleware('permission:RequestOwn:OvertimeAuthorization')
         ->name('overtime-requests.store');
+
+    Route::get('overtime-rest-day-balance', [MyOvertimeRestDayBalanceController::class, 'index'])
+        ->middleware('permission:ViewOwn:OvertimeAuthorization')
+        ->name('overtime-rest-day-balance.index');
 
     Route::post('marks', [MyMarkController::class, 'store'])
         ->middleware('permission:ClockOwn:Mark')

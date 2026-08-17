@@ -20,6 +20,13 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
 import {
     decimalHoursToTime,
@@ -46,6 +53,7 @@ type OvertimeAuthorizationRow = {
     status: string;
     status_label: string;
     status_badge: string;
+    compensation_eligible: boolean;
     reason: string | null;
     reviewed_by: string | null;
     reviewed_at: string | null;
@@ -81,6 +89,7 @@ type Props = {
     employeeOptions: FacetedOption[];
     statusOptions: Option[];
     requestStatusOptions: Option[];
+    compensationTypeOptions: Option[];
     requests: Paginated<OvertimeRequestRow>;
     pendingRequestsCount: number;
     can: {
@@ -100,6 +109,7 @@ export default function OvertimeQueueIndex({
     employeeOptions,
     statusOptions,
     requestStatusOptions,
+    compensationTypeOptions,
     requests,
     pendingRequestsCount,
     can,
@@ -139,7 +149,11 @@ export default function OvertimeQueueIndex({
     const [rejectRequestTarget, setRejectRequestTarget] =
         useState<OvertimeRequestRow | null>(null);
 
-    const approveForm = useForm({ authorized_hours: '', reason: '' });
+    const approveForm = useForm({
+        authorized_hours: '',
+        reason: '',
+        compensation_type: 'payment',
+    });
     const objectForm = useForm({ reason: '' });
     const bulkForm = useForm({
         ids: [] as number[],
@@ -190,6 +204,7 @@ export default function OvertimeQueueIndex({
                 row.authorized_hours ?? row.calculated_hours,
             ),
             reason: '',
+            compensation_type: 'payment',
         });
         setApproveTarget(row);
     }
@@ -795,6 +810,46 @@ export default function OvertimeQueueIndex({
                                 }
                             />
                         </FormField>
+
+                        {approveTarget?.compensation_eligible && (
+                            <FormField
+                                label={t(
+                                    'ui.overtime.queue.approve_dialog.compensation_type',
+                                )}
+                                htmlFor="approve_compensation_type"
+                                hint={t(
+                                    'ui.overtime.queue.approve_dialog.compensation_type_hint',
+                                    { employee: approveTarget?.employee ?? '' },
+                                )}
+                                error={approveForm.errors.compensation_type}
+                            >
+                                <Select
+                                    value={approveForm.data.compensation_type}
+                                    onValueChange={(value) =>
+                                        approveForm.setData(
+                                            'compensation_type',
+                                            value,
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger id="approve_compensation_type">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {compensationTypeOptions.map(
+                                            (option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
+                        )}
 
                         <FormField
                             label={t('ui.overtime.queue.approve_dialog.reason')}

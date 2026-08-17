@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Enums\OvertimeAuthorizationStatus;
+use App\Enums\OvertimeCompensationType;
 use App\Exceptions\OvertimeDecisionRefused;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Services\Overtime\OvertimeCapEvaluator;
+use App\Services\Overtime\RestDayBalanceService;
 use App\Support\Duration;
 use Carbon\CarbonInterface;
 use Database\Factories\OvertimeAuthorizationFactory;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -53,6 +56,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $reviewed_at
  * @property string|null $reason
  * @property int|null $overtime_pact_id
+ * @property OvertimeCompensationType $compensation_type
  */
 class OvertimeAuthorization extends Model
 {
@@ -68,6 +72,7 @@ class OvertimeAuthorization extends Model
     {
         return [
             'status' => OvertimeAuthorizationStatus::class,
+            'compensation_type' => OvertimeCompensationType::class,
             'date' => 'date',
             'reviewed_at' => 'datetime',
         ];
@@ -154,14 +159,32 @@ class OvertimeAuthorization extends Model
      * Resolves and snapshots the pacto covering this record's worked `date`
      * (KOL-42 AC #4) — not today's — so a decision made long after the fact is
      * still judged against the agreement in force when the hours were worked.
+     * The pacto has no say in {@see OvertimeCompensationType} (KOL-47 AC #8):
+     * that is the approver's own choice, per record, honoured only when
+     * {@see User::$overtime_rest_day_eligible} is set on the employee's
+     * profile — a standing eligibility flag, independent of any pacto.
+     * Omitting the choice, or the employee not being eligible, always resolves
+     * to {@see OvertimeCompensationType::Payment}; nothing can make rest-day
+     * compensation reachable for an ineligible employee. Rest-day
+     * compensation accrues a balance via {@see RestDayBalanceService} once the
+     * row is saved; payment does not.
      *
      * @param  User  $reviewer  The person deciding. Required — there is no other signature.
      * @param  string|null  $authorizedHours  The OHA as `HH:MM:SS`; defaults to authorising the calculated figure in full.
      * @param  string|null  $reason  Mandatory over a legal cap (KOL-41) or without a covering pacto (KOL-42).
+     * @param  OvertimeCompensationType|null  $compensationType  The approver's choice; null means payment.
+     *
+     * @throws OvertimeDecisionRefused when rest-day compensation is requested for an ineligible employee.
      */
-    public function approve(User $reviewer, ?string $authorizedHours = null, ?string $reason = null): self
+    public function approve(User $reviewer, ?string $authorizedHours = null, ?string $reason = null, ?OvertimeCompensationType $compensationType = null): self
     {
         $this->assertSameOrganizationAs($reviewer);
+
+        if ($compensationType === OvertimeCompensationType::RestDays && ! $this->user->overtime_rest_day_eligible) {
+            throw OvertimeDecisionRefused::notEligibleForRestDayCompensation();
+        }
+
+        $resolvedCompensationType = $compensationType ?? OvertimeCompensationType::Payment;
 
         $authorized = Duration::tryFrom($authorizedHours ?? $this->calculated_hours) ?? Duration::zero();
         $pact = OvertimePact::coveringDateFor($this->user_id, $this->date, $this->organization_id);
@@ -174,9 +197,14 @@ class OvertimeAuthorization extends Model
             'reviewed_at' => now(),
             'reason' => $reason,
             'overtime_pact_id' => $pact?->id,
+            'compensation_type' => $resolvedCompensationType,
         ])->save();
 
         $this->stampWorkdayDecision();
+
+        if ($resolvedCompensationType === OvertimeCompensationType::RestDays && ! $this->authorizedOvertime()->isZero()) {
+            app(RestDayBalanceService::class)->accrueFor($this);
+        }
 
         return $this;
     }
@@ -289,6 +317,21 @@ class OvertimeAuthorization extends Model
     }
 
     /**
+     * KOL-47 AC #4: the structural exclusion. An approved record compensated
+     * in rest days can never satisfy this scope — not today, not after
+     * consumption, not after expiry. There is no code path that flips a row's
+     * own `compensation_type` back to payment; an expired-unconsumed balance
+     * becomes payable through {@see OvertimeRestDayBalance::payableFromExpiry()}
+     * instead, a distinct source KOL-49's export must additionally union in.
+     *
+     * @param  Builder<OvertimeAuthorization>  $query
+     */
+    public function scopeExportable(Builder $query): void
+    {
+        $query->approved()->where('compensation_type', OvertimeCompensationType::Payment);
+    }
+
+    /**
      * The supervisors' queue of PRD §7.5.
      *
      * @param  Builder<OvertimeAuthorization>  $query
@@ -323,6 +366,17 @@ class OvertimeAuthorization extends Model
     public function workday(): BelongsTo
     {
         return $this->belongsTo(Workday::class);
+    }
+
+    /**
+     * The rest-day accrual this record produced, when compensated that way
+     * (KOL-47). Absent for every payment-compensated record.
+     *
+     * @return HasOne<OvertimeRestDayBalance, $this>
+     */
+    public function restDayBalance(): HasOne
+    {
+        return $this->hasOne(OvertimeRestDayBalance::class);
     }
 
     /**

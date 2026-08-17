@@ -54,6 +54,7 @@ export type EmployeeFormData = {
     additional_vacation_days: string;
     administrative_days: string;
     has_additional_sundays: boolean;
+    overtime_rest_day_eligible: boolean;
     phone: string;
     emergency_contact_name: string;
     emergency_contact_phone: string;
@@ -527,6 +528,24 @@ export default function EmployeeForm({
                         />
                         <Label htmlFor="has_additional_sundays">
                             {t('ui.employees.form.has_additional_sundays')}
+                        </Label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="overtime_rest_day_eligible"
+                            checked={data.overtime_rest_day_eligible}
+                            onCheckedChange={(checked) =>
+                                setData(
+                                    'overtime_rest_day_eligible',
+                                    checked === true,
+                                )
+                            }
+                        />
+                        <Label htmlFor="overtime_rest_day_eligible">
+                            {t(
+                                'ui.employees.form.overtime_rest_day_eligible',
+                            )}
                         </Label>
                     </div>
                 </TabsContent>

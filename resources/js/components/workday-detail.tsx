@@ -11,6 +11,10 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import OvertimeApproveDialog from '@/components/overtime-approve-dialog';
+import type { OvertimeApproveTarget } from '@/components/overtime-approve-dialog';
+import OvertimeObjectDialog from '@/components/overtime-object-dialog';
+import type { OvertimeObjectTarget } from '@/components/overtime-object-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -72,6 +76,7 @@ export type WorkdayDetailData = {
 
 export type Modification = {
     id: number;
+    kind: 'mark_modification';
     mark_type: string | null;
     mark_type_label: string | null;
     status: string | null;
@@ -89,6 +94,49 @@ export type Modification = {
     reviewed_ago: string | null;
     can_review: boolean;
 };
+
+/**
+ * KOL-71: the day's overtime decision, rendered in the same timeline as
+ * mark-modification requests on the admin/supervisor detail page. There is
+ * only ever one per workday — a summary of current state, not a log of
+ * requests like `Modification` — so it carries hours and a status rather
+ * than a time correction.
+ */
+export type OvertimeTimelineEntry = {
+    id: number;
+    kind: 'overtime';
+    status: string;
+    status_label: string;
+    status_badge: string;
+    calculated_hours: string | null;
+    authorized_hours: string | null;
+    final_hours: string | null;
+    compensation_type_label: string | null;
+    reason: string | null;
+    created_at: string | null;
+    created_ago: string | null;
+    reviewed_by: string | null;
+    reviewed_at: string | null;
+    reviewed_ago: string | null;
+    can_decide: boolean;
+};
+
+export type TimelineEntry = Modification | OvertimeTimelineEntry;
+
+/** KOL-71: the day's overtime figures for the detail page's stat tiles. */
+export type OvertimeSummary = {
+    calculated_hours: string | null;
+    authorized_hours: string | null;
+    final_hours: string | null;
+    status: string;
+    status_label: string;
+    status_badge: string;
+    compensation_type_label: string | null;
+    compensation_eligible: boolean;
+    can_decide: boolean;
+};
+
+type Option = { value: string; label: string };
 
 const STATUS_BADGE: Record<string, BadgeVariant> = {
     success: 'default',
@@ -507,12 +555,16 @@ function MarkPanel({
 /**
  * The read-only workday detail shared by the admin and employee views: identity
  * header, worked/extra/missing KPIs, the attendance strip, the two mark cards
- * and the mark-modification timeline with inline approve/decline for the
- * assigned reviewer. Callers layer their own actions on top:
+ * and the history timeline with inline approve/decline for the assigned
+ * reviewer. Callers layer their own actions on top:
  * - `headerAction` / `onModifyMark` add the admin's "modify marks" affordances;
  *   omitting both yields the employee's read-only marks.
  * - `employeeHref` links the employee name to their profile (admin only).
  * - `reviewUrl` builds the approve/decline endpoint for the current panel.
+ * - `overtime`/`compensationTypeOptions` (KOL-71) add the admin/supervisor
+ *   overtime stat section and merge the day's overtime decision into the
+ *   same timeline as mark-modification requests; omitted entirely on the
+ *   employee self-service page, which never decides overtime.
  */
 export default function WorkdayDetail({
     workday,
@@ -523,9 +575,11 @@ export default function WorkdayDetail({
     employeeHref,
     headerAction,
     onModifyMark,
+    overtime,
+    compensationTypeOptions = [],
 }: {
     workday: WorkdayDetailData;
-    modifications: Modification[];
+    modifications: TimelineEntry[];
     backHref: string;
     backLabel: string;
     reviewUrl: (
@@ -535,6 +589,8 @@ export default function WorkdayDetail({
     employeeHref?: string;
     headerAction?: ReactNode;
     onModifyMark?: () => void;
+    overtime?: OvertimeSummary | null;
+    compensationTypeOptions?: Option[];
 }) {
     const { t } = useTranslations();
 
@@ -544,6 +600,10 @@ export default function WorkdayDetail({
         action: 'approve' | 'decline';
         modification: Modification;
     } | null>(null);
+    const [approveOvertimeTarget, setApproveOvertimeTarget] =
+        useState<OvertimeApproveTarget>(null);
+    const [objectOvertimeTarget, setObjectOvertimeTarget] =
+        useState<OvertimeObjectTarget>(null);
 
     function submitReview() {
         if (reviewTarget === null) {
@@ -558,6 +618,29 @@ export default function WorkdayDetail({
                 onFinish: () => setReviewTarget(null),
             },
         );
+    }
+
+    function openApproveOvertime() {
+        if (!overtime) {
+            return;
+        }
+
+        setApproveOvertimeTarget({
+            workday_id: workday.id,
+            employee: workday.employee.name,
+            date: workday.date_label,
+            calculated_hours: overtime.calculated_hours,
+            authorized_hours: overtime.authorized_hours,
+            compensation_eligible: overtime.compensation_eligible,
+        });
+    }
+
+    function openObjectOvertime() {
+        setObjectOvertimeTarget({
+            workday_id: workday.id,
+            employee: workday.employee.name,
+            date: workday.date_label,
+        });
     }
 
     const initials = (workday.employee.name ?? '?')
@@ -693,6 +776,62 @@ export default function WorkdayDetail({
                     />
                 </div>
 
+                {overtime && (
+                    <section className="rounded-xl border bg-card p-4 shadow-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                <h2 className="text-[13px] font-semibold">
+                                    {t('ui.workdays.show.overtime.title')}
+                                </h2>
+                                <span
+                                    className={cn(
+                                        'rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase',
+                                        toneChip(overtime.status_badge),
+                                    )}
+                                >
+                                    {overtime.status_label}
+                                </span>
+                                <span className="text-lg font-semibold tracking-tight tabular-nums">
+                                    {hm(
+                                        overtime.final_hours ??
+                                            overtime.calculated_hours,
+                                    )}
+                                </span>
+                                {overtime.compensation_type_label && (
+                                    <span className="text-xs text-muted-foreground">
+                                        {overtime.compensation_type_label}
+                                    </span>
+                                )}
+                            </div>
+                            {overtime.can_decide && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                                        onClick={openApproveOvertime}
+                                    >
+                                        <Check className="size-4" />
+                                        {t(
+                                            'ui.workdays.show.overtime.actions.approve',
+                                        )}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={openObjectOvertime}
+                                    >
+                                        <X className="size-4" />
+                                        {t(
+                                            'ui.workdays.show.overtime.actions.object',
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                )}
+
                 <AttendanceStrip workday={workday} />
 
                 {/* Marks + modification timeline */}
@@ -731,17 +870,16 @@ export default function WorkdayDetail({
                             ) : (
                                 <div className="relative">
                                     <div className="absolute top-2 bottom-2 left-[9px] w-px bg-border" />
-                                    {modifications.map((modification) => (
+                                    {modifications.map((entry) => (
                                         <div
-                                            key={modification.id}
+                                            key={`${entry.kind}-${entry.id}`}
                                             className="relative pb-6 pl-8 last:pb-0"
                                         >
                                             <span
                                                 className={cn(
                                                     'absolute top-1 left-[2px] size-3.5 rounded-full ring-4 ring-card',
                                                     NODE_DOT[
-                                                        modification.status_badge ??
-                                                            ''
+                                                        entry.status_badge ?? ''
                                                     ] ?? 'bg-muted-foreground',
                                                 )}
                                             />
@@ -750,126 +888,201 @@ export default function WorkdayDetail({
                                                     className={cn(
                                                         'rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase',
                                                         toneChip(
-                                                            modification.status_badge,
+                                                            entry.status_badge,
                                                         ),
                                                     )}
                                                 >
-                                                    {modification.status_label}
+                                                    {entry.status_label}
                                                 </span>
                                                 <span className="text-[13px] font-semibold">
-                                                    {
-                                                        modification.mark_type_label
-                                                    }
+                                                    {entry.kind === 'overtime'
+                                                        ? t(
+                                                              'ui.workdays.show.overtime.title',
+                                                          )
+                                                        : entry.mark_type_label}
                                                 </span>
                                                 <span className="ml-auto text-xs text-muted-foreground">
-                                                    {modification.reviewed_ago ??
-                                                        modification.created_ago}
+                                                    {entry.reviewed_ago ??
+                                                        entry.created_ago}
                                                 </span>
                                             </div>
 
-                                            <div className="my-2 flex items-center gap-2.5 text-[17px] font-semibold tracking-tight tabular-nums">
-                                                <span className="text-muted-foreground/60 line-through">
-                                                    {hm(
-                                                        modification.original_time,
-                                                    ) ??
-                                                        t(
-                                                            'ui.workdays.show.no_mark',
-                                                        )}
-                                                </span>
-                                                <span className="text-sm text-muted-foreground">
-                                                    →
-                                                </span>
-                                                <span>
-                                                    {hm(
-                                                        modification.modified_time,
-                                                    )}
-                                                </span>
-                                            </div>
-
-                                            <div className="text-[12.5px] text-muted-foreground">
-                                                {modification.created_by && (
-                                                    <>
+                                            {entry.kind === 'overtime' ? (
+                                                <div className="my-2 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[17px] font-semibold tracking-tight tabular-nums">
+                                                    <span className="text-muted-foreground/60">
                                                         {t(
-                                                            'ui.workdays.show.requested_by',
-                                                        )}{' '}
-                                                        <span className="font-medium text-foreground">
+                                                            'ui.workdays.show.overtime.calculated_short',
+                                                        )}
+                                                    </span>
+                                                    <span>
+                                                        {hm(
+                                                            entry.calculated_hours,
+                                                        ) ?? '—'}
+                                                    </span>
+                                                    {entry.final_hours && (
+                                                        <>
+                                                            <span className="text-sm text-muted-foreground">
+                                                                →
+                                                            </span>
+                                                            <span className="text-emerald-600 dark:text-emerald-400">
+                                                                {hm(
+                                                                    entry.final_hours,
+                                                                )}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    {entry.compensation_type_label && (
+                                                        <span className="rounded-full border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                                                             {
-                                                                modification.created_by
+                                                                entry.compensation_type_label
                                                             }
                                                         </span>
-                                                    </>
-                                                )}
-                                                {modification.reviewed_by && (
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="my-2 flex items-center gap-2.5 text-[17px] font-semibold tracking-tight tabular-nums">
+                                                    <span className="text-muted-foreground/60 line-through">
+                                                        {hm(
+                                                            entry.original_time,
+                                                        ) ??
+                                                            t(
+                                                                'ui.workdays.show.no_mark',
+                                                            )}
+                                                    </span>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        →
+                                                    </span>
+                                                    <span>
+                                                        {hm(
+                                                            entry.modified_time,
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            <div className="text-[12.5px] text-muted-foreground">
+                                                {entry.kind === 'mark_modification' &&
+                                                    entry.created_by && (
+                                                        <>
+                                                            {t(
+                                                                'ui.workdays.show.requested_by',
+                                                            )}{' '}
+                                                            <span className="font-medium text-foreground">
+                                                                {
+                                                                    entry.created_by
+                                                                }
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                {entry.reviewed_by && (
                                                     <>
-                                                        {' · '}
+                                                        {entry.kind ===
+                                                            'mark_modification' &&
+                                                            entry.created_by &&
+                                                            ' · '}
                                                         {t(
                                                             'ui.workdays.show.reviewed_inline',
                                                         )}{' '}
                                                         <span className="font-medium text-foreground">
-                                                            {
-                                                                modification.reviewed_by
-                                                            }
+                                                            {entry.reviewed_by}
                                                         </span>
                                                     </>
                                                 )}
                                             </div>
 
                                             <div className="mt-2 flex flex-wrap items-center gap-2">
-                                                {modification.reason && (
+                                                {entry.reason && (
                                                     <span className="rounded-md bg-muted px-2 py-0.5 text-[11.5px] text-muted-foreground">
-                                                        {modification.reason}
+                                                        {entry.reason}
                                                     </span>
                                                 )}
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setDetailTarget(
-                                                            modification,
-                                                        )
-                                                    }
-                                                    className="rounded-md px-1.5 py-0.5 text-[11.5px] font-medium text-muted-foreground hover:text-foreground"
-                                                >
-                                                    {t(
-                                                        'ui.workdays.show.history.view_detail',
-                                                    )}
-                                                </button>
+                                                {entry.kind ===
+                                                    'mark_modification' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setDetailTarget(
+                                                                entry,
+                                                            )
+                                                        }
+                                                        className="rounded-md px-1.5 py-0.5 text-[11.5px] font-medium text-muted-foreground hover:text-foreground"
+                                                    >
+                                                        {t(
+                                                            'ui.workdays.show.history.view_detail',
+                                                        )}
+                                                    </button>
+                                                )}
                                             </div>
 
-                                            {modification.can_review && (
-                                                <div className="mt-3 flex gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
-                                                        onClick={() =>
-                                                            setReviewTarget({
-                                                                action: 'approve',
-                                                                modification,
-                                                            })
-                                                        }
-                                                    >
-                                                        <Check className="size-4" />
-                                                        {t(
-                                                            'ui.workdays.show.history.approve',
-                                                        )}
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() =>
-                                                            setReviewTarget({
-                                                                action: 'decline',
-                                                                modification,
-                                                            })
-                                                        }
-                                                    >
-                                                        <X className="size-4" />
-                                                        {t(
-                                                            'ui.workdays.show.history.decline',
-                                                        )}
-                                                    </Button>
-                                                </div>
-                                            )}
+                                            {entry.kind === 'mark_modification' &&
+                                                entry.can_review && (
+                                                    <div className="mt-3 flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                                                            onClick={() =>
+                                                                setReviewTarget({
+                                                                    action: 'approve',
+                                                                    modification:
+                                                                        entry,
+                                                                })
+                                                            }
+                                                        >
+                                                            <Check className="size-4" />
+                                                            {t(
+                                                                'ui.workdays.show.history.approve',
+                                                            )}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() =>
+                                                                setReviewTarget({
+                                                                    action: 'decline',
+                                                                    modification:
+                                                                        entry,
+                                                                })
+                                                            }
+                                                        >
+                                                            <X className="size-4" />
+                                                            {t(
+                                                                'ui.workdays.show.history.decline',
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                )}
+
+                                            {entry.kind === 'overtime' &&
+                                                entry.can_decide && (
+                                                    <div className="mt-3 flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                                                            onClick={
+                                                                openApproveOvertime
+                                                            }
+                                                        >
+                                                            <Check className="size-4" />
+                                                            {t(
+                                                                'ui.workdays.show.overtime.actions.approve',
+                                                            )}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={
+                                                                openObjectOvertime
+                                                            }
+                                                        >
+                                                            <X className="size-4" />
+                                                            {t(
+                                                                'ui.workdays.show.overtime.actions.object',
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                )}
                                         </div>
                                     ))}
                                 </div>
@@ -1075,6 +1288,19 @@ export default function WorkdayDetail({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <OvertimeApproveDialog
+                open={approveOvertimeTarget !== null}
+                onOpenChange={(open) => !open && setApproveOvertimeTarget(null)}
+                target={approveOvertimeTarget}
+                compensationTypeOptions={compensationTypeOptions}
+            />
+
+            <OvertimeObjectDialog
+                open={objectOvertimeTarget !== null}
+                onOpenChange={(open) => !open && setObjectOvertimeTarget(null)}
+                target={objectOvertimeTarget}
+            />
         </>
     );
 }

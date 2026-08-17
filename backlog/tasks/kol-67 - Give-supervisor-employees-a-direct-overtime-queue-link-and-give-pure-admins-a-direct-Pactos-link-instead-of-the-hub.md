@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-16 15:33'
+updated_date: '2026-08-17 19:08'
 labels:
   - overtime
   - frontend
@@ -40,3 +41,12 @@ KOL-66 adds a direct sidebar link to the overtime queue, but only in the admin n
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-08-17 19:08
+---
+Flagged while planning the Jornadas-overtime refactor (KOL-71..74): once KOL-74 ships, /overtime/queue no longer exists, so this task's premise ('a direct overtime-queue link') is gone. Needs rescoping once KOL-74 lands — likely 'a direct Jornadas link filtered to pending overtime' for supervisor-employees, plus the admin-Pactos-link half may still stand as originally scoped. Do not implement as currently written.
+---
+<!-- COMMENTS:END -->

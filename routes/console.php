@@ -23,3 +23,9 @@ Schedule::command('overtime:calculate')->dailyAt('04:00');
 // measured in days, not hours, and every pacto is only ever notified about
 // once (idempotent on `expiry_notified_at`).
 Schedule::command('overtime:pacts:notify-expiring')->dailyAt('07:00');
+
+// KOL-47 AC #3: unconsumed rest-day balance past its six-month expiry stops
+// being spendable and becomes payable instead (Código del Trabajo art. 32
+// §4). Once a day is enough — the window is months, not hours — and the
+// sweep is idempotent on `expired_at`.
+Schedule::command('overtime:rest-day-balances:sweep-expired')->dailyAt('07:00');

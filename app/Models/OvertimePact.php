@@ -20,9 +20,10 @@ use Illuminate\Support\Carbon;
  *
  * Nothing here decides whether overtime gets approved — a missing or expired
  * pacto is a flag on {@see OvertimeAuthorization}, never a bar (see
- * backlog/decisions/decision-1). What a pacto actually gates is KOL-47's
- * compensation type: rest-day compensation requires a valid agreement in force
- * on the day, and payment is the fallback without one.
+ * backlog/decisions/decision-1). It does not decide compensation type either
+ * (KOL-47): that is a standing per-employee eligibility flag
+ * ({@see User::$overtime_rest_day_eligible}), chosen per record by whoever
+ * approves the overtime, independent of whether a pacto covers the date.
  *
  * @property int $id
  * @property int|null $organization_id

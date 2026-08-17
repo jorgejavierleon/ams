@@ -28,6 +28,11 @@ class OvertimeController extends Controller
                 // where the request flow does not apply.
                 'request' => $settings->overtimeAuthorizationMode()->allowsRequests()
                     && $request->user()->can('RequestOwn:OvertimeAuthorization'),
+                // KOL-47: HR manages every employee's rest-day balance from
+                // the same permission as pactos; an employee sees only their
+                // own.
+                'manageRestDayBalances' => $request->user()->can('Manage:OvertimeAuthorization'),
+                'viewOwnRestDayBalance' => $request->user()->can('ViewOwn:OvertimeAuthorization'),
             ],
         ]);
     }

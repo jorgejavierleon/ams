@@ -32,6 +32,7 @@ type Employee = {
     additional_vacation_days: number;
     administrative_days: number;
     has_additional_sundays: boolean;
+    overtime_rest_day_eligible: boolean;
     phone: string | null;
     emergency_contact_name: string | null;
     emergency_contact_phone: string | null;
@@ -73,6 +74,7 @@ export default function EditEmployee({ employee, options }: Props) {
         additional_vacation_days: String(employee.additional_vacation_days),
         administrative_days: String(employee.administrative_days),
         has_additional_sundays: employee.has_additional_sundays,
+        overtime_rest_day_eligible: employee.overtime_rest_day_eligible,
         phone: employee.phone ?? '',
         emergency_contact_name: employee.emergency_contact_name ?? '',
         emergency_contact_phone: employee.emergency_contact_phone ?? '',

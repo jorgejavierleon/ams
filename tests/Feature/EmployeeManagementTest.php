@@ -62,6 +62,7 @@ function employeePayload(User $admin, array $overrides = []): array
         'additional_vacation_days' => 0,
         'administrative_days' => 0,
         'has_additional_sundays' => false,
+        'overtime_rest_day_eligible' => false,
         'phone' => '+56911111111',
         'emergency_contact_name' => null,
         'emergency_contact_phone' => null,
@@ -252,6 +253,21 @@ test('admin can create an employee', function () {
     expect($employee->organization_id)->toBe($admin->organization_id);
     expect($employee->hasRole('employee'))->toBeTrue();
     expect($employee->rut)->not->toBeNull();
+});
+
+test('admin can mark an employee eligible for rest-day overtime compensation (KOL-47)', function () {
+    $admin = employeeAdmin();
+
+    $this->actingAs($admin)
+        ->post(route('employees.store'), employeePayload($admin, [
+            'overtime_rest_day_eligible' => true,
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'ana@example.com',
+        'overtime_rest_day_eligible' => true,
+    ]);
 });
 
 test('creating an employee rejects an invalid rut', function () {
@@ -492,6 +508,7 @@ test('admin can view an employee detail page', function () {
         'additional_vacation_days' => 3,
         'administrative_days' => 2,
         'has_additional_sundays' => true,
+        'overtime_rest_day_eligible' => true,
     ]);
 
     $this->actingAs($admin)
@@ -503,7 +520,8 @@ test('admin can view an employee detail page', function () {
             ->where('employee.vacation_days', 12)
             ->where('employee.additional_vacation_days', 3)
             ->where('employee.administrative_days', 2)
-            ->where('employee.has_additional_sundays', true));
+            ->where('employee.has_additional_sundays', true)
+            ->where('employee.overtime_rest_day_eligible', true));
 });
 
 test('admin cannot view an employee from another organization', function () {

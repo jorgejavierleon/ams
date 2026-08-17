@@ -4,6 +4,7 @@ title: Expose an overtime export dataset that cannot contain an unapproved hour
 status: To Do
 assignee: []
 created_date: '2026-08-06 02:54'
+updated_date: '2026-08-17 11:16'
 labels:
   - overtime
   - backend
@@ -54,3 +55,17 @@ Day type is derived from existing data: `app/Models/Holiday.php` and its seeder 
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-08-17 11:16
+---
+Dependency note from KOL-47 (rest-day compensation): per Código del Trabajo art. 32, expired-unused rest-day balance is not forfeited — it must be paid. KOL-47 therefore does NOT give this export a single source to read. It gives two:
+
+1. OvertimeAuthorization rows with compensation_type = payment (status Approved) — the normal path, structurally excludes rest_days rows unconditionally.
+2. OvertimeRestDayBalance rows whose remainder expired unconsumed (App\Models\OvertimeRestDayBalance, see its expired-unpaid scope) — these are payable but never live on an OvertimeAuthorization row, because consumption can be partial and an authorization is one row per workday, not per balance-hour.
+
+This dataset's query/read-model needs to union both sources, or the export will silently under-pay anyone whose rest-day balance lapsed unused. See KOL-47's implementation notes and comment for the full statutory reasoning.
+---
+<!-- COMMENTS:END -->
