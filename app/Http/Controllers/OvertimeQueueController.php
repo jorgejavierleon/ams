@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesTableSort;
 use App\Enums\OvertimeAuthorizationStatus;
+use App\Enums\OvertimeCompensationType;
 use App\Enums\OvertimeRequestStatus;
 use App\Exceptions\OvertimeDecisionRefused;
 use App\Models\Company;
@@ -58,7 +59,7 @@ class OvertimeQueueController extends Controller
         $requestStatus = $this->requestStatusFilter($request);
 
         $authorizations = OvertimeAuthorization::query()
-            ->with(['user:id,name,supervisor_id', 'workday:id,anomaly_flags', 'reviewedBy:id,name'])
+            ->with(['user:id,name,supervisor_id,overtime_rest_day_eligible', 'workday:id,anomaly_flags', 'reviewedBy:id,name'])
             ->when($supervisorId, fn ($query) => $query->whereHas(
                 'user',
                 fn ($user) => $user->where('supervisor_id', $supervisorId),
@@ -103,6 +104,10 @@ class OvertimeQueueController extends Controller
                 'status' => $authorization->status->value,
                 'status_label' => $authorization->status->label(),
                 'status_badge' => $authorization->status->badge(),
+                // KOL-47: whether the approver may choose rest-day
+                // compensation for this record — the employee's standing
+                // profile flag, never derived from a pacto or tenant setting.
+                'compensation_eligible' => $authorization->user !== null && $authorization->user->overtime_rest_day_eligible,
                 'reason' => $authorization->reason,
                 'reviewed_by' => $authorization->reviewedBy?->name,
                 'reviewed_at' => $authorization->reviewed_at?->format('Y-m-d H:i'),
@@ -123,6 +128,7 @@ class OvertimeQueueController extends Controller
             'employeeOptions' => $this->employeeOptions($supervisorId),
             'statusOptions' => OvertimeAuthorizationStatus::options(),
             'requestStatusOptions' => OvertimeRequestStatus::options(),
+            'compensationTypeOptions' => OvertimeCompensationType::options(),
             'requests' => $requests->through(fn (OvertimeRequest $overtimeRequest): array => [
                 'id' => $overtimeRequest->id,
                 'employee' => $overtimeRequest->user?->name,
@@ -157,6 +163,7 @@ class OvertimeQueueController extends Controller
         $data = $request->validate([
             'authorized_hours' => ['nullable', 'date_format:H:i'],
             'reason' => ['nullable', 'string', 'max:1000'],
+            'compensation_type' => ['nullable', Rule::enum(OvertimeCompensationType::class)],
         ]);
 
         if ($overtimeAuthorization->workday?->isFlagged()) {
@@ -169,11 +176,23 @@ class OvertimeQueueController extends Controller
             ]);
         }
 
+        $compensationType = isset($data['compensation_type']) ? OvertimeCompensationType::from($data['compensation_type']) : null;
+
+        // KOL-47: named here, not left to the model's exception, so the
+        // error lands on the compensation field the approver actually chose
+        // rather than reading as a missing-reason complaint.
+        if ($compensationType === OvertimeCompensationType::RestDays && ! $overtimeAuthorization->user->overtime_rest_day_eligible) {
+            throw ValidationException::withMessages([
+                'compensation_type' => __('ui.overtime.queue.errors.not_eligible_for_rest_days'),
+            ]);
+        }
+
         try {
             $overtimeAuthorization->approve(
                 $request->user(),
                 isset($data['authorized_hours']) ? $data['authorized_hours'].':00' : null,
                 $data['reason'] ?? null,
+                $compensationType,
             );
         } catch (OvertimeDecisionRefused) {
             throw ValidationException::withMessages([

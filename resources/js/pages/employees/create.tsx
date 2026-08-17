@@ -35,6 +35,7 @@ const emptyEmployee: EmployeeFormData = {
     additional_vacation_days: '0',
     administrative_days: '0',
     has_additional_sundays: false,
+    overtime_rest_day_eligible: false,
     phone: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',

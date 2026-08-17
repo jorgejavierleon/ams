@@ -474,11 +474,11 @@ test('the detail page renders the workday with its modification history', functi
             ->has('workday.shift_start')
             ->has('workday.shift_end')
             ->has('workday.mark_in.scheduled')
-            ->has('modifications', 1)
-            ->where('modifications.0.status', 'pending')
-            ->has('modifications.0.created_ago')
+            ->has('timeline', 1)
+            ->where('timeline.0.status', 'pending')
+            ->has('timeline.0.created_ago')
             // The admin is not the assigned reviewer, so cannot act inline.
-            ->where('modifications.0.can_review', false));
+            ->where('timeline.0.can_review', false));
 });
 
 test('the mark detail card shows the employee and employer rut with dots', function () {
@@ -521,7 +521,7 @@ test('the detail page marks the request reviewable for the assigned reviewer', f
     $this->actingAs($admin)
         ->get(route('workdays.show', $workday))
         ->assertInertia(fn ($page) => $page
-            ->where('modifications.0.can_review', true));
+            ->where('timeline.0.can_review', true));
 });
 
 test('the detail page cannot show a workday from another organization', function () {
@@ -630,8 +630,8 @@ test('the modification timeline preserves the original time after approval rewri
     $this->actingAs($admin)
         ->get(route('workdays.show', $workday))
         ->assertInertia(fn ($page) => $page
-            ->where('modifications.0.original_time', '22:05:00')
-            ->where('modifications.0.modified_time', '22:30:00'));
+            ->where('timeline.0.original_time', '22:05:00')
+            ->where('timeline.0.modified_time', '22:30:00'));
 });
 
 test('the assigned reviewer declines a pending modification from the detail page', function () {

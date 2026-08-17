@@ -7,8 +7,10 @@ use App\Enums\MarkType;
 use App\Models\MarkModification;
 use App\Models\Workday;
 use App\Support\Rut;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Shapes a workday and its mark-modification history for the detail screens.
@@ -57,6 +59,9 @@ class WorkdayPresenter
 
     /**
      * Shape the workday's whole mark-modification history, most recent first.
+     * Used as-is by the employee self-service detail page; the admin/
+     * supervisor Jornadas detail page uses {@see self::timeline()} instead,
+     * which merges this same data with the day's overtime decision.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -65,6 +70,103 @@ class WorkdayPresenter
         return $workday->markModifications
             ->map(fn (MarkModification $modification) => $this->modification($modification))
             ->all();
+    }
+
+    /**
+     * KOL-71: the day's overtime figures and status for the detail page's
+     * stat section, or null when the day carries no calculated overtime.
+     * `overtimeAuthorization` (and its `user`) must already be eager-loaded
+     * on `$workday`.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function overtime(Workday $workday): ?array
+    {
+        if (! $workday->calculated_overtime || $workday->calculated_overtime === '00:00:00') {
+            return null;
+        }
+
+        $authorization = $workday->overtimeAuthorization;
+
+        return [
+            'calculated_hours' => $this->trimSeconds($workday->calculated_overtime),
+            'authorized_hours' => $this->trimSeconds($authorization?->authorized_hours),
+            'final_hours' => $this->trimSeconds($authorization?->final_hours),
+            'status' => $authorization?->status->value ?? 'not_opened',
+            'status_label' => $authorization?->status->label() ?? __('ui.workdays.overtime.statuses.not_opened'),
+            'status_badge' => $authorization?->status->badge() ?? 'outline',
+            'compensation_type_label' => $authorization?->isApproved() === true ? $authorization->compensation_type->label() : null,
+            'compensation_eligible' => $workday->user->overtime_rest_day_eligible,
+            'can_decide' => $authorization !== null && $authorization->isPending() && Gate::allows('approve', $authorization),
+        ];
+    }
+
+    /**
+     * KOL-71: the mark-modification history and the day's overtime decision
+     * merged into one chronological feed, most recently acted-on first — so
+     * the Jornadas detail page reads as a single audit trail rather than two
+     * disconnected lists. `overtimeAuthorization.user`/`.reviewedBy` must
+     * already be eager-loaded on `$workday`.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function timeline(Workday $workday): array
+    {
+        $entries = $workday->markModifications
+            ->map(fn (MarkModification $modification) => [
+                'sort_at' => ($modification->reviewed_at ?? $modification->created_at)->timestamp,
+                ...$this->modification($modification),
+            ])
+            ->all();
+
+        $overtimeEntry = $this->overtimeTimelineEntry($workday);
+
+        if ($overtimeEntry !== null) {
+            $entries[] = $overtimeEntry;
+        }
+
+        return collect($entries)
+            ->sortByDesc('sort_at')
+            ->values()
+            ->map(fn (array $entry) => Arr::except($entry, ['sort_at']))
+            ->all();
+    }
+
+    /**
+     * The day's overtime decision as a single timeline entry — there is only
+     * ever one decision per day, never a request history like mark
+     * modifications, so this is a summary of current state rather than a log
+     * of events. Null when the day has no OvertimeAuthorization row yet.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function overtimeTimelineEntry(Workday $workday): ?array
+    {
+        $authorization = $workday->overtimeAuthorization;
+
+        if ($authorization === null) {
+            return null;
+        }
+
+        return [
+            'id' => $authorization->id,
+            'kind' => 'overtime',
+            'status' => $authorization->status->value,
+            'status_label' => $authorization->status->label(),
+            'status_badge' => $authorization->status->badge(),
+            'calculated_hours' => $this->trimSeconds($authorization->calculated_hours),
+            'authorized_hours' => $this->trimSeconds($authorization->authorized_hours),
+            'final_hours' => $this->trimSeconds($authorization->final_hours),
+            'compensation_type_label' => $authorization->isApproved() ? $authorization->compensation_type->label() : null,
+            'reason' => $authorization->reason,
+            'created_at' => $authorization->created_at?->format('d/m/Y H:i'),
+            'created_ago' => $authorization->created_at?->diffForHumans(),
+            'reviewed_by' => $authorization->reviewedBy?->name,
+            'reviewed_at' => $authorization->reviewed_at?->format('d/m/Y H:i'),
+            'reviewed_ago' => $authorization->reviewed_at?->diffForHumans(),
+            'can_decide' => $authorization->isPending() && Gate::allows('approve', $authorization),
+            'sort_at' => ($authorization->reviewed_at ?? $authorization->created_at)->timestamp,
+        ];
     }
 
     /**
@@ -117,6 +219,7 @@ class WorkdayPresenter
     {
         return [
             'id' => $modification->id,
+            'kind' => 'mark_modification',
             'mark_type' => $modification->mark_type?->value,
             'mark_type_label' => $modification->mark_type?->label(),
             'status' => $modification->status?->value,

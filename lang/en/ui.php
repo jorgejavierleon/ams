@@ -419,6 +419,8 @@ return [
             'ClockOwn:Mark' => 'Clock own attendance',
             'ViewOwn:Mark' => 'View own marks',
             'ViewOwn:Workday' => 'View own workday',
+            'ViewTeam:Workday' => 'View team workday',
+            'ApproveTeam:Workday' => 'Act on team workday and overtime',
             'ReviewOwn:MarkModification' => 'Review own mark corrections',
             'ViewOwn:Document' => 'View own documents',
             'SignOwn:Document' => 'Sign own documents',
@@ -1160,6 +1162,7 @@ return [
             'additional_vacation_days' => 'Additional vacation days',
             'administrative_days' => 'Administrative days',
             'has_additional_sundays' => 'Has additional Sundays',
+            'overtime_rest_day_eligible' => 'May compensate overtime with rest days',
             'personal_email' => 'Personal email',
             'phone' => 'Phone',
             'emergency_contact_name' => 'Emergency contact name',
@@ -1388,6 +1391,7 @@ return [
             'shift_delta' => 'Delta (in / out)',
             'shift' => 'Shift',
             'leave' => 'Leave',
+            'overtime' => 'Overtime',
         ],
 
         'filters' => [
@@ -1410,6 +1414,26 @@ return [
         'actions' => [
             'view' => 'View details',
             'modify' => 'Modify marks',
+        ],
+
+        'overtime' => [
+            'statuses' => [
+                'not_opened' => 'Not opened',
+            ],
+            'actions' => [
+                'approve' => 'Approve overtime',
+                'object' => 'Object to overtime',
+            ],
+            'bulk' => [
+                'trigger_approve' => 'Approve overtime',
+                'trigger_object' => 'Object to overtime',
+                'approve_title' => 'Bulk-approve overtime',
+                'object_title' => 'Bulk-object to overtime',
+                'approve_description' => 'The :count selected workdays with pending overtime will be approved in full. A workday with unreviewed anomalies, or exceeding a legal cap without a reason, is left pending.',
+                'object_description' => 'The :count selected workdays with pending overtime will be objected to.',
+                'reason' => 'Reason',
+                'submit' => 'Confirm',
+            ],
         ],
 
         'modify' => [
@@ -1486,8 +1510,8 @@ return [
                 'coordinates' => 'Coordinates',
             ],
             'history' => [
-                'title' => 'Mark modifications',
-                'empty' => 'No mark modifications',
+                'title' => 'Workday history',
+                'empty' => 'No events recorded for this workday',
                 'type' => 'Mark',
                 'status' => 'Status',
                 'original' => 'Original',
@@ -1511,6 +1535,41 @@ return [
             'flash' => [
                 'approved' => 'Modification approved.',
                 'declined' => 'Modification declined.',
+            ],
+
+            'overtime' => [
+                'title' => 'Overtime',
+                'calculated_short' => 'Calculated:',
+                'actions' => [
+                    'approve' => 'Approve',
+                    'object' => 'Object',
+                ],
+                'approve_dialog' => [
+                    'title' => 'Approve overtime',
+                    'description' => ":employee's workday for :date. You may authorise fewer hours than calculated.",
+                    'authorized_hours' => 'Authorised hours',
+                    'compensation_type' => 'Compensation',
+                    'compensation_type_hint' => ':employee is eligible to compensate overtime with rest days.',
+                    'reason' => 'Reason',
+                    'reason_hint' => 'Optional, unless the workday exceeds a legal cap or has no covering pacto.',
+                    'submit' => 'Approve',
+                ],
+                'object_dialog' => [
+                    'title' => 'Object to overtime',
+                    'description' => ":employee's workday for :date. The original marks are left untouched.",
+                    'reason' => 'Reason',
+                    'submit' => 'Object',
+                ],
+                'errors' => [
+                    'unresolved_anomalies' => 'Cannot approve: the workday has unreviewed anomalies (:reasons). Correct the underlying data to unblock approval.',
+                    'reason_required' => 'A reason is required: the workday exceeds a legal cap or has no covering pacto.',
+                    'not_eligible_for_rest_days' => 'This employee is not eligible to compensate overtime with rest days.',
+                ],
+                'flash' => [
+                    'approved' => 'Overtime approved successfully.',
+                    'objected' => 'Overtime objected to successfully.',
+                    'bulk_decided' => ':decided of :total workday(s) decided.',
+                ],
             ],
         ],
 
@@ -1593,6 +1652,11 @@ return [
         'calculation_states' => [
             'not_applicable' => 'No overtime',
             'pending_review' => 'Pending review',
+        ],
+
+        'compensation_types' => [
+            'payment' => 'Payroll payment',
+            'rest_days' => 'Rest days',
         ],
 
         'authorization_statuses' => [
@@ -1735,6 +1799,72 @@ return [
             ],
         ],
 
+        'rest_day_balances' => [
+            'title' => 'Rest-day compensation balance',
+            'description' => 'Overtime compensated in additional rest days, with its accrual and expiry date (Código del Trabajo art. 32).',
+            'back' => 'Back to overtime',
+            'search_placeholder' => 'Search by employee...',
+            'empty' => 'No rest-day compensation balances.',
+            'register_consumption' => 'Register consumption',
+
+            'columns' => [
+                'employee' => 'Employee',
+                'accrued_hours' => 'Source overtime',
+                'rest_hours' => 'Rest hours',
+                'consumed_hours' => 'Consumed',
+                'remaining_hours' => 'Available',
+                'accrual_date' => 'Accrued',
+                'expiry_date' => 'Expires',
+                'status' => 'Status',
+            ],
+
+            'statuses' => [
+                'active' => 'Active',
+                'expired' => 'Expired — payable',
+            ],
+
+            'expired_hint' => 'Balance not consumed within six months must be paid in that period\'s payroll (Código del Trabajo art. 32), it is not forfeited.',
+
+            'consume_dialog' => [
+                'title' => 'Register rest-day consumption',
+                'employee' => 'Employee',
+                'employee_placeholder' => 'Select an employee',
+                'employee_search' => 'Search employee...',
+                'employee_empty' => 'No employees found.',
+                'hours' => 'Hours to consume',
+                'consumed_on' => 'Date used',
+                'note' => 'Note',
+                'note_placeholder' => 'Optional',
+                'submit' => 'Register',
+            ],
+
+            'validation' => [
+                'positive_hours' => 'Hours to consume must be greater than 0.',
+                'insufficient_balance' => 'This employee does not have enough available rest-day balance.',
+            ],
+
+            'flash' => [
+                'consumed' => 'Consumption registered successfully.',
+            ],
+
+            'my' => [
+                'title' => 'My rest-day compensation balance',
+                'description' => 'Overtime you compensated in rest days, with its accrual and expiry date.',
+                'available' => 'Available balance',
+                'empty' => 'You have no accrued rest-day compensation yet.',
+
+                'columns' => [
+                    'accrued_hours' => 'Source overtime',
+                    'rest_hours' => 'Rest hours',
+                    'consumed_hours' => 'Consumed',
+                    'remaining_hours' => 'Available',
+                    'accrual_date' => 'Accrued',
+                    'expiry_date' => 'Expires',
+                    'status' => 'Status',
+                ],
+            ],
+        ],
+
         'queue' => [
             'title' => 'Pending overtime',
             'description' => 'Approve or object to overtime workdays, individually or in bulk.',
@@ -1817,6 +1947,8 @@ return [
                 'title' => 'Approve overtime',
                 'description' => ":employee's workday for :date. You may authorise fewer hours than calculated.",
                 'authorized_hours' => 'Authorised hours',
+                'compensation_type' => 'Compensation',
+                'compensation_type_hint' => ':employee is eligible to compensate overtime with rest days.',
                 'reason' => 'Reason',
                 'reason_hint' => 'Optional, unless the workday exceeds a legal cap or has no covering pacto.',
                 'submit' => 'Approve',
@@ -1843,6 +1975,7 @@ return [
             'errors' => [
                 'unresolved_anomalies' => 'Cannot approve: the workday has unreviewed anomalies (:reasons). Correct the underlying data to unblock approval.',
                 'reason_required' => 'A reason is required: the workday exceeds a legal cap or has no covering pacto.',
+                'not_eligible_for_rest_days' => 'This employee is not eligible to compensate overtime with rest days.',
             ],
 
             'flash' => [

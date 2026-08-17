@@ -129,6 +129,44 @@ test('the queues editable authorised-hours field lets a supervisor authorise few
         ->and($authorization->final_hours)->toBe('01:00:00');
 });
 
+test('a supervisor may compensate an eligible employees overtime in rest days from the approve dialog (KOL-47)', function () {
+    $organization = Organization::factory()->create();
+    $supervisor = queueSupervisor($organization);
+    $employee = queueEmployee($organization, $supervisor);
+    $employee->update(['overtime_rest_day_eligible' => true]);
+
+    $authorization = queueDay($employee, '2026-08-03');
+
+    $this->actingAs($supervisor)
+        ->post(route('overtime.queue.approve', $authorization), [
+            'authorized_hours' => '01:00',
+            'compensation_type' => 'rest_days',
+        ])
+        ->assertRedirect();
+
+    expect($authorization->fresh()->compensation_type->value)->toBe('rest_days');
+    $this->assertDatabaseHas('overtime_rest_day_balances', [
+        'overtime_authorization_id' => $authorization->id,
+    ]);
+});
+
+test('requesting rest-day compensation for an ineligible employee is rejected with a field-specific error', function () {
+    $organization = Organization::factory()->create();
+    $supervisor = queueSupervisor($organization);
+    $employee = queueEmployee($organization, $supervisor);
+
+    $authorization = queueDay($employee, '2026-08-03');
+
+    $this->actingAs($supervisor)
+        ->post(route('overtime.queue.approve', $authorization), [
+            'authorized_hours' => '01:00',
+            'compensation_type' => 'rest_days',
+        ])
+        ->assertSessionHasErrors('compensation_type');
+
+    expect($authorization->fresh()->isPending())->toBeTrue();
+});
+
 test('a supervisor objects to a direct reports pending overtime individually, leaving the raw marks untouched', function () {
     $organization = Organization::factory()->create();
     $supervisor = queueSupervisor($organization);

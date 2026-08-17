@@ -90,4 +90,18 @@ class OvertimeDecisionRefused extends RuntimeException
             'An overtime authorisation with no pacto covering its worked date cannot be approved without a written justification. The absence of a pacto never blocks payment; approving it unexplained does.'
         );
     }
+
+    /**
+     * KOL-47: rest-day compensation is only reachable for an employee whose
+     * profile carries the standing eligibility flag. No pacto, agreement or
+     * approver preference can substitute for it — an approver who tries
+     * anyway is refused rather than silently downgraded to payment, so the
+     * attempt is visible instead of masked.
+     */
+    public static function notEligibleForRestDayCompensation(): self
+    {
+        return new self(
+            'An overtime authorisation cannot be compensated in rest days for an employee whose profile does not carry the rest-day-eligibility flag. Enable it on the employee profile first, or approve for payment.'
+        );
+    }
 }

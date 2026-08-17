@@ -1,5 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
-import { FileText, ListChecks, Plus, Timer } from 'lucide-react';
+import {
+    CalendarClock,
+    FileText,
+    ListChecks,
+    Plus,
+    Timer,
+} from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
@@ -7,14 +13,18 @@ import {
     create as createRequest,
     index as myRequestsIndex,
 } from '@/routes/my/overtime-requests';
+import { index as myRestDayBalanceIndex } from '@/routes/my/overtime-rest-day-balance';
 import { index as pactsIndex } from '@/routes/overtime/pacts';
 import { index as queueIndex } from '@/routes/overtime/queue';
+import { index as restDayBalancesIndex } from '@/routes/overtime/rest-day-balances';
 
 type Props = {
     can: {
         managePacts: boolean;
         viewQueue: boolean;
         request: boolean;
+        manageRestDayBalances: boolean;
+        viewOwnRestDayBalance: boolean;
     };
 };
 
@@ -64,6 +74,25 @@ export default function OvertimeIndex({ can }: Props) {
                                 </Link>
                             </Button>
                         )}
+                        {can.manageRestDayBalances && (
+                            <Button variant="outline" asChild>
+                                <Link href={restDayBalancesIndex()}>
+                                    <CalendarClock className="size-4" />
+                                    {t('ui.overtime.rest_day_balances.title')}
+                                </Link>
+                            </Button>
+                        )}
+                        {!can.manageRestDayBalances &&
+                            can.viewOwnRestDayBalance && (
+                                <Button variant="outline" asChild>
+                                    <Link href={myRestDayBalanceIndex()}>
+                                        <CalendarClock className="size-4" />
+                                        {t(
+                                            'ui.overtime.rest_day_balances.my.title',
+                                        )}
+                                    </Link>
+                                </Button>
+                            )}
                     </div>
                 </div>
 

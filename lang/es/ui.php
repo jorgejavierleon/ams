@@ -422,6 +422,8 @@ return [
             'ClockOwn:Mark' => 'Marcar asistencia propia',
             'ViewOwn:Mark' => 'Ver marcas propias',
             'ViewOwn:Workday' => 'Ver jornada propia',
+            'ViewTeam:Workday' => 'Ver jornada del equipo',
+            'ApproveTeam:Workday' => 'Actuar sobre jornada y horas extra del equipo',
             'ReviewOwn:MarkModification' => 'Revisar correcciones de marca propias',
             'ViewOwn:Document' => 'Ver documentos propios',
             'SignOwn:Document' => 'Firmar documentos propios',
@@ -1163,6 +1165,7 @@ return [
             'additional_vacation_days' => 'Días de vacaciones adicionales',
             'administrative_days' => 'Días administrativos',
             'has_additional_sundays' => 'Tiene domingos adicionales',
+            'overtime_rest_day_eligible' => 'Puede compensar horas extra con días de descanso',
             'personal_email' => 'Email personal',
             'phone' => 'Teléfono',
             'emergency_contact_name' => 'Nombre de contacto de emergencia',
@@ -1391,6 +1394,7 @@ return [
             'shift_delta' => 'Diferencia (entrada / salida)',
             'shift' => 'Turno',
             'leave' => 'Permiso',
+            'overtime' => 'Horas extra',
         ],
 
         'filters' => [
@@ -1413,6 +1417,26 @@ return [
         'actions' => [
             'view' => 'Ver detalles',
             'modify' => 'Modificar marcas',
+        ],
+
+        'overtime' => [
+            'statuses' => [
+                'not_opened' => 'Sin abrir',
+            ],
+            'actions' => [
+                'approve' => 'Aprobar horas extra',
+                'object' => 'Objetar horas extra',
+            ],
+            'bulk' => [
+                'trigger_approve' => 'Aprobar horas extra',
+                'trigger_object' => 'Objetar horas extra',
+                'approve_title' => 'Aprobar horas extra en bloque',
+                'object_title' => 'Objetar horas extra en bloque',
+                'approve_description' => 'Se aprobarán íntegramente las :count jornadas seleccionadas con horas extra pendientes. Una jornada con anomalías sin revisar, o que exceda un tope legal sin motivo, quedará pendiente.',
+                'object_description' => 'Se objetarán las :count jornadas seleccionadas con horas extra pendientes.',
+                'reason' => 'Motivo',
+                'submit' => 'Confirmar',
+            ],
         ],
 
         'modify' => [
@@ -1489,8 +1513,8 @@ return [
                 'coordinates' => 'Coordenadas',
             ],
             'history' => [
-                'title' => 'Modificaciones de marcas',
-                'empty' => 'No hay modificaciones de marcas',
+                'title' => 'Historial de la jornada',
+                'empty' => 'No hay eventos registrados en esta jornada',
                 'type' => 'Marca',
                 'status' => 'Estado',
                 'original' => 'Original',
@@ -1514,6 +1538,41 @@ return [
             'flash' => [
                 'approved' => 'Modificación aprobada.',
                 'declined' => 'Modificación rechazada.',
+            ],
+
+            'overtime' => [
+                'title' => 'Horas extra',
+                'calculated_short' => 'Calculadas:',
+                'actions' => [
+                    'approve' => 'Aprobar',
+                    'object' => 'Objetar',
+                ],
+                'approve_dialog' => [
+                    'title' => 'Aprobar horas extra',
+                    'description' => 'Jornada de :employee del :date. Puedes autorizar menos horas de las calculadas.',
+                    'authorized_hours' => 'Horas autorizadas',
+                    'compensation_type' => 'Compensación',
+                    'compensation_type_hint' => ':employee puede compensar horas extra con días de descanso.',
+                    'reason' => 'Motivo',
+                    'reason_hint' => 'Opcional, salvo que la jornada exceda un tope legal o no cuente con un pacto vigente.',
+                    'submit' => 'Aprobar',
+                ],
+                'object_dialog' => [
+                    'title' => 'Objetar horas extra',
+                    'description' => 'Jornada de :employee del :date. Las marcas originales no se modifican.',
+                    'reason' => 'Motivo',
+                    'submit' => 'Objetar',
+                ],
+                'errors' => [
+                    'unresolved_anomalies' => 'No se puede aprobar: la jornada tiene anomalías sin revisar (:reasons). Corrige el dato de origen para desbloquear la aprobación.',
+                    'reason_required' => 'Debes indicar un motivo: la jornada excede un tope legal o no cuenta con un pacto vigente.',
+                    'not_eligible_for_rest_days' => 'Este empleado no está habilitado para compensar horas extra con días de descanso.',
+                ],
+                'flash' => [
+                    'approved' => 'Horas extra aprobadas correctamente.',
+                    'objected' => 'Horas extra objetadas correctamente.',
+                    'bulk_decided' => ':decided de :total jornada(s) decidida(s).',
+                ],
             ],
         ],
 
@@ -1596,6 +1655,11 @@ return [
         'calculation_states' => [
             'not_applicable' => 'Sin horas extra',
             'pending_review' => 'Pendiente de revisión',
+        ],
+
+        'compensation_types' => [
+            'payment' => 'Pago en remuneraciones',
+            'rest_days' => 'Días de descanso',
         ],
 
         'authorization_statuses' => [
@@ -1738,6 +1802,72 @@ return [
             ],
         ],
 
+        'rest_day_balances' => [
+            'title' => 'Saldo de descanso compensatorio',
+            'description' => 'Horas extra compensadas en días de descanso adicionales, con su fecha de origen y vencimiento (art. 32 del Código del Trabajo).',
+            'back' => 'Volver a horas extra',
+            'search_placeholder' => 'Buscar por empleado...',
+            'empty' => 'No hay saldos de descanso compensatorio.',
+            'register_consumption' => 'Registrar consumo',
+
+            'columns' => [
+                'employee' => 'Empleado',
+                'accrued_hours' => 'Horas extra origen',
+                'rest_hours' => 'Horas de descanso',
+                'consumed_hours' => 'Consumidas',
+                'remaining_hours' => 'Disponibles',
+                'accrual_date' => 'Origen',
+                'expiry_date' => 'Vence',
+                'status' => 'Estado',
+            ],
+
+            'statuses' => [
+                'active' => 'Vigente',
+                'expired' => 'Expirado — a pagar',
+            ],
+
+            'expired_hint' => 'El saldo no consumido dentro de los seis meses siguientes debe pagarse en la remuneración del período (art. 32 del Código del Trabajo), no se pierde.',
+
+            'consume_dialog' => [
+                'title' => 'Registrar consumo de descanso',
+                'employee' => 'Empleado',
+                'employee_placeholder' => 'Selecciona un empleado',
+                'employee_search' => 'Buscar empleado...',
+                'employee_empty' => 'No se encontraron empleados.',
+                'hours' => 'Horas a consumir',
+                'consumed_on' => 'Fecha de uso',
+                'note' => 'Nota',
+                'note_placeholder' => 'Opcional',
+                'submit' => 'Registrar',
+            ],
+
+            'validation' => [
+                'positive_hours' => 'Las horas a consumir deben ser mayores a 0.',
+                'insufficient_balance' => 'El empleado no tiene saldo suficiente de descanso compensatorio disponible.',
+            ],
+
+            'flash' => [
+                'consumed' => 'Consumo registrado correctamente.',
+            ],
+
+            'my' => [
+                'title' => 'Mi saldo de descanso compensatorio',
+                'description' => 'Horas extra que compensaste en días de descanso, con su origen y vencimiento.',
+                'available' => 'Saldo disponible',
+                'empty' => 'Aún no tienes horas acumuladas por descanso compensatorio.',
+
+                'columns' => [
+                    'accrued_hours' => 'Horas extra origen',
+                    'rest_hours' => 'Horas de descanso',
+                    'consumed_hours' => 'Consumidas',
+                    'remaining_hours' => 'Disponibles',
+                    'accrual_date' => 'Origen',
+                    'expiry_date' => 'Vence',
+                    'status' => 'Estado',
+                ],
+            ],
+        ],
+
         'queue' => [
             'title' => 'Horas extra pendientes',
             'description' => 'Aprueba u objeta las jornadas con horas extraordinarias, individualmente o en bloque.',
@@ -1820,6 +1950,8 @@ return [
                 'title' => 'Aprobar horas extra',
                 'description' => 'Jornada de :employee del :date. Puedes autorizar menos horas de las calculadas.',
                 'authorized_hours' => 'Horas autorizadas',
+                'compensation_type' => 'Compensación',
+                'compensation_type_hint' => ':employee puede compensar horas extra con días de descanso.',
                 'reason' => 'Motivo',
                 'reason_hint' => 'Opcional, salvo que la jornada exceda un tope legal o no cuente con un pacto vigente.',
                 'submit' => 'Aprobar',
@@ -1846,6 +1978,7 @@ return [
             'errors' => [
                 'unresolved_anomalies' => 'No se puede aprobar: la jornada tiene anomalías sin revisar (:reasons). Corrige el dato de origen para desbloquear la aprobación.',
                 'reason_required' => 'Debes indicar un motivo: la jornada excede un tope legal o no cuenta con un pacto vigente.',
+                'not_eligible_for_rest_days' => 'Este empleado no está habilitado para compensar horas extra con días de descanso.',
             ],
 
             'flash' => [

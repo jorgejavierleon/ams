@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\MarkModificationReason;
 use App\Enums\MarkType;
+use App\Enums\OvertimeCompensationType;
 use App\Enums\WorkdayStatus;
+use App\Exceptions\OvertimeDecisionRefused;
 use App\Managers\MarkModificationManager;
 use App\Models\Company;
 use App\Models\MarkModification;
+use App\Models\OvertimeAuthorization;
 use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
@@ -24,6 +27,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,7 +42,15 @@ class WorkdayController extends Controller
      */
     public function index(Request $request): Response
     {
-        Gate::authorize('viewAny', Workday::class);
+        abort_unless(Gate::any(['viewAny', 'viewTeam'], Workday::class), 403);
+
+        // KOL-71: general (ViewAny:Workday) sees the whole organization; a
+        // supervisor holding only the team permission (ViewTeam:Workday) is
+        // scoped to their own direct reports, exactly like the overtime
+        // queue it replaced.
+        $isGeneral = $request->user()->can('viewAny', Workday::class);
+        $supervisorId = $isGeneral ? null : $request->user()->id;
+        $canDecide = $isGeneral || $request->user()->can('ApproveTeam:Workday');
 
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
@@ -62,12 +74,17 @@ class WorkdayController extends Controller
 
         $workdays = Workday::query()
             ->with([
-                'user:id,name,position_id',
+                'user:id,name,position_id,supervisor_id,overtime_rest_day_eligible',
                 'shift:id,name',
                 'leave:id,type',
+                'overtimeAuthorization.user:id,supervisor_id',
             ])
             ->withCount('pendingMarkModifications')
             ->betweenDates($from, $to)
+            ->when($supervisorId, fn ($query) => $query->whereHas(
+                'user',
+                fn ($user) => $user->where('supervisor_id', $supervisorId),
+            ))
             ->when($statuses, fn ($query) => $query->whereIn('status', $statuses))
             ->when($employeeIds, fn ($query) => $query->whereIn('user_id', $employeeIds))
             ->when($premiseIds, fn ($query) => $query->whereIn('premise_id', $premiseIds))
@@ -95,6 +112,7 @@ class WorkdayController extends Controller
                 'shift' => $workday->shift?->name,
                 'leave_type' => $workday->leave?->type->label(),
                 'pending_modifications' => $workday->pending_mark_modifications_count,
+                'overtime' => $this->overtimeRowData($workday),
             ]),
             'filters' => [
                 'from' => $from->format('Y-m-d'),
@@ -112,7 +130,39 @@ class WorkdayController extends Controller
             'premiseOptions' => $this->options(Premise::query()),
             'reasonOptions' => MarkModificationReason::options(),
             'markTypeOptions' => MarkType::options(),
+            'compensationTypeOptions' => OvertimeCompensationType::options(),
+            'can' => [
+                'decideOvertime' => $canDecide,
+            ],
         ]);
+    }
+
+    /**
+     * The index row's overtime summary (KOL-71), or null on a day with no
+     * calculated overtime. A day the engine computed excess for but that has
+     * no OvertimeAuthorization row yet (KOL-70) is surfaced as `not_opened`
+     * rather than hidden — visible and inert until that gap is closed.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function overtimeRowData(Workday $workday): ?array
+    {
+        if (! $workday->calculated_overtime || $workday->calculated_overtime === '00:00:00') {
+            return null;
+        }
+
+        $authorization = $workday->overtimeAuthorization;
+
+        return [
+            'calculated_hours' => $workday->calculated_overtime,
+            'authorized_hours' => $authorization?->authorized_hours,
+            'final_hours' => $authorization?->final_hours,
+            'status' => $authorization?->status->value ?? 'not_opened',
+            'status_label' => $authorization?->status->label() ?? __('ui.workdays.overtime.statuses.not_opened'),
+            'status_badge' => $authorization?->status->badge() ?? 'outline',
+            'compensation_eligible' => $workday->user->overtime_rest_day_eligible,
+            'can_decide' => $authorization !== null && $authorization->isPending() && Gate::allows('approve', $authorization),
+        ];
     }
 
     /**
@@ -121,7 +171,15 @@ class WorkdayController extends Controller
      */
     public function bulkModify(Request $request, MarkModificationManager $manager, BusinessDayResolver $businessDays): RedirectResponse
     {
-        Gate::authorize('update', Workday::class);
+        // Coarse pre-check only: a class-level Gate::authorize('update', ...)
+        // cannot evaluate the per-row team scoping WorkdayPolicy::update()
+        // needs (it requires a Workday instance), so the real check happens
+        // per row below via Gate::allows(), exactly like the bulk overtime
+        // action. Nobody without either permission ever reaches the filter.
+        abort_unless(
+            $request->user()->can('Update:Workday') || $request->user()->can('ApproveTeam:Workday'),
+            403,
+        );
 
         $organizationId = Company::currentOrganizationId();
 
@@ -138,11 +196,15 @@ class WorkdayController extends Controller
         ]);
 
         // Art. 41 c): drop workdays that cannot yet be corrected because the
-        // following business day has not arrived.
+        // following business day has not arrived, and (KOL-71) any a
+        // supervisor is not authorised to act on — a general Update:Workday
+        // holder passes every row, a team-scoped one only their own reports'.
         $workdays = Workday::query()
             ->whereIn('id', $data['workdays'])
+            ->with('user:id,supervisor_id')
             ->get()
-            ->filter(fn (Workday $workday): bool => $businessDays->correctionAllowed($workday->date));
+            ->filter(fn (Workday $workday): bool => $businessDays->correctionAllowed($workday->date)
+                && Gate::allows('update', $workday));
 
         if ($workdays->isEmpty()) {
             Inertia::flash('toast', [
@@ -254,7 +316,7 @@ class WorkdayController extends Controller
         Gate::authorize('view', $workday);
 
         $workday->load([
-            'user:id,name',
+            'user:id,name,supervisor_id,overtime_rest_day_eligible',
             'shift:id,name',
             'premise:id,name',
             'leave:id,type,start_date,end_date',
@@ -264,12 +326,16 @@ class WorkdayController extends Controller
             'markModifications.mark',
             'markModifications.createdBy:id,name',
             'markModifications.reviewedBy:id,name',
+            'overtimeAuthorization.user:id,supervisor_id',
+            'overtimeAuthorization.reviewedBy:id,name',
         ]);
 
         return Inertia::render('workdays/show', [
             'workday' => $presenter->workday($workday),
-            'modifications' => $presenter->modifications($workday),
+            'overtime' => $presenter->overtime($workday),
+            'timeline' => $presenter->timeline($workday),
             'reasonOptions' => MarkModificationReason::options(),
+            'compensationTypeOptions' => OvertimeCompensationType::options(),
         ]);
     }
 
@@ -310,6 +376,157 @@ class WorkdayController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('ui.workdays.show.flash.declined'),
+        ]);
+
+        return back();
+    }
+
+    /**
+     * Approve this workday's overtime (KOL-71, moved from the old overtime
+     * queue KOL-44). A flagged day is refused before it ever reaches the
+     * model, so the response names the flag reason rather than a generic
+     * error (KOL-40); a day with no OvertimeAuthorization row yet (KOL-70)
+     * has nothing to decide.
+     */
+    public function approveOvertime(Request $request, Workday $workday): RedirectResponse
+    {
+        $authorization = $workday->overtimeAuthorization()->first();
+        abort_if($authorization === null, 404);
+
+        Gate::authorize('approve', $authorization);
+        abort_if(! $authorization->isPending(), 403);
+
+        $data = $request->validate([
+            'authorized_hours' => ['nullable', 'date_format:H:i'],
+            'reason' => ['nullable', 'string', 'max:1000'],
+            'compensation_type' => ['nullable', Rule::enum(OvertimeCompensationType::class)],
+        ]);
+
+        if ($workday->isFlagged()) {
+            throw ValidationException::withMessages([
+                'reason' => __('ui.workdays.show.overtime.errors.unresolved_anomalies', [
+                    'reasons' => collect($workday->anomalyFlags())
+                        ->map(fn ($reason) => $reason->label())
+                        ->implode(', '),
+                ]),
+            ]);
+        }
+
+        $compensationType = isset($data['compensation_type']) ? OvertimeCompensationType::from($data['compensation_type']) : null;
+
+        // KOL-47: named here, not left to the model's exception, so the error
+        // lands on the compensation field the approver actually chose rather
+        // than reading as a missing-reason complaint.
+        if ($compensationType === OvertimeCompensationType::RestDays && ! $authorization->user->overtime_rest_day_eligible) {
+            throw ValidationException::withMessages([
+                'compensation_type' => __('ui.workdays.show.overtime.errors.not_eligible_for_rest_days'),
+            ]);
+        }
+
+        try {
+            $authorization->approve(
+                $request->user(),
+                isset($data['authorized_hours']) ? $data['authorized_hours'].':00' : null,
+                $data['reason'] ?? null,
+                $compensationType,
+            );
+        } catch (OvertimeDecisionRefused) {
+            throw ValidationException::withMessages([
+                'reason' => __('ui.workdays.show.overtime.errors.reason_required'),
+            ]);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.workdays.show.overtime.flash.approved')]);
+
+        return back();
+    }
+
+    /**
+     * Object to this workday's overtime — always reachable, even for a
+     * flagged day (PRD §7.4). The raw marks are never touched.
+     */
+    public function objectOvertime(Request $request, Workday $workday): RedirectResponse
+    {
+        $authorization = $workday->overtimeAuthorization()->first();
+        abort_if($authorization === null, 404);
+
+        Gate::authorize('object', $authorization);
+        abort_if(! $authorization->isPending(), 403);
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $authorization->object($request->user(), $data['reason']);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.workdays.show.overtime.flash.objected')]);
+
+        return back();
+    }
+
+    /**
+     * Decide a selection of workdays' overtime at once, resolving each to
+     * its OvertimeAuthorization. Every row is authorised in full (no per-row
+     * editable figure or compensation choice in bulk — those stay
+     * individual-decision features) and goes through the very same
+     * {@see OvertimeAuthorization::approve()}/{@see OvertimeAuthorization::object()}
+     * calls as the single-record actions, so a flagged day or an unjustified
+     * cap breach inside the selection is simply left pending. The count
+     * reported is only what actually changed.
+     */
+    public function bulkDecideOvertime(Request $request): RedirectResponse
+    {
+        $organizationId = Company::currentOrganizationId();
+
+        $data = $request->validate([
+            'workdays' => ['required', 'array', 'min:1'],
+            'workdays.*' => [
+                'integer',
+                Rule::exists('workdays', 'id')->where('organization_id', $organizationId),
+            ],
+            'action' => ['required', Rule::in(['approve', 'object'])],
+            'reason' => ['nullable', 'string', 'max:1000', 'required_if:action,object'],
+        ]);
+
+        $authorizations = OvertimeAuthorization::query()
+            ->whereIn('workday_id', $data['workdays'])
+            ->pending()
+            ->with(['user', 'workday'])
+            ->get();
+
+        $user = $request->user();
+        $decided = 0;
+
+        DB::transaction(function () use ($authorizations, $data, $user, &$decided): void {
+            foreach ($authorizations as $authorization) {
+                $ability = $data['action'] === 'approve' ? 'approve' : 'object';
+
+                if (Gate::denies($ability, $authorization)) {
+                    continue;
+                }
+
+                try {
+                    if ($data['action'] === 'approve') {
+                        $authorization->approve($user, reason: $data['reason'] ?? null);
+                    } else {
+                        $authorization->object($user, $data['reason']);
+                    }
+
+                    $decided++;
+                } catch (OvertimeDecisionRefused) {
+                    // Left pending: a flagged day or an unjustified cap breach
+                    // in the selection is not silently approved because the
+                    // rest of the batch was fine.
+                }
+            }
+        });
+
+        Inertia::flash('toast', [
+            'type' => $decided > 0 ? 'success' : 'error',
+            'message' => __('ui.workdays.show.overtime.flash.bulk_decided', [
+                'decided' => $decided,
+                'total' => $authorizations->count(),
+            ]),
         ]);
 
         return back();

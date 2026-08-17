@@ -41,6 +41,7 @@ type Employee = {
     additional_vacation_days: number;
     administrative_days: number;
     has_additional_sundays: boolean;
+    overtime_rest_day_eligible: boolean;
     is_active: boolean;
     is_admin: boolean;
     timezone: string;
@@ -271,6 +272,16 @@ export default function ShowEmployee({
                                     )}
                                     value={
                                         employee.has_additional_sundays
+                                            ? t('ui.employees.show.yes')
+                                            : t('ui.employees.show.no')
+                                    }
+                                />
+                                <Field
+                                    label={t(
+                                        'ui.employees.form.overtime_rest_day_eligible',
+                                    )}
+                                    value={
+                                        employee.overtime_rest_day_eligible
                                             ? t('ui.employees.show.yes')
                                             : t('ui.employees.show.no')
                                     }

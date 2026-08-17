@@ -46,6 +46,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property float $additional_vacation_days
  * @property float $administrative_days
  * @property bool $has_additional_sundays
+ * @property bool $overtime_rest_day_eligible
  * @property string|null $nationality
  * @property string|null $gender
  * @property string|null $phone
@@ -68,7 +69,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read string|null $avatar
  * @property-read string|null $formatted_rut
  */
-#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'is_admin', 'password_changed_at', 'organization_id', 'company_id', 'cost_center_id', 'position_id', 'premise_id', 'supervisor_id', 'contract_start_date', 'contract_end_date', 'contract_type', 'vacation_days', 'additional_vacation_days', 'administrative_days', 'has_additional_sundays', 'nationality', 'gender', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'timezone'])]
+#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'is_admin', 'password_changed_at', 'organization_id', 'company_id', 'cost_center_id', 'position_id', 'premise_id', 'supervisor_id', 'contract_start_date', 'contract_end_date', 'contract_type', 'vacation_days', 'additional_vacation_days', 'administrative_days', 'has_additional_sundays', 'overtime_rest_day_eligible', 'nationality', 'gender', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'timezone'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 #[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements HasMedia
@@ -190,6 +191,7 @@ class User extends Authenticatable implements HasMedia
             'additional_vacation_days' => 'float',
             'administrative_days' => 'float',
             'has_additional_sundays' => 'boolean',
+            'overtime_rest_day_eligible' => 'boolean',
             'is_dt' => 'boolean',
             'is_active' => 'boolean',
             'is_legal_rep' => 'boolean',

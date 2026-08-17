@@ -54,6 +54,13 @@ class RoleSeeder extends Seeder
      * (KOL-43) enforces that a supervisor only decides their own reports'
      * records, exactly as `LeavePolicy` does for leaves.
      *
+     * `Workday` (KOL-71) follows it too: `ViewTeam`/`ApproveTeam` reach
+     * Jornadas and act on marks for one's own reports, scoped by
+     * `WorkdayPolicy`. This is a separate permission domain from
+     * `OvertimeAuthorization` above — deciding a day's overtime from Jornadas
+     * still requires `ApproveTeam:OvertimeAuthorization` too, stacked
+     * independently rather than folded into the Workday permission.
+     *
      * @var array<int, string>
      */
     private const SUPERVISOR_PERMISSIONS = [
@@ -61,6 +68,8 @@ class RoleSeeder extends Seeder
         'ApproveTeam:Leave',
         'ViewTeam:OvertimeAuthorization',
         'ApproveTeam:OvertimeAuthorization',
+        'ViewTeam:Workday',
+        'ApproveTeam:Workday',
     ];
 
     public function run(): void

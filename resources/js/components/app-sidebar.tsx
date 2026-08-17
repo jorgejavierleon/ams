@@ -73,6 +73,9 @@ export function AppSidebar() {
         auth.permissions.includes('ViewTeam:OvertimeAuthorization') ||
         auth.permissions.includes('ApproveTeam:OvertimeAuthorization') ||
         auth.permissions.includes('Manage:OvertimeAuthorization');
+    // KOL-71: a supervisor's own view of Jornadas — separate from
+    // canViewOwnWorkdays above, which is their personal "Mis jornadas" link.
+    const canViewTeamWorkdays = auth.permissions.includes('ViewTeam:Workday');
 
     const employeeNavGroups: Array<{ label: string; items: NavItem[] }> = [
         {
@@ -204,6 +207,15 @@ export function AppSidebar() {
                     href: leavesCalendar(),
                     icon: CalendarRange,
                 },
+                ...(canViewTeamWorkdays
+                    ? [
+                          {
+                              title: t('ui.nav.workdays_list'),
+                              href: workdaysIndex(),
+                              icon: ClipboardList,
+                          },
+                      ]
+                    : []),
                 ...(canManageOvertime
                     ? [
                           {
