@@ -1,6 +1,13 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { AlertTriangle, Check, Eye, PencilLine, X } from 'lucide-react';
+import {
+    AlertTriangle,
+    Check,
+    Eye,
+    MoreVertical,
+    PencilLine,
+    X,
+} from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
@@ -23,6 +30,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -505,8 +519,10 @@ export default function WorkdaysIndex({
                                     'outline'
                                 }
                             >
-                                {(overtime.final_hours ??
-                                    overtime.calculated_hours)?.slice(0, 5)}
+                                {(
+                                    overtime.final_hours ??
+                                    overtime.calculated_hours
+                                )?.slice(0, 5)}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                                 {overtime.status_label}
@@ -524,61 +540,69 @@ export default function WorkdaysIndex({
                 },
                 header: () => null,
                 cell: ({ row }) => (
-                    <div className="flex items-center justify-end gap-1">
-                        {can.decideOvertime &&
-                            row.original.overtime?.can_decide && (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() =>
-                                            openApproveOvertime(row.original)
-                                        }
-                                        aria-label={t(
-                                            'ui.workdays.overtime.actions.approve',
-                                        )}
-                                        className="text-emerald-700 hover:text-emerald-700 dark:text-emerald-400"
-                                    >
-                                        <Check className="size-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() =>
-                                            openObjectOvertime(row.original)
-                                        }
-                                        aria-label={t(
-                                            'ui.workdays.overtime.actions.object',
-                                        )}
-                                        className="text-destructive hover:text-destructive"
-                                    >
-                                        <X className="size-4" />
-                                    </Button>
-                                </>
-                            )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openModify(row.original)}
-                            aria-label={t('ui.workdays.actions.modify')}
-                        >
-                            <PencilLine className="size-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            asChild
-                            aria-label={t('ui.workdays.actions.view')}
-                        >
-                            <Link href={show(row.original.id).url}>
-                                <Eye className="size-4" />
-                            </Link>
-                        </Button>
+                    <div className="flex justify-end">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t('ui.workdays.actions.more')}
+                                >
+                                    <MoreVertical className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem asChild>
+                                    <Link href={show(row.original.id).url}>
+                                        <Eye className="size-4" />
+                                        {t('ui.workdays.actions.view')}
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onSelect={() => openModify(row.original)}
+                                >
+                                    <PencilLine className="size-4" />
+                                    {t('ui.workdays.actions.modify')}
+                                </DropdownMenuItem>
+                                {can.decideOvertime &&
+                                    row.original.overtime?.can_decide && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                onSelect={() =>
+                                                    openApproveOvertime(
+                                                        row.original,
+                                                    )
+                                                }
+                                                className="text-emerald-700 focus:text-emerald-700 dark:text-emerald-400 dark:focus:text-emerald-400"
+                                            >
+                                                <Check className="size-4 text-emerald-700 dark:text-emerald-400" />
+                                                {t(
+                                                    'ui.workdays.overtime.actions.approve',
+                                                )}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                variant="destructive"
+                                                onSelect={() =>
+                                                    openObjectOvertime(
+                                                        row.original,
+                                                    )
+                                                }
+                                            >
+                                                <X className="size-4" />
+                                                {t(
+                                                    'ui.workdays.overtime.actions.object',
+                                                )}
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 ),
             },
         ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
         [t, openModify, can.decideOvertime],
     );
 
@@ -659,7 +683,9 @@ export default function WorkdaysIndex({
                                 {t('ui.workdays.bulk.trigger')}
                             </Button>
                             {can.decideOvertime &&
-                                rows.some((row) => row.overtime?.can_decide) && (
+                                rows.some(
+                                    (row) => row.overtime?.can_decide,
+                                ) && (
                                     <>
                                         <Button
                                             size="sm"

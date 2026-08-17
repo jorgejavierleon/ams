@@ -1417,6 +1417,7 @@ return [
         'actions' => [
             'view' => 'Ver detalles',
             'modify' => 'Modificar marcas',
+            'more' => 'Más acciones',
         ],
 
         'overtime' => [
