@@ -29,6 +29,7 @@ use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OvertimePactController;
 use App\Http\Controllers\OvertimeQueueController;
+use App\Http\Controllers\OvertimeRequestController;
 use App\Http\Controllers\OvertimeRestDayBalanceController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
@@ -220,6 +221,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // a separate inbox.
             Route::post('/requests/{overtimeRequest}/approve', [OvertimeQueueController::class, 'approveRequest'])->name('requests.approve');
             Route::post('/requests/{overtimeRequest}/reject', [OvertimeQueueController::class, 'rejectRequest'])->name('requests.reject');
+        });
+
+    // Mode A overtime requests (KOL-72), extracted from the queue's
+    // Solicitudes tab into their own screen — a request isn't tied to a
+    // computed Workday, so it doesn't belong on Jornadas (KOL-71) either.
+    // Reachable by whoever can see a team's requests; deciding one further
+    // requires ApproveTeam, enforced in OvertimeRequestController/Policy.
+    Route::middleware('permission:ViewTeam:OvertimeAuthorization|Manage:OvertimeAuthorization')
+        ->prefix('overtime/requests')
+        ->name('overtime.requests.')
+        ->group(function () {
+            Route::get('/', [OvertimeRequestController::class, 'index'])->name('index');
+            Route::post('/{overtimeRequest}/approve', [OvertimeRequestController::class, 'approve'])->name('approve');
+            Route::post('/{overtimeRequest}/reject', [OvertimeRequestController::class, 'reject'])->name('reject');
         });
 
     // Rest-day compensation balances (KOL-47): HR/admin view and consumption,

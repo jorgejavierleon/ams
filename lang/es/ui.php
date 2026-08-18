@@ -40,7 +40,7 @@ return [
         'my_documents' => 'Mis documentos',
         'team_leaves' => 'Permisos del equipo',
         'overtime' => 'Horas extra',
-        'overtime_queue' => 'Cola de horas extra',
+        'overtime_requests' => 'Horas extra pendientes',
     ],
 
     'user_menu' => [
@@ -1652,6 +1652,7 @@ return [
             'coming_soon' => 'Las pantallas de esta sección se irán habilitando próximamente.',
             'new_request' => 'Solicitar horas extra',
             'my_requests' => 'Mis solicitudes',
+            'view_requests' => 'Solicitudes de horas extra',
         ],
 
         'calculation_states' => [
@@ -1729,6 +1730,49 @@ return [
                     'requested_hours_hint' => 'Usa decimales, por ejemplo 1.5 para una hora y media.',
                     'reason' => 'Motivo',
                     'retroactive_hint' => 'Puedes solicitar fechas pasadas hasta :days días atrás.',
+                ],
+            ],
+
+            'review' => [
+                'title' => 'Solicitudes de horas extra',
+                'description' => 'Aprueba o rechaza las solicitudes de horas extra de tu equipo.',
+                'back' => 'Volver a horas extra',
+                'empty' => 'No hay solicitudes de horas extra para este filtro.',
+
+                'tabs' => [
+                    'all' => 'Todas',
+                ],
+
+                'columns' => [
+                    'employee' => 'Empleado',
+                    'date' => 'Fecha',
+                    'requested_hours' => 'Horas solicitadas',
+                    'reason' => 'Motivo',
+                    'status' => 'Estado',
+                    'reviewed_by' => 'Decidido por',
+                ],
+
+                'actions' => [
+                    'approve' => 'Aprobar',
+                    'reject' => 'Rechazar',
+                ],
+
+                'approve_dialog' => [
+                    'title' => 'Aprobar solicitud',
+                    'description' => 'Solicitud de :employee para el :date. Aprobarla no genera horas pagables por sí sola; las horas trabajadas seguirán pasando por la revisión de jornada una vez calculadas.',
+                    'submit' => 'Aprobar',
+                ],
+
+                'reject_dialog' => [
+                    'title' => 'Rechazar solicitud',
+                    'description' => 'Solicitud de :employee para el :date. Rechazarla no le impide trabajar ese día.',
+                    'reason' => 'Motivo',
+                    'submit' => 'Rechazar',
+                ],
+
+                'flash' => [
+                    'approved' => 'Solicitud aprobada correctamente.',
+                    'rejected' => 'Solicitud rechazada correctamente.',
                 ],
             ],
         ],

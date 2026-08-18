@@ -25,6 +25,18 @@ class OvertimeRequestPolicy
     }
 
     /**
+     * View the standalone requests screen (KOL-72). Admins reach this via the
+     * super-admin gate; a supervisor with `ViewTeam:OvertimeAuthorization`
+     * sees their direct reports' requests, and whoever holds
+     * `Manage:OvertimeAuthorization` sees every team's, mirroring
+     * {@see OvertimeAuthorizationPolicy::viewTeam()}.
+     */
+    public function viewTeam(User $user): bool
+    {
+        return $user->can('ViewTeam:OvertimeAuthorization') || $user->can('Manage:OvertimeAuthorization');
+    }
+
+    /**
      * Approve a request. Admins may approve any record via the super-admin
      * gate; a supervisor may approve only their own team's records, and only
      * while `ApproveTeam:OvertimeAuthorization` is granted to their role.
