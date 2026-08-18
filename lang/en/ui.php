@@ -40,7 +40,7 @@ return [
         'my_documents' => 'My documents',
         'team_leaves' => 'Team leaves',
         'overtime' => 'Overtime',
-        'overtime_queue' => 'Overtime queue',
+        'overtime_requests' => 'Pending overtime requests',
     ],
 
     'user_menu' => [
@@ -1649,6 +1649,7 @@ return [
             'coming_soon' => 'The screens in this section will be enabled progressively.',
             'new_request' => 'Request overtime',
             'my_requests' => 'My requests',
+            'view_requests' => 'Overtime requests',
         ],
 
         'calculation_states' => [
@@ -1726,6 +1727,49 @@ return [
                     'requested_hours_hint' => 'Use decimals, e.g. 1.5 for an hour and a half.',
                     'reason' => 'Reason',
                     'retroactive_hint' => 'You can request past dates up to :days days back.',
+                ],
+            ],
+
+            'review' => [
+                'title' => 'Overtime requests',
+                'description' => "Approve or reject your team's overtime requests.",
+                'back' => 'Back to overtime',
+                'empty' => 'No overtime requests for this filter.',
+
+                'tabs' => [
+                    'all' => 'All',
+                ],
+
+                'columns' => [
+                    'employee' => 'Employee',
+                    'date' => 'Date',
+                    'requested_hours' => 'Requested hours',
+                    'reason' => 'Reason',
+                    'status' => 'Status',
+                    'reviewed_by' => 'Decided by',
+                ],
+
+                'actions' => [
+                    'approve' => 'Approve',
+                    'reject' => 'Reject',
+                ],
+
+                'approve_dialog' => [
+                    'title' => 'Approve request',
+                    'description' => 'Request from :employee for :date. Approving it does not by itself create payable hours; worked hours will still pass through workday review once calculated.',
+                    'submit' => 'Approve',
+                ],
+
+                'reject_dialog' => [
+                    'title' => 'Reject request',
+                    'description' => 'Request from :employee for :date. Rejecting it does not stop them from working that day.',
+                    'reason' => 'Reason',
+                    'submit' => 'Reject',
+                ],
+
+                'flash' => [
+                    'approved' => 'Request approved successfully.',
+                    'rejected' => 'Request rejected successfully.',
                 ],
             ],
         ],

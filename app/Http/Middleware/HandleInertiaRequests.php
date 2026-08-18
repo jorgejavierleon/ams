@@ -6,7 +6,6 @@ use App\Enums\DocumentSignatureStatus;
 use App\Enums\MarkModificationStatus;
 use App\Models\DocumentSignature;
 use App\Models\MarkModification;
-use App\Models\OvertimeAuthorization;
 use App\Models\OvertimeRequest;
 use App\Services\OrganizationSettings;
 use Illuminate\Http\Request;
@@ -56,7 +55,7 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? collect(),
                 'pendingModificationsCount' => fn () => $this->pendingModificationsCount($request),
                 'pendingSignaturesCount' => fn () => $this->pendingSignaturesCount($request),
-                'pendingOvertimeCount' => fn () => $this->pendingOvertimeCount($request),
+                'pendingOvertimeRequestsCount' => fn () => $this->pendingOvertimeRequestsCount($request),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
@@ -110,19 +109,19 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * How many overtime records are awaiting the authenticated user's
-     * decision, for the overtime-queue nav badge — combining pending
-     * OvertimeAuthorization rows (shift-excess review) and pending
-     * OvertimeRequest rows (Mode-A pre-authorization), scoped exactly like
-     * OvertimeQueueController::index: org-wide for Manage:OvertimeAuthorization,
-     * the supervisor's own direct reports for ViewTeam/ApproveTeam, and zero
-     * for anyone holding neither.
+     * How many Mode A overtime requests are awaiting the authenticated user's
+     * decision, for the "Horas extra pendientes" nav badge (KOL-72) — scoped
+     * exactly like OvertimeRequestController::index: org-wide for
+     * Manage:OvertimeAuthorization, the supervisor's own direct reports for
+     * ViewTeam/ApproveTeam, and zero for anyone holding neither. Also zero
+     * under a tenant mode that doesn't allow requests, where there is nothing
+     * to decide on that screen.
      */
-    private function pendingOvertimeCount(Request $request): int
+    private function pendingOvertimeRequestsCount(Request $request): int
     {
         $user = $request->user();
 
-        if ($user === null) {
+        if ($user === null || ! $this->organizationSettings->overtimeAuthorizationMode()->allowsRequests()) {
             return 0;
         }
 
@@ -137,25 +136,13 @@ class HandleInertiaRequests extends Middleware
 
         $supervisorId = $isOrgWide ? null : $user->id;
 
-        $authorizationsCount = OvertimeAuthorization::query()
+        return OvertimeRequest::query()
             ->pending()
             ->when($supervisorId, fn ($query) => $query->whereHas(
                 'user',
                 fn ($employee) => $employee->where('supervisor_id', $supervisorId),
             ))
             ->count();
-
-        $requestsCount = $this->organizationSettings->overtimeAuthorizationMode()->allowsRequests()
-            ? OvertimeRequest::query()
-                ->pending()
-                ->when($supervisorId, fn ($query) => $query->whereHas(
-                    'user',
-                    fn ($employee) => $employee->where('supervisor_id', $supervisorId),
-                ))
-                ->count()
-            : 0;
-
-        return $authorizationsCount + $requestsCount;
     }
 
     /**

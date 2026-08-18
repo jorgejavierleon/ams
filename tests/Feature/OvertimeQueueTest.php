@@ -357,8 +357,7 @@ test('the queue stays bounded in query count regardless of how many employees ha
 
     // The listing is paginated and eager-loaded, so the query count must not
     // scale with the number of employees carrying pending overtime — only
-    // with the fixed set of relations loaded per page, plus the fixed pair
-    // of nav-badge counts HandleInertiaRequests::pendingOvertimeCount() runs
-    // on every request (KOL-66).
+    // with the fixed set of relations loaded per page, plus the fixed set of
+    // nav-badge counts (KOL-66) run on every request.
     expect($queryCount)->toBeLessThan(20);
 });

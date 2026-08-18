@@ -28,6 +28,12 @@ class OvertimeController extends Controller
                 // where the request flow does not apply.
                 'request' => $settings->overtimeAuthorizationMode()->allowsRequests()
                     && $request->user()->can('RequestOwn:OvertimeAuthorization'),
+                // KOL-72: the standalone Solicitudes screen, same audience as
+                // the old queue's requests tab — hidden under pure post-hoc,
+                // where there is nothing to review.
+                'viewRequests' => $settings->overtimeAuthorizationMode()->allowsRequests()
+                    && ($request->user()->can('ViewTeam:OvertimeAuthorization')
+                        || $request->user()->can('Manage:OvertimeAuthorization')),
                 // KOL-47: HR manages every employee's rest-day balance from
                 // the same permission as pactos; an employee sees only their
                 // own.

@@ -592,18 +592,6 @@ export default function OvertimeQueueIndex({
                     <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
                         <button
                             type="button"
-                            onClick={() => setView('excess')}
-                            className={cn(
-                                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                                view === 'excess'
-                                    ? 'bg-background text-foreground shadow-xs'
-                                    : 'text-muted-foreground hover:text-foreground',
-                            )}
-                        >
-                            {t('ui.overtime.queue.tabs.excess')}
-                        </button>
-                        <button
-                            type="button"
                             onClick={() => setView('requests')}
                             className={cn(
                                 'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
@@ -618,6 +606,18 @@ export default function OvertimeQueueIndex({
                                     {pendingRequestsCount}
                                 </span>
                             )}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setView('excess')}
+                            className={cn(
+                                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                view === 'excess'
+                                    ? 'bg-background text-foreground shadow-xs'
+                                    : 'text-muted-foreground hover:text-foreground',
+                            )}
+                        >
+                            {t('ui.overtime.queue.tabs.excess')}
                         </button>
                     </div>
                 )}
