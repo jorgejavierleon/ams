@@ -3,10 +3,10 @@ id: KOL-70
 title: >-
   Wire OvertimeAuthorization::openFor() into the overtime pipeline so computed
   days actually reach the queue
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-17 13:48'
-updated_date: '2026-08-18 11:21'
+updated_date: '2026-08-21 09:43'
 labels:
   - overtime
   - backend
@@ -58,3 +58,9 @@ created: 2026-08-18 11:21
 Replacement ticket: KOL-80.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Not implemented as scoped. Superseded during Jornadas-overtime refactor planning (see comments): the eager-pending-row premise was rejected in favour of lazy creation at approval time, shipped instead in KOL-80 (Decide Jornadas overtime lazily: create the authorisation on approve, drop objecting, add a revoke action), now Done. Closing without action.
+<!-- SECTION:FINAL_SUMMARY:END -->
