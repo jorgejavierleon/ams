@@ -7,14 +7,15 @@ import {
     Eye,
     Lock,
     PencilLine,
+    Trash2,
     X,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import OvertimeApproveDialog from '@/components/overtime-approve-dialog';
 import type { OvertimeApproveTarget } from '@/components/overtime-approve-dialog';
-import OvertimeObjectDialog from '@/components/overtime-object-dialog';
-import type { OvertimeObjectTarget } from '@/components/overtime-object-dialog';
+import OvertimeRevokeDialog from '@/components/overtime-revoke-dialog';
+import type { OvertimeRevokeTarget } from '@/components/overtime-revoke-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -118,7 +119,11 @@ export type OvertimeTimelineEntry = {
     reviewed_by: string | null;
     reviewed_at: string | null;
     reviewed_ago: string | null;
+    revoked_by: string | null;
+    revoked_at: string | null;
+    revoked_ago: string | null;
     can_decide: boolean;
+    can_revoke: boolean;
 };
 
 export type TimelineEntry = Modification | OvertimeTimelineEntry;
@@ -134,6 +139,7 @@ export type OvertimeSummary = {
     compensation_type_label: string | null;
     compensation_eligible: boolean;
     can_decide: boolean;
+    can_revoke: boolean;
 };
 
 type Option = { value: string; label: string };
@@ -602,8 +608,8 @@ export default function WorkdayDetail({
     } | null>(null);
     const [approveOvertimeTarget, setApproveOvertimeTarget] =
         useState<OvertimeApproveTarget>(null);
-    const [objectOvertimeTarget, setObjectOvertimeTarget] =
-        useState<OvertimeObjectTarget>(null);
+    const [revokeOvertimeTarget, setRevokeOvertimeTarget] =
+        useState<OvertimeRevokeTarget>(null);
 
     function submitReview() {
         if (reviewTarget === null) {
@@ -635,8 +641,8 @@ export default function WorkdayDetail({
         });
     }
 
-    function openObjectOvertime() {
-        setObjectOvertimeTarget({
+    function openRevokeOvertime() {
+        setRevokeOvertimeTarget({
             workday_id: workday.id,
             employee: workday.employee.name,
             date: workday.date_label,
@@ -803,29 +809,33 @@ export default function WorkdayDetail({
                                     </span>
                                 )}
                             </div>
-                            {overtime.can_decide && (
+                            {(overtime.can_decide || overtime.can_revoke) && (
                                 <div className="flex gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
-                                        onClick={openApproveOvertime}
-                                    >
-                                        <Check className="size-4" />
-                                        {t(
-                                            'ui.workdays.show.overtime.actions.approve',
-                                        )}
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={openObjectOvertime}
-                                    >
-                                        <X className="size-4" />
-                                        {t(
-                                            'ui.workdays.show.overtime.actions.object',
-                                        )}
-                                    </Button>
+                                    {overtime.can_decide && (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                                            onClick={openApproveOvertime}
+                                        >
+                                            <Check className="size-4" />
+                                            {t(
+                                                'ui.workdays.show.overtime.actions.approve',
+                                            )}
+                                        </Button>
+                                    )}
+                                    {overtime.can_revoke && (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={openRevokeOvertime}
+                                        >
+                                            <Trash2 className="size-4" />
+                                            {t(
+                                                'ui.workdays.show.overtime.actions.revoke',
+                                            )}
+                                        </Button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -1054,33 +1064,38 @@ export default function WorkdayDetail({
                                                 )}
 
                                             {entry.kind === 'overtime' &&
-                                                entry.can_decide && (
+                                                (entry.can_decide ||
+                                                    entry.can_revoke) && (
                                                     <div className="mt-3 flex gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
-                                                            onClick={
-                                                                openApproveOvertime
-                                                            }
-                                                        >
-                                                            <Check className="size-4" />
-                                                            {t(
-                                                                'ui.workdays.show.overtime.actions.approve',
-                                                            )}
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={
-                                                                openObjectOvertime
-                                                            }
-                                                        >
-                                                            <X className="size-4" />
-                                                            {t(
-                                                                'ui.workdays.show.overtime.actions.object',
-                                                            )}
-                                                        </Button>
+                                                        {entry.can_decide && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                                                                onClick={
+                                                                    openApproveOvertime
+                                                                }
+                                                            >
+                                                                <Check className="size-4" />
+                                                                {t(
+                                                                    'ui.workdays.show.overtime.actions.approve',
+                                                                )}
+                                                            </Button>
+                                                        )}
+                                                        {entry.can_revoke && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={
+                                                                    openRevokeOvertime
+                                                                }
+                                                            >
+                                                                <Trash2 className="size-4" />
+                                                                {t(
+                                                                    'ui.workdays.show.overtime.actions.revoke',
+                                                                )}
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 )}
                                         </div>
@@ -1296,10 +1311,10 @@ export default function WorkdayDetail({
                 compensationTypeOptions={compensationTypeOptions}
             />
 
-            <OvertimeObjectDialog
-                open={objectOvertimeTarget !== null}
-                onOpenChange={(open) => !open && setObjectOvertimeTarget(null)}
-                target={objectOvertimeTarget}
+            <OvertimeRevokeDialog
+                open={revokeOvertimeTarget !== null}
+                onOpenChange={(open) => !open && setRevokeOvertimeTarget(null)}
+                target={revokeOvertimeTarget}
             />
         </>
     );

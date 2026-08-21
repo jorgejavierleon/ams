@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-17 13:48'
+updated_date: '2026-08-18 11:21'
 labels:
   - overtime
   - backend
@@ -41,3 +42,19 @@ Discovered while manually QAing KOL-47 (rest-day compensation): the overtime que
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-08-18 11:20
+---
+Superseded while planning the Jornadas-overtime refactor with @jorge. Its premise — wire OvertimeAuthorization::openFor() into the calculation pipeline so a pending record exists ahead of time — is being replaced by a simpler model: the approve action itself opens the record on demand (find-or-create, then decide) right when a supervisor acts from Jornadas, instead of an eager pending row per calculated day. This also drops the "objected" state entirely — under the new model, silence on a day nobody approved is enough (the codebase's own philosophy already: "the absence of a decision is not a decision"); a separately-recorded refusal reason is no longer needed. An approved record gains a new "eliminar" (revoke) action instead, keeping an audit entry in the workday timeline.
+
+See the replacement ticket for the actual rework. Do not implement this task as currently written — its whole premise (eager pending-row creation) is gone.
+---
+
+created: 2026-08-18 11:21
+---
+Replacement ticket: KOL-80.
+---
+<!-- COMMENTS:END -->

@@ -34,15 +34,16 @@ class OvertimeAuthorizationPolicy
     }
 
     /**
-     * Object to a day's overtime — same authority rules as {@see approve()}.
+     * Revoke a previously approved day's overtime — same authority rules as
+     * {@see approve()}.
      */
-    public function object(User $user, OvertimeAuthorization $authorization): bool
+    public function revoke(User $user, OvertimeAuthorization $authorization): bool
     {
         return $this->canDecide($user, $authorization);
     }
 
     /**
-     * Shared authority check for approve/object: the employee's direct
+     * Shared authority check for approve/revoke: the employee's direct
      * supervisor holding the team-approval permission. Admins are handled
      * earlier by the super-admin gate.
      */

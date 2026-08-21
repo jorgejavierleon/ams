@@ -4,6 +4,7 @@ title: Add a read-only Horas extra aprobadas ledger
 status: To Do
 assignee: []
 created_date: '2026-08-17 19:08'
+updated_date: '2026-08-19 09:54'
 labels:
   - overtime
   - backend
@@ -11,6 +12,7 @@ labels:
 milestone: m-2
 dependencies:
   - KOL-11
+  - KOL-80
 ordinal: 51000
 ---
 

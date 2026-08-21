@@ -26,11 +26,12 @@ use Inertia\Response;
 
 /**
  * The pending-overtime queue (KOL-44, PRD §7.5): the screen where a supervisor
- * or HR admin approves or objects to a day's overtime, individually or in
- * bulk. Nothing here bypasses {@see OvertimeAuthorization::approve()} /
- * {@see OvertimeAuthorization::object()} — the anomaly block (KOL-40) and the
- * legal-cap justification requirement (KOL-41) are enforced on the model's
- * write path, so a bulk decision hits them exactly as an individual one does.
+ * or HR admin approves a day's overtime, individually or in bulk. Nothing
+ * here bypasses {@see OvertimeAuthorization::approve()} — the anomaly block
+ * (KOL-40) and the legal-cap justification requirement (KOL-41) are enforced
+ * on the model's write path, so a bulk decision hits them exactly as an
+ * individual one does. KOL-80 dropped objecting entirely: silence on a day
+ * nobody approved is sufficient refusal.
  */
 class OvertimeQueueController extends Controller
 {
@@ -206,28 +207,6 @@ class OvertimeQueueController extends Controller
     }
 
     /**
-     * Objecting is always reachable, even for a flagged day (PRD §7.4) — a
-     * refusal never needs the same trust a payment does. The raw marks are
-     * never touched; only this record's status changes.
-     */
-    public function object(Request $request, OvertimeAuthorization $overtimeAuthorization): RedirectResponse
-    {
-        Gate::authorize('object', $overtimeAuthorization);
-
-        abort_if(! $overtimeAuthorization->isPending(), 403);
-
-        $data = $request->validate([
-            'reason' => ['required', 'string', 'max:1000'],
-        ]);
-
-        $overtimeAuthorization->object($request->user(), $data['reason']);
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.overtime.queue.flash.objected')]);
-
-        return back();
-    }
-
-    /**
      * Approve an employee's overtime request (KOL-45, Mode A). A green light
      * to work the hours, never itself a payable one — the eventual worked day
      * still goes through {@see OvertimeAuthorization} once calculated.
@@ -274,11 +253,10 @@ class OvertimeQueueController extends Controller
     /**
      * Decide a selection at once. Each row is authorised in full (no per-row
      * editable figure in bulk — that stays an individual-decision feature) and
-     * goes through the very same {@see OvertimeAuthorization::approve()} /
-     * {@see OvertimeAuthorization::object()} calls as the single-record
-     * actions, so a flagged day or an unjustified cap breach inside the
-     * selection is simply left pending rather than waved through. The count
-     * reported is only what actually changed.
+     * goes through the very same {@see OvertimeAuthorization::approve()} call
+     * as the single-record action, so a flagged day or an unjustified cap
+     * breach inside the selection is simply left pending rather than waved
+     * through. The count reported is only what actually changed.
      */
     public function bulkDecide(Request $request): RedirectResponse
     {
@@ -290,8 +268,8 @@ class OvertimeQueueController extends Controller
                 'integer',
                 Rule::exists('overtime_authorizations', 'id')->where('organization_id', $organizationId),
             ],
-            'action' => ['required', Rule::in(['approve', 'object'])],
-            'reason' => ['nullable', 'string', 'max:1000', 'required_if:action,object'],
+            'action' => ['required', Rule::in(['approve'])],
+            'reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $authorizations = OvertimeAuthorization::query()
@@ -305,18 +283,12 @@ class OvertimeQueueController extends Controller
 
         DB::transaction(function () use ($authorizations, $data, $user, &$decided): void {
             foreach ($authorizations as $authorization) {
-                $ability = $data['action'] === 'approve' ? 'approve' : 'object';
-
-                if (Gate::denies($ability, $authorization)) {
+                if (Gate::denies('approve', $authorization)) {
                     continue;
                 }
 
                 try {
-                    if ($data['action'] === 'approve') {
-                        $authorization->approve($user, reason: $data['reason'] ?? null);
-                    } else {
-                        $authorization->object($user, $data['reason']);
-                    }
+                    $authorization->approve($user, reason: $data['reason'] ?? null);
 
                     $decided++;
                 } catch (OvertimeDecisionRefused) {

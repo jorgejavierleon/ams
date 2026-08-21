@@ -35,7 +35,7 @@ import {
 import { toneChip } from '@/lib/status-tone';
 import { cn } from '@/lib/utils';
 import { index as overtimeIndex } from '@/routes/overtime';
-import { approve, bulkDecide, index, object } from '@/routes/overtime/queue';
+import { approve, bulkDecide, index } from '@/routes/overtime/queue';
 import {
     approve as approveRequest,
     reject as rejectRequest,
@@ -132,11 +132,6 @@ export default function OvertimeQueueIndex({
 
     const [approveTarget, setApproveTarget] =
         useState<OvertimeAuthorizationRow | null>(null);
-    const [objectTarget, setObjectTarget] =
-        useState<OvertimeAuthorizationRow | null>(null);
-    const [bulkAction, setBulkAction] = useState<'approve' | 'object' | null>(
-        null,
-    );
     const [bulkTargets, setBulkTargets] = useState<OvertimeAuthorizationRow[]>(
         [],
     );
@@ -154,10 +149,9 @@ export default function OvertimeQueueIndex({
         reason: '',
         compensation_type: 'payment',
     });
-    const objectForm = useForm({ reason: '' });
     const bulkForm = useForm({
         ids: [] as number[],
-        action: 'approve' as 'approve' | 'object',
+        action: 'approve' as const,
         reason: '',
     });
     const approveRequestForm = useForm({});
@@ -227,26 +221,6 @@ export default function OvertimeQueueIndex({
         });
     }
 
-    function openObject(row: OvertimeAuthorizationRow) {
-        objectForm.clearErrors();
-        objectForm.setData('reason', '');
-        setObjectTarget(row);
-    }
-
-    function submitObject() {
-        if (!objectTarget) {
-            return;
-        }
-
-        objectForm.post(object(objectTarget.id).url, {
-            preserveScroll: true,
-            onSuccess: () => {
-                objectForm.reset();
-                setObjectTarget(null);
-            },
-        });
-    }
-
     function submitApproveRequest() {
         if (!approveRequestTarget) {
             return;
@@ -278,18 +252,13 @@ export default function OvertimeQueueIndex({
         });
     }
 
-    function openBulk(
-        action: 'approve' | 'object',
-        rows: OvertimeAuthorizationRow[],
-        reset: () => void,
-    ) {
-        setBulkAction(action);
+    function openBulk(rows: OvertimeAuthorizationRow[], reset: () => void) {
         setBulkTargets(rows);
         setResetSelection(() => reset);
         bulkForm.clearErrors();
         bulkForm.setData({
             ids: rows.map((row) => row.id),
-            action,
+            action: 'approve',
             reason: '',
         });
     }
@@ -302,7 +271,6 @@ export default function OvertimeQueueIndex({
                 bulkForm.reset('reason');
                 resetSelection();
                 setBulkTargets([]);
-                setBulkAction(null);
             },
         });
     }
@@ -442,17 +410,6 @@ export default function OvertimeQueueIndex({
                                 )}
                             >
                                 <Check className="size-4" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => openObject(row.original)}
-                                aria-label={t(
-                                    'ui.overtime.queue.actions.object',
-                                )}
-                            >
-                                <X className="size-4" />
                             </Button>
                         </div>
                     ) : null,
@@ -700,31 +657,11 @@ export default function OvertimeQueueIndex({
                                               <Button
                                                   size="sm"
                                                   onClick={() =>
-                                                      openBulk(
-                                                          'approve',
-                                                          rows,
-                                                          reset,
-                                                      )
+                                                      openBulk(rows, reset)
                                                   }
                                               >
                                                   {t(
                                                       'ui.overtime.queue.bulk.trigger_approve',
-                                                  )}
-                                              </Button>
-                                              <Button
-                                                  size="sm"
-                                                  variant="outline"
-                                                  className="text-destructive hover:text-destructive"
-                                                  onClick={() =>
-                                                      openBulk(
-                                                          'object',
-                                                          rows,
-                                                          reset,
-                                                      )
-                                                  }
-                                              >
-                                                  {t(
-                                                      'ui.overtime.queue.bulk.trigger_object',
                                                   )}
                                               </Button>
                                           </>
@@ -892,88 +829,18 @@ export default function OvertimeQueueIndex({
             </Dialog>
 
             <Dialog
-                open={objectTarget !== null}
-                onOpenChange={(open) => !open && setObjectTarget(null)}
+                open={bulkTargets.length > 0}
+                onOpenChange={(open) => !open && setBulkTargets([])}
             >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            {t('ui.overtime.queue.object_dialog.title')}
+                            {t('ui.overtime.queue.bulk.approve_title')}
                         </DialogTitle>
                         <DialogDescription>
-                            {t('ui.overtime.queue.object_dialog.description', {
-                                employee: objectTarget?.employee ?? '',
-                                date: objectTarget?.date ?? '',
+                            {t('ui.overtime.queue.bulk.approve_description', {
+                                count: bulkTargets.length,
                             })}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="grid gap-4 py-2">
-                        <FormField
-                            label={t('ui.overtime.queue.object_dialog.reason')}
-                            htmlFor="object_reason"
-                            required
-                            error={objectForm.errors.reason}
-                        >
-                            <textarea
-                                id="object_reason"
-                                rows={3}
-                                value={objectForm.data.reason}
-                                onChange={(event) =>
-                                    objectForm.setData(
-                                        'reason',
-                                        event.target.value,
-                                    )
-                                }
-                                className="flex min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                            />
-                        </FormField>
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setObjectTarget(null)}
-                        >
-                            {t('ui.common.cancel')}
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={submitObject}
-                            disabled={objectForm.processing}
-                        >
-                            {t('ui.overtime.queue.object_dialog.submit')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog
-                open={bulkAction !== null}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setBulkAction(null);
-                        setBulkTargets([]);
-                    }
-                }}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                            {bulkAction === 'object'
-                                ? t('ui.overtime.queue.bulk.object_title')
-                                : t('ui.overtime.queue.bulk.approve_title')}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {bulkAction === 'object'
-                                ? t(
-                                      'ui.overtime.queue.bulk.object_description',
-                                      { count: bulkTargets.length },
-                                  )
-                                : t(
-                                      'ui.overtime.queue.bulk.approve_description',
-                                      { count: bulkTargets.length },
-                                  )}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -981,7 +848,6 @@ export default function OvertimeQueueIndex({
                         <FormField
                             label={t('ui.overtime.queue.bulk.reason')}
                             htmlFor="bulk_reason"
-                            required={bulkAction === 'object'}
                             error={bulkForm.errors.reason}
                         >
                             <textarea
@@ -1002,19 +868,11 @@ export default function OvertimeQueueIndex({
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => {
-                                setBulkAction(null);
-                                setBulkTargets([]);
-                            }}
+                            onClick={() => setBulkTargets([])}
                         >
                             {t('ui.common.cancel')}
                         </Button>
                         <Button
-                            variant={
-                                bulkAction === 'object'
-                                    ? 'destructive'
-                                    : 'default'
-                            }
                             onClick={submitBulk}
                             disabled={bulkForm.processing}
                         >

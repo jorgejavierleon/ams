@@ -5,21 +5,23 @@ namespace App\Enums;
 use App\Models\OvertimeAuthorization;
 
 /**
- * The human decision on a day's overtime (PRD §7.5): `pending`, `approved` or
- * `objected`.
+ * The human decision on a day's overtime (PRD §7.5, reworked by KOL-80):
+ * `pending`, `approved` or `revoked`.
  *
  * **There is no expired or lapsed case, and that is the design.** The PRD is
  * explicit that overtime is *"never auto-approved by timeout — an ungoverned
- * record simply isn't exported, it's not assumed approved by default"*. So a
- * record nobody acts on stays {@see self::Pending} for as long as it takes, and
- * the export reads {@see self::Approved} only. The absence of a fourth case is
- * what stops elapsed time from being mistaken for consent.
+ * record simply isn't exported, it's not assumed approved by default"*. Under
+ * KOL-80 that silence is no longer even a stored row: a day nobody has acted
+ * on has no {@see OvertimeAuthorization} at all, and {@see self::Pending} is
+ * only the instant between {@see OvertimeAuthorization::openFor()} and the
+ * decision that follows it in the same request — never a state a queue lists
+ * or a supervisor waits in.
  *
- * This is the opposite reading of the same silence from
- * {@see MarkModificationStatus}, where the employee's opposition window *does*
- * consolidate on timeout (Resolución 38 art. 40 d). There, silence confirms a
- * correction the employer already made; here, silence would create a payment
- * obligation nobody agreed to.
+ * **There is no `objected` case either.** KOL-80 dropped it: silence on a day
+ * nobody approved is sufficient refusal, so the only way out of `pending` is
+ * {@see self::Approved}. An approved record can later move to
+ * {@see self::Revoked} — the row stays, with who revoked it, when, and why —
+ * but nothing decided ever goes back to unapproved-with-a-reason.
  *
  * Distinct from {@see OvertimeCalculationState}, which is what the engine may
  * conclude on its own and has no approved case at all.
@@ -28,14 +30,14 @@ use App\Models\OvertimeAuthorization;
  */
 enum OvertimeAuthorizationStatus: string
 {
-    /** Awaiting a decision. Never exported, never assumed approved. */
+    /** The instant between opening a record and deciding it. Never listed, never waited in. */
     case Pending = 'pending';
 
     /** A human authorised these hours. The only status payroll may read. */
     case Approved = 'approved';
 
-    /** A human refused these hours. The worked time stays visible as unauthorised. */
-    case Objected = 'objected';
+    /** A previously approved record whose authorisation was withdrawn. Preserved, not deleted. */
+    case Revoked = 'revoked';
 
     /**
      * Human-readable, translated label for display in the UI.
@@ -54,13 +56,13 @@ enum OvertimeAuthorizationStatus: string
         return match ($this) {
             self::Approved => 'success',
             self::Pending => 'warning',
-            self::Objected => 'destructive',
+            self::Revoked => 'destructive',
         };
     }
 
     /**
-     * Whether reaching this status required somebody to act. Both terminal
-     * statuses do, which is why the record refuses to persist in either of them
+     * Whether reaching this status required somebody to act. Every terminal
+     * status does, which is why the record refuses to persist in any of them
      * without a reviewer attached.
      */
     public function requiresReviewer(): bool
