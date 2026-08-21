@@ -183,20 +183,34 @@ test('a recalculation that raises the figure after approval does not raise the p
         ->and($workday->fresh()->overtimeNeedsReReview())->toBeTrue();
 });
 
-test('an objected day pays nothing and leaves every worked hour visible as unauthorised', function () {
+test('a revoked day pays nothing and leaves every worked hour visible as unauthorised', function () {
     [$workday, $supervisor] = overtimeDay('02:30:00');
 
     $authorization = OvertimeAuthorization::openFor($workday)
-        ->object($supervisor, reason: 'No hubo autorización previa de la jefatura.');
+        ->approve($supervisor, reason: 'Autorización de prueba.')
+        ->revoke($supervisor, 'Aprobación registrada por error.');
 
-    expect($authorization->isObjected())->toBeTrue()
-        ->and($authorization->final_hours)->toBe('00:00:00')
+    expect($authorization->isRevoked())->toBeTrue()
         ->and((string) $authorization->authorizedOvertime())->toBe('00:00:00')
         ->and((string) $authorization->unauthorizedOvertime())->toBe('02:30:00')
-        ->and($authorization->reason)->toBe('No hubo autorización previa de la jefatura.')
-        ->and($authorization->reviewed_by)->toBe($supervisor->id);
+        ->and($authorization->revoked_reason)->toBe('Aprobación registrada por error.')
+        ->and($authorization->revoked_by)->toBe($supervisor->id)
+        // The original approval's own audit trail is untouched by the revocation.
+        ->and($authorization->reviewed_by)->toBe($supervisor->id)
+        ->and($authorization->reason)->toBe('Autorización de prueba.');
 
     expect(OvertimeAuthorization::approved()->count())->toBe(0);
+});
+
+test('revoking a record that was never approved is refused', function () {
+    [$workday, $supervisor] = overtimeDay('02:30:00');
+
+    $authorization = OvertimeAuthorization::openFor($workday);
+
+    expect(fn () => $authorization->revoke($supervisor, 'Nada que revocar.'))
+        ->toThrow(OvertimeDecisionRefused::class);
+
+    expect($authorization->fresh()->isPending())->toBeTrue();
 });
 
 test('a day nobody decided authorises nothing, whatever the engine calculated', function () {
@@ -268,7 +282,7 @@ test('a record cannot be created as approved without the person who decided it',
 
 test('an enum with no lapsed case is what makes the timeout impossible', function () {
     expect(array_column(OvertimeAuthorizationStatus::cases(), 'value'))
-        ->toBe(['pending', 'approved', 'objected']);
+        ->toBe(['pending', 'approved', 'revoked']);
 });
 
 test('the record is optionally linked to the pacto covering its worked date', function () {
@@ -298,12 +312,12 @@ test('the scopes separate a period into what payroll may read and what it may no
         'reason' => 'Autorización de prueba.',
     ]);
 
-    [$objectedWorkday] = overtimeDay('01:00:00', $organization);
-    OvertimeAuthorization::factory()->objected($supervisor)->create([
+    [$revokedWorkday] = overtimeDay('01:00:00', $organization);
+    OvertimeAuthorization::factory()->revoked($supervisor)->create([
         'organization_id' => $organization->id,
-        'workday_id' => $objectedWorkday->id,
-        'user_id' => $objectedWorkday->user_id,
-        'date' => $objectedWorkday->date,
+        'workday_id' => $revokedWorkday->id,
+        'user_id' => $revokedWorkday->user_id,
+        'date' => $revokedWorkday->date,
     ]);
 
     [$pendingWorkday] = overtimeDay('03:00:00', $organization);
@@ -312,7 +326,7 @@ test('the scopes separate a period into what payroll may read and what it may no
     $period = Carbon::parse('2026-08-01');
 
     expect(OvertimeAuthorization::approved()->betweenDates($period, $period->copy()->endOfMonth())->count())->toBe(1)
-        ->and(OvertimeAuthorization::objected()->count())->toBe(1)
+        ->and(OvertimeAuthorization::revoked()->count())->toBe(1)
         ->and(OvertimeAuthorization::pending()->count())->toBe(1);
 });
 
@@ -329,8 +343,8 @@ test('a tenant never reads another tenant authorisation record', function () {
         ->and(OvertimeAuthorization::count())->toBe(0);
 });
 
-test('a tenant cannot approve or object to another tenant record', function () {
-    [$workday] = overtimeDay('03:00:00');
+test('a tenant cannot approve or revoke another tenant record', function () {
+    [$workday, $supervisor] = overtimeDay('03:00:00');
     $authorization = OvertimeAuthorization::openFor($workday);
 
     $intruder = User::factory()->create([
@@ -338,7 +352,10 @@ test('a tenant cannot approve or object to another tenant record', function () {
     ]);
 
     expect(fn () => $authorization->approve($intruder))->toThrow(OvertimeDecisionRefused::class);
-    expect(fn () => $authorization->object($intruder, 'No.'))->toThrow(OvertimeDecisionRefused::class);
-
     expect($authorization->fresh()->status)->toBe(OvertimeAuthorizationStatus::Pending);
+
+    $authorization->approve($supervisor, reason: 'Continuidad de servicio crítico.');
+
+    expect(fn () => $authorization->revoke($intruder, 'No.'))->toThrow(OvertimeDecisionRefused::class);
+    expect($authorization->fresh()->status)->toBe(OvertimeAuthorizationStatus::Approved);
 });

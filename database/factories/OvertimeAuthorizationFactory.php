@@ -63,20 +63,19 @@ class OvertimeAuthorizationFactory extends Factory
     }
 
     /**
-     * A day whose overtime a supervisor refused. Nothing is payable; the worked
-     * hours stay readable as unauthorised.
+     * A day that was approved and then had that authorisation withdrawn. The
+     * row is kept — its original approval fields untouched — with a separate
+     * revocation trail (who, when, why) layered on top.
      */
-    public function objected(?User $reviewer = null): static
+    public function revoked(?User $approver = null, ?User $revoker = null): static
     {
-        return $this->state(fn (array $attributes): array => [
-            'status' => OvertimeAuthorizationStatus::Objected,
-            'authorized_hours' => '00:00:00',
-            'final_hours' => '00:00:00',
-            'reason' => 'Horas no autorizadas por la jefatura.',
-            'reviewed_by' => $reviewer->id ?? User::factory()->state([
+        return $this->approved($approver)->state(fn (array $attributes): array => [
+            'status' => OvertimeAuthorizationStatus::Revoked,
+            'revoked_by' => $revoker->id ?? User::factory()->state([
                 'organization_id' => $attributes['organization_id'],
             ]),
-            'reviewed_at' => now(),
+            'revoked_at' => now(),
+            'revoked_reason' => 'Horas no autorizadas por la jefatura.',
         ]);
     }
 }

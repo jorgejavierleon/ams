@@ -163,8 +163,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('workdays.overtime.bulk-decide');
     Route::post('workdays/{workday}/overtime/approve', [WorkdayController::class, 'approveOvertime'])
         ->name('workdays.overtime.approve');
-    Route::post('workdays/{workday}/overtime/object', [WorkdayController::class, 'objectOvertime'])
-        ->name('workdays.overtime.object');
+    Route::post('workdays/{workday}/overtime/revoke', [WorkdayController::class, 'revokeOvertime'])
+        ->name('workdays.overtime.revoke');
 });
 
 // Leave review routes shared by admins and supervisors. Authorization is
@@ -215,7 +215,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [OvertimeQueueController::class, 'index'])->name('index');
             Route::post('/decide-bulk', [OvertimeQueueController::class, 'bulkDecide'])->name('bulk-decide');
             Route::post('/{overtimeAuthorization}/approve', [OvertimeQueueController::class, 'approve'])->name('approve');
-            Route::post('/{overtimeAuthorization}/object', [OvertimeQueueController::class, 'object'])->name('object');
 
             // Mode A requests (KOL-45): decided in this same queue rather than
             // a separate inbox.

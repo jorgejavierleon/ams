@@ -104,4 +104,16 @@ class OvertimeDecisionRefused extends RuntimeException
             'An overtime authorisation cannot be compensated in rest days for an employee whose profile does not carry the rest-day-eligibility flag. Enable it on the employee profile first, or approve for payment.'
         );
     }
+
+    /**
+     * KOL-80: revoking withdraws a decision that was made, so there has to be
+     * an approval to withdraw. A pending or already-revoked record has
+     * nothing for {@see OvertimeAuthorization::revoke()} to act on.
+     */
+    public static function withoutApproval(): self
+    {
+        return new self(
+            'An overtime authorisation can only be revoked while it is approved. A record that was never approved, or was already revoked, has nothing to withdraw.'
+        );
+    }
 }

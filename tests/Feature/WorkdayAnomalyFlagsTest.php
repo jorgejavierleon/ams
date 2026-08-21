@@ -280,7 +280,7 @@ test('flagging never blocks saving the marks or running the calculation', functi
     expect(flaggedWorkday($employee, $date)->isFlagged())->toBeTrue();
 });
 
-test('a flagged day cannot be approved but can still be objected', function () {
+test('a flagged day cannot be approved and stays undecided', function () {
     [$employee, $date, $organization] = flagEmployeeOnShift();
     $supervisor = User::factory()->create(['organization_id' => $organization->id]);
 
@@ -296,8 +296,4 @@ test('a flagged day cannot be approved but can still be objected', function () {
 
     expect(fn () => $authorization->approve($supervisor))->toThrow(OvertimeDecisionRefused::class);
     expect($authorization->fresh()->isPending())->toBeTrue();
-
-    $authorization->object($supervisor, 'Marca fuera de geocerco, no se puede verificar el horario.');
-
-    expect($authorization->fresh()->isObjected())->toBeTrue();
 });

@@ -1391,7 +1391,7 @@ return [
             'shift_delta' => 'Delta (in / out)',
             'shift' => 'Shift',
             'leave' => 'Leave',
-            'overtime' => 'Overtime',
+            'overtime' => 'Authorised overtime',
         ],
 
         'filters' => [
@@ -1420,19 +1420,16 @@ return [
 
         'overtime' => [
             'statuses' => [
-                'not_opened' => 'Not opened',
+                'not_opened' => 'Not authorised',
             ],
             'actions' => [
                 'approve' => 'Approve overtime',
-                'object' => 'Object to overtime',
+                'revoke' => 'Revoke authorisation',
             ],
             'bulk' => [
                 'trigger_approve' => 'Approve overtime',
-                'trigger_object' => 'Object to overtime',
                 'approve_title' => 'Bulk-approve overtime',
-                'object_title' => 'Bulk-object to overtime',
-                'approve_description' => 'The :count selected workdays with pending overtime will be approved in full. A workday with unreviewed anomalies, or exceeding a legal cap without a reason, is left pending.',
-                'object_description' => 'The :count selected workdays with pending overtime will be objected to.',
+                'approve_description' => 'The :count selected workdays with unauthorised overtime will be approved in full. A workday with unreviewed anomalies, or exceeding a legal cap without a reason, is left unauthorised.',
                 'reason' => 'Reason',
                 'submit' => 'Confirm',
             ],
@@ -1544,7 +1541,7 @@ return [
                 'calculated_short' => 'Calculated:',
                 'actions' => [
                     'approve' => 'Approve',
-                    'object' => 'Object',
+                    'revoke' => 'Revoke',
                 ],
                 'approve_dialog' => [
                     'title' => 'Approve overtime',
@@ -1556,11 +1553,11 @@ return [
                     'reason_hint' => 'Optional, unless the workday exceeds a legal cap or has no covering pacto.',
                     'submit' => 'Approve',
                 ],
-                'object_dialog' => [
-                    'title' => 'Object to overtime',
-                    'description' => ":employee's workday for :date. The original marks are left untouched.",
+                'revoke_dialog' => [
+                    'title' => 'Revoke overtime authorisation',
+                    'description' => ":employee's workday for :date. The record is kept with the revocation reason; the original marks are left untouched.",
                     'reason' => 'Reason',
-                    'submit' => 'Object',
+                    'submit' => 'Revoke',
                 ],
                 'errors' => [
                     'unresolved_anomalies' => 'Cannot approve: the workday has unreviewed anomalies (:reasons). Correct the underlying data to unblock approval.',
@@ -1569,7 +1566,7 @@ return [
                 ],
                 'flash' => [
                     'approved' => 'Overtime approved successfully.',
-                    'objected' => 'Overtime objected to successfully.',
+                    'revoked' => 'Overtime authorisation revoked.',
                     'bulk_decided' => ':decided of :total workday(s) decided.',
                 ],
             ],
@@ -1665,7 +1662,7 @@ return [
         'authorization_statuses' => [
             'pending' => 'Pending',
             'approved' => 'Authorised',
-            'objected' => 'Objected',
+            'revoked' => 'Revoked',
         ],
 
         'requests' => [
@@ -1913,7 +1910,7 @@ return [
 
         'queue' => [
             'title' => 'Pending overtime',
-            'description' => 'Approve or object to overtime workdays, individually or in bulk.',
+            'description' => 'Approve overtime workdays, individually or in bulk.',
             'back' => 'Back to overtime',
             'empty' => 'No overtime workdays for this filter.',
             'select_all' => 'Select all rows',
@@ -1986,7 +1983,6 @@ return [
 
             'actions' => [
                 'approve' => 'Approve',
-                'object' => 'Object',
             ],
 
             'approve_dialog' => [
@@ -2000,20 +1996,10 @@ return [
                 'submit' => 'Approve',
             ],
 
-            'object_dialog' => [
-                'title' => 'Object to overtime',
-                'description' => ":employee's workday for :date. The original marks are left untouched.",
-                'reason' => 'Reason',
-                'submit' => 'Object',
-            ],
-
             'bulk' => [
                 'trigger_approve' => 'Approve selected',
-                'trigger_object' => 'Object to selected',
                 'approve_title' => 'Bulk-approve overtime',
-                'object_title' => 'Bulk-object to overtime',
                 'approve_description' => 'The :count selected workdays will be approved in full. A workday with unreviewed anomalies, or exceeding a legal cap without a reason, is left pending.',
-                'object_description' => 'The :count selected workdays will be objected to.',
                 'reason' => 'Reason',
                 'submit' => 'Confirm',
             ],
@@ -2026,7 +2012,6 @@ return [
 
             'flash' => [
                 'approved' => 'Overtime approved successfully.',
-                'objected' => 'Overtime objected to successfully.',
                 'bulk_decided' => ':decided of :total workdays decided. The rest were left pending for unreviewed anomalies or unjustified caps.',
             ],
         ],

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
 use App\Models\MarkModification;
+use App\Models\OvertimeAuthorization;
 use App\Models\Workday;
 use App\Support\Rut;
 use Illuminate\Support\Arr;
@@ -87,6 +88,7 @@ class WorkdayPresenter
         }
 
         $authorization = $workday->overtimeAuthorization;
+        $isApproved = $authorization?->isApproved() ?? false;
 
         return [
             'calculated_hours' => $this->trimSeconds($workday->calculated_overtime),
@@ -95,10 +97,27 @@ class WorkdayPresenter
             'status' => $authorization?->status->value ?? 'not_opened',
             'status_label' => $authorization?->status->label() ?? __('ui.workdays.overtime.statuses.not_opened'),
             'status_badge' => $authorization?->status->badge() ?? 'outline',
-            'compensation_type_label' => $authorization?->isApproved() === true ? $authorization->compensation_type->label() : null,
+            'compensation_type_label' => $isApproved ? $authorization->compensation_type->label() : null,
             'compensation_eligible' => $workday->user->overtime_rest_day_eligible,
-            'can_decide' => $authorization !== null && $authorization->isPending() && Gate::allows('approve', $authorization),
+            'can_decide' => ! $isApproved && Gate::allows('approve', $authorization ?? $this->provisionalAuthorization($workday)),
+            'can_revoke' => $isApproved && Gate::allows('revoke', $authorization),
         ];
+    }
+
+    /**
+     * A transient, unsaved OvertimeAuthorization for permission checks only.
+     * KOL-80: a day nobody has acted on has no persisted row, so "may this
+     * user decide it" cannot be answered by loading one. The policy only
+     * reads `$authorization->user->supervisor_id`, so an in-memory instance
+     * carrying that relation (already eager-loaded on the workday) answers
+     * the same question without writing anything or an extra query.
+     */
+    private function provisionalAuthorization(Workday $workday): OvertimeAuthorization
+    {
+        return (new OvertimeAuthorization([
+            'organization_id' => $workday->organization_id,
+            'user_id' => $workday->user_id,
+        ]))->setRelation('user', $workday->user);
     }
 
     /**
@@ -148,6 +167,8 @@ class WorkdayPresenter
             return null;
         }
 
+        $isApproved = $authorization->isApproved();
+
         return [
             'id' => $authorization->id,
             'kind' => 'overtime',
@@ -157,15 +178,19 @@ class WorkdayPresenter
             'calculated_hours' => $this->trimSeconds($authorization->calculated_hours),
             'authorized_hours' => $this->trimSeconds($authorization->authorized_hours),
             'final_hours' => $this->trimSeconds($authorization->final_hours),
-            'compensation_type_label' => $authorization->isApproved() ? $authorization->compensation_type->label() : null,
-            'reason' => $authorization->reason,
+            'compensation_type_label' => $isApproved ? $authorization->compensation_type->label() : null,
+            'reason' => $authorization->isRevoked() ? $authorization->revoked_reason : $authorization->reason,
             'created_at' => $authorization->created_at?->format('d/m/Y H:i'),
             'created_ago' => $authorization->created_at?->diffForHumans(),
             'reviewed_by' => $authorization->reviewedBy?->name,
             'reviewed_at' => $authorization->reviewed_at?->format('d/m/Y H:i'),
             'reviewed_ago' => $authorization->reviewed_at?->diffForHumans(),
-            'can_decide' => $authorization->isPending() && Gate::allows('approve', $authorization),
-            'sort_at' => ($authorization->reviewed_at ?? $authorization->created_at)->timestamp,
+            'revoked_by' => $authorization->revokedBy?->name,
+            'revoked_at' => $authorization->revoked_at?->format('d/m/Y H:i'),
+            'revoked_ago' => $authorization->revoked_at?->diffForHumans(),
+            'can_decide' => ! $isApproved && Gate::allows('approve', $authorization),
+            'can_revoke' => $isApproved && Gate::allows('revoke', $authorization),
+            'sort_at' => ($authorization->revoked_at ?? $authorization->reviewed_at ?? $authorization->created_at)->timestamp,
         ];
     }
 

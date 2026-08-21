@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\OvertimeAuthorizationStatus;
 use App\Enums\OvertimeCompensationType;
 use App\Exceptions\OvertimeDecisionRefused;
+use App\Http\Controllers\WorkdayController;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Services\Overtime\OvertimeCapEvaluator;
 use App\Services\Overtime\RestDayBalanceService;
@@ -57,6 +58,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $reason
  * @property int|null $overtime_pact_id
  * @property OvertimeCompensationType $compensation_type
+ * @property int|null $revoked_by
+ * @property Carbon|null $revoked_at
+ * @property string|null $revoked_reason
  */
 class OvertimeAuthorization extends Model
 {
@@ -75,6 +79,7 @@ class OvertimeAuthorization extends Model
             'compensation_type' => OvertimeCompensationType::class,
             'date' => 'date',
             'reviewed_at' => 'datetime',
+            'revoked_at' => 'datetime',
         ];
     }
 
@@ -95,8 +100,9 @@ class OvertimeAuthorization extends Model
             }
 
             // PRD §7.4: a flagged day's data is not trustworthy enough to pay
-            // from. Only approval is blocked — an objection stays reachable, so
-            // a supervisor can still refuse hours nobody can vouch for.
+            // from. Only approval is blocked — silence (never approving) is
+            // always reachable, so a supervisor can still withhold hours
+            // nobody can vouch for without this check standing in the way.
             if ($status === OvertimeAuthorizationStatus::Approved) {
                 $flags = $authorization->workday?->anomalyFlags() ?? [];
 
@@ -125,16 +131,19 @@ class OvertimeAuthorization extends Model
     }
 
     /**
-     * Open (or return) the pending authorisation for a computed day, snapshotting
-     * the engine's figure as the OHC this decision will be made against.
+     * Open (or return) the authorisation for a computed day, snapshotting the
+     * engine's figure as the OHC this decision will be made against.
      *
-     * Opening a record is not a decision and cannot become one: the row starts
-     * pending, and the only paths out of that are {@see self::approve()} and
-     * {@see self::object()}, both of which demand a person. A day whose figure
-     * later moves is reported as needing re-review by
-     * {@see Workday::overtimeNeedsReReview()} rather than being quietly
-     * re-snapshotted here, so the figure an approver saw stays the figure the
-     * record says they saw.
+     * KOL-80: nothing in app/ calls this ahead of a decision any more — a day
+     * nobody has acted on simply has no row (see {@see Workday::authorizedOvertime()}).
+     * The only callers are {@see WorkdayController::approveOvertime()}
+     * and {@see WorkdayController::bulkDecideOvertime()},
+     * which open the record and immediately decide it with {@see self::approve()}
+     * in the same request — the transient `pending` status is never a state a
+     * queue lists or a supervisor waits in. A day whose figure later moves is
+     * reported as needing re-review by {@see Workday::overtimeNeedsReReview()}
+     * rather than being quietly re-snapshotted here, so the figure an approver
+     * saw stays the figure the record says they saw.
      *
      * @param  string|null  $requestedHours  The employee's OHR, under Mode A.
      */
@@ -210,27 +219,32 @@ class OvertimeAuthorization extends Model
     }
 
     /**
-     * Refuse this day's overtime. The hours worked are not erased — they stay
-     * readable as unauthorised, which is the whole point of recording the
-     * objection rather than deleting the record.
+     * Withdraw a previously approved record's authorisation (KOL-80). The row
+     * is kept, not deleted: {@see self::authorizedOvertime()} answers zero
+     * once this runs (it is non-zero only while {@see self::isApproved()}),
+     * and the approval's own `reviewed_by`/`reviewed_at`/`reason` stay
+     * untouched — who revoked it and why is recorded as a separate fact
+     * alongside them, not a rewrite of the original decision.
      *
-     * @param  User  $reviewer  The person deciding. Required — there is no other signature.
-     * @param  string  $reason  Why. An objection without one is unanswerable to the employee.
+     * @param  User  $reviewer  The person revoking. Required — there is no other signature.
+     * @param  string  $reason  Why. A revocation without one is unanswerable to the employee.
+     *
+     * @throws OvertimeDecisionRefused when the record is not currently approved.
      */
-    public function object(User $reviewer, string $reason): self
+    public function revoke(User $reviewer, string $reason): self
     {
         $this->assertSameOrganizationAs($reviewer);
 
-        $this->forceFill([
-            'status' => OvertimeAuthorizationStatus::Objected,
-            'authorized_hours' => Duration::zero()->toTimeString(),
-            'final_hours' => Duration::zero()->toTimeString(),
-            'reviewed_by' => $reviewer->id,
-            'reviewed_at' => now(),
-            'reason' => $reason,
-        ])->save();
+        if (! $this->isApproved()) {
+            throw OvertimeDecisionRefused::withoutApproval();
+        }
 
-        $this->stampWorkdayDecision();
+        $this->forceFill([
+            'status' => OvertimeAuthorizationStatus::Revoked,
+            'revoked_by' => $reviewer->id,
+            'revoked_at' => now(),
+            'revoked_reason' => $reason,
+        ])->save();
 
         return $this;
     }
@@ -269,8 +283,8 @@ class OvertimeAuthorization extends Model
 
     /**
      * How many of this day's hours are payable. Zero unless a human approved
-     * them: pending and objected records answer the question without the caller
-     * having to remember to check the status first.
+     * them: a pending or revoked record answers the question without the
+     * caller having to remember to check the status first.
      */
     public function authorizedOvertime(): Duration
     {
@@ -281,7 +295,7 @@ class OvertimeAuthorization extends Model
 
     /**
      * Hours the employee worked beyond what was authorised. On a pending or
-     * objected day that is the whole calculated figure; on a partially
+     * revoked day that is the whole calculated figure; on a partially
      * authorised one it is the remainder. Never merged into the payable total,
      * and never dropped — this is the number KOL-24 makes visually prominent.
      */
@@ -301,9 +315,9 @@ class OvertimeAuthorization extends Model
         return $this->status === OvertimeAuthorizationStatus::Approved;
     }
 
-    public function isObjected(): bool
+    public function isRevoked(): bool
     {
-        return $this->status === OvertimeAuthorizationStatus::Objected;
+        return $this->status === OvertimeAuthorizationStatus::Revoked;
     }
 
     /**
@@ -344,9 +358,9 @@ class OvertimeAuthorization extends Model
     /**
      * @param  Builder<OvertimeAuthorization>  $query
      */
-    public function scopeObjected(Builder $query): void
+    public function scopeRevoked(Builder $query): void
     {
-        $query->where('status', OvertimeAuthorizationStatus::Objected);
+        $query->where('status', OvertimeAuthorizationStatus::Revoked);
     }
 
     /**
@@ -393,6 +407,14 @@ class OvertimeAuthorization extends Model
     public function reviewedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function revokedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'revoked_by');
     }
 
     /**

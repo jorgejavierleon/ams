@@ -167,42 +167,6 @@ test('requesting rest-day compensation for an ineligible employee is rejected wi
     expect($authorization->fresh()->isPending())->toBeTrue();
 });
 
-test('a supervisor objects to a direct reports pending overtime individually, leaving the raw marks untouched', function () {
-    $organization = Organization::factory()->create();
-    $supervisor = queueSupervisor($organization);
-    $employee = queueEmployee($organization, $supervisor);
-
-    $authorization = queueDay($employee, '2026-08-03');
-    $originalCalculatedOvertime = $authorization->workday->calculated_overtime;
-    $originalMarkIn = $authorization->workday->mark_in_at;
-
-    $this->actingAs($supervisor)
-        ->post(route('overtime.queue.object', $authorization), [
-            'reason' => 'No corresponde: turno cubierto por otro motivo.',
-        ])
-        ->assertRedirect();
-
-    $authorization->refresh();
-
-    expect($authorization->isObjected())->toBeTrue()
-        ->and($authorization->authorized_hours)->toBe('00:00:00')
-        ->and($authorization->workday->fresh()->calculated_overtime)->toBe($originalCalculatedOvertime)
-        ->and($authorization->workday->fresh()->mark_in_at->equalTo($originalMarkIn))->toBeTrue();
-});
-
-test('objecting without a reason is rejected and the record stays pending', function () {
-    $organization = Organization::factory()->create();
-    $supervisor = queueSupervisor($organization);
-    $employee = queueEmployee($organization, $supervisor);
-    $authorization = queueDay($employee, '2026-08-03');
-
-    $this->actingAs($supervisor)
-        ->post(route('overtime.queue.object', $authorization), [])
-        ->assertSessionHasErrors('reason');
-
-    expect($authorization->fresh()->isPending())->toBeTrue();
-});
-
 test('approving a flagged day is refused with the flag reason rather than a generic error', function () {
     $organization = Organization::factory()->create();
     $supervisor = queueSupervisor($organization);

@@ -71,7 +71,7 @@ test('a supervisor can decide their own direct report overtime', function () {
     $authorization = overtimeSectionRecordFor($employee);
 
     expect($supervisor->can('approve', $authorization))->toBeTrue()
-        ->and($supervisor->can('object', $authorization))->toBeTrue();
+        ->and($supervisor->can('revoke', $authorization))->toBeTrue();
 });
 
 test('a supervisor is refused for overtime outside their team', function () {
@@ -83,7 +83,7 @@ test('a supervisor is refused for overtime outside their team', function () {
     $authorization = overtimeSectionRecordFor($employee);
 
     expect($supervisor->can('approve', $authorization))->toBeFalse()
-        ->and($supervisor->can('object', $authorization))->toBeFalse();
+        ->and($supervisor->can('revoke', $authorization))->toBeFalse();
 });
 
 test('an admin can reach the overtime section and decide any record via the super-admin gate', function () {

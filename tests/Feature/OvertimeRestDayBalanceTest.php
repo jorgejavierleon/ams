@@ -303,14 +303,15 @@ test('an approved payment-compensated authorization satisfies the exportable sco
     expect(OvertimeAuthorization::exportable()->find($authorization->id))->not->toBeNull();
 });
 
-test('a pending or objected record never satisfies the exportable scope', function () {
+test('a pending or revoked record never satisfies the exportable scope', function () {
     [$workday, $supervisor] = restDayBalanceDay('2026-08-15', '01:00:00');
 
     $pending = OvertimeAuthorization::openFor($workday);
 
     expect(OvertimeAuthorization::exportable()->find($pending->id))->toBeNull();
 
-    $pending->object($supervisor, reason: 'Horas no autorizadas.');
+    $pending->approve($supervisor, reason: 'Sin pacto vigente para esta fecha.')
+        ->revoke($supervisor, 'Horas no autorizadas.');
 
     expect(OvertimeAuthorization::exportable()->find($pending->id))->toBeNull();
 });

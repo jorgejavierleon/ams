@@ -11,9 +11,9 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';
-import { object as objectOvertime } from '@/routes/workdays/overtime';
+import { revoke as revokeOvertime } from '@/routes/workdays/overtime';
 
-export type OvertimeObjectTarget = {
+export type OvertimeRevokeTarget = {
     workday_id: number;
     employee: string | null;
     date: string;
@@ -22,14 +22,16 @@ export type OvertimeObjectTarget = {
 type Props = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    target: OvertimeObjectTarget;
+    target: OvertimeRevokeTarget;
 };
 
 /**
- * Object to a day's overtime — shared by the Jornadas index (quick action)
- * and the day detail page's merged history timeline (KOL-71).
+ * Revoke a day's already-approved overtime (KOL-80) — shared by the Jornadas
+ * index and the day detail page's merged history timeline, so both act
+ * through the exact same form. The record is kept, not deleted; the reason
+ * is required so the revocation is answerable to the employee later.
  */
-export default function OvertimeObjectDialog({
+export default function OvertimeRevokeDialog({
     open,
     onOpenChange,
     target,
@@ -51,7 +53,7 @@ export default function OvertimeObjectDialog({
             return;
         }
 
-        post(objectOvertime(target.workday_id).url, {
+        post(revokeOvertime(target.workday_id).url, {
             preserveScroll: true,
             onSuccess: () => {
                 reset();
@@ -65,11 +67,11 @@ export default function OvertimeObjectDialog({
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        {t('ui.workdays.show.overtime.object_dialog.title')}
+                        {t('ui.workdays.show.overtime.revoke_dialog.title')}
                     </DialogTitle>
                     <DialogDescription>
                         {t(
-                            'ui.workdays.show.overtime.object_dialog.description',
+                            'ui.workdays.show.overtime.revoke_dialog.description',
                             {
                                 employee: target?.employee ?? '',
                                 date: target?.date ?? '',
@@ -81,14 +83,14 @@ export default function OvertimeObjectDialog({
                 <div className="grid gap-4 py-2">
                     <FormField
                         label={t(
-                            'ui.workdays.show.overtime.object_dialog.reason',
+                            'ui.workdays.show.overtime.revoke_dialog.reason',
                         )}
-                        htmlFor="overtime_object_reason"
+                        htmlFor="overtime_revoke_reason"
                         required
                         error={errors.reason}
                     >
                         <textarea
-                            id="overtime_object_reason"
+                            id="overtime_revoke_reason"
                             rows={3}
                             value={data.reason}
                             onChange={(event) =>
@@ -108,7 +110,7 @@ export default function OvertimeObjectDialog({
                         onClick={submit}
                         disabled={processing}
                     >
-                        {t('ui.workdays.show.overtime.object_dialog.submit')}
+                        {t('ui.workdays.show.overtime.revoke_dialog.submit')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
