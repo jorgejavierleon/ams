@@ -172,6 +172,18 @@ class OvertimeRestDayBalance extends Model
     }
 
     /**
+     * Lines that still carry spendable rest-hours: unexpired, with something
+     * left after consumption. The population KOL-48's notifier mails about —
+     * a fully-consumed or expired line has nothing left to alert on.
+     *
+     * @param  Builder<OvertimeRestDayBalance>  $query
+     */
+    public function scopeSpendable(Builder $query): void
+    {
+        $query->unexpired()->whereColumn('rest_hours', '>', 'consumed_hours');
+    }
+
+    /**
      * Unswept lines whose `expiry_date` has passed — the sweep's candidate
      * set, before the per-row remaining-balance check the service still has
      * to make in PHP (a zero-remaining line needs no expiry stamp).

@@ -47,6 +47,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property float $administrative_days
  * @property bool $has_additional_sundays
  * @property bool $overtime_rest_day_eligible
+ * @property Carbon|null $rest_day_balance_notified_at
  * @property string|null $nationality
  * @property string|null $gender
  * @property string|null $phone
@@ -141,6 +142,14 @@ class User extends Authenticatable implements HasMedia
     }
 
     /**
+     * @return HasMany<OvertimeRestDayBalance, $this>
+     */
+    public function restDayBalances(): HasMany
+    {
+        return $this->hasMany(OvertimeRestDayBalance::class);
+    }
+
+    /**
      * @return BelongsToMany<Shift, $this>
      */
     public function shifts(): BelongsToMany
@@ -174,6 +183,26 @@ class User extends Authenticatable implements HasMedia
     }
 
     /**
+     * Employees due for the rest-day balance notification (KOL-48,
+     * Resolución 38 art. 45.3): carrying spendable rest-day balance, and
+     * either never notified or last notified 30+ days ago. The cadence is
+     * per employee from their own {@see self::$rest_day_balance_notified_at},
+     * not from a global run date.
+     *
+     * @param  Builder<User>  $query
+     */
+    public function scopeDueForRestDayBalanceNotification(Builder $query): void
+    {
+        $query
+            ->whereHas('restDayBalances', fn (Builder $balances) => $balances
+                ->whereNull('expired_at')
+                ->whereColumn('rest_hours', '>', 'consumed_hours'))
+            ->where(fn (Builder $due) => $due
+                ->whereNull('rest_day_balance_notified_at')
+                ->orWhere('rest_day_balance_notified_at', '<=', Carbon::now()->subDays(30)));
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -192,11 +221,25 @@ class User extends Authenticatable implements HasMedia
             'administrative_days' => 'float',
             'has_additional_sundays' => 'boolean',
             'overtime_rest_day_eligible' => 'boolean',
+            'rest_day_balance_notified_at' => 'datetime',
             'is_dt' => 'boolean',
             'is_active' => 'boolean',
             'is_legal_rep' => 'boolean',
             'is_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * Stamp the rest-day balance notification as sent (KOL-48), so
+     * {@see self::scopeDueForRestDayBalanceNotification()} does not pick this
+     * employee again until the 30-day cadence elapses. Not mass-assignable on
+     * purpose — written from exactly one place, the scheduled notifier.
+     */
+    public function markRestDayBalanceNotified(): self
+    {
+        $this->forceFill(['rest_day_balance_notified_at' => now()])->save();
+
+        return $this;
     }
 
     public function hasActivePassword(): bool

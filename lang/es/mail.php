@@ -78,6 +78,15 @@ return [
         'action' => 'Ver pactos',
     ],
 
+    'rest_day_balance_accrued' => [
+        'subject' => 'Tus horas de descanso compensatorio y su vencimiento',
+        'heading' => 'Saldo de descanso compensatorio',
+        'body' => 'Tienes horas extraordinarias compensadas en días de descanso pendientes de usar. Revisa el detalle y sus fechas de vencimiento a continuación.',
+        'hours' => 'Horas',
+        'expiry_date' => 'Fecha de vencimiento',
+        'action' => 'Ver mi saldo',
+    ],
+
     'leave_approved' => [
         'subject' => 'Tu solicitud de permiso fue aprobada',
         'heading' => 'Solicitud de permiso aprobada',
