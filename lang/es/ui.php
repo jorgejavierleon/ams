@@ -1645,7 +1645,7 @@ return [
     'overtime' => [
         'index' => [
             'title' => 'Horas extra',
-            'description' => 'Gestión de horas extraordinarias, sus autorizaciones y pactos.',
+            'description' => 'Solicitudes de horas extra, pactos y saldo de descanso compensatorio.',
             'coming_soon' => 'Las pantallas de esta sección se irán habilitando próximamente.',
             'new_request' => 'Solicitar horas extra',
             'my_requests' => 'Mis solicitudes',
@@ -1908,114 +1908,6 @@ return [
                     'expiry_date' => 'Vence',
                     'status' => 'Estado',
                 ],
-            ],
-        ],
-
-        'queue' => [
-            'title' => 'Horas extra pendientes',
-            'description' => 'Aprueba las jornadas con horas extraordinarias, individualmente o en bloque.',
-            'back' => 'Volver a horas extra',
-            'empty' => 'No hay jornadas de horas extra para este filtro.',
-            'select_all' => 'Seleccionar todas las filas',
-            'select_row' => 'Seleccionar fila',
-            'selected' => ':count seleccionadas',
-
-            'tabs' => [
-                'all' => 'Todas',
-                'excess' => 'Jornadas',
-                'requests' => 'Solicitudes',
-            ],
-
-            'requests' => [
-                'empty' => 'No hay solicitudes de horas extra pendientes.',
-
-                'columns' => [
-                    'employee' => 'Empleado',
-                    'date' => 'Fecha',
-                    'requested_hours' => 'Horas solicitadas',
-                    'reason' => 'Motivo',
-                    'status' => 'Estado',
-                    'reviewed_by' => 'Decidido por',
-                ],
-
-                'actions' => [
-                    'approve' => 'Aprobar',
-                    'reject' => 'Rechazar',
-                ],
-
-                'approve_dialog' => [
-                    'title' => 'Aprobar solicitud',
-                    'description' => 'Solicitud de :employee para el :date. Aprobarla no genera horas pagables por sí sola; las horas trabajadas seguirán pasando por esta misma cola una vez calculadas.',
-                    'submit' => 'Aprobar',
-                ],
-
-                'reject_dialog' => [
-                    'title' => 'Rechazar solicitud',
-                    'description' => 'Solicitud de :employee para el :date. Rechazarla no le impide trabajar ese día.',
-                    'reason' => 'Motivo',
-                    'submit' => 'Rechazar',
-                ],
-
-                'flash' => [
-                    'approved' => 'Solicitud aprobada correctamente.',
-                    'rejected' => 'Solicitud rechazada correctamente.',
-                ],
-            ],
-
-            'columns' => [
-                'employee' => 'Empleado',
-                'date' => 'Fecha',
-                'calculated_hours' => 'Calculadas (OHC)',
-                'authorized_hours' => 'Autorizadas (OHA)',
-                'final_hours' => 'Pagables',
-                'status' => 'Estado',
-                'reviewed_by' => 'Decidido por',
-                'reason' => 'Motivo',
-            ],
-
-            'flags' => [
-                'label' => 'Con anomalías',
-                'tooltip' => 'Anomalías sin revisar, bloquean la aprobación: :reasons',
-            ],
-
-            'filters' => [
-                'employee' => 'Empleado',
-                'from' => 'Desde',
-                'to' => 'Hasta',
-            ],
-
-            'actions' => [
-                'approve' => 'Aprobar',
-            ],
-
-            'approve_dialog' => [
-                'title' => 'Aprobar horas extra',
-                'description' => 'Jornada de :employee del :date. Puedes autorizar menos horas de las calculadas.',
-                'authorized_hours' => 'Horas autorizadas',
-                'compensation_type' => 'Compensación',
-                'compensation_type_hint' => ':employee puede compensar horas extra con días de descanso.',
-                'reason' => 'Motivo',
-                'reason_hint' => 'Opcional, salvo que la jornada exceda un tope legal o no cuente con un pacto vigente.',
-                'submit' => 'Aprobar',
-            ],
-
-            'bulk' => [
-                'trigger_approve' => 'Aprobar seleccionadas',
-                'approve_title' => 'Aprobar horas extra en bloque',
-                'approve_description' => 'Se aprobarán íntegramente las :count jornadas seleccionadas. Una jornada con anomalías sin revisar, o que exceda un tope legal sin motivo, quedará pendiente.',
-                'reason' => 'Motivo',
-                'submit' => 'Confirmar',
-            ],
-
-            'errors' => [
-                'unresolved_anomalies' => 'No se puede aprobar: la jornada tiene anomalías sin revisar (:reasons). Corrige el dato de origen para desbloquear la aprobación.',
-                'reason_required' => 'Debes indicar un motivo: la jornada excede un tope legal o no cuenta con un pacto vigente.',
-                'not_eligible_for_rest_days' => 'Este empleado no está habilitado para compensar horas extra con días de descanso.',
-            ],
-
-            'flash' => [
-                'approved' => 'Horas extra aprobadas correctamente.',
-                'bulk_decided' => ':decided de :total jornadas decididas. Las demás quedaron pendientes por anomalías o topes sin justificar.',
             ],
         ],
     ],

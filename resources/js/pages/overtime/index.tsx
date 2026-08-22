@@ -15,14 +15,12 @@ import {
 } from '@/routes/my/overtime-requests';
 import { index as myRestDayBalanceIndex } from '@/routes/my/overtime-rest-day-balance';
 import { index as pactsIndex } from '@/routes/overtime/pacts';
-import { index as queueIndex } from '@/routes/overtime/queue';
 import { index as requestsIndex } from '@/routes/overtime/requests';
 import { index as restDayBalancesIndex } from '@/routes/overtime/rest-day-balances';
 
 type Props = {
     can: {
         managePacts: boolean;
-        viewQueue: boolean;
         request: boolean;
         viewRequests: boolean;
         manageRestDayBalances: boolean;
@@ -59,14 +57,6 @@ export default function OvertimeIndex({ can }: Props) {
                                     </Link>
                                 </Button>
                             </>
-                        )}
-                        {can.viewQueue && (
-                            <Button variant="outline" asChild>
-                                <Link href={queueIndex()}>
-                                    <ListChecks className="size-4" />
-                                    {t('ui.overtime.queue.title')}
-                                </Link>
-                            </Button>
                         )}
                         {can.viewRequests && (
                             <Button variant="outline" asChild>

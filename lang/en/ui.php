@@ -1642,7 +1642,7 @@ return [
     'overtime' => [
         'index' => [
             'title' => 'Overtime',
-            'description' => 'Manage overtime authorizations and pactos.',
+            'description' => 'Overtime requests, pactos and rest-day compensation balances.',
             'coming_soon' => 'The screens in this section will be enabled progressively.',
             'new_request' => 'Request overtime',
             'my_requests' => 'My requests',
@@ -1905,114 +1905,6 @@ return [
                     'expiry_date' => 'Expires',
                     'status' => 'Status',
                 ],
-            ],
-        ],
-
-        'queue' => [
-            'title' => 'Pending overtime',
-            'description' => 'Approve overtime workdays, individually or in bulk.',
-            'back' => 'Back to overtime',
-            'empty' => 'No overtime workdays for this filter.',
-            'select_all' => 'Select all rows',
-            'select_row' => 'Select row',
-            'selected' => ':count selected',
-
-            'tabs' => [
-                'all' => 'All',
-                'excess' => 'Workdays',
-                'requests' => 'Requests',
-            ],
-
-            'requests' => [
-                'empty' => 'No pending overtime requests.',
-
-                'columns' => [
-                    'employee' => 'Employee',
-                    'date' => 'Date',
-                    'requested_hours' => 'Requested hours',
-                    'reason' => 'Reason',
-                    'status' => 'Status',
-                    'reviewed_by' => 'Decided by',
-                ],
-
-                'actions' => [
-                    'approve' => 'Approve',
-                    'reject' => 'Reject',
-                ],
-
-                'approve_dialog' => [
-                    'title' => 'Approve request',
-                    'description' => 'Request from :employee for :date. Approving it does not by itself create payable hours; worked hours will still pass through this same queue once calculated.',
-                    'submit' => 'Approve',
-                ],
-
-                'reject_dialog' => [
-                    'title' => 'Reject request',
-                    'description' => 'Request from :employee for :date. Rejecting it does not stop them from working that day.',
-                    'reason' => 'Reason',
-                    'submit' => 'Reject',
-                ],
-
-                'flash' => [
-                    'approved' => 'Request approved successfully.',
-                    'rejected' => 'Request rejected successfully.',
-                ],
-            ],
-
-            'columns' => [
-                'employee' => 'Employee',
-                'date' => 'Date',
-                'calculated_hours' => 'Calculated (OHC)',
-                'authorized_hours' => 'Authorised (OHA)',
-                'final_hours' => 'Payable',
-                'status' => 'Status',
-                'reviewed_by' => 'Decided by',
-                'reason' => 'Reason',
-            ],
-
-            'flags' => [
-                'label' => 'Has anomalies',
-                'tooltip' => 'Unreviewed anomalies block approval: :reasons',
-            ],
-
-            'filters' => [
-                'employee' => 'Employee',
-                'from' => 'From',
-                'to' => 'To',
-            ],
-
-            'actions' => [
-                'approve' => 'Approve',
-            ],
-
-            'approve_dialog' => [
-                'title' => 'Approve overtime',
-                'description' => ":employee's workday for :date. You may authorise fewer hours than calculated.",
-                'authorized_hours' => 'Authorised hours',
-                'compensation_type' => 'Compensation',
-                'compensation_type_hint' => ':employee is eligible to compensate overtime with rest days.',
-                'reason' => 'Reason',
-                'reason_hint' => 'Optional, unless the workday exceeds a legal cap or has no covering pacto.',
-                'submit' => 'Approve',
-            ],
-
-            'bulk' => [
-                'trigger_approve' => 'Approve selected',
-                'approve_title' => 'Bulk-approve overtime',
-                'approve_description' => 'The :count selected workdays will be approved in full. A workday with unreviewed anomalies, or exceeding a legal cap without a reason, is left pending.',
-                'reason' => 'Reason',
-                'submit' => 'Confirm',
-            ],
-
-            'errors' => [
-                'unresolved_anomalies' => 'Cannot approve: the workday has unreviewed anomalies (:reasons). Correct the underlying data to unblock approval.',
-                'reason_required' => 'A reason is required: the workday exceeds a legal cap or has no covering pacto.',
-                'not_eligible_for_rest_days' => 'This employee is not eligible to compensate overtime with rest days.',
-            ],
-
-            'flash' => [
-                'approved' => 'Overtime approved successfully.',
-                'bulk_decided' => ':decided of :total workdays decided. The rest were left pending for unreviewed anomalies or unjustified caps.',
             ],
         ],
     ],

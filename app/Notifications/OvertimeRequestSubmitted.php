@@ -33,7 +33,7 @@ class OvertimeRequestSubmitted extends Notification implements ShouldQueue
             ->subject(__('mail.overtime_request_submitted.subject'))
             ->markdown('mail.overtime-requests.submitted', [
                 'overtimeRequest' => $this->overtimeRequest,
-                'url' => route('overtime.queue.index'),
+                'url' => route('overtime.requests.index'),
             ]);
     }
 }
