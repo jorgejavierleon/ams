@@ -28,7 +28,6 @@ use App\Http\Controllers\My\OvertimeRestDayBalanceController as MyOvertimeRestDa
 use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OvertimePactController;
-use App\Http\Controllers\OvertimeQueueController;
 use App\Http\Controllers\OvertimeRequestController;
 use App\Http\Controllers\OvertimeRestDayBalanceController;
 use App\Http\Controllers\PositionController;
@@ -203,23 +202,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/{overtimePact}', [OvertimePactController::class, 'update'])->name('update');
             Route::patch('/{overtimePact}/revoke', [OvertimePactController::class, 'revoke'])->name('revoke');
             Route::patch('/{overtimePact}/activate', [OvertimePactController::class, 'activate'])->name('activate');
-        });
-
-    // Pending-overtime queue (KOL-44, PRD §7.5): reachable by whoever can see a
-    // team's overtime; deciding it further requires ApproveTeam, enforced in
-    // OvertimeQueueController/OvertimeAuthorizationPolicy per request.
-    Route::middleware('permission:ViewTeam:OvertimeAuthorization|Manage:OvertimeAuthorization')
-        ->prefix('overtime/queue')
-        ->name('overtime.queue.')
-        ->group(function () {
-            Route::get('/', [OvertimeQueueController::class, 'index'])->name('index');
-            Route::post('/decide-bulk', [OvertimeQueueController::class, 'bulkDecide'])->name('bulk-decide');
-            Route::post('/{overtimeAuthorization}/approve', [OvertimeQueueController::class, 'approve'])->name('approve');
-
-            // Mode A requests (KOL-45): decided in this same queue rather than
-            // a separate inbox.
-            Route::post('/requests/{overtimeRequest}/approve', [OvertimeQueueController::class, 'approveRequest'])->name('requests.approve');
-            Route::post('/requests/{overtimeRequest}/reject', [OvertimeQueueController::class, 'rejectRequest'])->name('requests.reject');
         });
 
     // Mode A overtime requests (KOL-72), extracted from the queue's

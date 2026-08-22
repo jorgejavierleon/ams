@@ -4,7 +4,7 @@ title: Add a read-only Horas extra aprobadas ledger
 status: To Do
 assignee: []
 created_date: '2026-08-17 19:08'
-updated_date: '2026-08-19 09:54'
+updated_date: '2026-08-21 09:50'
 labels:
   - overtime
   - backend
@@ -37,3 +37,13 @@ Once overtime approval moves onto Jornadas (KOL-71) and the queue concept disapp
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @jorge
+created: 2026-08-21 09:50
+---
+Dropped per user decision on 2026-08-21: the Horas extra aprobadas ledger is not needed. KOL-74 amended to a 3-link hub (Solicitudes, Pactos, Saldo de descanso) and its dependency on this task removed.
+---
+<!-- COMMENTS:END -->

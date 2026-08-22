@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-16 15:33'
-updated_date: '2026-08-17 19:08'
+updated_date: '2026-08-21 09:54'
 labels:
   - overtime
   - frontend
@@ -48,5 +48,11 @@ KOL-66 adds a direct sidebar link to the overtime queue, but only in the admin n
 created: 2026-08-17 19:08
 ---
 Flagged while planning the Jornadas-overtime refactor (KOL-71..74): once KOL-74 ships, /overtime/queue no longer exists, so this task's premise ('a direct overtime-queue link') is gone. Needs rescoping once KOL-74 lands — likely 'a direct Jornadas link filtered to pending overtime' for supervisor-employees, plus the admin-Pactos-link half may still stand as originally scoped. Do not implement as currently written.
+---
+
+author: @jorge
+created: 2026-08-21 09:54
+---
+Closed as superseded by KOL-74 on 2026-08-21: with the queue decommissioned, this task's premise (a direct sidebar link to /overtime/queue for supervisor-employees) no longer applies. The admin-Pactos-link half (AC #2/#3) may still be worth doing, and a supervisor-facing 'pending overtime' shortcut into Jornadas could replace the queue-link idea, but both are new scope requiring fresh design -- not implemented as part of KOL-74. Archiving; re-create as a fresh task if wanted.
 ---
 <!-- COMMENTS:END -->
