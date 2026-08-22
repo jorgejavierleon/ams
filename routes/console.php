@@ -29,3 +29,11 @@ Schedule::command('overtime:pacts:notify-expiring')->dailyAt('07:00');
 // §4). Once a day is enough — the window is months, not hours — and the
 // sweep is idempotent on `expired_at`.
 Schedule::command('overtime:rest-day-balances:sweep-expired')->dailyAt('07:00');
+
+// KOL-48, Resolución 38 art. 45.3: a hard compliance requirement, not a
+// convenience — the worker must be told every 30 days what rest-day balance
+// they hold and when each accrual expires. The cadence is per employee, not
+// per run: the daily check only mails whoever's own 30-day window has
+// elapsed (or who has never been notified), and is idempotent on
+// `rest_day_balance_notified_at`.
+Schedule::command('overtime:rest-day-balances:notify')->dailyAt('07:00');
