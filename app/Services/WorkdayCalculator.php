@@ -447,7 +447,7 @@ class WorkdayCalculator
             $reasons[] = AnomalyFlagReason::OutsideGeofence;
         }
 
-        $weeklyTotalSeconds = $weeklyOtherDaysSeconds + (Duration::tryFrom($calculatedOvertime)?->seconds ?? 0);
+        $weeklyTotalSeconds = $weeklyOtherDaysSeconds + (Duration::tryFrom($calculatedOvertime)->seconds ?? 0);
         $thresholdSeconds = (int) round($this->organizationSettings->overtimeWeeklyAnomalyThresholdHours($row->organization_id) * 3600);
 
         if ($weeklyTotalSeconds > $thresholdSeconds) {
@@ -491,7 +491,7 @@ class WorkdayCalculator
             return null;
         }
 
-        return json_encode(array_map(fn (AnomalyFlagReason $reason): string => $reason->value, $reasons));
+        return json_encode(array_map(fn (AnomalyFlagReason $reason): string => $reason->value, $reasons), JSON_THROW_ON_ERROR);
     }
 
     /**
