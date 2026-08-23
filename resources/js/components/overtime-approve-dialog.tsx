@@ -65,10 +65,10 @@ export default function OvertimeApproveDialog({
         clearErrors,
         transform,
     } = useForm({
-            authorized_hours: '',
-            compensation_type: 'payment',
-            reason: '',
-        });
+        authorized_hours: '',
+        compensation_type: 'payment',
+        reason: '',
+    });
 
     useEffect(() => {
         if (open && target) {
@@ -199,7 +199,10 @@ export default function OvertimeApproveDialog({
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
                         {t('ui.common.cancel')}
                     </Button>
                     <Button onClick={submit} disabled={processing}>

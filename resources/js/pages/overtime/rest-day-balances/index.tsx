@@ -66,9 +66,7 @@ export default function OvertimeRestDayBalancesIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <span className="font-medium">
-                        {row.original.employee}
-                    </span>
+                    <span className="font-medium">{row.original.employee}</span>
                 ),
             },
             {
@@ -101,9 +99,7 @@ export default function OvertimeRestDayBalancesIndex({
                     ),
                 },
                 header: () =>
-                    t(
-                        'ui.overtime.rest_day_balances.columns.consumed_hours',
-                    ),
+                    t('ui.overtime.rest_day_balances.columns.consumed_hours'),
                 cell: ({ row }) => row.original.consumed_hours,
             },
             {
@@ -114,9 +110,7 @@ export default function OvertimeRestDayBalancesIndex({
                     ),
                 },
                 header: () =>
-                    t(
-                        'ui.overtime.rest_day_balances.columns.remaining_hours',
-                    ),
+                    t('ui.overtime.rest_day_balances.columns.remaining_hours'),
                 cell: ({ row }) => (
                     <span className="font-medium">
                         {row.original.remaining_hours}
@@ -145,8 +139,7 @@ export default function OvertimeRestDayBalancesIndex({
                 meta: {
                     title: t('ui.overtime.rest_day_balances.columns.status'),
                 },
-                header: () =>
-                    t('ui.overtime.rest_day_balances.columns.status'),
+                header: () => t('ui.overtime.rest_day_balances.columns.status'),
                 cell: ({ row }) => (
                     <div className="flex flex-col gap-1">
                         <Badge variant={row.original.status.variant}>

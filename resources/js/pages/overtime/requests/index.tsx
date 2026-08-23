@@ -65,8 +65,9 @@ export default function OvertimeRequestsIndex({
 
     const [approveTarget, setApproveTarget] =
         useState<OvertimeRequestRow | null>(null);
-    const [rejectTarget, setRejectTarget] =
-        useState<OvertimeRequestRow | null>(null);
+    const [rejectTarget, setRejectTarget] = useState<OvertimeRequestRow | null>(
+        null,
+    );
 
     const approveForm = useForm({});
     const rejectForm = useForm({ reason: '' });
@@ -117,7 +118,9 @@ export default function OvertimeRequestsIndex({
             {
                 id: 'employee',
                 enableSorting: false,
-                meta: { title: t('ui.overtime.requests.review.columns.employee') },
+                meta: {
+                    title: t('ui.overtime.requests.review.columns.employee'),
+                },
                 header: () => t('ui.overtime.requests.review.columns.employee'),
                 cell: ({ row }) => row.original.employee ?? '—',
             },
@@ -144,14 +147,18 @@ export default function OvertimeRequestsIndex({
             {
                 id: 'reason',
                 enableSorting: false,
-                meta: { title: t('ui.overtime.requests.review.columns.reason') },
+                meta: {
+                    title: t('ui.overtime.requests.review.columns.reason'),
+                },
                 header: () => t('ui.overtime.requests.review.columns.reason'),
                 cell: ({ row }) => row.original.reason ?? '—',
             },
             {
                 id: 'status',
                 enableSorting: false,
-                meta: { title: t('ui.overtime.requests.review.columns.status') },
+                meta: {
+                    title: t('ui.overtime.requests.review.columns.status'),
+                },
                 header: () => t('ui.overtime.requests.review.columns.status'),
                 cell: ({ row }) => (
                     <span
@@ -271,7 +278,9 @@ export default function OvertimeRequestsIndex({
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            {t('ui.overtime.requests.review.approve_dialog.title')}
+                            {t(
+                                'ui.overtime.requests.review.approve_dialog.title',
+                            )}
                         </DialogTitle>
                         <DialogDescription>
                             {t(
@@ -295,7 +304,9 @@ export default function OvertimeRequestsIndex({
                             onClick={submitApprove}
                             disabled={approveForm.processing}
                         >
-                            {t('ui.overtime.requests.review.approve_dialog.submit')}
+                            {t(
+                                'ui.overtime.requests.review.approve_dialog.submit',
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -308,7 +319,9 @@ export default function OvertimeRequestsIndex({
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            {t('ui.overtime.requests.review.reject_dialog.title')}
+                            {t(
+                                'ui.overtime.requests.review.reject_dialog.title',
+                            )}
                         </DialogTitle>
                         <DialogDescription>
                             {t(
@@ -357,7 +370,9 @@ export default function OvertimeRequestsIndex({
                             onClick={submitReject}
                             disabled={rejectForm.processing}
                         >
-                            {t('ui.overtime.requests.review.reject_dialog.submit')}
+                            {t(
+                                'ui.overtime.requests.review.reject_dialog.submit',
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -106,7 +106,10 @@ export default function OrganizationsIndex({ organizations, filters }: Props) {
             {
                 id: 'actions',
                 enableHiding: false,
-                meta: { headClassName: 'text-right', cellClassName: 'text-right' },
+                meta: {
+                    headClassName: 'text-right',
+                    cellClassName: 'text-right',
+                },
                 header: () => null,
                 cell: ({ row }) => (
                     <div className="flex justify-end gap-2">

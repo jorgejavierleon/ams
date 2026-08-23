@@ -543,9 +543,7 @@ export default function EmployeeForm({
                             }
                         />
                         <Label htmlFor="overtime_rest_day_eligible">
-                            {t(
-                                'ui.employees.form.overtime_rest_day_eligible',
-                            )}
+                            {t('ui.employees.form.overtime_rest_day_eligible')}
                         </Label>
                     </div>
                 </TabsContent>

@@ -1,11 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import {
-    CalendarClock,
-    FileText,
-    ListChecks,
-    Plus,
-    Timer,
-} from 'lucide-react';
+import { CalendarClock, FileText, ListChecks, Plus, Timer } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';

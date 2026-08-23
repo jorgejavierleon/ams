@@ -42,7 +42,9 @@ export default function DtPasswordChange() {
                                 autoComplete="new-password"
                                 placeholder="Confirmar clave"
                             />
-                            <InputError message={errors.password_confirmation} />
+                            <InputError
+                                message={errors.password_confirmation}
+                            />
                         </div>
 
                         <Button
@@ -63,5 +65,6 @@ export default function DtPasswordChange() {
 
 DtPasswordChange.layout = {
     title: 'Cambiar clave – Portal DT',
-    description: 'Su clave ha expirado. Por favor establezca una nueva clave para continuar.',
+    description:
+        'Su clave ha expirado. Por favor establezca una nueva clave para continuar.',
 };

@@ -38,16 +38,8 @@ export default function CostCenterFormDialog({
 }: Props) {
     const { t } = useTranslations();
     const isEdit = Boolean(costCenter);
-    const {
-        data,
-        setData,
-        post,
-        put,
-        processing,
-        errors,
-        reset,
-        clearErrors,
-    } = useForm<FormData>({ name: '', code: '' });
+    const { data, setData, post, put, processing, errors, reset, clearErrors } =
+        useForm<FormData>({ name: '', code: '' });
 
     // Sync the fields with the target whenever the dialog is (re)opened.
     useEffect(() => {

@@ -4,6 +4,7 @@ import type { FormEvent } from 'react';
 import { Combobox } from '@/components/combobox';
 import type { ComboboxOption } from '@/components/combobox';
 import { FormField } from '@/components/form-field';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -11,7 +12,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslations } from '@/hooks/use-translations';
@@ -50,16 +50,8 @@ export default function OvertimePactFormDialog({
 }: Props) {
     const { t } = useTranslations();
     const isEdit = Boolean(pact);
-    const {
-        data,
-        setData,
-        post,
-        put,
-        processing,
-        errors,
-        reset,
-        clearErrors,
-    } = useForm<FormData>({ user_id: '', start_date: '', end_date: '' });
+    const { data, setData, post, put, processing, errors, reset, clearErrors } =
+        useForm<FormData>({ user_id: '', start_date: '', end_date: '' });
 
     // Sync the fields with the target whenever the dialog is (re)opened.
     useEffect(() => {
@@ -121,9 +113,7 @@ export default function OvertimePactFormDialog({
                                 id="user_id"
                                 options={employeeOptions ?? []}
                                 value={data.user_id}
-                                onChange={(value) =>
-                                    setData('user_id', value)
-                                }
+                                onChange={(value) => setData('user_id', value)}
                                 placeholder={t(
                                     'ui.overtime.pacts.form.employee_placeholder',
                                 )}

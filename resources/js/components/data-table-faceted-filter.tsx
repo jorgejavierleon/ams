@@ -82,16 +82,16 @@ export function DataTableFacetedFilter({
             </PopoverTrigger>
             <PopoverContent className="w-56 p-0" align="start">
                 <Command>
-                    <CommandInput
-                        placeholder={searchPlaceholder ?? title}
-                    />
+                    <CommandInput placeholder={searchPlaceholder ?? title} />
                     <CommandList>
                         <CommandEmpty>
                             {emptyLabel ?? t('ui.common.data_table.empty')}
                         </CommandEmpty>
                         <CommandGroup>
                             {options.map((option) => {
-                                const isSelected = selectedSet.has(option.value);
+                                const isSelected = selectedSet.has(
+                                    option.value,
+                                );
 
                                 return (
                                     <CommandItem

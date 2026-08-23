@@ -102,7 +102,8 @@ export default function AuditLogIndex({
             date_from: dateFrom || undefined,
             date_to: dateTo || undefined,
             causer_id: causerId !== ALL ? causerId : undefined,
-            organization_id: organizationId !== ALL ? organizationId : undefined,
+            organization_id:
+                organizationId !== ALL ? organizationId : undefined,
         }),
         [dateFrom, dateTo, causerId, organizationId],
     );

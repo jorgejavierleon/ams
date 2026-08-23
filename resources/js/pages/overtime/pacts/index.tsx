@@ -47,9 +47,7 @@ export default function OvertimePactsIndex({
     const { t } = useTranslations();
     const [formOpen, setFormOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<OvertimePactFormTarget>(null);
-    const [revokeTarget, setRevokeTarget] = useState<OvertimePact | null>(
-        null,
-    );
+    const [revokeTarget, setRevokeTarget] = useState<OvertimePact | null>(null);
 
     const columns = useMemo<ColumnDef<OvertimePact>[]>(
         () => [
@@ -63,9 +61,7 @@ export default function OvertimePactsIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <span className="font-medium">
-                        {row.original.employee}
-                    </span>
+                    <span className="font-medium">{row.original.employee}</span>
                 ),
             },
             {
@@ -191,9 +187,7 @@ export default function OvertimePactsIndex({
                     <div className="flex flex-1 items-center justify-between gap-4">
                         <Heading
                             title={t('ui.overtime.pacts.title')}
-                            description={t(
-                                'ui.overtime.pacts.description',
-                            )}
+                            description={t('ui.overtime.pacts.description')}
                         />
                         <Button onClick={openCreate}>
                             <Plus className="size-4" />
@@ -226,10 +220,9 @@ export default function OvertimePactsIndex({
                 open={revokeTarget !== null}
                 onOpenChange={(open) => !open && setRevokeTarget(null)}
                 title={t('ui.overtime.pacts.revoke_dialog.title')}
-                description={t(
-                    'ui.overtime.pacts.revoke_dialog.description',
-                    { employee: revokeTarget?.employee ?? '' },
-                )}
+                description={t('ui.overtime.pacts.revoke_dialog.description', {
+                    employee: revokeTarget?.employee ?? '',
+                })}
                 confirmLabel={t('ui.overtime.pacts.revoke_dialog.confirm')}
                 onConfirm={confirmRevoke}
             />

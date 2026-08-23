@@ -971,7 +971,8 @@ export default function WorkdayDetail({
                                             )}
 
                                             <div className="text-[12.5px] text-muted-foreground">
-                                                {entry.kind === 'mark_modification' &&
+                                                {entry.kind ===
+                                                    'mark_modification' &&
                                                     entry.created_by && (
                                                         <>
                                                             {t(
@@ -1024,7 +1025,8 @@ export default function WorkdayDetail({
                                                 )}
                                             </div>
 
-                                            {entry.kind === 'mark_modification' &&
+                                            {entry.kind ===
+                                                'mark_modification' &&
                                                 entry.can_review && (
                                                     <div className="mt-3 flex gap-2">
                                                         <Button
@@ -1032,11 +1034,13 @@ export default function WorkdayDetail({
                                                             variant="outline"
                                                             className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
                                                             onClick={() =>
-                                                                setReviewTarget({
-                                                                    action: 'approve',
-                                                                    modification:
-                                                                        entry,
-                                                                })
+                                                                setReviewTarget(
+                                                                    {
+                                                                        action: 'approve',
+                                                                        modification:
+                                                                            entry,
+                                                                    },
+                                                                )
                                                             }
                                                         >
                                                             <Check className="size-4" />
@@ -1048,11 +1052,13 @@ export default function WorkdayDetail({
                                                             size="sm"
                                                             variant="outline"
                                                             onClick={() =>
-                                                                setReviewTarget({
-                                                                    action: 'decline',
-                                                                    modification:
-                                                                        entry,
-                                                                })
+                                                                setReviewTarget(
+                                                                    {
+                                                                        action: 'decline',
+                                                                        modification:
+                                                                            entry,
+                                                                    },
+                                                                )
                                                             }
                                                         >
                                                             <X className="size-4" />

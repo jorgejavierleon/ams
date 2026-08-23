@@ -113,7 +113,10 @@ export default function HolidaysIndex({ holidays, filters }: Props) {
             {
                 id: 'actions',
                 enableHiding: false,
-                meta: { headClassName: 'text-right', cellClassName: 'text-right' },
+                meta: {
+                    headClassName: 'text-right',
+                    cellClassName: 'text-right',
+                },
                 header: () => null,
                 cell: ({ row }) => {
                     // Official holidays are shared and cannot be edited by tenants.

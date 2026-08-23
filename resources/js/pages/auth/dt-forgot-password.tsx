@@ -59,5 +59,6 @@ export default function DtForgotPassword({ status }: { status?: string }) {
 
 DtForgotPassword.layout = {
     title: 'Solicitar clave – Portal DT',
-    description: 'Ingrese su correo @dt.gov.cl para recibir una clave de acceso',
+    description:
+        'Ingrese su correo @dt.gov.cl para recibir una clave de acceso',
 };

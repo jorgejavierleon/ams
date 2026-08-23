@@ -10,6 +10,8 @@ export default function AdminLayout({
     children: ReactNode;
 }) {
     return (
-        <AppSidebarLayout breadcrumbs={breadcrumbs}>{children}</AppSidebarLayout>
+        <AppSidebarLayout breadcrumbs={breadcrumbs}>
+            {children}
+        </AppSidebarLayout>
     );
 }

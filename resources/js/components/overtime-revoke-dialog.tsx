@@ -102,7 +102,10 @@ export default function OvertimeRevokeDialog({
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
                         {t('ui.common.cancel')}
                     </Button>
                     <Button

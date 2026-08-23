@@ -13,7 +13,10 @@ type DataTablePaginationProps = {
  * Server-side pagination footer for a Laravel paginated response. Uses
  * Inertia `<Link>`s so navigation is a partial visit preserving scroll/state.
  */
-export function DataTablePagination({ meta, children }: DataTablePaginationProps) {
+export function DataTablePagination({
+    meta,
+    children,
+}: DataTablePaginationProps) {
     const { t } = useTranslations();
 
     return (

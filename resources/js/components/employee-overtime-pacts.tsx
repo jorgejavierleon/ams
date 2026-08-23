@@ -120,21 +120,15 @@ export function EmployeeOvertimePacts({
                                         )}
                                     </TableHead>
                                     <TableHead>
-                                        {t(
-                                            'ui.overtime.pacts.columns.status',
-                                        )}
+                                        {t('ui.overtime.pacts.columns.status')}
                                     </TableHead>
-                                    {canManage && (
-                                        <TableHead className="w-0" />
-                                    )}
+                                    {canManage && <TableHead className="w-0" />}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {pacts.map((pact) => (
                                     <TableRow key={pact.id}>
-                                        <TableCell>
-                                            {pact.start_date}
-                                        </TableCell>
+                                        <TableCell>{pact.start_date}</TableCell>
                                         <TableCell>{pact.end_date}</TableCell>
                                         <TableCell>
                                             <Badge
@@ -180,9 +174,7 @@ export function EmployeeOvertimePacts({
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() =>
-                                                                reactivate(
-                                                                    pact,
-                                                                )
+                                                                reactivate(pact)
                                                             }
                                                         >
                                                             {t(

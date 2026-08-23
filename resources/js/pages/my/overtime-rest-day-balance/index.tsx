@@ -123,9 +123,7 @@ export default function MyOvertimeRestDayBalanceIndex({
                                         <TableCell>
                                             {line.accrued_hours}
                                         </TableCell>
-                                        <TableCell>
-                                            {line.rest_hours}
-                                        </TableCell>
+                                        <TableCell>{line.rest_hours}</TableCell>
                                         <TableCell>
                                             {line.consumed_hours}
                                         </TableCell>
@@ -137,9 +135,7 @@ export default function MyOvertimeRestDayBalanceIndex({
                                         </TableCell>
                                         <TableCell>
                                             <Badge
-                                                variant={
-                                                    line.status.variant
-                                                }
+                                                variant={line.status.variant}
                                             >
                                                 {line.status.label}
                                             </Badge>

@@ -1,4 +1,8 @@
-import type { DatesSetArg, EventClickArg, EventInput } from '@fullcalendar/core';
+import type {
+    DatesSetArg,
+    EventClickArg,
+    EventInput,
+} from '@fullcalendar/core';
 import { Head, useHttp } from '@inertiajs/react';
 import {
     lazy,
@@ -142,7 +146,10 @@ export default function LeavesCalendar({ leaveTypes }: Props) {
                     <span
                         aria-hidden
                         className="pointer-events-none fixed"
-                        style={{ left: selected?.x ?? 0, top: selected?.y ?? 0 }}
+                        style={{
+                            left: selected?.x ?? 0,
+                            top: selected?.y ?? 0,
+                        }}
                     />
                 </PopoverAnchor>
 

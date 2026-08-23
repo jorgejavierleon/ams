@@ -104,7 +104,7 @@ export default function IncidentsReport({ options, filters, report }: Props) {
                                                     <TableCell className="font-medium whitespace-nowrap tabular-nums">
                                                         {incident.start_time}
                                                     </TableCell>
-                                                    <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">
+                                                    <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
                                                         {incident.end_time ?? (
                                                             <span className="font-medium text-destructive">
                                                                 {t(

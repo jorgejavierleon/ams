@@ -608,7 +608,7 @@ export default function WorkdaysIndex({
                 ),
             },
         ],
-         
+
         [t, openModify, can.decideOvertime],
     );
 
@@ -1012,9 +1012,12 @@ export default function WorkdaysIndex({
                             {t('ui.workdays.overtime.bulk.approve_title')}
                         </DialogTitle>
                         <DialogDescription>
-                            {t('ui.workdays.overtime.bulk.approve_description', {
-                                count: bulkOvertimeTargets.length,
-                            })}
+                            {t(
+                                'ui.workdays.overtime.bulk.approve_description',
+                                {
+                                    count: bulkOvertimeTargets.length,
+                                },
+                            )}
                         </DialogDescription>
                     </DialogHeader>
 

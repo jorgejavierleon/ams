@@ -21,14 +21,17 @@ export function useFlashToast(): void {
         });
 
         const unsubscribeNavigate = router.on('navigate', (event) => {
-            const flash = (event.detail.page.props as { flash?: FlashProps }).flash;
+            const flash = (event.detail.page.props as { flash?: FlashProps })
+                .flash;
 
             if (flash?.success) {
                 toast.success(flash.success);
             }
+
             if (flash?.error) {
                 toast.error(flash.error);
             }
+
             if (flash?.warning) {
                 toast.warning(flash.warning);
             }
