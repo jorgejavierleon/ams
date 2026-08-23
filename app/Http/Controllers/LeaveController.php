@@ -78,6 +78,7 @@ class LeaveController extends Controller
                 'status' => $leave->status->value,
                 'status_label' => $leave->status->label(),
                 'approved_by' => $leave->approver?->name,
+                'rejection_reason' => $leave->rejection_reason,
                 'is_medical' => $leave->type === LeaveType::Medical,
                 'medical_leave_number' => $leave->medical_leave_number,
                 'medical_leave_doctor' => $leave->medical_leave_doctor,
@@ -222,14 +223,18 @@ class LeaveController extends Controller
     /**
      * @throws Throwable
      */
-    public function reject(Leave $leave, LeaveManager $manager): RedirectResponse
+    public function reject(Request $request, Leave $leave, LeaveManager $manager): RedirectResponse
     {
         Gate::authorize('reject', $leave);
 
         // Medical leaves are auto-approved and cannot be rejected.
         abort_if($leave->status === LeaveStatus::Rejected || $leave->type === LeaveType::Medical, 403);
 
-        $manager->reject($leave);
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $manager->reject($leave, $data['reason']);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.leaves.flash.rejected')]);
 

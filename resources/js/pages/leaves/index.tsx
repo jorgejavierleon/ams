@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, Eye, MoreVertical, Plus, Trash2, X } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -8,6 +8,7 @@ import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import type { FacetedOption } from '@/components/data-table-faceted-filter';
+import { FormField } from '@/components/form-field';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ type Leave = {
     status: string;
     status_label: string;
     approved_by: string | null;
+    rejection_reason: string | null;
     is_medical: boolean;
     medical_leave_number: string | null;
     medical_leave_doctor: string | null;
@@ -111,6 +113,8 @@ export default function LeavesIndex({
     const [rejectTarget, setRejectTarget] = useState<Leave | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<Leave | null>(null);
 
+    const rejectForm = useForm({ reason: '' });
+
     const extraParams = useMemo(
         () => ({
             status: status === 'all' ? undefined : status,
@@ -144,19 +148,24 @@ export default function LeavesIndex({
         );
     }
 
+    function openReject(row: Leave) {
+        rejectForm.clearErrors();
+        rejectForm.setData('reason', '');
+        setRejectTarget(row);
+    }
+
     function confirmReject() {
         if (!rejectTarget) {
             return;
         }
 
-        router.post(
-            reject(rejectTarget.id).url,
-            {},
-            {
-                preserveScroll: true,
-                onFinish: () => setRejectTarget(null),
+        rejectForm.post(reject(rejectTarget.id).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                rejectForm.reset();
+                setRejectTarget(null);
             },
-        );
+        });
     }
 
     function confirmDelete() {
@@ -295,9 +304,7 @@ export default function LeavesIndex({
                                     variant="ghost"
                                     size="icon"
                                     className="text-destructive hover:text-destructive"
-                                    onClick={() =>
-                                        setRejectTarget(row.original)
-                                    }
+                                    onClick={() => openReject(row.original)}
                                     aria-label={t('ui.leaves.actions.reject')}
                                 >
                                     <X className="size-4" />
@@ -340,6 +347,7 @@ export default function LeavesIndex({
                 ),
             },
         ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [t, can.delete, can.approve],
     );
 
@@ -485,6 +493,17 @@ export default function LeavesIndex({
                                         t('ui.leaves.detail.none')
                                     }
                                 />
+                                {viewTarget.status === 'rejected' && (
+                                    <DetailRow
+                                        label={t(
+                                            'ui.leaves.detail.rejection_reason',
+                                        )}
+                                        value={
+                                            viewTarget.rejection_reason ??
+                                            t('ui.leaves.detail.none')
+                                        }
+                                    />
+                                )}
                                 <DetailRow
                                     label={t('ui.leaves.detail.created_at')}
                                     value={
@@ -558,7 +577,7 @@ export default function LeavesIndex({
                                     variant="outline"
                                     className="text-destructive hover:text-destructive"
                                     onClick={() => {
-                                        setRejectTarget(viewTarget);
+                                        openReject(viewTarget);
                                         setViewTarget(null);
                                     }}
                                 >
@@ -594,16 +613,61 @@ export default function LeavesIndex({
                 onConfirm={confirmApprove}
             />
 
-            <ConfirmDialog
+            <Dialog
                 open={rejectTarget !== null}
                 onOpenChange={(open) => !open && setRejectTarget(null)}
-                title={t('ui.leaves.reject_dialog.title')}
-                description={t('ui.leaves.reject_dialog.description', {
-                    name: rejectTarget?.employee ?? '',
-                })}
-                confirmLabel={t('ui.leaves.actions.reject')}
-                onConfirm={confirmReject}
-            />
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('ui.leaves.reject_dialog.title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('ui.leaves.reject_dialog.description', {
+                                name: rejectTarget?.employee ?? '',
+                            })}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-2">
+                        <FormField
+                            label={t('ui.leaves.reject_dialog.reason')}
+                            htmlFor="leave_reject_reason"
+                            required
+                            error={rejectForm.errors.reason}
+                        >
+                            <textarea
+                                id="leave_reject_reason"
+                                rows={3}
+                                value={rejectForm.data.reason}
+                                onChange={(event) =>
+                                    rejectForm.setData(
+                                        'reason',
+                                        event.target.value,
+                                    )
+                                }
+                                className="flex min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </FormField>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setRejectTarget(null)}
+                        >
+                            {t('ui.common.cancel')}
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={confirmReject}
+                            disabled={rejectForm.processing}
+                        >
+                            {t('ui.leaves.actions.reject')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <ConfirmDialog
                 open={deleteTarget !== null}

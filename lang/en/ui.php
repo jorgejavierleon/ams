@@ -1270,6 +1270,7 @@ return [
             'half_day' => 'Half day',
             'days' => 'Business days',
             'approved_by' => 'Approved by',
+            'rejection_reason' => 'Rejection reason',
             'created_at' => 'Requested at',
             'medical' => 'Medical leave',
             'medical_leave_number' => 'Leave number',
@@ -1332,6 +1333,7 @@ return [
         'reject_dialog' => [
             'title' => 'Reject leave',
             'description' => "Reject :name's leave request?",
+            'reason' => 'Reason',
         ],
 
         'delete_dialog' => [

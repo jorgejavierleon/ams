@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ForgotPasswordController;
+use App\Http\Controllers\Api\LeavesController;
 use App\Http\Controllers\Api\MarkController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\PendingMarkModificationsController;
@@ -108,6 +109,16 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             ->scopeBindings()
             ->middleware('permission:ReviewOwn:MarkModification')
             ->name('me.workdays.modifications.decline');
+
+        // The Permisos tab's Mis solicitudes screen (KMO-39): the employee's
+        // own leave requests plus their vacation balance, and cancelling a
+        // still-pending one.
+        Route::get('me/leaves', [LeavesController::class, 'index'])
+            ->middleware('permission:ViewOwn:Leave')
+            ->name('me.leaves.index');
+        Route::delete('me/leaves/{leave}', [LeavesController::class, 'destroy'])
+            ->middleware('permission:CancelOwn:Leave')
+            ->name('me.leaves.destroy');
 
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
