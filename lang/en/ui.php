@@ -1667,6 +1667,12 @@ return [
             'revoked' => 'Revoked',
         ],
 
+        'day_types' => [
+            'weekday' => 'Weekday',
+            'sunday' => 'Sunday',
+            'holiday' => 'Holiday',
+        ],
+
         'requests' => [
             'statuses' => [
                 'pending' => 'Pending',

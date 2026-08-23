@@ -1670,6 +1670,12 @@ return [
             'revoked' => 'Eliminada',
         ],
 
+        'day_types' => [
+            'weekday' => 'Día hábil',
+            'sunday' => 'Domingo',
+            'holiday' => 'Festivo',
+        ],
+
         'requests' => [
             'statuses' => [
                 'pending' => 'Pendiente',
