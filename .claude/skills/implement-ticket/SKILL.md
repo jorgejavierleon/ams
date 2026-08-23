@@ -49,6 +49,26 @@ restate them per task.
 Acceptance criteria must be concrete and checkable. A task whose criteria are vague
 cannot be verified as done — push back and refine rather than accepting "improve X".
 
+**Every task's description must include a `## User stories for manual testing (Gherkin)`
+section** — one or more concrete `Given/When/Then` scenarios describing something a human
+can actually do and observe (open a screen, click something, see a result), not just
+backend acceptance criteria. KOL-60 already carries this pattern; use it as the template.
+
+**Write the Gherkin scenarios before finalizing the task, and let them drive the scope
+check.** If no real `Given/When/Then` can be written — nothing a person could act out —
+that is the signal this task is a **horizontal slice** (a data-model layer, a service with
+no caller, an API with no UI yet) rather than a **vertical slice** (a thin end-to-end path
+a user can see). When decomposing an epic into multiple tasks:
+- Prefer a thin walking-skeleton-first ticket that reaches end-to-end (even with a rough
+  or hardcoded middle) over splitting into "all the data tickets, then all the service
+  tickets, then the UI last."
+- A purely infrastructural ticket (no UI, no route) is sometimes unavoidable — but treat it
+  as a smell, name it explicitly as infrastructure for a specific upcoming vertical-slice
+  ticket, and keep the horizontal chain as short as possible before something becomes
+  human-testable.
+- If in doubt, ask the user whether to keep a horizontal decomposition or re-plan around a
+  vertical slice, rather than silently proceeding.
+
 **Prefer a normal task over `--draft`.** Drafts land in `backlog/drafts/` with a separate
 `DRAFT-<n>` ID and are **invisible to `backlog task list`** — easy to forget. For an
 under-specified item, create a normal task whose first acceptance criterion is to define
