@@ -117,7 +117,7 @@ test('rejecting a previously approved leave returns the workday to its original 
     expect($workday->status)->toBe(WorkdayStatus::Justified);
 
     $this->actingAs($admin)
-        ->post(route('leaves.reject', $leave))
+        ->post(route('leaves.reject', $leave), ['reason' => 'No longer needed.'])
         ->assertRedirect();
 
     expect($leave->refresh()->status)->toBe(LeaveStatus::Rejected);

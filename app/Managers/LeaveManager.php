@@ -35,12 +35,12 @@ class LeaveManager
     /**
      * @throws Throwable
      */
-    public function reject(Leave $leave): void
+    public function reject(Leave $leave, ?string $reason = null): void
     {
         if ($leave->type === LeaveType::Vacation) {
-            DB::transaction(fn () => $this->rejectVacation($leave));
+            DB::transaction(fn () => $this->rejectVacation($leave, $reason));
         } else {
-            DB::transaction(fn () => $this->rejectGeneralLeave($leave));
+            DB::transaction(fn () => $this->rejectGeneralLeave($leave, $reason));
         }
 
         $leave->user->notify(new LeaveRejected($leave));
@@ -69,13 +69,15 @@ class LeaveManager
     {
         $leave->status = LeaveStatus::Approved;
         $leave->approved_by = $this->currentUserId();
+        $leave->rejection_reason = null;
         $leave->save();
     }
 
-    private function rejectGeneralLeave(Leave $leave): void
+    private function rejectGeneralLeave(Leave $leave, ?string $reason): void
     {
         $leave->status = LeaveStatus::Rejected;
         $leave->approved_by = null;
+        $leave->rejection_reason = $reason;
         $leave->save();
     }
 
@@ -83,13 +85,14 @@ class LeaveManager
     {
         $leave->status = LeaveStatus::Approved;
         $leave->approved_by = $this->currentUserId();
+        $leave->rejection_reason = null;
         $leave->save();
 
         $leave->user->vacation_days -= $leave->business_days_requested;
         $leave->user->save();
     }
 
-    private function rejectVacation(Leave $leave): void
+    private function rejectVacation(Leave $leave, ?string $reason): void
     {
         // Only refund the balance if the vacation had previously been approved.
         if ($leave->status === LeaveStatus::Approved) {
@@ -99,6 +102,7 @@ class LeaveManager
 
         $leave->status = LeaveStatus::Rejected;
         $leave->approved_by = null;
+        $leave->rejection_reason = $reason;
         $leave->save();
     }
 

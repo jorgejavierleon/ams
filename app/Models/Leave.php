@@ -37,6 +37,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $medical_leave_doctor
  * @property string|null $notes
  * @property int|null $approved_by
+ * @property string|null $rejection_reason
  * @property int $created_by
  */
 #[ObservedBy(LeaveObserver::class)]
@@ -54,6 +55,7 @@ use Illuminate\Support\Carbon;
     'medical_leave_doctor',
     'notes',
     'approved_by',
+    'rejection_reason',
     'created_by',
 ])]
 class Leave extends Model

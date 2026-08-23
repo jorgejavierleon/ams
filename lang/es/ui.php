@@ -1273,6 +1273,7 @@ return [
             'half_day' => 'Medio día',
             'days' => 'Días hábiles',
             'approved_by' => 'Aprobado por',
+            'rejection_reason' => 'Motivo de rechazo',
             'created_at' => 'Solicitado el',
             'medical' => 'Licencia médica',
             'medical_leave_number' => 'Número de licencia',
@@ -1335,6 +1336,7 @@ return [
         'reject_dialog' => [
             'title' => 'Rechazar permiso',
             'description' => '¿Rechazar la solicitud de :name?',
+            'reason' => 'Motivo',
         ],
 
         'delete_dialog' => [

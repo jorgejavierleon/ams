@@ -133,10 +133,11 @@ test('a supervisor can reject their own team member leave', function () {
     ]);
 
     $this->actingAs($supervisor)
-        ->post(route('leaves.reject', $leave))
+        ->post(route('leaves.reject', $leave), ['reason' => 'Cupo mensual excedido.'])
         ->assertRedirect();
 
-    expect($leave->refresh()->status)->toBe(LeaveStatus::Rejected);
+    expect($leave->refresh()->status)->toBe(LeaveStatus::Rejected)
+        ->and($leave->rejection_reason)->toBe('Cupo mensual excedido.');
 });
 
 // --- Team-scoped index ---
@@ -303,7 +304,7 @@ test('rejecting a leave notifies the requesting employee', function () {
         'created_by' => $admin->id,
     ]);
 
-    $this->actingAs($admin)->post(route('leaves.reject', $leave))->assertRedirect();
+    $this->actingAs($admin)->post(route('leaves.reject', $leave), ['reason' => 'No longer needed.'])->assertRedirect();
 
     Notification::assertSentTo($employee, LeaveRejected::class);
 });

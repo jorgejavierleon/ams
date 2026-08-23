@@ -17,6 +17,20 @@ enum LeaveStatus: string
     }
 
     /**
+     * A shared, semantic badge tone for the status so the UI colours are
+     * decided once here rather than per component, mirroring
+     * {@see WorkdayStatus::badge()}.
+     */
+    public function badge(): string
+    {
+        return match ($this) {
+            self::Pending => 'warning',
+            self::Approved => 'success',
+            self::Rejected => 'destructive',
+        };
+    }
+
+    /**
      * All statuses as value/label pairs for select inputs.
      *
      * @return array<int, array{value: string, label: string}>

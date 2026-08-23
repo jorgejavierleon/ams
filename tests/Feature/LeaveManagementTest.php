@@ -286,14 +286,56 @@ test('rejecting a previously approved vacation refunds the balance', function ()
     ]);
 
     $this->actingAs($admin)
-        ->post(route('leaves.reject', $leave))
+        ->post(route('leaves.reject', $leave), ['reason' => 'Cupo mensual excedido.'])
         ->assertRedirect();
 
     $leave->refresh();
 
     expect($leave->status)->toBe(LeaveStatus::Rejected)
         ->and($leave->approved_by)->toBeNull()
+        ->and($leave->rejection_reason)->toBe('Cupo mensual excedido.')
         ->and($employee->refresh()->vacation_days)->toEqual(15.0);
+});
+
+test('rejecting a leave without a reason is rejected by validation', function () {
+    $admin = leaveAdmin();
+    $organization = $admin->organization;
+    $employee = leaveEmployee($organization);
+
+    $leave = Leave::factory()->pending()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'type' => LeaveType::Paid,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('leaves.reject', $leave))
+        ->assertSessionHasErrors('reason');
+
+    expect($leave->refresh()->status)->toBe(LeaveStatus::Pending);
+});
+
+test('approving a previously rejected leave clears the rejection reason', function () {
+    $admin = leaveAdmin();
+    $organization = $admin->organization;
+    $employee = leaveEmployee($organization);
+
+    $leave = Leave::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'type' => LeaveType::Paid,
+        'status' => LeaveStatus::Rejected,
+        'rejection_reason' => 'Cupo mensual excedido.',
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('leaves.approve', $leave))
+        ->assertRedirect();
+
+    expect($leave->refresh()->status)->toBe(LeaveStatus::Approved)
+        ->and($leave->rejection_reason)->toBeNull();
 });
 
 test('medical leaves cannot be rejected', function () {
