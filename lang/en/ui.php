@@ -1673,6 +1673,11 @@ return [
             'holiday' => 'Holiday',
         ],
 
+        'pay_buckets' => [
+            'ordinary_day' => 'Overtime, ordinary day',
+            'sunday_or_holiday' => 'Overtime, Sunday or holiday',
+        ],
+
         'requests' => [
             'statuses' => [
                 'pending' => 'Pending',

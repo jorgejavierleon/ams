@@ -1676,6 +1676,11 @@ return [
             'holiday' => 'Festivo',
         ],
 
+        'pay_buckets' => [
+            'ordinary_day' => 'HHEE día hábil',
+            'sunday_or_holiday' => 'HHEE domingo o festivo',
+        ],
+
         'requests' => [
             'statuses' => [
                 'pending' => 'Pendiente',
