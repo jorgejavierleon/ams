@@ -30,6 +30,7 @@ class AttendanceReportService
     /**
      * @param  list<int>  $userIds
      * @return list<array{
+     *     userId: int,
      *     employee: string,
      *     employer: string|null,
      *     premise: string|null,
@@ -87,6 +88,7 @@ class AttendanceReportService
             }
 
             return [
+                'userId' => $user->id,
                 'employee' => $this->label($user->name, $user->formatted_rut ?? $user->rut),
                 'employer' => $user->company === null
                     ? null
