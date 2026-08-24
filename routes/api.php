@@ -120,6 +120,19 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             ->middleware('permission:CancelOwn:Leave')
             ->name('me.leaves.destroy');
 
+        // The Permisos tab's request wizard (KMO-41): step 1's self-service
+        // type and half-day options, the review step's server-computed
+        // business-day count, and submitting the request itself.
+        Route::get('me/leaves/options', [LeavesController::class, 'options'])
+            ->middleware('permission:RequestOwn:Leave')
+            ->name('me.leaves.options');
+        Route::get('me/leaves/business-days', [LeavesController::class, 'businessDays'])
+            ->middleware('permission:RequestOwn:Leave')
+            ->name('me.leaves.business-days');
+        Route::post('me/leaves', [LeavesController::class, 'store'])
+            ->middleware('permission:RequestOwn:Leave')
+            ->name('me.leaves.store');
+
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
         Route::post('marks', [MarkController::class, 'store'])
