@@ -1,10 +1,10 @@
 ---
 id: KOL-84
 title: Fix ShiftScheduleResolver dropping the tail of a multi-day range
-status: In Review
+status: Done
 assignee: []
 created_date: '2026-08-24 10:46'
-updated_date: '2026-08-24 10:55'
+updated_date: '2026-08-24 10:56'
 labels:
   - bug
   - mobile-api
