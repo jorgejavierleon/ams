@@ -2519,4 +2519,29 @@ return [
         ],
     ],
 
+    'payroll_export' => [
+        'finding_types' => [
+            'pending_mark_modification' => 'Pending mark modification',
+            'irregular_workday' => 'Irregular workday',
+            'incomplete_workday' => 'Incomplete workday',
+            'open_incident' => 'Open technical incident',
+        ],
+
+        'findings' => [
+            'pending_mark_modification' => 'Has a mark modification pending approval.',
+            'irregular_workday' => 'Irregular workday: the recorded times do not match the assigned shift.',
+            'incomplete_workday' => 'Incomplete workday: a clock-in or clock-out mark is missing.',
+            'open_incident' => 'Open technical incident since :date (:description). Attendance for the period may be affected.',
+        ],
+
+        'warning' => [
+            'title' => 'There is unresolved attendance data in this period',
+            'description' => 'Review the following findings before exporting. You can still proceed, but your confirmation will be recorded.',
+            'informational_title' => 'Additional information',
+            'no_date' => 'No associated date',
+            'resolve_link' => 'Go fix it',
+            'confirm_label' => 'I understand there is unresolved data and I want to proceed anyway.',
+        ],
+    ],
+
 ];
