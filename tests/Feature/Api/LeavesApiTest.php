@@ -1,12 +1,15 @@
 <?php
 
+use App\Enums\LeaveHalfDayType;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\Leave;
 use App\Models\Organization;
 use App\Models\User;
+use App\Notifications\LeaveRequestSubmitted;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -226,4 +229,179 @@ test('cancelling another employee leave is forbidden', function () {
     $this->deleteJson("/api/v1/me/leaves/{$leave->id}")->assertForbidden();
 
     expect(Leave::find($leave->id))->not->toBeNull();
+});
+
+// --- Options (#1, #2) ---
+
+test('an unauthenticated options request returns 401', function () {
+    $this->getJson('/api/v1/me/leaves/options')->assertUnauthorized();
+});
+
+test('an employee without RequestOwn:Leave is forbidden from options', function () {
+    $employee = User::factory()->create(); // no role, no permissions
+    Sanctum::actingAs($employee);
+
+    $this->getJson('/api/v1/me/leaves/options')->assertForbidden();
+});
+
+test('options returns the self-service types and never includes Medical', function () {
+    $employee = mobileLeaveEmployee();
+    Sanctum::actingAs($employee);
+
+    $response = $this->getJson('/api/v1/me/leaves/options')->assertOk();
+
+    expect($response->json('data'))->toEqual(LeaveType::selfServiceOptions())
+        ->and(collect($response->json('data'))->pluck('value'))->not->toContain(LeaveType::Medical->value);
+});
+
+test('options bundles the half-day types alongside the leave types', function () {
+    $employee = mobileLeaveEmployee();
+    Sanctum::actingAs($employee);
+
+    $response = $this->getJson('/api/v1/me/leaves/options')->assertOk();
+
+    expect($response->json('halfDayTypes'))->toEqual(LeaveHalfDayType::options());
+});
+
+// --- Business days (#3) ---
+
+test('an unauthenticated business-days request returns 401', function () {
+    $this->getJson('/api/v1/me/leaves/business-days?start_date=2026-08-24&end_date=2026-08-28')
+        ->assertUnauthorized();
+});
+
+test('an employee without RequestOwn:Leave is forbidden from business-days', function () {
+    $employee = User::factory()->create(); // no role, no permissions
+    Sanctum::actingAs($employee);
+
+    $this->getJson('/api/v1/me/leaves/business-days?start_date=2026-08-24&end_date=2026-08-28')
+        ->assertForbidden();
+});
+
+test('business-days computes the working days for the authenticated employee via BusinessDaysCalculator', function () {
+    $employee = mobileLeaveEmployee();
+    Sanctum::actingAs($employee);
+
+    // 2026-08-24 is a Monday; through 2026-08-28 (Friday) is a full 5-day work week.
+    $response = $this->getJson('/api/v1/me/leaves/business-days?start_date=2026-08-24&end_date=2026-08-28')
+        ->assertOk();
+
+    expect($response->json('business_days'))->toEqual(5.0);
+});
+
+test('business-days requires start_date and end_date', function () {
+    $employee = mobileLeaveEmployee();
+    Sanctum::actingAs($employee);
+
+    $this->getJson('/api/v1/me/leaves/business-days')->assertUnprocessable();
+});
+
+// --- Store (#4, #5, #6, #7) ---
+
+test('an unauthenticated store request returns 401', function () {
+    $this->postJson('/api/v1/me/leaves', [
+        'type' => LeaveType::Vacation->value,
+        'start_date' => '2026-08-24',
+        'end_date' => '2026-08-24',
+    ])->assertUnauthorized();
+});
+
+test('an employee without RequestOwn:Leave is forbidden from creating a leave', function () {
+    $employee = User::factory()->create(); // no role, no permissions
+    Sanctum::actingAs($employee);
+
+    $this->postJson('/api/v1/me/leaves', [
+        'type' => LeaveType::Vacation->value,
+        'start_date' => '2026-08-24',
+        'end_date' => '2026-08-24',
+    ])->assertForbidden();
+});
+
+test('a full-day leave request is created with the server-computed business days', function () {
+    Notification::fake();
+    $employee = mobileLeaveEmployee();
+    Sanctum::actingAs($employee);
+
+    // Monday through Friday: a full 5-day work week.
+    $response = $this->postJson('/api/v1/me/leaves', [
+        'type' => LeaveType::Vacation->value,
+        'start_date' => '2026-08-24',
+        'end_date' => '2026-08-28',
+        'notes' => 'Vacaciones familiares',
+    ])->assertCreated();
+
+    $leave = Leave::findOrFail($response->json('data.id'));
+    expect($leave->user_id)->toBe($employee->id)
+        ->and($leave->organization_id)->toBe($employee->organization_id)
+        ->and($leave->type)->toBe(LeaveType::Vacation)
+        ->and($leave->status)->toBe(LeaveStatus::Pending)
+        ->and($leave->half_day)->toBeFalse()
+        ->and($leave->half_day_type)->toBeNull()
+        ->and((float) $leave->business_days_requested)->toBe(5.0)
+        ->and($leave->notes)->toBe('Vacaciones familiares');
+});
+
+test('a half-day leave is confined to a single day and always stores 0.5 business days', function () {
+    Notification::fake();
+    $employee = mobileLeaveEmployee();
+    Sanctum::actingAs($employee);
+
+    $response = $this->postJson('/api/v1/me/leaves', [
+        'type' => LeaveType::Vacation->value,
+        'start_date' => '2026-08-24',
+        'end_date' => '2026-08-24',
+        'half_day' => true,
+        'half_day_type' => LeaveHalfDayType::Morning->value,
+    ])->assertCreated();
+
+    $leave = Leave::findOrFail($response->json('data.id'));
+    expect($leave->half_day)->toBeTrue()
+        ->and($leave->half_day_type)->toBe(LeaveHalfDayType::Morning)
+        ->and((float) $leave->business_days_requested)->toBe(0.5);
+});
+
+test('a half-day request spanning more than one day is rejected', function () {
+    $employee = mobileLeaveEmployee();
+    Sanctum::actingAs($employee);
+
+    $this->postJson('/api/v1/me/leaves', [
+        'type' => LeaveType::Vacation->value,
+        'start_date' => '2026-08-24',
+        'end_date' => '2026-08-25',
+        'half_day' => true,
+        'half_day_type' => LeaveHalfDayType::Morning->value,
+    ])->assertUnprocessable()->assertJsonValidationErrors('end_date');
+});
+
+test('requesting Medical leave through self-service is refused', function () {
+    $employee = mobileLeaveEmployee();
+    Sanctum::actingAs($employee);
+
+    $this->postJson('/api/v1/me/leaves', [
+        'type' => LeaveType::Medical->value,
+        'start_date' => '2026-08-24',
+        'end_date' => '2026-08-24',
+    ])->assertUnprocessable()->assertJsonValidationErrors('type');
+});
+
+test('submitting a leave notifies the approvers LeaveApprovers resolves', function () {
+    Notification::fake();
+    $employee = mobileLeaveEmployee();
+    $admin = User::factory()->create(['organization_id' => $employee->organization_id]);
+    $admin->assignRole('admin');
+    Sanctum::actingAs($employee);
+
+    $response = $this->postJson('/api/v1/me/leaves', [
+        'type' => LeaveType::Vacation->value,
+        'start_date' => '2026-08-24',
+        'end_date' => '2026-08-24',
+    ])->assertCreated();
+
+    $leave = Leave::findOrFail($response->json('data.id'));
+
+    Notification::assertSentTo(
+        $admin,
+        LeaveRequestSubmitted::class,
+        fn (LeaveRequestSubmitted $notification): bool => $notification->leave->is($leave),
+    );
 });
