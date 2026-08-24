@@ -2522,4 +2522,29 @@ return [
         ],
     ],
 
+    'payroll_export' => [
+        'finding_types' => [
+            'pending_mark_modification' => 'Modificación de marca pendiente',
+            'irregular_workday' => 'Jornada irregular',
+            'incomplete_workday' => 'Jornada incompleta',
+            'open_incident' => 'Incidente técnico abierto',
+        ],
+
+        'findings' => [
+            'pending_mark_modification' => 'Tiene una modificación de marca pendiente de aprobación.',
+            'irregular_workday' => 'Jornada irregular: los horarios registrados no calzan con el turno asignado.',
+            'incomplete_workday' => 'Jornada incompleta: falta una marca de entrada o de salida.',
+            'open_incident' => 'Incidente técnico abierto desde el :date (:description). La asistencia del período puede verse afectada.',
+        ],
+
+        'warning' => [
+            'title' => 'Hay datos de asistencia sin resolver en este período',
+            'description' => 'Revisa los siguientes hallazgos antes de exportar. Puedes continuar de todas formas, pero quedará registrado que fuiste advertido.',
+            'informational_title' => 'Información adicional',
+            'no_date' => 'Sin fecha asociada',
+            'resolve_link' => 'Ir a corregir',
+            'confirm_label' => 'Entiendo que hay datos sin resolver y quiero continuar de todas formas.',
+        ],
+    ],
+
 ];
