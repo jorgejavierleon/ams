@@ -70,7 +70,14 @@ class ShiftScheduleResolver
 
         $days = collect();
 
-        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+        // Re-snap to local midnight every iteration, not just once before the
+        // loop: Chile's spring-forward DST transition (the first Saturday of
+        // September) skips 00:00-00:59 entirely, so the first `addDay()` that
+        // lands on that date is normalized forward to 01:00 by the timezone —
+        // and every `addDay()` after that keeps carrying the extra hour,
+        // eventually pushing `$date` past `$end` and silently truncating the
+        // last day(s) of the range.
+        for ($date = $start->copy(); $date->lte($end); $date = $date->copy()->addDay()->startOfDay()) {
             $day = $this->resolveDate($date->copy(), $assignments, $leaves, $holidays, $premise);
 
             if ($day !== null) {
