@@ -41,6 +41,7 @@ class SundaysReportService
     /**
      * @param  list<int>  $userIds
      * @return list<array{
+     *     userId: int,
      *     employee: string,
      *     employer: string|null,
      *     premise: string|null,
@@ -99,6 +100,7 @@ class SundaysReportService
             $total = array_sum(array_column($months, 'worked'));
 
             return [
+                'userId' => $user->id,
                 'employee' => $this->label($user->name, $user->formatted_rut ?? $user->rut),
                 'employer' => $user->company === null
                     ? null
