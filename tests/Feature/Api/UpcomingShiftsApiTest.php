@@ -124,6 +124,29 @@ test('the days param controls the horizon and defaults to 14', function () {
     expect($lastDate->toDateString())->toBe(lastWorkingDateWithinHorizon(14)->toDateString());
 });
 
+test('a Friday-weekend-Monday tail crossing Chile\'s DST spring-forward is not dropped from the range', function () {
+    // KOL-84 regression: the resolver's day-by-day loop re-snapped `$date` to
+    // local midnight only once, before the loop. Chile's DST spring-forward
+    // (the first Sunday of September) skips 00:00-00:59 entirely, so once the
+    // loop's `addDay()` crossed that gap it silently carried an extra hour of
+    // wall-clock drift for every day after — eventually pushing `$date` past
+    // `$end` and truncating the range's own last days. Pinned to a fixed
+    // "today" (2026-08-24) rather than the real clock, so this keeps failing
+    // the old way on any future run, in or out of the DST season.
+    Carbon::setTestNow('2026-08-24 08:00:00');
+    $employee = upcomingEmployee();
+    upcomingShift($employee);
+    Sanctum::actingAs($employee);
+
+    $response = $this->getJson('/api/v1/me/shifts/upcoming?days=14')->assertOk();
+    $dates = collect($response->json('days'))->pluck('date');
+
+    expect($dates)->toContain('2026-09-04') // Friday, the last workday before the DST weekend
+        ->and($dates)->not->toContain('2026-09-05') // Saturday, free
+        ->and($dates)->not->toContain('2026-09-06') // Sunday, free — and the DST transition itself
+        ->and($dates)->toContain('2026-09-07'); // Monday, the trailing workday the bug used to drop
+});
+
 test('the days param is capped at 30', function () {
     $employee = upcomingEmployee();
     upcomingShift($employee);
