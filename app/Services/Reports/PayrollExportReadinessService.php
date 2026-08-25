@@ -40,11 +40,14 @@ class PayrollExportReadinessService
             return new PayrollExportReadiness(collect());
         }
 
-        $scopedUserIds = User::query()
-            ->where('organization_id', CurrentOrganization::id())
-            ->whereIn('id', $userIds)
-            ->pluck('id')
-            ->all();
+        $scopedUserIds = array_values(array_map(
+            intval(...),
+            User::query()
+                ->where('organization_id', CurrentOrganization::id())
+                ->whereIn('id', $userIds)
+                ->pluck('id')
+                ->all(),
+        ));
 
         if ($scopedUserIds === []) {
             return new PayrollExportReadiness(collect());

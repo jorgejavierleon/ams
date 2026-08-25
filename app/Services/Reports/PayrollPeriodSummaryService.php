@@ -55,11 +55,14 @@ class PayrollPeriodSummaryService
             return collect();
         }
 
-        $scopedUserIds = User::query()
-            ->where('organization_id', CurrentOrganization::id())
-            ->whereIn('id', $userIds)
-            ->pluck('id')
-            ->all();
+        $scopedUserIds = array_values(array_map(
+            intval(...),
+            User::query()
+                ->where('organization_id', CurrentOrganization::id())
+                ->whereIn('id', $userIds)
+                ->pluck('id')
+                ->all(),
+        ));
 
         if ($scopedUserIds === []) {
             return collect();
@@ -113,8 +116,8 @@ class PayrollPeriodSummaryService
             ->get(['user_id', 'worked_time', 'missing_time', 'in_time_difference'])
             ->each(function (Workday $workday) use (&$totals): void {
                 $totals[$workday->user_id] ??= ['worked' => 0, 'missing' => 0, 'lateness' => 0];
-                $totals[$workday->user_id]['worked'] += Duration::tryFrom($workday->worked_time)?->seconds ?? 0;
-                $totals[$workday->user_id]['missing'] += Duration::tryFrom($workday->missing_time)?->seconds ?? 0;
+                $totals[$workday->user_id]['worked'] += Duration::tryFrom($workday->worked_time)->seconds ?? 0;
+                $totals[$workday->user_id]['missing'] += Duration::tryFrom($workday->missing_time)->seconds ?? 0;
                 $totals[$workday->user_id]['lateness'] += $this->latenessSeconds($workday->in_time_difference);
             });
 
@@ -196,7 +199,7 @@ class PayrollPeriodSummaryService
                 $justified++;
                 $observation = $row['observation'];
 
-                if ($observation !== null && $observation['kind'] === 'leave') {
+                if ($observation !== null && $observation['kind'] === 'leave' && isset($observation['type'])) {
                     $this->bucketLeaveType(LeaveType::from($observation['type']), $paid, $nonPaid);
                 }
             }

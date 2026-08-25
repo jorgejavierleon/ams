@@ -80,6 +80,9 @@
         "types:check": [
             "phpstan analyse --memory-limit=1G"
         ],
+        "install-git-hooks": [
+            "@php -r \"copy('.githooks/pre-push', '.git/hooks/pre-push') && chmod('.git/hooks/pre-push', 0755);\""
+        ],
         "test": [
             "@php artisan config:clear --ansi",
             "@lint:check",
@@ -90,9 +93,13 @@
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
         ],
+        "post-install-cmd": [
+            "@install-git-hooks"
+        ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
-            "@php artisan boost:update --ansi"
+            "@php artisan boost:update --ansi",
+            "@install-git-hooks"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""

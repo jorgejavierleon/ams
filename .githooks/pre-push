@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -e
+
+echo "pre-push: running composer types:check (phpstan)…"
+./vendor/bin/sail composer types:check
