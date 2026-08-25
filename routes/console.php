@@ -37,3 +37,8 @@ Schedule::command('overtime:rest-day-balances:sweep-expired')->dailyAt('07:00');
 // elapsed (or who has never been notified), and is idempotent on
 // `rest_day_balance_notified_at`.
 Schedule::command('overtime:rest-day-balances:notify')->dailyAt('07:00');
+
+// KOL-16 AC #5: a queued export's file must not sit on disk once its signed
+// download link has lapsed. Hourly is frequent enough given links are
+// measured in hours/days, not minutes.
+Schedule::command('report-exports:prune-expired')->hourly();

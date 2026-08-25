@@ -106,6 +106,35 @@ docker exec ams-laravel.test-1 php artisan <command>
 
 ---
 
+## Queues
+
+`QUEUE_CONNECTION=database`. `compose.yaml` (Sail) has no dedicated queue-worker
+service — the only thing that processes jobs today is `php artisan queue:listen`,
+started as part of `composer run dev`'s `concurrently` group alongside the app
+server, Vite and `pail`. That covers local dev as long as `composer run dev` (not
+just `sail up`) is running. **Nothing runs a worker in a deployed environment
+yet** — the first ticket that ships a queued job to production must also add a
+worker process (a dedicated Sail/Cloud service, Horizon, or a supervisor entry)
+rather than assume one exists.
+
+Large report exports (KOL-16) are the first consumer: a selection over
+`config('reports.export.queue_threshold')` employees is dispatched to
+`App\Jobs\GenerateReportExport` instead of rendered inline. The finished file is
+written to the private `local` disk (`storage/app/private`, never `public`).
+The mailed `URL::temporarySignedRoute()` link points at a real HTML landing
+page (`dt.reports.exports.show`) with a "Descargar" button, **not** directly at
+the file response (`dt.reports.exports.download`, unsigned but still
+authenticated + organization-scoped, same as `documents.download`) — a fresh
+browser tab pointed straight at a raw-file response has nothing to render and
+Chrome only completes the download on a manual refresh, which no end user
+would ever discover. Any future signed-link delivery should land on a page the
+same way. `report-exports:prune-expired` (scheduled hourly) deletes the file
+once the link's expiry passes. This is the pattern to reuse for any future
+export that can grow
+large enough to need queuing, rather than inventing a second one.
+
+---
+
 ## Frontend Route Helpers
 
 Use Wayfinder for all TypeScript route references. Import from `@/actions/` (controllers) or `@/routes/` (named routes). Never hardcode URL strings.

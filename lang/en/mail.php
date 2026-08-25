@@ -126,4 +126,19 @@ return [
         'auto_approve' => 'If you do not approve or decline it, this request will be approved automatically in 48 hours.',
         'action' => 'Review request',
     ],
+
+    'report_export_ready' => [
+        'subject' => 'Your report is ready to download',
+        'heading' => 'Report ready',
+        'body' => 'The report you generated is now ready.',
+        'expiry' => 'The download link expires in :minutes minutes.',
+        'action' => 'Download report',
+        'note' => 'You must be logged in with the same audited employer selected for the file to download.',
+    ],
+
+    'report_export_failed' => [
+        'subject' => 'We could not generate your report',
+        'heading' => 'Report not generated',
+        'body' => 'Something went wrong generating the report you requested. Try generating it again; if the problem persists, contact support.',
+    ],
 ];

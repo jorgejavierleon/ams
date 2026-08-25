@@ -53,22 +53,7 @@ class DtReportExporter
         array $userIds,
         Organization $organization,
     ): Response {
-        $previousLocale = App::getLocale();
-        App::setLocale('es');
-
-        try {
-            // The report's table markup, as a well-formed HTML fragment. The Word
-            // writer consumes it directly; the PDF and Excel writers take it
-            // wrapped in a full styled document.
-            $fragment = View::make("exports.dt.{$type}", [
-                'title' => __("ui.dt.reports.{$type}.title"),
-                'report' => $this->build($type, $start, $end, $userIds),
-            ])->render();
-
-            $filename = $this->filename($type, $start, $end, $organization);
-        } finally {
-            App::setLocale($previousLocale);
-        }
+        ['fragment' => $fragment, 'filename' => $filename] = $this->prepare($type, $start, $end, $userIds, $organization);
 
         return match ($format) {
             'excel' => $this->writer->excel($this->document($fragment, $type), $filename),
@@ -76,6 +61,70 @@ class DtReportExporter
             'word' => $this->writer->word($fragment, $filename),
             default => throw new InvalidArgumentException("Unsupported export format: {$format}"),
         };
+    }
+
+    /**
+     * Build the requested report and render it to raw bytes rather than an
+     * HTTP response, for a queued export that must save the file to disk
+     * (KOL-16) instead of streaming it to a browser.
+     *
+     * @param  list<int>  $userIds
+     * @return array{filename: string, mime: string, contents: string}
+     */
+    public function renderToBytes(
+        string $type,
+        string $format,
+        Carbon $start,
+        Carbon $end,
+        array $userIds,
+        Organization $organization,
+    ): array {
+        ['fragment' => $fragment, 'filename' => $filename] = $this->prepare($type, $start, $end, $userIds, $organization);
+
+        return match ($format) {
+            'excel' => [
+                'filename' => "{$filename}.xlsx",
+                'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'contents' => $this->writer->excelBytes($this->document($fragment, $type)),
+            ],
+            'pdf' => [
+                'filename' => "{$filename}.pdf",
+                'mime' => 'application/pdf',
+                'contents' => $this->writer->pdfBytes($this->document($fragment, $type)),
+            ],
+            'word' => [
+                'filename' => "{$filename}.docx",
+                'mime' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'contents' => $this->writer->wordBytes($fragment),
+            ],
+            default => throw new InvalidArgumentException("Unsupported export format: {$format}"),
+        };
+    }
+
+    /**
+     * Render the report's table markup as a well-formed HTML fragment (the
+     * Word writer consumes it directly; the PDF and Excel writers take it
+     * wrapped in a full styled document via {@see document}) and compose the
+     * download filename, pinning the locale to Spanish for the duration.
+     *
+     * @param  list<int>  $userIds
+     * @return array{fragment: string, filename: string}
+     */
+    private function prepare(string $type, Carbon $start, Carbon $end, array $userIds, Organization $organization): array
+    {
+        $previousLocale = App::getLocale();
+        App::setLocale('es');
+
+        try {
+            $fragment = View::make("exports.dt.{$type}", [
+                'title' => __("ui.dt.reports.{$type}.title"),
+                'report' => $this->build($type, $start, $end, $userIds),
+            ])->render();
+
+            return ['fragment' => $fragment, 'filename' => $this->filename($type, $start, $end, $organization)];
+        } finally {
+            App::setLocale($previousLocale);
+        }
     }
 
     /**

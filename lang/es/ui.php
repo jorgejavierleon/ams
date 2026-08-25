@@ -2072,6 +2072,14 @@ return [
                 'no_results' => 'Sin resultados.',
                 'generate' => 'Generar reporte',
             ],
+            'export' => [
+                'queued' => 'Tu reporte se está generando. Te avisaremos por correo electrónico cuando esté listo para descargar.',
+                'ready_heading' => 'Tu reporte está listo',
+                'ready_body' => 'Descarga el archivo generado a continuación.',
+                'download' => 'Descargar reporte',
+                'expired_heading' => 'Enlace vencido',
+                'expired_body' => 'Este enlace de descarga ya venció. Genera el reporte nuevamente desde el panel de reportes.',
+            ],
             'attendance' => [
                 'title' => 'Reporte de asistencia',
                 'description' => 'Asistencia diaria de cada trabajador en el período seleccionado (Resolución 38, Art. 27 a).',
