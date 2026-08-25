@@ -14,6 +14,7 @@ use App\Http\Controllers\Dt\MarkValidationController;
 use App\Http\Controllers\Dt\OrganizationController as DtOrganizationController;
 use App\Http\Controllers\Dt\PasswordChangeController;
 use App\Http\Controllers\Dt\ReportController as DtReportController;
+use App\Http\Controllers\Dt\ReportExportDownloadController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveCalendarController;
@@ -354,8 +355,21 @@ Route::prefix('dt')->name('dt.')->group(function () {
                     Route::get('incidents', [DtReportController::class, 'incidents'])->name('incidents');
 
                     // Excel / PDF / Word download for any report (Resolución 38,
-                    // Art. 28 b), streamed directly rather than via Inertia.
+                    // Art. 28 b), streamed directly rather than via Inertia. A
+                    // selection above the configured threshold is queued instead
+                    // (KOL-16) and delivered through the route below.
                     Route::get('{type}/export', [DtReportController::class, 'export'])->name('export');
+
+                    // The signed, expiring link mailed once a queued export
+                    // finishes rendering (KOL-16 AC #4): a real HTML landing
+                    // page (not a raw file response — see
+                    // ReportExportDownloadController) with a button to the
+                    // actual file, served just like documents.download below.
+                    Route::get('exports/{reportExport}', [ReportExportDownloadController::class, 'show'])
+                        ->name('exports.show')
+                        ->middleware('signed');
+                    Route::get('exports/{reportExport}/download', [ReportExportDownloadController::class, 'download'])
+                        ->name('exports.download');
                 });
             });
         });

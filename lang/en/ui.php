@@ -2069,6 +2069,14 @@ return [
                 'no_results' => 'No results.',
                 'generate' => 'Generate report',
             ],
+            'export' => [
+                'queued' => 'Your report is being generated. We will email you when it is ready to download.',
+                'ready_heading' => 'Your report is ready',
+                'ready_body' => 'Download the generated file below.',
+                'download' => 'Download report',
+                'expired_heading' => 'Link expired',
+                'expired_body' => 'This download link has expired. Generate the report again from the reports panel.',
+            ],
             'attendance' => [
                 'title' => 'Attendance report',
                 'description' => 'Daily attendance for each worker over the selected range (Resolución 38, Art. 27 a).',

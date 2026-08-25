@@ -135,4 +135,19 @@ return [
         'auto_approve' => 'De no aprobarla o rechazarla, esta solicitud será aprobada automáticamente en 48 horas.',
         'action' => 'Revisar solicitud',
     ],
+
+    'report_export_ready' => [
+        'subject' => 'Tu reporte está listo para descargar',
+        'heading' => 'Reporte listo',
+        'body' => 'El reporte que generaste ya está listo.',
+        'expiry' => 'El enlace de descarga vence en :minutes minutos.',
+        'action' => 'Descargar reporte',
+        'note' => 'Debes haber iniciado sesión y tener seleccionado el mismo empleador auditado para poder descargar el archivo.',
+    ],
+
+    'report_export_failed' => [
+        'subject' => 'No pudimos generar tu reporte',
+        'heading' => 'Reporte no generado',
+        'body' => 'Ocurrió un error al generar el reporte que solicitaste. Intenta generarlo nuevamente; si el problema persiste, contacta a soporte.',
+    ],
 ];

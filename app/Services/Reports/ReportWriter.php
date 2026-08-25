@@ -38,6 +38,19 @@ class ReportWriter
     }
 
     /**
+     * Render an HTML table fragment into .xlsx bytes, for a queued export
+     * that must save the file to disk rather than stream it to a browser
+     * (KOL-16).
+     */
+    public function excelBytes(string $html): string
+    {
+        $spreadsheet = (new HtmlSpreadsheetReader)->loadFromString($html);
+        $spreadsheet->getDefaultStyle()->getFont()->setName(self::DEFAULT_FONT)->setSize(self::DEFAULT_FONT_SIZE);
+
+        return $this->captureOutput(fn () => (new XlsxWriter($spreadsheet))->save('php://output'));
+    }
+
+    /**
      * Render several HTML table fragments into one .xlsx workbook, one named
      * sheet per fragment, in the given order.
      *
@@ -90,6 +103,14 @@ class ReportWriter
     }
 
     /**
+     * Render a full HTML document into PDF bytes (KOL-16, see {@see excelBytes}).
+     */
+    public function pdfBytes(string $html): string
+    {
+        return Pdf::loadHTML($html)->setPaper('letter', 'landscape')->output();
+    }
+
+    /**
      * Render an HTML table fragment into a .docx document. PhpWord's HTML
      * reader parses with a strict XML parser, so it must be fed a
      * well-formed fragment (no document shell).
@@ -110,6 +131,33 @@ class ReportWriter
             "{$filename}.docx",
             ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
         );
+    }
+
+    /**
+     * Render an HTML table fragment into .docx bytes (KOL-16, see {@see excelBytes}).
+     */
+    public function wordBytes(string $fragment): string
+    {
+        $phpWord = new PhpWord;
+        $phpWord->setDefaultFontName(self::DEFAULT_FONT);
+        $phpWord->setDefaultFontSize(self::DEFAULT_FONT_SIZE);
+
+        $section = $phpWord->addSection(['orientation' => 'landscape']);
+        WordHtml::addHtml($section, $fragment, false, false);
+
+        return $this->captureOutput(fn () => WordIOFactory::createWriter($phpWord, 'Word2007')->save('php://output'));
+    }
+
+    /**
+     * Capture the bytes a writer would otherwise stream straight to the
+     * browser via `php://output` (KOL-16).
+     */
+    private function captureOutput(callable $save): string
+    {
+        ob_start();
+        $save();
+
+        return (string) ob_get_clean();
     }
 
     private function streamXlsx(Spreadsheet $spreadsheet, string $filename): StreamedResponse

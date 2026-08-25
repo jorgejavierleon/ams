@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Dt;
 
+use App\Enums\ReportExportStatus;
 use App\Enums\ShiftType;
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateReportExport;
 use App\Models\Mark;
 use App\Models\Organization;
 use App\Models\Position;
 use App\Models\Premise;
+use App\Models\ReportExport;
 use App\Models\Shift;
 use App\Models\User;
 use App\Services\Reports\AttendanceReportService;
@@ -172,6 +175,11 @@ class ReportController extends Controller
      * drives the on-screen tables selects the rows, so the download matches the
      * screen (Art. 28 a). The incidents log is per-employer (Art. 24 d) and takes
      * no worker filter.
+     *
+     * A selection above the configured threshold is dispatched to the queue
+     * instead of rendered here (KOL-16, PRD §7 performance NFR), so a large
+     * export never ties up the request thread; the requester is notified by
+     * email once it is ready.
      */
     public function export(Request $request, DtReportExporter $exporter, string $type): HttpResponse
     {
@@ -182,15 +190,51 @@ class ReportController extends Controller
 
         $organizationId = (int) $request->session()->get('dt_organization_id');
         $filters = $this->currentFilters($request);
+        $userIds = $type === 'incidents' ? [] : $this->resolveWorkerIds($filters, $organizationId);
+
+        if (count($userIds) > (int) config('reports.export.queue_threshold')) {
+            return $this->queueExport($request, $type, $format, $filters, $userIds, $organizationId);
+        }
 
         return $exporter->download(
             $type,
             $format,
             Carbon::parse($filters['start']),
             Carbon::parse($filters['end']),
-            $type === 'incidents' ? [] : $this->resolveWorkerIds($filters, $organizationId),
+            $userIds,
             Organization::findOrFail($organizationId),
         );
+    }
+
+    /**
+     * Queue a selection too large to render synchronously and tell the
+     * requester their report is being generated, rather than leaving them
+     * with a hanging request (KOL-16 AC #2).
+     *
+     * @param  array{start: string, end: string}  $filters
+     * @param  list<int>  $userIds
+     */
+    private function queueExport(Request $request, string $type, string $format, array $filters, array $userIds, int $organizationId): HttpResponse
+    {
+        $reportExport = ReportExport::create([
+            'organization_id' => $organizationId,
+            'user_id' => $request->user('dt')->id,
+            'type' => $type,
+            'format' => $format,
+            'filters' => [
+                'start' => $filters['start'],
+                'end' => $filters['end'],
+                'user_ids' => $userIds,
+            ],
+            'status' => ReportExportStatus::Pending,
+        ]);
+
+        GenerateReportExport::dispatch($reportExport->id);
+
+        return response()->json([
+            'queued' => true,
+            'message' => __('ui.dt.reports.export.queued'),
+        ], 202);
     }
 
     /**
