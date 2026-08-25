@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\DocumentsController;
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\LeavesController;
 use App\Http\Controllers\Api\MarkController;
@@ -132,6 +133,15 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         Route::post('me/leaves', [LeavesController::class, 'store'])
             ->middleware('permission:RequestOwn:Leave')
             ->name('me.leaves.store');
+
+        // The Documentos tab's list (KMO-42): the employee's own non-draft
+        // documents — those belonging to them or listing them as a
+        // signatory — with a status badge and the awaiting_me flag that
+        // drives the pending-signature count and the tab-bar badge, mirroring
+        // My\DocumentController::index()'s scope exactly.
+        Route::get('me/documents', [DocumentsController::class, 'index'])
+            ->middleware('permission:ViewOwn:Document')
+            ->name('me.documents.index');
 
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
