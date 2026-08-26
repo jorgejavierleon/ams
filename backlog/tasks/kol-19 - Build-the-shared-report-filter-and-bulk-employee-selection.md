@@ -4,7 +4,7 @@ title: Build the shared report filter and bulk employee selection
 status: Done
 assignee: []
 created_date: '2026-08-04 11:13'
-updated_date: '2026-08-26 09:17'
+updated_date: '2026-08-26 09:21'
 labels:
   - payroll-reports
   - backend
@@ -80,6 +80,8 @@ Scope corrections made while implementing:
 2. The period selector offers only structured month/quincena selection (AC#2), not also a raw arbitrary date range — AC#2's specific requirement (month + quincena) is treated as the concrete shape of the 'date range' dimension named in AC#1, since AC#2 explicitly says the period selector must support these 'not only an arbitrary date range'.
 3. Employee selection model: a single EmployeeSelection DTO {selectAll: bool, ids: int[]}. selectAll=true resolves to every filtered candidate minus ids (Talana exclusion pattern); selectAll=false with ids=[] resolves to [] explicitly (AC#7); selectAll=false with ids=[...] is a manual pick independent of the filter dimensions (satisfies the 'individual employee' filter in AC#1). This one object, plus a ReportPeriod (year/month/type), is exactly what ReportEmployeeSelector::resolve() and ReportPeriod::start()/end() produce — proven in ReportSelectionSharedByDownstreamServicesTest to feed PayrollPeriodSummaryService::build() and PayrollExportReadinessService::check() (KOL-13/KOL-14) with no adaptation (AC#4).
 4. No report exists yet to submit the filter to (KOL-20..24), so the shared components (report-filter-form.tsx, employee-picker.tsx) render on the payroll-reports landing page as a live, functional preview (real server-driven picker + a resolved-count summary), not wired to a 'generate' action. Future report tickets import these directly.
+
+Push blocked by the pre-push composer types:check (phpstan) gate (7 errors: LengthAwarePaginator contract vs concrete generic class, list<> docblocks not provably list-safe through Collection chains, an untyped sort direction param). Fixed by switching to the concrete generic Illuminate\Pagination\LengthAwarePaginator<int, User>, rewriting the two id/enum list filters to native array_map/array_filter/array_values (matching PayrollPeriodSummaryService's proven pattern) instead of Collection chains, and widening optionsFor()'s docblock to array<int, ...> to match EmployeeController's existing convention. Pushed as 0519856 on top of the merge; phpstan and the full suite are clean on master.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
