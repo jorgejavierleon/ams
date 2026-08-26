@@ -2575,6 +2575,36 @@ return [
             'employee-master' => 'Full employee record with their current contract.',
             'overtime-excess' => 'Weekly overtime with its justification detail.',
         ],
+
+        'filters' => [
+            'title' => 'Filter and select employees',
+            'period_label' => 'Period',
+            'period_type_label' => 'Period type',
+            'period_range' => 'From :start to :end',
+            'period_types' => [
+                'month' => 'Full month',
+                'first_fortnight' => 'First fortnight (1st to 15th)',
+                'second_fortnight' => 'Second fortnight (16th to end of month)',
+            ],
+            'premise' => 'Premise',
+            'position' => 'Position',
+            'cost_center' => 'Cost center',
+            'contract_type' => 'Contract type',
+            'search_placeholder' => 'Search by name, email or RUT...',
+            'empty' => 'No employees found.',
+            'select_employee' => 'Select employee',
+            'select_all' => 'Select all matching',
+            'clear_selection' => 'Clear selection',
+            'selected_count' => ':count employee(s) selected',
+            'columns' => [
+                'employee' => 'Employee',
+                'rut' => 'RUT',
+                'position' => 'Position',
+                'premise' => 'Premise',
+                'cost_center' => 'Cost center',
+                'contract_type' => 'Contract type',
+            ],
+        ],
     ],
 
 ];

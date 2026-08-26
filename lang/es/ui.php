@@ -2578,6 +2578,36 @@ return [
             'employee-master' => 'Ficha completa de cada trabajador con su último contrato vigente.',
             'overtime-excess' => 'Horas extra por semana con el detalle de su justificación.',
         ],
+
+        'filters' => [
+            'title' => 'Filtro y selección de trabajadores',
+            'period_label' => 'Período',
+            'period_type_label' => 'Tipo de período',
+            'period_range' => 'Del :start al :end',
+            'period_types' => [
+                'month' => 'Mes completo',
+                'first_fortnight' => 'Primera quincena (1 al 15)',
+                'second_fortnight' => 'Segunda quincena (16 al fin de mes)',
+            ],
+            'premise' => 'Sucursal',
+            'position' => 'Cargo',
+            'cost_center' => 'Centro de costo',
+            'contract_type' => 'Tipo de contrato',
+            'search_placeholder' => 'Buscar por nombre, correo o RUT...',
+            'empty' => 'No se encontraron trabajadores.',
+            'select_employee' => 'Seleccionar trabajador',
+            'select_all' => 'Seleccionar todos los que coinciden',
+            'clear_selection' => 'Limpiar selección',
+            'selected_count' => ':count trabajador(es) seleccionado(s)',
+            'columns' => [
+                'employee' => 'Trabajador',
+                'rut' => 'RUT',
+                'position' => 'Cargo',
+                'premise' => 'Sucursal',
+                'cost_center' => 'Centro de costo',
+                'contract_type' => 'Tipo de contrato',
+            ],
+        ],
     ],
 
 ];

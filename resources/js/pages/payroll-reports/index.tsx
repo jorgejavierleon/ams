@@ -10,6 +10,14 @@ import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
+import { index as payrollReportsIndex } from '@/routes/payroll-reports';
+import type { Paginated } from '@/types/ui';
+import { ReportFilterForm } from './report-filter-form';
+import type {
+    PayrollReportEmployee,
+    PayrollReportFilterOptions,
+    PayrollReportFilters,
+} from './types';
 
 type ReportType =
     | 'payroll-summary'
@@ -26,11 +34,26 @@ const REPORT_ICONS: Record<ReportType, typeof Wallet> = {
     'overtime-excess': Timer,
 };
 
-type Props = {
-    reportTypes: ReportType[];
+type PeriodTypeOption = {
+    value: 'month' | 'first_fortnight' | 'second_fortnight';
+    label: string;
 };
 
-export default function PayrollReportsIndex({ reportTypes }: Props) {
+type Props = {
+    reportTypes: ReportType[];
+    employees: Paginated<PayrollReportEmployee>;
+    filters: PayrollReportFilters;
+    filterOptions: PayrollReportFilterOptions;
+    periodTypeOptions: PeriodTypeOption[];
+};
+
+export default function PayrollReportsIndex({
+    reportTypes,
+    employees,
+    filters,
+    filterOptions,
+    periodTypeOptions,
+}: Props) {
     const { t } = useTranslations();
 
     return (
@@ -42,6 +65,23 @@ export default function PayrollReportsIndex({ reportTypes }: Props) {
                     title={t('ui.payroll_reports.title')}
                     description={t('ui.payroll_reports.description')}
                 />
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">
+                            {t('ui.payroll_reports.filters.title')}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ReportFilterForm
+                            employees={employees}
+                            filters={filters}
+                            filterOptions={filterOptions}
+                            periodTypeOptions={periodTypeOptions}
+                            routeUrl={payrollReportsIndex().url}
+                        />
+                    </CardContent>
+                </Card>
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {reportTypes.map((type) => {
