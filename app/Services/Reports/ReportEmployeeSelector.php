@@ -11,8 +11,8 @@ use App\Models\User;
 use App\Support\CurrentOrganization;
 use App\Support\EmployeeSelection;
 use App\Support\ReportEmployeeFilters;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Resolves the employee pool every payroll report filters and selects from
@@ -46,6 +46,9 @@ class ReportEmployeeSelector
     /**
      * Paginated candidates for the employee-picker table, ordered by name and
      * optionally narrowed by a search term (name, email or RUT).
+     *
+     * @param  'asc'|'desc'  $direction
+     * @return LengthAwarePaginator<int, User>
      */
     public function paginate(
         ReportEmployeeFilters $filters,
@@ -88,14 +91,15 @@ class ReportEmployeeSelector
         // dimensions — the filters narrow the *picker*, not which explicitly
         // chosen ids count — but it must still never reach across tenants
         // (AC #6) or name a non-employee record.
-        return User::query()
-            ->employees()
-            ->where('organization_id', CurrentOrganization::id())
-            ->whereIn('id', $selection->ids)
-            ->pluck('id')
-            ->map(intval(...))
-            ->values()
-            ->all();
+        return array_values(array_map(
+            intval(...),
+            User::query()
+                ->employees()
+                ->where('organization_id', CurrentOrganization::id())
+                ->whereIn('id', $selection->ids)
+                ->pluck('id')
+                ->all(),
+        ));
     }
 
     /**
@@ -104,10 +108,10 @@ class ReportEmployeeSelector
      * {@see BelongsToOrganization}.
      *
      * @return array{
-     *     premises: list<array{value: string, label: string}>,
-     *     positions: list<array{value: string, label: string}>,
-     *     costCenters: list<array{value: string, label: string}>,
-     *     contractTypes: list<array{value: string, label: string}>,
+     *     premises: array<int, array{value: string, label: string}>,
+     *     positions: array<int, array{value: string, label: string}>,
+     *     costCenters: array<int, array{value: string, label: string}>,
+     *     contractTypes: array<int, array{value: string, label: string}>,
      * }
      */
     public function optionsFor(): array

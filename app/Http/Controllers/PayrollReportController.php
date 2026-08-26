@@ -81,11 +81,10 @@ class PayrollReportController extends Controller
      */
     private function idListFilter(Request $request, string $key): array
     {
-        return collect((array) $request->input($key, []))
-            ->map(fn ($id): int => (int) $id)
-            ->filter()
-            ->values()
-            ->all();
+        return array_values(array_filter(array_map(
+            fn ($id): int => (int) $id,
+            (array) $request->input($key, []),
+        )));
     }
 
     /**
@@ -99,10 +98,9 @@ class PayrollReportController extends Controller
      */
     private function enumListFilter(Request $request, string $key, string $enum): array
     {
-        return collect((array) $request->input($key, []))
-            ->map(fn ($value) => $enum::tryFrom((string) $value))
-            ->filter()
-            ->values()
-            ->all();
+        return array_values(array_filter(array_map(
+            fn ($value) => $enum::tryFrom((string) $value),
+            (array) $request->input($key, []),
+        )));
     }
 }
