@@ -122,7 +122,8 @@ class ReportEmployeeSelector
     {
         $countsBy = fn (string $column): array => $this->candidates(new ReportEmployeeFilters)
             ->whereNotNull($column)
-            ->selectRaw("{$column}, count(*) as aggregate")
+            ->select($column)
+            ->selectRaw('count(*) as aggregate')
             ->groupBy($column)
             ->pluck('aggregate', $column)
             ->all();
