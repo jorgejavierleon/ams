@@ -41,6 +41,8 @@ return [
         'team_leaves' => 'Permisos del equipo',
         'overtime' => 'Horas extra',
         'overtime_requests' => 'Horas extra pendientes',
+        'reports' => 'Reportes',
+        'payroll_reports' => 'Remuneraciones',
     ],
 
     'user_menu' => [
@@ -413,6 +415,7 @@ return [
             'Document' => 'Documentos',
             'MarkModification' => 'Correcciones de marca',
             'OvertimeAuthorization' => 'Horas extraordinarias',
+            'PayrollReport' => 'Reportes de remuneraciones',
         ],
 
         'permissions' => [
@@ -434,6 +437,8 @@ return [
             'ViewTeam:OvertimeAuthorization' => 'Ver horas extra del equipo',
             'ApproveTeam:OvertimeAuthorization' => 'Aprobar horas extra del equipo',
             'Manage:OvertimeAuthorization' => 'Administrar política y pactos de horas extra',
+            'View:PayrollReport' => 'Ver reportes de remuneraciones',
+            'Export:PayrollReport' => 'Exportar reportes de remuneraciones',
         ],
     ],
 
@@ -2552,6 +2557,26 @@ return [
             'no_date' => 'Sin fecha asociada',
             'resolve_link' => 'Ir a corregir',
             'confirm_label' => 'Entiendo que hay datos sin resolver y quiero continuar de todas formas.',
+        ],
+    ],
+
+    'payroll_reports' => [
+        'title' => 'Reportes de remuneraciones',
+        'description' => 'Reportes de asistencia y jornada laboral para el proceso de remuneraciones.',
+        'coming_soon' => 'Próximamente',
+        'types' => [
+            'payroll-summary' => 'Resumen de remuneraciones por período',
+            'weekly-detail' => 'Detalle semanal por trabajador',
+            'period-movements' => 'Movimientos del período',
+            'employee-master' => 'Maestro de trabajadores',
+            'overtime-excess' => 'Excesos de jornada y horas extra',
+        ],
+        'descriptions' => [
+            'payroll-summary' => 'Horas normales, horas extra, atrasos y ausentismos por trabajador y consolidado por empresa.',
+            'weekly-detail' => 'Entrada y salida real versus teórica, colación y anomalías por trabajador.',
+            'period-movements' => 'Altas, bajas, licencias, vacaciones aprobadas y cambios de turno del período.',
+            'employee-master' => 'Ficha completa de cada trabajador con su último contrato vigente.',
+            'overtime-excess' => 'Horas extra por semana con el detalle de su justificación.',
         ],
     ],
 
