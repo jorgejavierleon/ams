@@ -1,4 +1,4 @@
-import type { FacetedOption } from '@/components/data-table-faceted-filter';
+export type ReportFacetOption = { value: string; label: string; count: number };
 
 export type PayrollReportEmployee = {
     id: number;
@@ -38,8 +38,8 @@ export type PayrollReportFilters = {
 };
 
 export type PayrollReportFilterOptions = {
-    premises: FacetedOption[];
-    positions: FacetedOption[];
-    costCenters: FacetedOption[];
-    contractTypes: FacetedOption[];
+    premises: ReportFacetOption[];
+    positions: ReportFacetOption[];
+    costCenters: ReportFacetOption[];
+    contractTypes: ReportFacetOption[];
 };

@@ -1,16 +1,7 @@
 import { useState } from 'react';
-import { FormField } from '@/components/form-field';
-import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { useTranslations } from '@/hooks/use-translations';
 import type { Paginated } from '@/types/ui';
 import { EmployeePicker } from './employee-picker';
+import { PeriodSelector } from './period-selector';
 import type {
     EmployeeSelection,
     PayrollReportEmployee,
@@ -75,8 +66,6 @@ export function ReportFilterForm({
     periodTypeOptions,
     routeUrl,
 }: Props) {
-    const { t, formatDate } = useTranslations();
-
     const [month, setMonth] = useState(
         toMonthValue(today.getFullYear(), today.getMonth() + 1),
     );
@@ -90,52 +79,15 @@ export function ReportFilterForm({
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                    label={t('ui.payroll_reports.filters.period_label')}
-                    htmlFor="report-period-month"
-                >
-                    <Input
-                        id="report-period-month"
-                        type="month"
-                        value={month}
-                        onChange={(event) => setMonth(event.target.value)}
-                    />
-                </FormField>
-
-                <FormField
-                    label={t('ui.payroll_reports.filters.period_type_label')}
-                    htmlFor="report-period-type"
-                >
-                    <Select
-                        value={periodType}
-                        onValueChange={(value) =>
-                            setPeriodType(value as ReportPeriodType)
-                        }
-                    >
-                        <SelectTrigger id="report-period-type">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {periodTypeOptions.map((option) => (
-                                <SelectItem
-                                    key={option.value}
-                                    value={option.value}
-                                >
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </FormField>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-                {t('ui.payroll_reports.filters.period_range', {
-                    start: formatDate(start),
-                    end: formatDate(end),
-                })}
-            </p>
+            <PeriodSelector
+                month={month}
+                periodType={periodType}
+                periodTypeOptions={periodTypeOptions}
+                start={start}
+                end={end}
+                onMonthChange={setMonth}
+                onPeriodTypeChange={setPeriodType}
+            />
 
             <EmployeePicker
                 employees={employees}

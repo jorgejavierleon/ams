@@ -153,3 +153,21 @@ test('the facet options are scoped to the current organization', function () {
     expect(collect($options['premises'])->pluck('label')->all())
         ->toBe([$premise->name]);
 });
+
+test('each facet option carries how many employees currently have that value', function () {
+    $organization = reportSelectorOrg();
+    $premise = Premise::factory()->for($organization)->create();
+    $otherPremise = Premise::factory()->for($organization)->create();
+    User::factory()->for($organization)->employee()->count(2)->create(['premise_id' => $premise->id]);
+    User::factory()->for($organization)->employee()->create(['premise_id' => $otherPremise->id]);
+    User::factory()->for($organization)->employee()->count(3)->create(['contract_type' => ContractType::Honorarios]);
+
+    $options = app(ReportEmployeeSelector::class)->optionsFor();
+
+    $premiseCounts = collect($options['premises'])->keyBy('value');
+    expect($premiseCounts->get((string) $premise->id)['count'])->toBe(2)
+        ->and($premiseCounts->get((string) $otherPremise->id)['count'])->toBe(1);
+
+    $contractTypeCounts = collect($options['contractTypes'])->keyBy('value');
+    expect($contractTypeCounts->get(ContractType::Honorarios->value)['count'])->toBe(3);
+});

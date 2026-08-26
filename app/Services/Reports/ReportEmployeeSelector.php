@@ -105,28 +105,59 @@ class ReportEmployeeSelector
     /**
      * Facet option lists for the filter dropdowns, scoped to the current
      * organization by each model's own
-     * {@see BelongsToOrganization}.
+     * {@see BelongsToOrganization}. Each option carries a `count` of how many
+     * of the organization's employees currently have that value — a simple,
+     * filter-independent tally (not narrowed by any other active facet) that
+     * gives the picker a sense of scale without a combinatorial per-facet
+     * aggregation.
      *
      * @return array{
-     *     premises: array<int, array{value: string, label: string}>,
-     *     positions: array<int, array{value: string, label: string}>,
-     *     costCenters: array<int, array{value: string, label: string}>,
-     *     contractTypes: array<int, array{value: string, label: string}>,
+     *     premises: array<int, array{value: string, label: string, count: int}>,
+     *     positions: array<int, array{value: string, label: string, count: int}>,
+     *     costCenters: array<int, array{value: string, label: string, count: int}>,
+     *     contractTypes: array<int, array{value: string, label: string, count: int}>,
      * }
      */
     public function optionsFor(): array
     {
+        $countsBy = fn (string $column): array => $this->candidates(new ReportEmployeeFilters)
+            ->whereNotNull($column)
+            ->selectRaw("{$column}, count(*) as aggregate")
+            ->groupBy($column)
+            ->pluck('aggregate', $column)
+            ->all();
+
+        $premiseCounts = $countsBy('premise_id');
+        $positionCounts = $countsBy('position_id');
+        $costCenterCounts = $countsBy('cost_center_id');
+        $contractTypeCounts = $countsBy('contract_type');
+
         return [
             'premises' => Premise::query()->orderBy('name')->get()
-                ->map(fn (Premise $premise): array => ['value' => (string) $premise->id, 'label' => $premise->name])
+                ->map(fn (Premise $premise): array => [
+                    'value' => (string) $premise->id,
+                    'label' => $premise->name,
+                    'count' => $premiseCounts[$premise->id] ?? 0,
+                ])
                 ->all(),
             'positions' => Position::query()->orderBy('name')->get()
-                ->map(fn (Position $position): array => ['value' => (string) $position->id, 'label' => $position->name])
+                ->map(fn (Position $position): array => [
+                    'value' => (string) $position->id,
+                    'label' => $position->name,
+                    'count' => $positionCounts[$position->id] ?? 0,
+                ])
                 ->all(),
             'costCenters' => CostCenter::query()->orderBy('name')->get()
-                ->map(fn (CostCenter $costCenter): array => ['value' => (string) $costCenter->id, 'label' => $costCenter->name])
+                ->map(fn (CostCenter $costCenter): array => [
+                    'value' => (string) $costCenter->id,
+                    'label' => $costCenter->name,
+                    'count' => $costCenterCounts[$costCenter->id] ?? 0,
+                ])
                 ->all(),
-            'contractTypes' => ContractType::options(),
+            'contractTypes' => array_map(
+                fn (array $option): array => [...$option, 'count' => $contractTypeCounts[$option['value']] ?? 0],
+                ContractType::options(),
+            ),
         ];
     }
 }
