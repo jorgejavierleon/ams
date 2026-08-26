@@ -5,6 +5,7 @@ import {
     CalendarDays,
     CalendarRange,
     ClipboardList,
+    FileSpreadsheet,
     FileText,
     IdCard,
     LayoutGrid,
@@ -48,6 +49,7 @@ import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { index as overtimeRequestsIndex } from '@/routes/overtime/requests';
+import { index as payrollReportsIndex } from '@/routes/payroll-reports';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
@@ -76,6 +78,11 @@ export function AppSidebar() {
     // KOL-71: a supervisor's own view of Jornadas — separate from
     // canViewOwnWorkdays above, which is their personal "Mis jornadas" link.
     const canViewTeamWorkdays = auth.permissions.includes('ViewTeam:Workday');
+    // KOL-18: the payroll reports section, gated on its own permission rather
+    // than shown to every admin-nav user.
+    const canViewPayrollReports = auth.permissions.includes(
+        'View:PayrollReport',
+    );
 
     const employeeNavGroups: Array<{ label: string; items: NavItem[] }> = [
         {
@@ -248,6 +255,20 @@ export function AppSidebar() {
                 },
             ],
         },
+        ...(canViewPayrollReports
+            ? [
+                  {
+                      label: t('ui.nav.reports'),
+                      items: [
+                          {
+                              title: t('ui.nav.payroll_reports'),
+                              href: payrollReportsIndex(),
+                              icon: FileSpreadsheet,
+                          },
+                      ],
+                  },
+              ]
+            : []),
         {
             label: t('ui.nav.settings'),
             items: [

@@ -31,6 +31,7 @@ use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OvertimePactController;
 use App\Http\Controllers\OvertimeRequestController;
 use App\Http\Controllers\OvertimeRestDayBalanceController;
+use App\Http\Controllers\PayrollReportController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -229,6 +230,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [OvertimeRestDayBalanceController::class, 'index'])->name('index');
             Route::post('/consume', [OvertimeRestDayBalanceController::class, 'consume'])->name('consume');
         });
+});
+
+// Payroll reports section (KOL-18): the container for the five RF-1 reports
+// (KOL-20..24). Gated on its own permissions rather than role:admin — tenant
+// users (RRHH/admin), separate from the DT inspector's `dt.reports.*`.
+Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])->group(function () {
+    Route::get('payroll-reports', [PayrollReportController::class, 'index'])->name('payroll-reports.index');
 });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)

@@ -41,6 +41,8 @@ return [
         'team_leaves' => 'Team leaves',
         'overtime' => 'Overtime',
         'overtime_requests' => 'Pending overtime requests',
+        'reports' => 'Reports',
+        'payroll_reports' => 'Payroll reports',
     ],
 
     'user_menu' => [
@@ -410,6 +412,7 @@ return [
             'Document' => 'Documents',
             'MarkModification' => 'Mark corrections',
             'OvertimeAuthorization' => 'Overtime',
+            'PayrollReport' => 'Payroll reports',
         ],
 
         'permissions' => [
@@ -431,6 +434,8 @@ return [
             'ViewTeam:OvertimeAuthorization' => 'View team overtime',
             'ApproveTeam:OvertimeAuthorization' => 'Approve team overtime',
             'Manage:OvertimeAuthorization' => 'Manage overtime policy and pactos',
+            'View:PayrollReport' => 'View payroll reports',
+            'Export:PayrollReport' => 'Export payroll reports',
         ],
     ],
 
@@ -2549,6 +2554,26 @@ return [
             'no_date' => 'No associated date',
             'resolve_link' => 'Go fix it',
             'confirm_label' => 'I understand there is unresolved data and I want to proceed anyway.',
+        ],
+    ],
+
+    'payroll_reports' => [
+        'title' => 'Payroll reports',
+        'description' => 'Attendance and workday reports for the payroll process.',
+        'coming_soon' => 'Coming soon',
+        'types' => [
+            'payroll-summary' => 'Payroll summary by period',
+            'weekly-detail' => 'Weekly detail by employee',
+            'period-movements' => 'Period movements',
+            'employee-master' => 'Employee master file',
+            'overtime-excess' => 'Overtime excess',
+        ],
+        'descriptions' => [
+            'payroll-summary' => 'Regular hours, overtime, tardiness and absences by employee and consolidated by company.',
+            'weekly-detail' => 'Actual versus theoretical clock-in/clock-out, lunch break and anomalies by employee.',
+            'period-movements' => 'Hires, terminations, leaves, approved vacations and shift changes for the period.',
+            'employee-master' => 'Full employee record with their current contract.',
+            'overtime-excess' => 'Weekly overtime with its justification detail.',
         ],
     ],
 

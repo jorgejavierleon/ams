@@ -36,12 +36,21 @@ class RoleSeeder extends Seeder
      * and `overtime.index` (KOL-43) — are not covered by that gate, so an admin
      * must hold these permissions explicitly to reach them.
      *
+     * `PayrollReport` (KOL-18) follows the same shape: `View` and `Export` are
+     * kept separate because viewing a report and producing the file that
+     * leaves the building are different levels of exposure for this
+     * company-wide, sensitive payroll data — a future role could hold one
+     * without the other, even though today only `admin` (the RRHH/tenant-admin
+     * role) holds both.
+     *
      * @var array<int, string>
      */
     private const ADMIN_PERMISSIONS = [
         'ClockOwn:Mark',
         'ViewOwn:Mark',
         'Manage:OvertimeAuthorization',
+        'View:PayrollReport',
+        'Export:PayrollReport',
     ];
 
     /**
