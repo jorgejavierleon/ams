@@ -143,6 +143,14 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             ->middleware('permission:ViewOwn:Document')
             ->name('me.documents.index');
 
+        // The Documentos tab's reader (KMO-43): one document's resolved body
+        // plus awaiting_me, driving the sticky Rechazar / Firmar documento bar.
+        // Mirrors My\DocumentController::show()'s ownership/signatory
+        // authorization exactly.
+        Route::get('me/documents/{document}', [DocumentsController::class, 'show'])
+            ->middleware('permission:ViewOwn:Document')
+            ->name('me.documents.show');
+
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
         Route::post('marks', [MarkController::class, 'store'])
