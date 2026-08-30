@@ -59,10 +59,12 @@ export function ReportFacetFilter({ title, options, selected, onChange }: Props)
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button
+                <button
                     type="button"
-                    variant="outline"
-                    className={cn(selectedSet.size > 0 && 'border-primary')}
+                    className={cn(
+                        'inline-flex h-8 items-center gap-1.5 rounded-full border bg-card px-3 text-sm font-medium hover:border-muted-foreground',
+                        selectedSet.size > 0 && 'border-muted-foreground bg-muted',
+                    )}
                 >
                     {buttonLabel}
                     {selectedSet.size > 1 && (
@@ -74,7 +76,7 @@ export function ReportFacetFilter({ title, options, selected, onChange }: Props)
                         </Badge>
                     )}
                     <ChevronDown className="size-3.5 text-muted-foreground" />
-                </Button>
+                </button>
             </PopoverTrigger>
             <PopoverContent className="w-72 p-0" align="start">
                 <Command>

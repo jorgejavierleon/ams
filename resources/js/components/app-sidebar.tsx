@@ -49,7 +49,7 @@ import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { index as overtimeRequestsIndex } from '@/routes/overtime/requests';
-import { index as payrollReportsIndex } from '@/routes/payroll-reports';
+import { summary as payrollReportsSummary } from '@/routes/payroll-reports';
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
@@ -262,7 +262,7 @@ export function AppSidebar() {
                       items: [
                           {
                               title: t('ui.nav.payroll_reports'),
-                              href: payrollReportsIndex(),
+                              href: payrollReportsSummary(),
                               icon: FileSpreadsheet,
                           },
                       ],

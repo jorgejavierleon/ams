@@ -85,6 +85,41 @@ class PayrollExportReadinessService
     }
 
     /**
+     * Record that a payroll report was exported — user, timestamp, report
+     * type, period, format and the employees covered (KOL-20 AC #7). Logged
+     * to the same `payroll_export` activity log {@see self::recordConfirmation()}
+     * writes to, so a future browsable history (KOL-17) can read one log for
+     * both events. This does not replace KOL-17: it only guarantees every
+     * export leaves a trace before that screen exists.
+     *
+     * @param  list<int>  $userIds  the employees the export covered
+     */
+    public function recordExport(
+        User $confirmedBy,
+        string $reportType,
+        Carbon $start,
+        Carbon $end,
+        string $format,
+        array $userIds,
+        PayrollExportReadiness $readiness,
+        bool $confirmed,
+    ): void {
+        activity('payroll_export')
+            ->causedBy($confirmedBy)
+            ->withProperties([
+                'organization_id' => CurrentOrganization::id(),
+                'report_type' => $reportType,
+                'period_start' => $start->toDateString(),
+                'period_end' => $end->toDateString(),
+                'format' => $format,
+                'employee_ids' => $userIds,
+                'warned' => ! $readiness->isClean(),
+                'confirmed' => $confirmed,
+            ])
+            ->log('Exported payroll report');
+    }
+
+    /**
      * One bulk pass over the period's workdays for the selected employees,
      * carrying each one's pending mark modifications along via the existing
      * {@see Workday::pendingMarkModifications()} relation — a query, not new
