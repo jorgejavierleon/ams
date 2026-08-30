@@ -70,3 +70,44 @@ export type PayrollSummaryReportRow = {
 export type PayrollSummaryReportTotal = Omit<PayrollSummaryReportRow, 'userId' | 'name' | 'rut'> & {
     employeeCount: number;
 };
+
+/** The single worker a "Detalle Semanal por Trabajador" (KOL-21) report covers. */
+export type WeeklyDetailReportEmployee = {
+    id: number;
+    name: string;
+    rut: string | null;
+};
+
+/** Real vs. teórica for one mark (entrada or salida), plus the already-computed difference. */
+export type WeeklyDetailReportMarkTime = {
+    real: string | null;
+    theoretical: string | null;
+    difference: string | null;
+};
+
+/** One day in the "Detalle Semanal por Trabajador" (KOL-21) grid. */
+export type WeeklyDetailReportDay = {
+    date: string;
+    weekday_label: string;
+    date_label: string;
+    has_record: boolean;
+    status: string | null;
+    status_label: string | null;
+    status_badge: string | null;
+    entry: WeeklyDetailReportMarkTime;
+    exit: WeeklyDetailReportMarkTime;
+    lunch: {
+        real: string | null;
+        theoretical_start: string | null;
+        theoretical_end: string | null;
+    };
+    leave: { type_label: string } | null;
+    has_pending_modification: boolean;
+    has_approved_modification: boolean;
+};
+
+export type WeeklyDetailReportWeek = {
+    start: string;
+    end: string;
+    days: WeeklyDetailReportDay[];
+};
