@@ -111,3 +111,54 @@ export type WeeklyDetailReportWeek = {
     end: string;
     days: WeeklyDetailReportDay[];
 };
+
+/** One row in the "Altas" or "Bajas" sheet of "Movimientos del Período" (KOL-22). */
+export type MovementsEmployeeRow = {
+    employee: string;
+    rut: string | null;
+    position: string | null;
+    premise: string | null;
+    date: string;
+};
+
+/** One row in the "Inicio/Fin de Licencias" or "Vacaciones Aprobadas" sheets (KOL-22). */
+export type MovementsLeaveRow = {
+    employee: string;
+    rut: string | null;
+    type: string;
+    startDate: string;
+    endDate: string;
+    days: number;
+};
+
+/** One shift-change row, reusing the DT Art. 27 d) shift-changes shape (KOL-22 AC #5). */
+export type MovementsShiftChangeRow = {
+    oldStartDate: string | null;
+    oldShift: string | null;
+    oldExtension: string | null;
+    notificationDate: string | null;
+    newStartDate: string;
+    newShift: string;
+    newExtension: string;
+    requestedBy: 'employee' | 'employer';
+    observation: string | null;
+};
+
+/** One employee's shift-change block, as {@see \App\Services\Reports\ShiftChangesReportService} produces it. */
+export type MovementsShiftChangeBlock = {
+    employee: string;
+    employer: string | null;
+    premise: string | null;
+    rows: MovementsShiftChangeRow[];
+    emptyReason: 'fixed-journey' | 'no-changes' | null;
+};
+
+/** The six movement-type groups "Movimientos del Período" (KOL-22) tabs over. */
+export type PeriodMovementsReport = {
+    hires: MovementsEmployeeRow[];
+    terminations: MovementsEmployeeRow[];
+    leaveStarts: MovementsLeaveRow[];
+    leaveEnds: MovementsLeaveRow[];
+    vacations: MovementsLeaveRow[];
+    shiftChanges: MovementsShiftChangeBlock[];
+};

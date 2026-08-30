@@ -2691,6 +2691,43 @@ return [
                 'observation' => 'Observation',
             ],
         ],
+
+        'movements' => [
+            'generate' => 'Generate',
+            'selection_footer' => ':count employee(s) included in the report',
+            'no_employees' => 'No employees selected. Use the filters above to choose who to include.',
+            'export' => [
+                'title' => 'Export',
+                'excel' => 'Excel',
+            ],
+            'tabs' => [
+                'hires' => 'Hires',
+                'terminations' => 'Terminations',
+                'leave_starts' => 'Leave starts',
+                'leave_ends' => 'Leave ends',
+                'vacations' => 'Approved vacations',
+                'shift_changes' => 'Shift changes',
+            ],
+            'columns' => [
+                'employee' => 'Employee',
+                'rut' => 'RUT',
+                'position' => 'Position',
+                'premise' => 'Premise',
+                'hire_date' => 'Hire date',
+                'termination_date' => 'Termination date',
+                'type' => 'Type',
+                'start_date' => 'Start date',
+                'end_date' => 'End date',
+                'days' => 'Days',
+            ],
+            'empty' => [
+                'hires' => 'No hires in this period.',
+                'terminations' => 'No terminations in this period.',
+                'leave_starts' => 'No leave starts in this period.',
+                'leave_ends' => 'No leave ends in this period.',
+                'vacations' => 'No approved vacations in this period.',
+            ],
+        ],
     ],
 
 ];
