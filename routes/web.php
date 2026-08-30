@@ -32,6 +32,7 @@ use App\Http\Controllers\OvertimePactController;
 use App\Http\Controllers\OvertimeRequestController;
 use App\Http\Controllers\OvertimeRestDayBalanceController;
 use App\Http\Controllers\PayrollSummaryReportController;
+use App\Http\Controllers\PeriodMovementsReportController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -246,6 +247,7 @@ Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])
     ->group(function () {
         Route::get('summary', [PayrollSummaryReportController::class, 'index'])->name('summary');
         Route::get('weekly-detail', [WeeklyDetailReportController::class, 'index'])->name('weekly-detail');
+        Route::get('period-movements', [PeriodMovementsReportController::class, 'index'])->name('period-movements');
     });
 
 // Producing the actual export file is a more sensitive action than viewing
@@ -257,6 +259,7 @@ Route::middleware(['auth', 'verified', 'permission:Export:PayrollReport'])
     ->group(function () {
         Route::get('summary/export/{format}', [PayrollSummaryReportController::class, 'export'])->name('summary.export');
         Route::get('weekly-detail/export/{format}', [WeeklyDetailReportController::class, 'export'])->name('weekly-detail.export');
+        Route::get('period-movements/export/{format}', [PeriodMovementsReportController::class, 'export'])->name('period-movements.export');
     });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)

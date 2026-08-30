@@ -2694,6 +2694,43 @@ return [
                 'observation' => 'Observación',
             ],
         ],
+
+        'movements' => [
+            'generate' => 'Generar',
+            'selection_footer' => ':count colaborador(es) incluidos en el reporte',
+            'no_employees' => 'No hay trabajadores seleccionados. Use los filtros de arriba para elegir a quiénes incluir.',
+            'export' => [
+                'title' => 'Exportar',
+                'excel' => 'Excel',
+            ],
+            'tabs' => [
+                'hires' => 'Altas',
+                'terminations' => 'Bajas',
+                'leave_starts' => 'Inicio de Licencias',
+                'leave_ends' => 'Fin de Licencias',
+                'vacations' => 'Vacaciones Aprobadas',
+                'shift_changes' => 'Cambios de Turno',
+            ],
+            'columns' => [
+                'employee' => 'Trabajador',
+                'rut' => 'RUT',
+                'position' => 'Cargo',
+                'premise' => 'Sucursal',
+                'hire_date' => 'Fecha de ingreso',
+                'termination_date' => 'Fecha de término',
+                'type' => 'Tipo',
+                'start_date' => 'Fecha de inicio',
+                'end_date' => 'Fecha de término',
+                'days' => 'Días',
+            ],
+            'empty' => [
+                'hires' => 'No hay altas en este período.',
+                'terminations' => 'No hay bajas en este período.',
+                'leave_starts' => 'No hay inicios de licencia en este período.',
+                'leave_ends' => 'No hay términos de licencia en este período.',
+                'vacations' => 'No hay vacaciones aprobadas en este período.',
+            ],
+        ],
     ],
 
 ];
