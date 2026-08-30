@@ -2670,6 +2670,30 @@ return [
                 'non_paid_unpaid_days' => 'Permiso sin goce',
             ],
         ],
+
+        'weekly_detail' => [
+            'selection_footer' => ':count trabajador(es) seleccionados — elija exactamente uno para ver su detalle',
+            'select_one_required' => 'Selecciona exactamente un trabajador para ver su detalle semanal.',
+            'week_label' => 'Semana del :start al :end',
+            'lunch_not_applicable' => 'No aplica',
+            'pending_modification' => 'Modificación pendiente',
+            'approved_modification' => 'Modificación aprobada',
+            'groups' => [
+                'entry' => 'Entrada',
+                'exit' => 'Salida',
+                'lunch' => 'Colación',
+            ],
+            'columns' => [
+                'day' => 'Día',
+                'status' => 'Estado',
+                'real' => 'Real',
+                'theoretical' => 'Teórica',
+                'difference' => 'Diferencia',
+                'theoretical_start' => 'Colación desde',
+                'theoretical_end' => 'Colación hasta',
+                'observation' => 'Observación',
+            ],
+        ],
     ],
 
 ];

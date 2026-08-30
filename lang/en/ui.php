@@ -2667,6 +2667,30 @@ return [
                 'non_paid_unpaid_days' => 'Unpaid leave',
             ],
         ],
+
+        'weekly_detail' => [
+            'selection_footer' => ':count employee(s) selected — pick exactly one to see their detail',
+            'select_one_required' => 'Select exactly one employee to see their weekly detail.',
+            'week_label' => 'Week of :start to :end',
+            'lunch_not_applicable' => 'N/A',
+            'pending_modification' => 'Pending modification',
+            'approved_modification' => 'Approved modification',
+            'groups' => [
+                'entry' => 'Clock-in',
+                'exit' => 'Clock-out',
+                'lunch' => 'Lunch',
+            ],
+            'columns' => [
+                'day' => 'Day',
+                'status' => 'Status',
+                'real' => 'Actual',
+                'theoretical' => 'Theoretical',
+                'difference' => 'Difference',
+                'theoretical_start' => 'Lunch from',
+                'theoretical_end' => 'Lunch to',
+                'observation' => 'Observation',
+            ],
+        ],
     ],
 
 ];

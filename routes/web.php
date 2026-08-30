@@ -45,6 +45,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ShiftAssignmentController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\UserRoleController;
+use App\Http\Controllers\WeeklyDetailReportController;
 use App\Http\Controllers\WorkdayController;
 use Illuminate\Support\Facades\Route;
 
@@ -236,13 +237,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // (KOL-20..24). Gated on its own permissions rather than role:admin — tenant
 // users (RRHH/admin), separate from the DT inspector's `dt.reports.*`. The
 // landing page (a report-type picker) is gone for now (KOL-20 UI redesign)
-// since only one report exists — the nav goes straight to it. Revisit once
-// KOL-21..24 land and a picker (or sub-nav) is actually needed again.
+// since only one report existed — now that KOL-21 lands a second, both are
+// reachable from the nav (app-sidebar.tsx) instead. Revisit once KOL-22..24
+// land and a picker (or sub-nav) is actually needed again.
 Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])
     ->prefix('payroll-reports')
     ->name('payroll-reports.')
     ->group(function () {
         Route::get('summary', [PayrollSummaryReportController::class, 'index'])->name('summary');
+        Route::get('weekly-detail', [WeeklyDetailReportController::class, 'index'])->name('weekly-detail');
     });
 
 // Producing the actual export file is a more sensitive action than viewing
@@ -253,6 +256,7 @@ Route::middleware(['auth', 'verified', 'permission:Export:PayrollReport'])
     ->name('payroll-reports.')
     ->group(function () {
         Route::get('summary/export/{format}', [PayrollSummaryReportController::class, 'export'])->name('summary.export');
+        Route::get('weekly-detail/export/{format}', [WeeklyDetailReportController::class, 'export'])->name('weekly-detail.export');
     });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)
