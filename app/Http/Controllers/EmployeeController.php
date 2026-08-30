@@ -119,7 +119,7 @@ class EmployeeController extends Controller
             $now,
             $now,
             $format,
-            $employees->pluck('id')->all(),
+            array_values($employees->map(fn (User $employee): int => $employee->id)->all()),
             new PayrollExportReadiness(collect()),
             confirmed: true,
         );
