@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
+import { Download, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
@@ -13,6 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -24,11 +30,20 @@ import {
     create,
     destroy,
     edit,
+    exportMethod as exportEmployees,
     index,
     show,
     toggleActive,
 } from '@/routes/employees';
 import type { Paginated } from '@/types/ui';
+
+function filenameFrom(response: Response): string {
+    const match = /filename="?([^"]+)"?/.exec(
+        response.headers.get('content-disposition') ?? '',
+    );
+
+    return match?.[1] ?? 'export';
+}
 
 type Employee = {
     id: number;
@@ -73,6 +88,7 @@ export default function EmployeesIndex({
 }: Props) {
     const { t } = useTranslations();
     const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
+    const [pendingExport, setPendingExport] = useState(false);
 
     const [isActive, setIsActive] = useState(filters.is_active ?? 'all');
     const [isAdmin, setIsAdmin] = useState(filters.is_admin ?? 'all');
@@ -122,6 +138,26 @@ export default function EmployeesIndex({
             {},
             { preserveScroll: true, preserveState: true },
         );
+    }
+
+    async function handleExport(format: 'excel' | 'csv') {
+        setPendingExport(true);
+
+        try {
+            const response = await fetch(
+                `${exportEmployees(format).url}${window.location.search}`,
+            );
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filenameFrom(response);
+            link.click();
+            URL.revokeObjectURL(url);
+        } finally {
+            setPendingExport(false);
+        }
     }
 
     function confirmDelete() {
@@ -287,12 +323,35 @@ export default function EmployeesIndex({
                         title={t('ui.employees.title')}
                         description={t('ui.employees.description')}
                     />
-                    <Button asChild>
-                        <Link href={create()}>
-                            <Plus className="size-4" />
-                            {t('ui.employees.new')}
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" disabled={pendingExport}>
+                                    <Download className="size-4" />
+                                    {t('ui.employees.export.button')}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                    onSelect={() => handleExport('excel')}
+                                >
+                                    {t('ui.employees.export.excel')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onSelect={() => handleExport('csv')}
+                                >
+                                    {t('ui.employees.export.csv')}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <Button asChild>
+                            <Link href={create()}>
+                                <Plus className="size-4" />
+                                {t('ui.employees.new')}
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <DataTable
