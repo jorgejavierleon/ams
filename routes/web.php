@@ -31,7 +31,7 @@ use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OvertimePactController;
 use App\Http\Controllers\OvertimeRequestController;
 use App\Http\Controllers\OvertimeRestDayBalanceController;
-use App\Http\Controllers\PayrollReportController;
+use App\Http\Controllers\PayrollSummaryReportController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
@@ -234,10 +234,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Payroll reports section (KOL-18): the container for the five RF-1 reports
 // (KOL-20..24). Gated on its own permissions rather than role:admin — tenant
-// users (RRHH/admin), separate from the DT inspector's `dt.reports.*`.
-Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])->group(function () {
-    Route::get('payroll-reports', [PayrollReportController::class, 'index'])->name('payroll-reports.index');
-});
+// users (RRHH/admin), separate from the DT inspector's `dt.reports.*`. The
+// landing page (a report-type picker) is gone for now (KOL-20 UI redesign)
+// since only one report exists — the nav goes straight to it. Revisit once
+// KOL-21..24 land and a picker (or sub-nav) is actually needed again.
+Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])
+    ->prefix('payroll-reports')
+    ->name('payroll-reports.')
+    ->group(function () {
+        Route::get('summary', [PayrollSummaryReportController::class, 'index'])->name('summary');
+    });
+
+// Producing the actual export file is a more sensitive action than viewing
+// the on-screen report, so it holds its own permission (RoleSeeder: `View`
+// and `Export` are deliberately separate for PayrollReport).
+Route::middleware(['auth', 'verified', 'permission:Export:PayrollReport'])
+    ->prefix('payroll-reports')
+    ->name('payroll-reports.')
+    ->group(function () {
+        Route::get('summary/export/{format}', [PayrollSummaryReportController::class, 'export'])->name('summary.export');
+    });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)
 Route::middleware(['auth', 'verified'])->prefix('my')->name('my.')->group(function () {

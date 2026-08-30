@@ -172,6 +172,21 @@ Based on the work involved, activate:
 - Keep multi-tenancy: all models behind `BelongsToOrganization` must scope to the current org
 - Never reimplement `MarkManager`, `LeaveManager`, `WorkdayCalculator`, or any Observer — import them
 
+### UI/UX layout work — defer verification until the browser is approved
+When the task (or part of it) is visual/layout work — building a page from a design mock,
+reworking a component's look, iterating on spacing/styling — **do not run pint, type-check,
+lint, `npm run build`, or Pest until the user has looked at the result in the browser and
+approved it.** Layout changes typically go through several rounds of visual tweaks based on
+what the user sees; running the full verification stack after every round is wasted work
+when the very next message is "move this chip over" or "make this wider." Get the change
+building and visible (dev server / HMR is enough — no need for `npm run build`), show it or
+describe it, and iterate on the user's feedback first.
+
+Only once the user says the layout/behavior looks right do you run the checks below and
+treat the result as ready for Phase 4. If the task is backend-only or the UI portion is
+already approved, run the checks as usual — this deferral only applies while visual
+iteration is still in play.
+
 ### After all PHP changes
 ```bash
 vendor/bin/pint --dirty --format agent

@@ -1,111 +1,145 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import type { ReportPeriodType } from './types';
-
-type PeriodTypeOption = { value: ReportPeriodType; label: string };
 
 type Props = {
     month: string;
-    periodType: ReportPeriodType;
-    periodTypeOptions: PeriodTypeOption[];
-    start: Date;
-    end: Date;
     onMonthChange: (month: string) => void;
-    onPeriodTypeChange: (periodType: ReportPeriodType) => void;
 };
 
-function shiftMonth(month: string, delta: number): string {
-    const [year, monthNumber] = month.split('-').map(Number);
-    const date = new Date(year, monthNumber - 1 + delta, 1);
+const today = new Date();
 
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+function toMonth(year: number, monthIndex: number): string {
+    return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+}
+
+/** `YYYY-MM` for the current real month, the period picker's default. */
+export function currentMonthValue(): string {
+    return toMonth(today.getFullYear(), today.getMonth());
 }
 
 /**
- * The report filter's "Paso 1 · Período" panel (KOL-89): prev/next month
- * arrows plus a quincena segmented control, replacing the previous native
- * `<input type=month>` and `<Select>` pair. `report-filter-form.tsx` still
- * owns the month/periodType state and the resolved date range so the label
- * shown here can never disagree with the range caption below it.
+ * The report filter's period picker (KOL-20 UI redesign): a single chip that
+ * opens a month-grid dropdown, replacing the previous "Paso 1" card with
+ * prev/next-month arrows and a quincena segmented control. Quincena support
+ * was dropped from the UI along with it — `ReportPeriod`/`ReportPeriodType`
+ * still resolve quincenas server-side, this picker just never offers one.
  */
-export function PeriodSelector({
-    month,
-    periodType,
-    periodTypeOptions,
-    start,
-    end,
-    onMonthChange,
-    onPeriodTypeChange,
-}: Props) {
-    const { t, formatDate, localeTag } = useTranslations();
-
+export function PeriodSelector({ month, onMonthChange }: Props) {
+    const { t, localeTag } = useTranslations();
+    const [open, setOpen] = useState(false);
     const [year, monthNumber] = month.split('-').map(Number);
-    const monthLabel = new Intl.DateTimeFormat(localeTag, {
+    const [viewYear, setViewYear] = useState(year);
+
+    const rawMonthLabel = new Intl.DateTimeFormat(localeTag, {
         month: 'long',
         year: 'numeric',
     }).format(new Date(year, monthNumber - 1, 1));
+    const monthLabel =
+        rawMonthLabel.charAt(0).toUpperCase() + rawMonthLabel.slice(1);
+
+    const monthFormatter = new Intl.DateTimeFormat(localeTag, {
+        month: 'short',
+    });
+
+    const isFutureYear = viewYear >= today.getFullYear();
 
     return (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-4">
-            <div className="flex flex-col gap-0.5">
-                <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    {t('ui.payroll_reports.filters.step_period')}
-                </span>
-                <span className="text-base font-semibold capitalize">
-                    {monthLabel}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                    {t('ui.payroll_reports.filters.period_range', {
-                        start: formatDate(start),
-                        end: formatDate(end),
-                    })}
-                </span>
-            </div>
+        <Popover
+            open={open}
+            onOpenChange={(next) => {
+                setOpen(next);
 
-            <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-1 rounded-lg border p-0.5">
+                if (next) {
+                    setViewYear(year);
+                }
+            }}
+        >
+            <PopoverTrigger asChild>
+                <button
+                    type="button"
+                    className={cn(
+                        'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium',
+                        open
+                            ? 'border-muted-foreground bg-muted'
+                            : 'border-border bg-card hover:border-muted-foreground',
+                    )}
+                >
+                    {monthLabel}
+                    <ChevronDown className="size-3.5 text-muted-foreground" />
+                </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-68 p-2.5" align="end">
+                <div className="flex items-center justify-between px-0.5 pb-2">
                     <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        aria-label={t('ui.payroll_reports.filters.period_prev')}
-                        onClick={() => onMonthChange(shiftMonth(month, -1))}
+                        className="size-7"
+                        aria-label={t(
+                            'ui.payroll_reports.filters.period_prev_year',
+                        )}
+                        onClick={() => setViewYear((y) => y - 1)}
                     >
                         <ChevronLeft className="size-4" />
                     </Button>
+                    <span className="text-sm font-semibold">{viewYear}</span>
                     <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        aria-label={t('ui.payroll_reports.filters.period_next')}
-                        onClick={() => onMonthChange(shiftMonth(month, 1))}
+                        className="size-7"
+                        aria-label={t(
+                            'ui.payroll_reports.filters.period_next_year',
+                        )}
+                        disabled={isFutureYear}
+                        onClick={() =>
+                            setViewYear((y) => Math.min(today.getFullYear(), y + 1))
+                        }
                     >
                         <ChevronRight className="size-4" />
                     </Button>
                 </div>
 
-                <div className="flex gap-1 rounded-lg bg-muted p-1">
-                    {periodTypeOptions.map((option) => (
-                        <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => onPeriodTypeChange(option.value)}
-                            className={cn(
-                                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                                periodType === option.value
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'text-muted-foreground hover:text-foreground',
-                            )}
-                        >
-                            {t(
-                                `ui.payroll_reports.filters.period_types_short.${option.value}`,
-                            )}
-                        </button>
-                    ))}
+                <div className="grid grid-cols-3 gap-1">
+                    {Array.from({ length: 12 }, (_, monthIndex) => {
+                        const future =
+                            viewYear > today.getFullYear() ||
+                            (viewYear === today.getFullYear() &&
+                                monthIndex > today.getMonth());
+                        const active =
+                            viewYear === year && monthIndex === monthNumber - 1;
+
+                        return (
+                            <button
+                                key={monthIndex}
+                                type="button"
+                                disabled={future}
+                                onClick={() => {
+                                    onMonthChange(toMonth(viewYear, monthIndex));
+                                    setOpen(false);
+                                }}
+                                className={cn(
+                                    'h-8 rounded-md text-sm capitalize',
+                                    active
+                                        ? 'bg-primary font-semibold text-primary-foreground'
+                                        : 'text-foreground hover:bg-muted',
+                                    future && 'cursor-default opacity-35 hover:bg-transparent',
+                                )}
+                            >
+                                {monthFormatter.format(new Date(viewYear, monthIndex, 1))}
+                            </button>
+                        );
+                    })}
                 </div>
-            </div>
-        </div>
+            </PopoverContent>
+        </Popover>
     );
 }

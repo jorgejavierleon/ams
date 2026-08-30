@@ -43,3 +43,30 @@ export type PayrollReportFilterOptions = {
     costCenters: ReportFacetOption[];
     contractTypes: ReportFacetOption[];
 };
+
+/** One employee's row in the "Resumen de Remuneraciones por Período" (KOL-20). */
+export type PayrollSummaryReportRow = {
+    userId: number;
+    name: string;
+    rut: string | null;
+    workedHours: string;
+    nonWorkedHours: string;
+    totalLateness: string;
+    overtimeOrdinaryDay: string;
+    overtimeSundayOrHoliday: string;
+    overtimeCompensatedInRestDays: string;
+    overtimeUnauthorized: string;
+    justifiedAbsenceDays: number;
+    unjustifiedAbsenceDays: number;
+    sundaysAndHolidaysWorked: number;
+    paidWorkedDays: number;
+    paidVacationDays: number;
+    paidLeaveDays: number;
+    nonPaidUnjustifiedAbsenceDays: number;
+    nonPaidMedicalLeaveDays: number;
+    nonPaidUnpaidLeaveDays: number;
+};
+
+export type PayrollSummaryReportTotal = Omit<PayrollSummaryReportRow, 'userId' | 'name' | 'rut'> & {
+    employeeCount: number;
+};
