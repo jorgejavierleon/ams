@@ -1,13 +1,17 @@
 <?php
 
 use App\Enums\DocumentSignatureStatus;
+use App\Enums\DocumentSignatureType;
 use App\Enums\DocumentStatus;
+use App\Mail\DocumentFullySigned;
+use App\Mail\DocumentSignatureVerificationCode;
 use App\Models\Document;
 use App\Models\DocumentSignature;
 use App\Models\Organization;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -24,6 +28,29 @@ function mobileDocumentEmployee(?Organization $organization = null): User
     return User::factory()->employee()->create([
         'organization_id' => $organization->id,
     ]);
+}
+
+/**
+ * A document out for signature with a single pending employee signature
+ * belonging to $employee, mirroring DocumentSignatureWorkflowTest's own
+ * pendingContractFor().
+ */
+function mobilePendingSignatureFor(User $employee): Document
+{
+    $document = Document::factory()->pendingSignature()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+    ]);
+
+    DocumentSignature::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'document_id' => $document->id,
+        'user_id' => $employee->id,
+        'type' => DocumentSignatureType::Employee,
+        'status' => DocumentSignatureStatus::Pending,
+    ]);
+
+    return $document;
 }
 
 // --- Authentication and authorization ---
@@ -339,4 +366,291 @@ test('awaiting_me is true for the document detail when it is the employee turn (
     $response = $this->getJson("/api/v1/me/documents/{$document->id}")->assertOk();
 
     expect($response->json('awaiting_me'))->toBeTrue();
+});
+
+// --- Send code: authentication and authorization (#1) ---
+
+test('an unauthenticated request to send a code returns 401', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/send-code")->assertUnauthorized();
+});
+
+test('an employee without SignOwn:Document is forbidden from sending a code', function () {
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->create(['organization_id' => $organization->id]);
+    $employee->givePermissionTo('ViewOwn:Document');
+    $document = mobilePendingSignatureFor($employee);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/send-code")->assertForbidden();
+});
+
+test('a document belonging to another employee who is not a signatory gets 403 when sending a code', function () {
+    $employee = mobileDocumentEmployee();
+    $other = mobileDocumentEmployee($employee->organization);
+    $document = mobilePendingSignatureFor($other);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/send-code")->assertForbidden();
+});
+
+test('an unknown document id gets 404 when sending a code', function () {
+    $employee = mobileDocumentEmployee();
+    Sanctum::actingAs($employee);
+
+    $this->postJson('/api/v1/me/documents/999999/send-code')->assertNotFound();
+});
+
+// --- Send code: resend semantics (#2) ---
+
+test('a plain send-code request reuses a live code', function () {
+    Mail::fake();
+
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    $signature = $document->signatures()->first();
+    $signature->update([
+        'verification_code' => '111111',
+        'verification_code_expires_at' => now()->addMinutes(15),
+    ]);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/send-code")->assertOk();
+
+    expect($signature->refresh()->verification_code)->toBe('111111');
+    Mail::assertNotQueued(DocumentSignatureVerificationCode::class);
+});
+
+test('an explicit resend mints and emails a fresh code', function () {
+    Mail::fake();
+
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    $signature = $document->signatures()->first();
+    $signature->update([
+        'verification_code' => '111111',
+        'verification_code_expires_at' => now()->addMinutes(15),
+    ]);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/send-code", ['resend' => true])->assertOk();
+
+    expect($signature->refresh()->verification_code)->not->toBe('111111');
+    Mail::assertQueued(DocumentSignatureVerificationCode::class);
+});
+
+// --- Send code: response shape (#3) ---
+
+test('send-code returns sent true and an expires_at wall-clock string', function () {
+    Mail::fake();
+
+    $employee = mobileDocumentEmployee();
+    $employee->update(['personal_email' => 'juan@example.com']);
+    $document = mobilePendingSignatureFor($employee);
+    Sanctum::actingAs($employee);
+
+    $response = $this->postJson("/api/v1/me/documents/{$document->id}/send-code")->assertOk();
+
+    $signature = $document->signatures()->first()->refresh();
+
+    expect($response->json('sent'))->toBeTrue()
+        ->and($response->json('expires_at'))->toBe($signature->verification_code_expires_at->format('Y-m-d H:i:s'));
+});
+
+test('send-code returns sent false and a null expires_at when the signer has no actionable signature', function () {
+    $employee = mobileDocumentEmployee();
+    $document = Document::factory()->published()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+    ]);
+    Sanctum::actingAs($employee);
+
+    $response = $this->postJson("/api/v1/me/documents/{$document->id}/send-code")->assertOk();
+
+    expect($response->json())->toMatchArray(['sent' => false, 'expires_at' => null]);
+});
+
+test('send-code mints nothing when ordered signing blocks the employee turn', function () {
+    Mail::fake();
+
+    $employee = mobileDocumentEmployee();
+    $legalRep = mobileDocumentEmployee($employee->organization);
+    $document = Document::factory()->pendingSignature()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'ordered_signing' => true,
+    ]);
+    DocumentSignature::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'document_id' => $document->id,
+        'user_id' => $legalRep->id,
+        'status' => DocumentSignatureStatus::Pending,
+        'order' => 1,
+    ]);
+    $employeeSignature = DocumentSignature::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'document_id' => $document->id,
+        'user_id' => $employee->id,
+        'status' => DocumentSignatureStatus::Pending,
+        'order' => 2,
+    ]);
+    Sanctum::actingAs($employee);
+
+    $response = $this->postJson("/api/v1/me/documents/{$document->id}/send-code")->assertOk();
+
+    expect($response->json('sent'))->toBeFalse()
+        ->and($employeeSignature->refresh()->verification_code)->toBeNull();
+    Mail::assertNothingQueued();
+});
+
+// --- Sign: authentication and authorization (#4) ---
+
+test('an unauthenticated request to sign returns 401', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/sign", ['code' => '123456'])->assertUnauthorized();
+});
+
+test('an employee without SignOwn:Document is forbidden from signing', function () {
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->create(['organization_id' => $organization->id]);
+    $employee->givePermissionTo('ViewOwn:Document');
+    $document = mobilePendingSignatureFor($employee);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/sign", ['code' => '123456'])->assertForbidden();
+});
+
+test('a document belonging to another employee who is not a signatory gets 403 when signing', function () {
+    $employee = mobileDocumentEmployee();
+    $other = mobileDocumentEmployee($employee->organization);
+    $document = mobilePendingSignatureFor($other);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/sign", ['code' => '123456'])->assertForbidden();
+});
+
+test('an unknown document id gets 404 when signing', function () {
+    $employee = mobileDocumentEmployee();
+    Sanctum::actingAs($employee);
+
+    $this->postJson('/api/v1/me/documents/999999/sign', ['code' => '123456'])->assertNotFound();
+});
+
+// --- Sign: invalid code (#5) ---
+
+test('a missing code returns a 422 validation error and does not sign', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    $document->signatures()->first()->update([
+        'verification_code' => '654321',
+        'verification_code_expires_at' => now()->addMinutes(15),
+    ]);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/sign")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('code');
+
+    expect($document->refresh()->status)->toBe(DocumentStatus::PendingSignature)
+        ->and($document->signatures()->first()->status)->toBe(DocumentSignatureStatus::Pending);
+});
+
+test('a wrong code returns a 422 validation error and does not sign', function () {
+    Mail::fake();
+
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    $document->signatures()->first()->update([
+        'verification_code' => '654321',
+        'verification_code_expires_at' => now()->addMinutes(15),
+    ]);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/sign", ['code' => '000000'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('code');
+
+    expect($document->refresh()->status)->toBe(DocumentStatus::PendingSignature)
+        ->and($document->signatures()->first()->status)->toBe(DocumentSignatureStatus::Pending);
+    Mail::assertNothingQueued();
+});
+
+test('an expired code returns a 422 validation error and does not sign', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    $document->signatures()->first()->update([
+        'verification_code' => '654321',
+        'verification_code_expires_at' => now()->subMinute(),
+    ]);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/sign", ['code' => '654321'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('code');
+
+    expect($document->refresh()->status)->toBe(DocumentStatus::PendingSignature);
+});
+
+// --- Sign: success (#6, #7) ---
+
+test('a correct code signs and returns the signature and document status', function () {
+    Mail::fake();
+
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    $signature = $document->signatures()->first();
+    $signature->update([
+        'verification_code' => '654321',
+        'verification_code_expires_at' => now()->addMinutes(15),
+    ]);
+    Sanctum::actingAs($employee);
+
+    $response = $this->postJson("/api/v1/me/documents/{$document->id}/sign", ['code' => '654321'])->assertOk();
+
+    $signature->refresh();
+
+    expect($response->json())->toMatchArray([
+        'status' => 'signed',
+        'signed_at' => $signature->signed_at->format('Y-m-d H:i:s'),
+        'document_status' => 'signed',
+    ]);
+
+    expect($signature->signed_ip)->not->toBeNull()
+        ->and($signature->signed_content_hash)->toBe($document->refresh()->contentHash())
+        ->and($document->getFirstMedia(Document::SIGNED_MEDIA_COLLECTION))->not->toBeNull();
+
+    Mail::assertQueued(DocumentFullySigned::class);
+});
+
+test('signing the only-but-not-last signature keeps the document pending and reports its own status', function () {
+    Mail::fake();
+
+    $employee = mobileDocumentEmployee();
+    $legalRep = mobileDocumentEmployee($employee->organization);
+    $document = mobilePendingSignatureFor($employee);
+    DocumentSignature::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'document_id' => $document->id,
+        'user_id' => $legalRep->id,
+        'type' => DocumentSignatureType::LegalRep,
+        'status' => DocumentSignatureStatus::Pending,
+    ]);
+    $employeeSignature = $document->signatures()->where('user_id', $employee->id)->first();
+    $employeeSignature->update([
+        'verification_code' => '654321',
+        'verification_code_expires_at' => now()->addMinutes(15),
+    ]);
+    Sanctum::actingAs($employee);
+
+    $response = $this->postJson("/api/v1/me/documents/{$document->id}/sign", ['code' => '654321'])->assertOk();
+
+    expect($response->json())->toMatchArray([
+        'status' => 'signed',
+        'document_status' => 'pending_signature',
+    ]);
+    Mail::assertNotQueued(DocumentFullySigned::class);
 });

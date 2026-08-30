@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Documents\SendVerificationCode;
+use App\Actions\Documents\SignDocument;
 use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\My\DocumentController;
@@ -15,12 +17,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * The Documentos tab's list (kolvi-mobile KMO-42): the employee's own
- * non-draft documents — those belonging to them or listing them as a
- * signatory — with a status badge and the awaiting_me flag that drives the
- * pending-signature count and tab-bar badge. Mirrors
- * {@see DocumentController::index()}'s scope exactly, ported to /api/v1 the
- * way KOL-81 ported the leaves list.
+ * The Documentos tab (kolvi-mobile KMO-42/KMO-43/KMO-44): the employee's own
+ * non-draft documents, one document's resolved body, and the sign flow behind
+ * the reader's sticky Firmar documento button — those belonging to them or
+ * listing them as a signatory. Mirrors {@see DocumentController}'s own
+ * index()/show()/sendCode()/sign() exactly, ported to /api/v1 the way KOL-81
+ * ported the leaves list.
  */
 class DocumentsController extends Controller
 {
@@ -59,13 +61,83 @@ class DocumentsController extends Controller
      */
     public function show(Request $request, Document $document, DocumentVariableResolver $resolver): DocumentDetailResource
     {
+        $this->authorizeAccess($request, $document);
+
+        return new DocumentDetailResource($document, $resolver->resolve($document));
+    }
+
+    /**
+     * Issue (or re-issue) the verification code for the signatory's own
+     * actionable signature (kolvi-mobile KMO-44), mirroring
+     * {@see DocumentController::sendCode()} exactly. `sent` is false, with
+     * nothing minted or emailed, when the signer has no actionable signature
+     * right now — already signed, rejected, or not yet their turn under
+     * ordered signing.
+     */
+    public function sendCode(Request $request, Document $document, SendVerificationCode $sendCode): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $this->authorizeAccess($request, $document);
+
+        $sent = $sendCode->handle($document, $user, $request->boolean('resend'));
+
+        $expiresAt = $sent
+            ? $document->actionableSignatureFor($user)?->verification_code_expires_at?->format('Y-m-d H:i:s')
+            : null;
+
+        return response()->json([
+            'sent' => $sent,
+            'expires_at' => $expiresAt,
+        ]);
+    }
+
+    /**
+     * Author the signatory's firma electrónica simple (kolvi-mobile KMO-44),
+     * mirroring {@see DocumentController::sign()} exactly. SignDocument
+     * mutates $document in place when this was the last outstanding
+     * signature, so its status here already reflects that without a second
+     * fetch.
+     */
+    public function sign(Request $request, Document $document, SignDocument $signDocument): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $this->authorizeAccess($request, $document);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string'],
+        ]);
+
+        $signDocument->handle(
+            $document,
+            $user,
+            $validated['code'],
+            (string) $request->ip(),
+            $request->userAgent(),
+        );
+
+        $signature = $document->signatures()->where('user_id', $user->id)->first();
+
+        return response()->json([
+            'status' => $signature->status->value,
+            'signed_at' => $signature->signed_at?->format('Y-m-d H:i:s'),
+            'document_status' => $document->status->value,
+        ]);
+    }
+
+    /**
+     * A signatory may only reach a document that belongs to them or lists
+     * them as a signatory, mirroring
+     * {@see DocumentController::authorizeAccess()} exactly.
+     */
+    private function authorizeAccess(Request $request, Document $document): void
+    {
         /** @var User $user */
         $user = $request->user();
 
         $isSignatory = $document->signatures()->where('user_id', $user->id)->exists();
 
         abort_unless($document->user_id === $user->id || $isSignatory, 403);
-
-        return new DocumentDetailResource($document, $resolver->resolve($document));
     }
 }
