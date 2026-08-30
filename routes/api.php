@@ -151,6 +151,21 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             ->middleware('permission:ViewOwn:Document')
             ->name('me.documents.show');
 
+        // The sign flow behind the reader's sticky Firmar documento button
+        // (KMO-44): request/resend the verification code, then consume it to
+        // author the firma electrónica simple. Same permission gate as the
+        // web self-service portal (routes/web.php), reusing
+        // SendVerificationCode/SignDocument unchanged, mirroring
+        // My\DocumentController::sendCode()/sign(). Reject
+        // (My\DocumentController::reject()) is out of scope — kolvi-mobile
+        // tracks that separately as KMO-45.
+        Route::post('me/documents/{document}/send-code', [DocumentsController::class, 'sendCode'])
+            ->middleware('permission:SignOwn:Document')
+            ->name('me.documents.send-code');
+        Route::post('me/documents/{document}/sign', [DocumentsController::class, 'sign'])
+            ->middleware('permission:SignOwn:Document')
+            ->name('me.documents.sign');
+
         // Mirror the web permission model: clocking needs ClockOwn:Mark, reading
         // needs ViewOwn:Mark.
         Route::post('marks', [MarkController::class, 'store'])
