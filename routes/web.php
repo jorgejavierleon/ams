@@ -101,6 +101,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::patch('employees/{employee}/active', [EmployeeController::class, 'toggleActive'])
         ->name('employees.toggle-active');
+    Route::get('employees/export/{format}', [EmployeeController::class, 'export'])
+        ->name('employees.export');
     Route::resource('employees', EmployeeController::class);
 
     Route::post('employees/{employee}/shift-assignments', [ShiftAssignmentController::class, 'store'])

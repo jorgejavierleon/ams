@@ -10,13 +10,31 @@ use App\Models\OvertimePact;
 use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
+use App\Support\Rut;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\TestResponse;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpFoundation\Response;
 
 uses(RefreshDatabase::class);
+
+function employeeMasterSpreadsheetFromXlsxResponse(Response $response): Spreadsheet
+{
+    $path = tempnam(sys_get_temp_dir(), 'xlsx');
+    file_put_contents($path, TestResponse::fromBaseResponse($response)->streamedContent());
+
+    try {
+        return (new XlsxReader)->load($path);
+    } finally {
+        unlink($path);
+    }
+}
 
 beforeEach(function () {
     Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
@@ -660,6 +678,171 @@ test('an admin viewing an employee page is granted manageOvertimePacts', functio
     $this->actingAs($admin)
         ->get(route('employees.show', $employee))
         ->assertInertia(fn ($page) => $page->where('can.manageOvertimePacts', true));
+});
+
+// --- Export (Maestro de Trabajadores, KOL-23) ---
+
+test('non-admin users cannot export employees', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('employees.export', ['format' => 'excel']))
+        ->assertForbidden();
+});
+
+test('an unsupported export format is rejected', function () {
+    $admin = employeeAdmin();
+
+    $this->actingAs($admin)
+        ->get(route('employees.export', ['format' => 'pdf']))
+        ->assertNotFound();
+});
+
+test('the excel export contains the full ficha column set with a formatted rut', function () {
+    $admin = employeeAdmin();
+    $company = Company::factory()->create(['organization_id' => $admin->organization_id, 'social_reason' => 'Acme SpA']);
+    $position = Position::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Analista']);
+    $premise = Premise::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'Casa Matriz']);
+    $costCenter = CostCenter::factory()->create(['organization_id' => $admin->organization_id, 'name' => 'CC-01']);
+
+    User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'company_id' => $company->id,
+        'first_name' => 'Ana',
+        'last_name' => 'Pérez',
+        'second_last_name' => 'Soto',
+        'rut' => validRut(12345678),
+        'email' => 'ana@example.com',
+        'position_id' => $position->id,
+        'premise_id' => $premise->id,
+        'cost_center_id' => $costCenter->id,
+        'contract_type' => ContractType::Indefinido,
+        'contract_start_date' => '2026-01-05',
+        'contract_end_date' => null,
+        'is_active' => true,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('employees.export', ['format' => 'excel']))
+        ->assertOk();
+
+    $spreadsheet = employeeMasterSpreadsheetFromXlsxResponse($response->baseResponse);
+    $rows = $spreadsheet->getActiveSheet()->toArray();
+
+    expect($rows[0])->toContain('RUT', 'Empresa', 'Centro de costo', 'Sucursal', 'Cargo', 'Tipo de contrato', 'Activo');
+
+    $header = $rows[0];
+    $dataRow = array_combine($header, $rows[1]);
+
+    expect($dataRow['Nombre'])->toBe('Ana')
+        ->and($dataRow['Apellido paterno'])->toBe('Pérez')
+        ->and($dataRow['Apellido materno'])->toBe('Soto')
+        ->and($dataRow['RUT'])->toBe(Rut::format(validRut(12345678)))
+        ->and($dataRow['Empresa'])->toBe('Acme SpA')
+        ->and($dataRow['Centro de costo'])->toBe('CC-01')
+        ->and($dataRow['Sucursal'])->toBe('Casa Matriz')
+        ->and($dataRow['Cargo'])->toBe('Analista')
+        ->and($dataRow['Tipo de contrato'])->toBe('Indefinido')
+        ->and($dataRow['Activo'])->toBe('Sí');
+});
+
+test('inactive employees are included and flagged rather than excluded by default', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'is_active' => false]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('employees.export', ['format' => 'excel']))
+        ->assertOk();
+
+    $rows = employeeMasterSpreadsheetFromXlsxResponse($response->baseResponse)->getActiveSheet()->toArray();
+    $header = $rows[0];
+    $dataRow = array_combine($header, $rows[1]);
+
+    expect($dataRow['Activo'])->toBe('No');
+});
+
+test('the export respects the is_active filter', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'is_active' => true, 'email' => 'active@example.com']);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'is_active' => false, 'email' => 'inactive@example.com']);
+
+    $response = $this->actingAs($admin)
+        ->get(route('employees.export', ['format' => 'excel', 'is_active' => '1']))
+        ->assertOk();
+
+    $rows = employeeMasterSpreadsheetFromXlsxResponse($response->baseResponse)->getActiveSheet()->toArray();
+
+    expect($rows)->toHaveCount(2); // header + one active employee
+});
+
+test('the export respects the search filter', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'email' => 'findme@example.com']);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id, 'email' => 'other@example.com']);
+
+    $response = $this->actingAs($admin)
+        ->get(route('employees.export', ['format' => 'excel', 'search' => 'findme']))
+        ->assertOk();
+
+    $rows = employeeMasterSpreadsheetFromXlsxResponse($response->baseResponse)->getActiveSheet()->toArray();
+    $header = $rows[0];
+    $dataRow = array_combine($header, $rows[1]);
+
+    expect($rows)->toHaveCount(2)
+        ->and($dataRow['Email'])->toBe('findme@example.com');
+});
+
+test('the export only includes employees from the current organization', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    User::factory()->employee()->create(); // foreign organization
+
+    $response = $this->actingAs($admin)
+        ->get(route('employees.export', ['format' => 'excel']))
+        ->assertOk();
+
+    $rows = employeeMasterSpreadsheetFromXlsxResponse($response->baseResponse)->getActiveSheet()->toArray();
+
+    expect($rows)->toHaveCount(2);
+});
+
+test('the csv export delimits with a semicolon for the Chilean locale', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'rut' => validRut(12345678),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('employees.export', ['format' => 'csv']))
+        ->assertOk();
+
+    $content = TestResponse::fromBaseResponse($response->baseResponse)->streamedContent();
+    $lines = explode("\n", trim($content));
+
+    expect($lines[0])->toContain(';')
+        ->and($lines[1])->toContain(Rut::format(validRut(12345678)));
+});
+
+test('every export is recorded in the payroll export activity log', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.export', ['format' => 'excel']))
+        ->assertOk();
+
+    $activity = Activity::query()
+        ->where('log_name', 'payroll_export')
+        ->where('description', 'Exported payroll report')
+        ->latest('id')
+        ->first();
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->causer_id)->toBe($admin->id)
+        ->and($activity->properties['report_type'])->toBe('employee-master')
+        ->and($activity->properties['format'])->toBe('excel')
+        ->and($activity->properties['employee_ids'])->toContain($employee->id);
 });
 
 // --- Delete ---

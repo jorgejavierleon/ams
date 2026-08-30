@@ -16,13 +16,19 @@ use App\Models\Shift;
 use App\Models\ShiftAssignment;
 use App\Models\User;
 use App\Rules\ValidRut;
+use App\Services\Reports\EmployeeMasterExporter;
+use App\Services\Reports\PayrollExportReadiness;
+use App\Services\Reports\PayrollExportReadinessService;
 use App\Support\Rut;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class EmployeeController extends Controller
 {
@@ -30,13 +36,13 @@ class EmployeeController extends Controller
 
     public function index(Request $request): Response
     {
-        $search = $request->string('search')->trim()->value() ?: null;
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
             ['name', 'email', 'rut', 'created_at'],
             'name',
         );
 
+        $search = $request->string('search')->trim()->value() ?: null;
         $isActive = $this->ternaryFilter($request, 'is_active');
         $isAdmin = $this->ternaryFilter($request, 'is_admin');
         $premiseIds = $this->idListFilter($request, 'premises');
@@ -44,19 +50,8 @@ class EmployeeController extends Controller
         $costCenterIds = $this->idListFilter($request, 'costCenters');
         $contractTypes = $this->enumListFilter($request, 'contractTypes', ContractType::class);
 
-        $employees = User::query()
-            ->employees()
-            ->where('organization_id', Company::currentOrganizationId())
+        $employees = $this->filteredEmployeesQuery($request)
             ->with(['position:id,name', 'premise:id,name', 'costCenter:id,name'])
-            ->when($search, fn ($query) => $query->where(fn ($q) => $q
-                ->where('email', 'like', "%{$search}%")
-                ->orWhere('rut', 'like', "%{$search}%")))
-            ->when($isActive !== null, fn ($query) => $query->where('is_active', $isActive))
-            ->when($isAdmin !== null, fn ($query) => $query->where('is_admin', $isAdmin))
-            ->when($premiseIds, fn ($query) => $query->whereIn('premise_id', $premiseIds))
-            ->when($positionIds, fn ($query) => $query->whereIn('position_id', $positionIds))
-            ->when($costCenterIds, fn ($query) => $query->whereIn('cost_center_id', $costCenterIds))
-            ->when($contractTypes, fn ($query) => $query->whereIn('contract_type', $contractTypes))
             ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
@@ -92,6 +87,44 @@ class EmployeeController extends Controller
             'costCenterOptions' => $this->costCenterOptions(),
             'contractTypeOptions' => ContractType::options(),
         ]);
+    }
+
+    /**
+     * "Maestro de Trabajadores" (RF-1, KOL-23): a bulk dump of the employee
+     * master file — full ficha plus current contract, sucursal and centro de
+     * costo. Reuses {@see self::filteredEmployeesQuery()} so the file always
+     * matches whatever search/filters are applied on the table (AC #7),
+     * including inactive employees unless the is_active filter excludes them
+     * (AC #4) — this report never drops them on its own.
+     */
+    public function export(Request $request, string $format, EmployeeMasterExporter $exporter, PayrollExportReadinessService $readinessService): HttpResponse
+    {
+        abort_unless(in_array($format, EmployeeMasterExporter::FORMATS, true), 404);
+
+        ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
+            $request,
+            ['name', 'email', 'rut', 'created_at'],
+            'name',
+        );
+
+        $employees = $this->filteredEmployeesQuery($request)
+            ->with(['position:id,name', 'premise:id,name', 'costCenter:id,name', 'company:id,social_reason'])
+            ->orderBy($sort, $direction)
+            ->get();
+
+        $now = Carbon::now();
+        $readinessService->recordExport(
+            $request->user(),
+            'employee-master',
+            $now,
+            $now,
+            $format,
+            $employees->pluck('id')->all(),
+            new PayrollExportReadiness(collect()),
+            confirmed: true,
+        );
+
+        return $exporter->download($format, $employees, $format === 'csv' ? ';' : ',');
     }
 
     public function create(): Response
@@ -269,6 +302,38 @@ class EmployeeController extends Controller
                 && $employee->hasRole('employee'),
             404,
         );
+    }
+
+    /**
+     * The organization-scoped employees query with every list/export filter
+     * applied (search, active/admin state, premise, position, cost centre,
+     * contract type) — shared by {@see self::index()} and {@see self::export()}
+     * so the two never drift (AC #7).
+     *
+     * @return Builder<User>
+     */
+    private function filteredEmployeesQuery(Request $request): Builder
+    {
+        $search = $request->string('search')->trim()->value() ?: null;
+        $isActive = $this->ternaryFilter($request, 'is_active');
+        $isAdmin = $this->ternaryFilter($request, 'is_admin');
+        $premiseIds = $this->idListFilter($request, 'premises');
+        $positionIds = $this->idListFilter($request, 'positions');
+        $costCenterIds = $this->idListFilter($request, 'costCenters');
+        $contractTypes = $this->enumListFilter($request, 'contractTypes', ContractType::class);
+
+        return User::query()
+            ->employees()
+            ->where('organization_id', Company::currentOrganizationId())
+            ->when($search, fn ($query) => $query->where(fn ($q) => $q
+                ->where('email', 'like', "%{$search}%")
+                ->orWhere('rut', 'like', "%{$search}%")))
+            ->when($isActive !== null, fn ($query) => $query->where('is_active', $isActive))
+            ->when($isAdmin !== null, fn ($query) => $query->where('is_admin', $isAdmin))
+            ->when($premiseIds, fn ($query) => $query->whereIn('premise_id', $premiseIds))
+            ->when($positionIds, fn ($query) => $query->whereIn('position_id', $positionIds))
+            ->when($costCenterIds, fn ($query) => $query->whereIn('cost_center_id', $costCenterIds))
+            ->when($contractTypes, fn ($query) => $query->whereIn('contract_type', $contractTypes));
     }
 
     /**
