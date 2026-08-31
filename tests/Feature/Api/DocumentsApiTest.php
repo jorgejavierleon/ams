@@ -654,3 +654,120 @@ test('signing the only-but-not-last signature keeps the document pending and rep
     ]);
     Mail::assertNotQueued(DocumentFullySigned::class);
 });
+
+// --- Reject: authentication and authorization (#1) ---
+
+test('an unauthenticated request to reject returns 401', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/reject")->assertUnauthorized();
+});
+
+test('an employee without SignOwn:Document is forbidden from rejecting', function () {
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->create(['organization_id' => $organization->id]);
+    $employee->givePermissionTo('ViewOwn:Document');
+    $document = mobilePendingSignatureFor($employee);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/reject")->assertForbidden();
+});
+
+test('a document belonging to another employee who is not a signatory gets 403 when rejecting', function () {
+    $employee = mobileDocumentEmployee();
+    $other = mobileDocumentEmployee($employee->organization);
+    $document = mobilePendingSignatureFor($other);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/reject")->assertForbidden();
+});
+
+test('an unknown document id gets 404 when rejecting', function () {
+    $employee = mobileDocumentEmployee();
+    Sanctum::actingAs($employee);
+
+    $this->postJson('/api/v1/me/documents/999999/reject')->assertNotFound();
+});
+
+// --- Reject: validation (#3) ---
+
+test('a reason longer than 500 characters returns a 422 validation error and does not reject', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/reject", ['reason' => str_repeat('a', 501)])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('reason');
+
+    expect($document->refresh()->status)->toBe(DocumentStatus::PendingSignature)
+        ->and($document->signatures()->first()->status)->toBe(DocumentSignatureStatus::Pending);
+});
+
+// --- Reject: no actionable signature (#4) ---
+
+test('a signer with no currently pending signature gets 403 when rejecting', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    $document->signatures()->first()->update(['status' => DocumentSignatureStatus::Signed]);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/reject")->assertForbidden();
+
+    expect($document->refresh()->status)->toBe(DocumentStatus::PendingSignature);
+});
+
+// --- Reject: success (#5, #6) ---
+
+test('rejecting with a reason marks the signature rejected and the document rejected', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    $signature = $document->signatures()->first();
+    Sanctum::actingAs($employee);
+
+    $response = $this->postJson("/api/v1/me/documents/{$document->id}/reject", ['reason' => 'No estoy de acuerdo.'])
+        ->assertOk();
+
+    expect($response->json())->toBe([
+        'status' => 'rejected',
+        'document_status' => 'rejected',
+    ]);
+
+    $signature->refresh();
+    expect($signature->status)->toBe(DocumentSignatureStatus::Rejected)
+        ->and($signature->rejection_reason)->toBe('No estoy de acuerdo.')
+        ->and($signature->signed_ip)->not->toBeNull()
+        ->and($document->refresh()->status)->toBe(DocumentStatus::Rejected);
+});
+
+test('rejecting with no reason records the rejection with a null reason', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    $signature = $document->signatures()->first();
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/reject")->assertOk();
+
+    expect($signature->refresh()->rejection_reason)->toBeNull()
+        ->and($signature->status)->toBe(DocumentSignatureStatus::Rejected);
+});
+
+test('rejecting one of several signatories cancels the other still-pending signatures', function () {
+    $employee = mobileDocumentEmployee();
+    $legalRep = mobileDocumentEmployee($employee->organization);
+    $document = mobilePendingSignatureFor($employee);
+    $legalRepSignature = DocumentSignature::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'document_id' => $document->id,
+        'user_id' => $legalRep->id,
+        'type' => DocumentSignatureType::LegalRep,
+        'status' => DocumentSignatureStatus::Pending,
+    ]);
+    Sanctum::actingAs($employee);
+
+    $this->postJson("/api/v1/me/documents/{$document->id}/reject")->assertOk();
+
+    expect($legalRepSignature->refresh()->status)->toBe(DocumentSignatureStatus::Cancelled)
+        ->and($document->refresh()->status)->toBe(DocumentStatus::Rejected);
+});

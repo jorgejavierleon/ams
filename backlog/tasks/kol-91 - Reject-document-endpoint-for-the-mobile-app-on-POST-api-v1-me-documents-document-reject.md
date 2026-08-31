@@ -3,10 +3,10 @@ id: KOL-91
 title: >-
   Reject-document endpoint for the mobile app on POST
   /api/v1/me/documents/{document}/reject
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-30 20:17'
-updated_date: '2026-08-30 20:19'
+updated_date: '2026-08-31 11:33'
 labels:
   - mobile-api
 dependencies: []
@@ -59,19 +59,34 @@ Feature: Reject a document from the mobile API
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 POST /api/v1/me/documents/{document}/reject is gated on permission:SignOwn:Document and the same ownership/signatory authorization sendCode()/sign() apply (Api\DocumentsController::authorizeAccess()) — 403 when the document belongs to neither the employee nor lists them as a signatory, 404 for an unknown or other-org id
-- [ ] #2 Accepts an optional reason (nullable string, max 500 chars) and calls RejectDocument::handle() unchanged, passing the authenticated request's IP and user agent as the rejection evidence, exactly as My\DocumentController::reject() does
-- [ ] #3 A reason longer than 500 characters returns a 422 validation error on the reason field, and the document/signature are left unchanged
-- [ ] #4 A signer with no currently Pending signature on the document (already signed, already rejected, or cancelled) gets a 403, per RejectDocument's own abort_unless — ported as-is, not softened into a sent:false-style response
-- [ ] #5 A successful rejection marks the signer's own signature Rejected with the stated reason (null when omitted), cancels every other still-pending signature on the document, and transitions the document itself to Rejected — mirroring RejectDocument's existing behaviour exactly, with no duplicated logic in the new controller method
-- [ ] #6 The response is a bare object {status, document_status} — no signed_at/rejected_at or invented folio, since RejectDocument tracks neither
-- [ ] #7 POST me/documents/{document}/reject is registered in routes/api.php under permission:SignOwn:Document, and the routes/api.php comment noting reject as out of scope for kolvi-mobile is removed
+- [x] #1 POST /api/v1/me/documents/{document}/reject is gated on permission:SignOwn:Document and the same ownership/signatory authorization sendCode()/sign() apply (Api\DocumentsController::authorizeAccess()) — 403 when the document belongs to neither the employee nor lists them as a signatory, 404 for an unknown or other-org id
+- [x] #2 Accepts an optional reason (nullable string, max 500 chars) and calls RejectDocument::handle() unchanged, passing the authenticated request's IP and user agent as the rejection evidence, exactly as My\DocumentController::reject() does
+- [x] #3 A reason longer than 500 characters returns a 422 validation error on the reason field, and the document/signature are left unchanged
+- [x] #4 A signer with no currently Pending signature on the document (already signed, already rejected, or cancelled) gets a 403, per RejectDocument's own abort_unless — ported as-is, not softened into a sent:false-style response
+- [x] #5 A successful rejection marks the signer's own signature Rejected with the stated reason (null when omitted), cancels every other still-pending signature on the document, and transitions the document itself to Rejected — mirroring RejectDocument's existing behaviour exactly, with no duplicated logic in the new controller method
+- [x] #6 The response is a bare object {status, document_status} — no signed_at/rejected_at or invented folio, since RejectDocument tracks neither
+- [x] #7 POST me/documents/{document}/reject is registered in routes/api.php under permission:SignOwn:Document, and the routes/api.php comment noting reject as out of scope for kolvi-mobile is removed
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #2 sa test --compact passes
 - [ ] #3 npm run types:check passes when TypeScript touched
-- [ ] #4 Every PHP change has a Pest test
+- [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Api\DocumentsController::reject() — authorizeAccess($request, $document); validate {reason: nullable|string|max:500}; call app(RejectDocument::class)->handle($document, $user, ip, userAgent, $validated['reason'] ?? null) via constructor injection like sign()'s SignDocument param; re-query the user's own signature for its new status; return response()->json(['status' => ..., 'document_status' => $document->status->value]) — $document is mutated in place by the action, same as sign().
+2. routes/api.php — register POST me/documents/{document}/reject under permission:SignOwn:Document, next to send-code/sign; remove the comment noting reject as out of scope for kolvi-mobile (KOL-90's comment block).
+3. tests/Feature/Api/DocumentsApiTest.php — new tests mirroring the sign block: 401/403/404 auth+authz, reason max:500 -> 422 with no state change, no pending signature -> 403 (not a soft response), successful reject with/without reason marks the signer's own signature Rejected + reason, cancels other pending signatures, sets document Rejected, response shape {status, document_status} only.
+4. vendor/bin/pint --dirty --format agent; sa test --compact --filter=DocumentsApiTest; sa test --compact --filter=Document for regressions.
+<!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Ported My\DocumentController::reject() to POST /api/v1/me/documents/{document}/reject via Api\DocumentsController::reject(), reusing RejectDocument unchanged and mirroring sign()'s shape exactly. Route registered under permission:SignOwn:Document; full Pest coverage added for authz, validation, no-pending-signature 403, and success (with/without reason, multi-signatory cancellation).
+<!-- SECTION:FINAL_SUMMARY:END -->
