@@ -1,11 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    BarChart3,
     Building2,
     CalendarClock,
     CalendarDays,
     CalendarRange,
     ClipboardList,
-    FileSpreadsheet,
     FileText,
     IdCard,
     LayoutGrid,
@@ -268,22 +268,22 @@ export function AppSidebar() {
                           {
                               title: t('ui.nav.payroll_reports'),
                               href: payrollReportsSummary(),
-                              icon: FileSpreadsheet,
+                              icon: BarChart3,
                           },
                           {
                               title: t('ui.payroll_reports.types.weekly-detail'),
                               href: payrollReportsWeeklyDetail(),
-                              icon: FileText,
+                              icon: BarChart3,
                           },
                           {
                               title: t('ui.payroll_reports.types.period-movements'),
                               href: payrollReportsPeriodMovements(),
-                              icon: FileText,
+                              icon: BarChart3,
                           },
                           {
                               title: t('ui.payroll_reports.types.overtime-excess'),
                               href: payrollReportsOvertimeExcess(),
-                              icon: FileText,
+                              icon: BarChart3,
                           },
                       ],
                   },
