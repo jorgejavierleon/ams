@@ -6,6 +6,7 @@ use App\Actions\Documents\DownloadDocument;
 use App\Actions\Documents\DuplicateDocument;
 use App\Actions\Documents\PublishDocument;
 use App\Actions\Documents\VoidDocument;
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\DocumentSignatureStatus;
 use App\Enums\DocumentStatus;
@@ -27,6 +28,7 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class DocumentController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     public function index(Request $request): Response
@@ -44,6 +46,7 @@ class DocumentController extends Controller
         $employeeId = $request->integer('employee') ?: null;
         $from = $request->date('from');
         $to = $request->date('to');
+        $perPage = $this->resolveTablePerPage($request);
 
         $documents = Document::query()
             ->with('user:id,name')
@@ -54,7 +57,7 @@ class DocumentController extends Controller
             ->when($from, fn ($query) => $query->whereDate('published_at', '>=', $from))
             ->when($to, fn ($query) => $query->whereDate('published_at', '<=', $to))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('documents/index', [

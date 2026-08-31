@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Models\Company;
 use App\Models\Premise;
@@ -13,6 +14,7 @@ use Inertia\Response;
 
 class PremiseController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     public function index(Request $request): Response
@@ -23,6 +25,7 @@ class PremiseController extends Controller
             ['name', 'code', 'address', 'created_at'],
             'name',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $premises = Premise::query()
             ->with('company:id,social_reason')
@@ -31,7 +34,7 @@ class PremiseController extends Controller
                 ->orWhere('code', 'like', "%{$search}%")
                 ->orWhere('address', 'like', "%{$search}%")))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('premises/index', [

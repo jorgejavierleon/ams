@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\ShiftType;
 use App\Models\LegalHourLimit;
@@ -21,6 +22,7 @@ use Inertia\Response;
 
 class ShiftController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     public function __construct(
@@ -38,12 +40,13 @@ class ShiftController extends Controller
             ['name', 'type', 'total_week_hours', 'created_at'],
             'name',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $shifts = Shift::query()
             ->withCount('activeShiftAssignments')
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('shifts/index', [

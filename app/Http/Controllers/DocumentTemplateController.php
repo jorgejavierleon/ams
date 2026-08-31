@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\DocumentType;
 use App\Models\DocumentTemplate;
@@ -16,6 +17,7 @@ use Inertia\Response;
 
 class DocumentTemplateController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     public function index(Request $request): Response
@@ -28,13 +30,14 @@ class DocumentTemplateController extends Controller
             'desc',
         );
 
+        $perPage = $this->resolveTablePerPage($request);
         $variableKeys = DocumentVar::query()->pluck('key');
 
         $templates = DocumentTemplate::query()
             ->withTrashed()
             ->when($search, fn ($query) => $query->where('title', 'like', "%{$search}%"))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('document-templates/index', [

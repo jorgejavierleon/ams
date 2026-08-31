@@ -369,7 +369,33 @@ test('the document detail carries the resolved body and status badge (#2)', func
         'body' => 'Hola '.$employee->name,
         'published_at' => '2026-08-10',
         'awaiting_me' => false,
+        'has_signed_pdf' => false,
     ]);
+});
+
+// --- Show: has_signed_pdf (KMO-46) ---
+
+test('has_signed_pdf is false for a Published document with the same success badge as Signed', function () {
+    $employee = mobileDocumentEmployee();
+    $document = Document::factory()->published()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+    ]);
+    Sanctum::actingAs($employee);
+
+    $response = $this->getJson("/api/v1/me/documents/{$document->id}")->assertOk();
+
+    expect($response->json())->toMatchArray(['status_badge' => 'success', 'has_signed_pdf' => false]);
+});
+
+test('has_signed_pdf is true once the document has a signed pdf', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobileSignedDocumentFor($employee);
+    Sanctum::actingAs($employee);
+
+    $response = $this->getJson("/api/v1/me/documents/{$document->id}")->assertOk();
+
+    expect($response->json('has_signed_pdf'))->toBeTrue();
 });
 
 test('the document detail response is a bare object, not a data envelope (#3)', function () {

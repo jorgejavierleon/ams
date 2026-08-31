@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\ContractType;
 use App\Enums\LeaveStatus;
@@ -32,6 +33,7 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class EmployeeController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     public function index(Request $request): Response
@@ -49,11 +51,12 @@ class EmployeeController extends Controller
         $positionIds = $this->idListFilter($request, 'positions');
         $costCenterIds = $this->idListFilter($request, 'costCenters');
         $contractTypes = $this->enumListFilter($request, 'contractTypes', ContractType::class);
+        $perPage = $this->resolveTablePerPage($request);
 
         $employees = $this->filteredEmployeesQuery($request)
             ->with(['position:id,name', 'premise:id,name', 'costCenter:id,name'])
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('employees/index', [

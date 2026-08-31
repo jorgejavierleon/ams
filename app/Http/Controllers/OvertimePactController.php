@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Models\OvertimePact;
 use App\Models\User;
@@ -24,6 +25,7 @@ use Inertia\Response;
  */
 class OvertimePactController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     public function index(Request $request): Response
@@ -35,6 +37,7 @@ class OvertimePactController extends Controller
             'start_date',
             'desc',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $pacts = OvertimePact::query()
             ->with('user:id,name')
@@ -43,7 +46,7 @@ class OvertimePactController extends Controller
                 fn ($user) => $user->where('name', 'like', "%{$search}%"),
             ))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('overtime/pacts/index', [

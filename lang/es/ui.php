@@ -67,6 +67,7 @@ return [
                 'none' => 'Sin resultados',
                 'previous' => 'Anterior',
                 'next' => 'Siguiente',
+                'rows_per_page' => 'Filas por página',
             ],
         ],
     ],

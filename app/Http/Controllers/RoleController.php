@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Support\RolePresenter;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +14,7 @@ use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     /** Roles reserved for system use — admins cannot manage these. */
@@ -26,12 +28,13 @@ class RoleController extends Controller
             ['name', 'permissions_count'],
             'name',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $roles = Role::withCount('permissions')
             ->whereNotIn('name', self::PROTECTED_ROLES)
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('roles/index', [

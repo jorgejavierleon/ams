@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dt;
 
 use App\Actions\Documents\DownloadDocument;
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Http\Controllers\Controller;
 use App\Models\Document;
@@ -23,6 +24,7 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
  */
 class DocumentController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     /**
@@ -36,11 +38,12 @@ class DocumentController extends Controller
             'published_at',
             'desc',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $documents = Document::query()
             ->with('user:id,name')
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('dt/documents/index', [

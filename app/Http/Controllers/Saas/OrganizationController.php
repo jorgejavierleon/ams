@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Saas;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\Plan;
 use App\Http\Controllers\Controller;
@@ -14,6 +15,7 @@ use Inertia\Response;
 
 class OrganizationController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     public function index(Request $request): Response
@@ -24,12 +26,13 @@ class OrganizationController extends Controller
             ['name', 'slug', 'plan', 'users_count', 'created_at'],
             'name',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $organizations = Organization::query()
             ->withCount('users')
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('saas/organizations/index', [

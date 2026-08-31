@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Models\CostCenter;
 use Illuminate\Http\RedirectResponse;
@@ -17,6 +18,7 @@ use Inertia\Response;
  */
 class CostCenterController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     public function index(Request $request): Response
@@ -27,6 +29,7 @@ class CostCenterController extends Controller
             ['name', 'code', 'active_users_count'],
             'name',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $costCenters = CostCenter::query()
             ->withCount('activeUsers')
@@ -34,7 +37,7 @@ class CostCenterController extends Controller
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('code', 'like', "%{$search}%")))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('cost-centers/index', [

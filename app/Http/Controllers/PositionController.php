@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Models\Position;
 use App\Models\User;
@@ -12,6 +13,7 @@ use Inertia\Response;
 
 class PositionController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     /**
@@ -28,6 +30,7 @@ class PositionController extends Controller
             ['name', 'active_users_count'],
             'name',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $positions = Position::query()
             ->withCount('activeUsers')
@@ -38,7 +41,7 @@ class PositionController extends Controller
                 ->limit(self::AVATAR_LIMIT)])
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('positions/index', [
