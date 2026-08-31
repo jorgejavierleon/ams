@@ -12,6 +12,8 @@ use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -237,6 +239,41 @@ test('awaiting_me is false when ordered signing blocks the employee turn', funct
 
     expect($response->json('data.0.awaiting_me'))->toBeFalse();
 });
+
+/**
+ * A document that already has its authoritative signed PDF, mirroring what
+ * SignDocument::completeIfFullySigned() produces once every signature is
+ * collected — without going through the whole verification-code flow.
+ */
+function mobileSignedDocumentFor(User $employee, string $pdfContents = '%PDF-1.4 fake signed content'): Document
+{
+    $document = Document::factory()->pendingSignature()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'status' => DocumentStatus::Signed,
+        'signed_at' => now(),
+    ]);
+
+    $document->addMediaFromString($pdfContents)
+        ->usingFileName('documento-firmado.pdf')
+        ->toMediaCollection(Document::SIGNED_MEDIA_COLLECTION);
+
+    return $document;
+}
+
+/**
+ * Both pdfShow() and My\DocumentController::download() return a Symfony
+ * BinaryFileResponse, which streams the file on send() rather than buffering
+ * it — TestResponse::getContent() is always false for one. Capture what it
+ * would actually send instead.
+ */
+function streamedFileContents(TestResponse $response): string
+{
+    ob_start();
+    $response->baseResponse->sendContent();
+
+    return ob_get_clean();
+}
 
 // --- Show: authentication and authorization ---
 
@@ -770,4 +807,126 @@ test('rejecting one of several signatories cancels the other still-pending signa
 
     expect($legalRepSignature->refresh()->status)->toBe(DocumentSignatureStatus::Cancelled)
         ->and($document->refresh()->status)->toBe(DocumentStatus::Rejected);
+});
+
+// --- KOL-92: pdf-url authentication and authorization (#1) ---
+
+test('an unauthenticated request for a pdf url returns 401', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobileSignedDocumentFor($employee);
+
+    $this->getJson("/api/v1/me/documents/{$document->id}/pdf-url")->assertUnauthorized();
+});
+
+test('an employee without ViewOwn:Document is forbidden from a pdf url', function () {
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->create(['organization_id' => $organization->id]); // no role, no permissions
+    $document = mobileSignedDocumentFor($employee);
+    Sanctum::actingAs($employee);
+
+    $this->getJson("/api/v1/me/documents/{$document->id}/pdf-url")->assertForbidden();
+});
+
+test('a pdf url for a document belonging to another employee who is not a signatory gets 403', function () {
+    $employee = mobileDocumentEmployee();
+    $other = mobileDocumentEmployee($employee->organization);
+    $document = mobileSignedDocumentFor($other);
+    Sanctum::actingAs($employee);
+
+    $this->getJson("/api/v1/me/documents/{$document->id}/pdf-url")->assertForbidden();
+});
+
+test('a pdf url for an unknown document id gets 404', function () {
+    $employee = mobileDocumentEmployee();
+    Sanctum::actingAs($employee);
+
+    $this->getJson('/api/v1/me/documents/999999/pdf-url')->assertNotFound();
+});
+
+// --- KOL-92: pdf-url readiness (#2) ---
+
+test('a document without a signed pdf yet returns a distinct not-ready response, not a 404', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobilePendingSignatureFor($employee);
+    Sanctum::actingAs($employee);
+
+    $this->getJson("/api/v1/me/documents/{$document->id}/pdf-url")
+        ->assertStatus(409)
+        ->assertJson(['code' => 'pdf_not_ready']);
+});
+
+// --- KOL-92: pdf-url mints a temporary signed URL (#3) ---
+
+test('a document with a signed pdf returns a temporary signed url and expiry', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobileSignedDocumentFor($employee);
+    Sanctum::actingAs($employee);
+
+    $json = $this->getJson("/api/v1/me/documents/{$document->id}/pdf-url")
+        ->assertOk()
+        ->json();
+
+    expect($json)->toHaveKeys(['url', 'expires_at'])
+        ->and($json['url'])->toContain("/api/v1/me/documents/{$document->id}/pdf")
+        ->and($json['url'])->toContain('signature=')
+        ->and($json['url'])->toContain('expires=');
+
+    // The minted URL itself works, unauthenticated — the app hands it
+    // straight to Linking.openURL.
+    $this->get($json['url'])->assertOk();
+});
+
+// --- KOL-92: streaming route, authorized only by the signature (#4, #5, #6) ---
+
+test('the streaming route returns the pdf bytes for a valid signature, with no auth header and no session', function () {
+    $pdfContents = '%PDF-1.4 signed document bytes';
+    $employee = mobileDocumentEmployee();
+    $document = mobileSignedDocumentFor($employee, $pdfContents);
+
+    $url = URL::temporarySignedRoute('v1.me.documents.pdf', now()->addMinutes(5), ['document' => $document->id]);
+
+    $response = $this->get($url)->assertOk();
+
+    $response->assertHeader('Content-Type', 'application/pdf');
+    expect(streamedFileContents($response))->toBe($pdfContents);
+});
+
+test('the streaming route rejects a request with no signature at all', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobileSignedDocumentFor($employee);
+
+    $this->get("/api/v1/me/documents/{$document->id}/pdf")->assertForbidden();
+});
+
+test('the streaming route rejects a tampered signature', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobileSignedDocumentFor($employee);
+
+    $url = URL::temporarySignedRoute('v1.me.documents.pdf', now()->addMinutes(5), ['document' => $document->id]);
+    $tampered = preg_replace('/signature=[^&]+/', 'signature=0000000000000000000000000000000000000000000000000000000000000000', $url);
+
+    $this->get($tampered)->assertForbidden();
+});
+
+test('the streaming route rejects an expired signature', function () {
+    $employee = mobileDocumentEmployee();
+    $document = mobileSignedDocumentFor($employee);
+
+    $url = URL::temporarySignedRoute('v1.me.documents.pdf', now()->subMinute(), ['document' => $document->id]);
+
+    $this->get($url)->assertForbidden();
+});
+
+test('the streaming route serves the same file My\DocumentController::download() already serves', function () {
+    $pdfContents = '%PDF-1.4 identical bytes';
+    $employee = mobileDocumentEmployee();
+    $document = mobileSignedDocumentFor($employee, $pdfContents);
+
+    $url = URL::temporarySignedRoute('v1.me.documents.pdf', now()->addMinutes(5), ['document' => $document->id]);
+    $streamed = streamedFileContents($this->get($url)->assertOk());
+
+    $this->actingAs($employee);
+    $downloaded = streamedFileContents($this->get("/my/documents/{$document->id}/download")->assertOk());
+
+    expect($streamed)->toBe($downloaded)->toBe($pdfContents);
 });

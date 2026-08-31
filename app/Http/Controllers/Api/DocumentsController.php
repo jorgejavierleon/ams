@@ -16,6 +16,8 @@ use App\Models\User;
 use App\Services\Documents\DocumentVariableResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * The Documentos tab (kolvi-mobile KMO-42/KMO-43/KMO-44/KMO-45): the
@@ -65,6 +67,50 @@ class DocumentsController extends Controller
         $this->authorizeAccess($request, $document);
 
         return new DocumentDetailResource($document, $resolver->resolve($document));
+    }
+
+    /**
+     * Mint a short-lived signed URL for the document's authoritative signed
+     * PDF (kolvi-mobile KMO-46): the app opens the result with
+     * Linking.openURL, an external browser with no Sanctum bearer token and
+     * no session, so the URL itself has to authorize the request that
+     * follows — {@see pdfShow()} is guarded only by the signature.
+     */
+    public function pdfUrl(Request $request, Document $document): JsonResponse
+    {
+        $this->authorizeAccess($request, $document);
+
+        if ($document->getFirstMedia(Document::SIGNED_MEDIA_COLLECTION) === null) {
+            return response()->json([
+                'message' => __('ui.documents.api.pdf_not_ready'),
+                'code' => 'pdf_not_ready',
+            ], 409);
+        }
+
+        $expiresAt = now()->addMinutes(5);
+
+        return response()->json([
+            'url' => URL::temporarySignedRoute('v1.me.documents.pdf', $expiresAt, ['document' => $document->id]),
+            'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
+     * Stream the authoritative signed PDF for a Laravel-signed URL minted by
+     * {@see pdfUrl()}. Only the `signed` route middleware authorizes this —
+     * no Sanctum, no permission gate, no fallback to any other auth check —
+     * since the destination is the OS's own PDF handler, which cannot attach
+     * a bearer token. Serves the same file
+     * {@see DocumentController::download()} already
+     * serves.
+     */
+    public function pdfShow(Document $document): BinaryFileResponse
+    {
+        $media = $document->getFirstMedia(Document::SIGNED_MEDIA_COLLECTION);
+
+        abort_unless($media !== null, 404);
+
+        return response()->file($media->getPath(), ['Content-Type' => 'application/pdf']);
     }
 
     /**

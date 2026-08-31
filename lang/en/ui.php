@@ -2470,6 +2470,12 @@ return [
             ],
         ],
 
+        // Refusals the mobile app renders as a state, not as an error,
+        // mirroring marks.api above.
+        'api' => [
+            'pdf_not_ready' => 'The signed PDF is not available for this document yet.',
+        ],
+
         'flash' => [
             'created' => 'Document created.',
             'updated' => 'Document updated.',

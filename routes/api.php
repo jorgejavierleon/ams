@@ -40,6 +40,16 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         ->middleware('throttle:password-reset-requests')
         ->name('password.email');
 
+    // Public, signature-only (KOL-92 / kolvi-mobile KMO-46): the reader
+    // opens a document's signed PDF with the OS's own handler via
+    // Linking.openURL, so the request reaches an external browser with no
+    // Sanctum bearer token and no session at all. Only the signed URL minted
+    // by DocumentsController::pdfUrl() authorizes this — no permission gate,
+    // no auth guard, on purpose.
+    Route::get('me/documents/{document}/pdf', [DocumentsController::class, 'pdfShow'])
+        ->middleware('signed')
+        ->name('me.documents.pdf');
+
     Route::middleware('auth:sanctum')->group(function (): void {
         // Sign out on this device only: revokes the bearer token that
         // authenticated the request and leaves the user's other tokens alone.
@@ -150,6 +160,16 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         Route::get('me/documents/{document}', [DocumentsController::class, 'show'])
             ->middleware('permission:ViewOwn:Document')
             ->name('me.documents.show');
+
+        // Mints the short-lived signed URL the app opens with
+        // Linking.openURL (KOL-92 / kolvi-mobile KMO-46): the app calls this
+        // first, Sanctum-authenticated, with the same ownership/signatory
+        // authorization as show(); the mobile client then hands the
+        // resulting URL to the OS unauthenticated, hitting the public
+        // me.documents.pdf route above.
+        Route::get('me/documents/{document}/pdf-url', [DocumentsController::class, 'pdfUrl'])
+            ->middleware('permission:ViewOwn:Document')
+            ->name('me.documents.pdf-url');
 
         // The sign/reject flow behind the reader's sticky Firmar documento /
         // Rechazar buttons (KMO-44/KMO-45): request/resend the verification
