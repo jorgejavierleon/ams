@@ -2759,6 +2759,40 @@ return [
                 'vacations' => 'No approved vacations in this period.',
             ],
         ],
+
+        'overtime_excess' => [
+            'generate' => 'Generate',
+            'selection_footer' => ':count employee(s) included in the report',
+            'no_employees' => 'No employees selected. Use the filters above to choose who to include.',
+            'no_rows' => 'The current selection has no data for this period.',
+            'week_label' => 'Week of :start to :end',
+            'week_total' => 'Week total',
+            'legal_basis' => 'Weekly legal cap: :hours hours (:reference)',
+            'employees_over_cap' => ':count employee(s) over the cap this week',
+            'cap_exceeded_yes' => 'Exceeds the cap',
+            'cap_exceeded_no' => 'Within the cap',
+            'export' => [
+                'title' => 'Export',
+                'excel' => 'Excel',
+                'pdf' => 'PDF',
+                'confirm_required' => 'You must confirm the unresolved attendance data warning before exporting.',
+            ],
+            'groups' => [
+                'employee' => 'Employee',
+                'pactada' => 'Pactada (authorised)',
+                'no_pactada' => 'No pactada',
+            ],
+            'columns' => [
+                'employee' => 'Employee',
+                'rut' => 'RUT',
+                'ordinary_day' => 'Overtime 50%',
+                'sunday_holiday' => 'Overtime 100%',
+                'compensated_rest_days' => 'Compensated overtime',
+                'payable_total' => 'Pactada total',
+                'unauthorized' => 'Unauthorized overtime',
+                'cap_exceeded' => 'Weekly cap',
+            ],
+        ],
     ],
 
 ];

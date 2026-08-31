@@ -50,6 +50,7 @@ import { edit as organizationSettingsEdit } from '@/routes/organization-settings
 import { index as overtimeIndex } from '@/routes/overtime';
 import { index as overtimeRequestsIndex } from '@/routes/overtime/requests';
 import {
+    overtimeExcess as payrollReportsOvertimeExcess,
     periodMovements as payrollReportsPeriodMovements,
     summary as payrollReportsSummary,
     weeklyDetail as payrollReportsWeeklyDetail,
@@ -277,6 +278,11 @@ export function AppSidebar() {
                           {
                               title: t('ui.payroll_reports.types.period-movements'),
                               href: payrollReportsPeriodMovements(),
+                              icon: FileText,
+                          },
+                          {
+                              title: t('ui.payroll_reports.types.overtime-excess'),
+                              href: payrollReportsOvertimeExcess(),
                               icon: FileText,
                           },
                       ],

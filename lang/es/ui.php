@@ -2762,6 +2762,40 @@ return [
                 'vacations' => 'No hay vacaciones aprobadas en este período.',
             ],
         ],
+
+        'overtime_excess' => [
+            'generate' => 'Generar',
+            'selection_footer' => ':count colaborador(es) incluidos en el reporte',
+            'no_employees' => 'No hay trabajadores seleccionados. Use los filtros de arriba para elegir a quiénes incluir.',
+            'no_rows' => 'La selección actual no tiene datos para este período.',
+            'week_label' => 'Semana del :start al :end',
+            'week_total' => 'Total semana',
+            'legal_basis' => 'Tope legal semanal: :hours horas (:reference)',
+            'employees_over_cap' => ':count trabajador(es) sobre el tope esta semana',
+            'cap_exceeded_yes' => 'Excede el tope',
+            'cap_exceeded_no' => 'Dentro del tope',
+            'export' => [
+                'title' => 'Exportar',
+                'excel' => 'Excel',
+                'pdf' => 'PDF',
+                'confirm_required' => 'Debes confirmar la advertencia de datos sin resolver antes de exportar.',
+            ],
+            'groups' => [
+                'employee' => 'Trabajador',
+                'pactada' => 'Pactada (autorizada)',
+                'no_pactada' => 'No pactada',
+            ],
+            'columns' => [
+                'employee' => 'Trabajador',
+                'rut' => 'RUT',
+                'ordinary_day' => 'HHEE 50%',
+                'sunday_holiday' => 'HHEE 100%',
+                'compensated_rest_days' => 'HHEE compensada',
+                'payable_total' => 'Total pactada',
+                'unauthorized' => 'HHEE no autorizada',
+                'cap_exceeded' => 'Tope semanal',
+            ],
+        ],
     ],
 
 ];
