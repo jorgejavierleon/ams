@@ -28,6 +28,7 @@ use App\Http\Controllers\My\OvertimeRequestController as MyOvertimeRequestContro
 use App\Http\Controllers\My\OvertimeRestDayBalanceController as MyOvertimeRestDayBalanceController;
 use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\OvertimeController;
+use App\Http\Controllers\OvertimeExcessReportController;
 use App\Http\Controllers\OvertimePactController;
 use App\Http\Controllers\OvertimeRequestController;
 use App\Http\Controllers\OvertimeRestDayBalanceController;
@@ -240,9 +241,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // (KOL-20..24). Gated on its own permissions rather than role:admin — tenant
 // users (RRHH/admin), separate from the DT inspector's `dt.reports.*`. The
 // landing page (a report-type picker) is gone for now (KOL-20 UI redesign)
-// since only one report existed — now that KOL-21 lands a second, both are
-// reachable from the nav (app-sidebar.tsx) instead. Revisit once KOL-22..24
-// land and a picker (or sub-nav) is actually needed again.
+// since only one report existed — now that KOL-21/22/24 land more, all are
+// reachable from the nav (app-sidebar.tsx) instead. Revisit once a picker
+// (or sub-nav) is actually needed again.
 Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])
     ->prefix('payroll-reports')
     ->name('payroll-reports.')
@@ -250,6 +251,7 @@ Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])
         Route::get('summary', [PayrollSummaryReportController::class, 'index'])->name('summary');
         Route::get('weekly-detail', [WeeklyDetailReportController::class, 'index'])->name('weekly-detail');
         Route::get('period-movements', [PeriodMovementsReportController::class, 'index'])->name('period-movements');
+        Route::get('overtime-excess', [OvertimeExcessReportController::class, 'index'])->name('overtime-excess');
     });
 
 // Producing the actual export file is a more sensitive action than viewing
@@ -262,6 +264,7 @@ Route::middleware(['auth', 'verified', 'permission:Export:PayrollReport'])
         Route::get('summary/export/{format}', [PayrollSummaryReportController::class, 'export'])->name('summary.export');
         Route::get('weekly-detail/export/{format}', [WeeklyDetailReportController::class, 'export'])->name('weekly-detail.export');
         Route::get('period-movements/export/{format}', [PeriodMovementsReportController::class, 'export'])->name('period-movements.export');
+        Route::get('overtime-excess/export/{format}', [OvertimeExcessReportController::class, 'export'])->name('overtime-excess.export');
     });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)

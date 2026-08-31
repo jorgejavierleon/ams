@@ -112,6 +112,42 @@ export type WeeklyDetailReportWeek = {
     days: WeeklyDetailReportDay[];
 };
 
+/** One employee's week in the "Excesos de Jornada y HHEE" report (KOL-24). */
+export type OvertimeExcessReportRow = {
+    userId: number;
+    name: string;
+    rut: string | null;
+    ordinaryDayHours: string;
+    sundayOrHolidayHours: string;
+    compensatedInRestDaysHours: string;
+    payableTotalHours: string;
+    unauthorizedHours: string;
+    totalHours: string;
+    capExceeded: boolean;
+};
+
+/** The consolidated total row for one week — informational, never compared against the legal cap (evaluated per employee instead). */
+export type OvertimeExcessReportWeekTotal = {
+    employeeCount: number;
+    ordinaryDayHours: string;
+    sundayOrHolidayHours: string;
+    compensatedInRestDaysHours: string;
+    payableTotalHours: string;
+    unauthorizedHours: string;
+    totalHours: string;
+};
+
+/** One Monday-Sunday week in the "Excesos de Jornada y HHEE" report (KOL-24). */
+export type OvertimeExcessReportWeek = {
+    start: string;
+    end: string;
+    weeklyOvertimeCapHours: number;
+    legalReference: string;
+    employeesOverCapCount: number;
+    rows: OvertimeExcessReportRow[];
+    total: OvertimeExcessReportWeekTotal;
+};
+
 /** One row in the "Altas" or "Bajas" sheet of "Movimientos del Período" (KOL-22). */
 export type MovementsEmployeeRow = {
     employee: string;
