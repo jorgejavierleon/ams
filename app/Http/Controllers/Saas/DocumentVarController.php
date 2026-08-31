@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Saas;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Http\Controllers\Controller;
 use App\Models\DocumentVar;
@@ -13,6 +14,7 @@ use Inertia\Response;
 
 class DocumentVarController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     /**
@@ -29,13 +31,14 @@ class DocumentVarController extends Controller
             ['name', 'key', 'created_at'],
             'name',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $variables = DocumentVar::query()
             ->when($search, fn ($query) => $query->where(fn ($q) => $q
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('key', 'like', "%{$search}%")))
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('saas/document-variables/index', [

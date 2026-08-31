@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Dt;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Http\Controllers\Controller;
 use App\Mail\DtAuditNotification;
@@ -26,6 +27,7 @@ use Inertia\Response;
  */
 class OrganizationController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     /**
@@ -40,6 +42,7 @@ class OrganizationController extends Controller
             ['name', 'rut'],
             'name',
         );
+        $perPage = $this->resolveTablePerPage($request);
 
         $organizations = Organization::query()
             ->when($search, function ($query) use ($search) {
@@ -50,7 +53,7 @@ class OrganizationController extends Controller
                     ->orWhere('rut', 'like', "%{$rut}%"));
             })
             ->orderBy($sort, $direction)
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('dt/select-organization', [

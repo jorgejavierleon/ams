@@ -204,7 +204,7 @@ export function DataTable<TData>({
             </div>
 
             {showPagination && 'total' in data && (
-                <DataTablePagination meta={data} />
+                <DataTablePagination meta={data} only={only} />
             )}
         </div>
     );

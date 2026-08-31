@@ -159,6 +159,63 @@ test('positions index ignores a disallowed sort column and falls back to the def
         );
 });
 
+test('positions index paginates 10 per page by default', function () {
+    $admin = admin();
+    Position::factory()->count(15)->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('positions.index'))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('positions.data', 10)
+                ->where('positions.per_page', 10)
+                ->where('positions.last_page', 2),
+        );
+});
+
+test('positions index can select a rows-per-page value from the allow-list', function () {
+    $admin = admin();
+    Position::factory()->count(15)->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('positions.index', ['per_page' => 25]))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('positions.data', 15)
+                ->where('positions.per_page', 25),
+        );
+});
+
+test('positions index ignores a per_page value outside the allow-list', function () {
+    $admin = admin();
+    Position::factory()->count(15)->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('positions.index', ['per_page' => 999]))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('positions.data', 10)
+                ->where('positions.per_page', 10),
+        );
+});
+
+test('positions index can navigate to a numbered page', function () {
+    $admin = admin();
+    Position::factory()->count(15)->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('positions.index', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('positions.data', 5)
+                ->where('positions.current_page', 2),
+        );
+});
+
 // --- Create ---
 
 test('admin can create a position scoped to their organization', function () {
