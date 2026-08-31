@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Documents\RejectDocument;
 use App\Actions\Documents\SendVerificationCode;
 use App\Actions\Documents\SignDocument;
 use App\Enums\DocumentStatus;
@@ -17,12 +18,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * The Documentos tab (kolvi-mobile KMO-42/KMO-43/KMO-44): the employee's own
- * non-draft documents, one document's resolved body, and the sign flow behind
- * the reader's sticky Firmar documento button — those belonging to them or
- * listing them as a signatory. Mirrors {@see DocumentController}'s own
- * index()/show()/sendCode()/sign() exactly, ported to /api/v1 the way KOL-81
- * ported the leaves list.
+ * The Documentos tab (kolvi-mobile KMO-42/KMO-43/KMO-44/KMO-45): the
+ * employee's own non-draft documents, one document's resolved body, and the
+ * sign/reject flows behind the reader's sticky Rechazar / Firmar documento
+ * bar — those belonging to them or listing them as a signatory. Mirrors
+ * {@see DocumentController}'s own index()/show()/sendCode()/sign()/reject()
+ * exactly, ported to /api/v1 the way KOL-81 ported the leaves list.
  */
 class DocumentsController extends Controller
 {
@@ -122,6 +123,37 @@ class DocumentsController extends Controller
         return response()->json([
             'status' => $signature->status->value,
             'signed_at' => $signature->signed_at?->format('Y-m-d H:i:s'),
+            'document_status' => $document->status->value,
+        ]);
+    }
+
+    /**
+     * Record the signatory's rejection of the document (kolvi-mobile KMO-45),
+     * mirroring {@see DocumentController::reject()} exactly. RejectDocument
+     * mutates $document in place, the same as SignDocument does for sign().
+     */
+    public function reject(Request $request, Document $document, RejectDocument $rejectDocument): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $this->authorizeAccess($request, $document);
+
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $rejectDocument->handle(
+            $document,
+            $user,
+            (string) $request->ip(),
+            $request->userAgent(),
+            $validated['reason'] ?? null,
+        );
+
+        $signature = $document->signatures()->where('user_id', $user->id)->first();
+
+        return response()->json([
+            'status' => $signature->status->value,
             'document_status' => $document->status->value,
         ]);
     }
