@@ -91,6 +91,7 @@ class PeriodMovementsReportController extends Controller
             $userIds,
             new PayrollExportReadiness(collect()),
             confirmed: true,
+            filters: [...$this->reportEmployeeFiltersProp($filters), 'select_all' => $selection->selectAll],
         );
 
         return $exporter->download(

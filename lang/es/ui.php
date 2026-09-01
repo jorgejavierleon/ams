@@ -43,6 +43,7 @@ return [
         'overtime_requests' => 'Horas extra pendientes',
         'reports' => 'Reportes',
         'payroll_reports' => 'Remuneraciones',
+        'payroll_export_history' => 'Historial de exportaciones',
     ],
 
     'user_menu' => [
@@ -2801,6 +2802,41 @@ return [
                 'payable_total' => 'Total pactada',
                 'unauthorized' => 'HHEE no autorizada',
                 'cap_exceeded' => 'Tope semanal',
+            ],
+        ],
+
+        'history' => [
+            'title' => 'Historial de exportaciones',
+            'description' => 'Quién exportó qué reporte, cuándo y con qué filtros — para auditoría interna.',
+            'empty' => 'Aún no se ha exportado ningún reporte.',
+            'filters' => [
+                'date_from' => 'Desde',
+                'date_to' => 'Hasta',
+                'report_type' => 'Tipo de reporte',
+                'all_report_types' => 'Todos los tipos',
+            ],
+            'columns' => [
+                'timestamp' => 'Fecha y hora',
+                'user' => 'Usuario',
+                'report_type' => 'Reporte',
+                'period' => 'Período',
+                'format' => 'Formato',
+                'employees' => 'Trabajadores',
+                'status' => 'Estado',
+                'details' => 'Detalle',
+            ],
+            'status' => [
+                'clean' => 'Sin advertencias',
+                'warned_confirmed' => 'Advertido y confirmado',
+                'warned' => 'Advertido',
+            ],
+            'view_details' => 'Ver detalle',
+            'details_dialog' => [
+                'title' => 'Detalle de la exportación',
+                'description' => 'Filtros aplicados y hallazgos sin resolver al momento de exportar.',
+                'filters_heading' => 'Filtros aplicados',
+                'findings_heading' => 'Hallazgos sin resolver',
+                'no_findings' => 'No había hallazgos sin resolver.',
             ],
         ],
     ],

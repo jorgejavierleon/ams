@@ -69,6 +69,7 @@ class PayrollExportReadinessService
     {
         activity('payroll_export')
             ->causedBy($confirmedBy)
+            ->event('confirmed')
             ->withProperties([
                 'organization_id' => CurrentOrganization::id(),
                 'period_start' => $start->toDateString(),
@@ -86,13 +87,16 @@ class PayrollExportReadinessService
 
     /**
      * Record that a payroll report was exported — user, timestamp, report
-     * type, period, format and the employees covered (KOL-20 AC #7). Logged
-     * to the same `payroll_export` activity log {@see self::recordConfirmation()}
-     * writes to, so a future browsable history (KOL-17) can read one log for
-     * both events. This does not replace KOL-17: it only guarantees every
-     * export leaves a trace before that screen exists.
+     * type, period, format, the employees covered, the filters that selected
+     * them, and (when the export proceeded past a readiness warning) what was
+     * unresolved at the time (KOL-17 AC #1-2). Logged to the same
+     * `payroll_export` activity log {@see self::recordConfirmation()} writes
+     * to, tagged with the `exported` event so the browsable history
+     * (KOL-17, `PayrollExportHistoryController`) can read one log for both
+     * events without mixing the two.
      *
      * @param  list<int>  $userIds  the employees the export covered
+     * @param  array<string, mixed>  $filters  the raw selection criteria applied (report-specific shape)
      */
     public function recordExport(
         User $confirmedBy,
@@ -103,9 +107,11 @@ class PayrollExportReadinessService
         array $userIds,
         PayrollExportReadiness $readiness,
         bool $confirmed,
+        array $filters = [],
     ): void {
         activity('payroll_export')
             ->causedBy($confirmedBy)
+            ->event('exported')
             ->withProperties([
                 'organization_id' => CurrentOrganization::id(),
                 'report_type' => $reportType,
@@ -113,8 +119,15 @@ class PayrollExportReadinessService
                 'period_end' => $end->toDateString(),
                 'format' => $format,
                 'employee_ids' => $userIds,
+                'filters' => $filters,
                 'warned' => ! $readiness->isClean(),
                 'confirmed' => $confirmed,
+                'finding_types' => $readiness->findings
+                    ->map(fn (PayrollExportFinding $finding): string => $finding->type->value)
+                    ->unique()
+                    ->values()
+                    ->all(),
+                'finding_count' => $readiness->findings->count(),
             ])
             ->log('Exported payroll report');
     }

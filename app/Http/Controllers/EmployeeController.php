@@ -125,6 +125,7 @@ class EmployeeController extends Controller
             array_values($employees->map(fn (User $employee): int => $employee->id)->all()),
             new PayrollExportReadiness(collect()),
             confirmed: true,
+            filters: $this->employeeMasterFiltersProp($request),
         );
 
         return $exporter->download($format, $employees, $format === 'csv' ? ';' : ',');
@@ -337,6 +338,32 @@ class EmployeeController extends Controller
             ->when($positionIds, fn ($query) => $query->whereIn('position_id', $positionIds))
             ->when($costCenterIds, fn ($query) => $query->whereIn('cost_center_id', $costCenterIds))
             ->when($contractTypes, fn ($query) => $query->whereIn('contract_type', $contractTypes));
+    }
+
+    /**
+     * The filter criteria applied to a Maestro de Trabajadores export, for the
+     * payroll export audit trail (KOL-17 AC #1) — the same dimensions
+     * {@see self::filteredEmployeesQuery()} reads from the request.
+     *
+     * @return array<string, mixed>
+     */
+    private function employeeMasterFiltersProp(Request $request): array
+    {
+        $isActive = $this->ternaryFilter($request, 'is_active');
+        $isAdmin = $this->ternaryFilter($request, 'is_admin');
+
+        return [
+            'search' => $request->string('search')->trim()->value() ?: null,
+            'is_active' => $isActive === null ? null : ($isActive ? '1' : '0'),
+            'is_admin' => $isAdmin === null ? null : ($isAdmin ? '1' : '0'),
+            'premises' => array_map('strval', $this->idListFilter($request, 'premises')),
+            'positions' => array_map('strval', $this->idListFilter($request, 'positions')),
+            'costCenters' => array_map('strval', $this->idListFilter($request, 'costCenters')),
+            'contractTypes' => array_map(
+                fn (ContractType $type): string => $type->value,
+                $this->enumListFilter($request, 'contractTypes', ContractType::class),
+            ),
+        ];
     }
 
     /**
