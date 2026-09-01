@@ -32,6 +32,7 @@ use App\Http\Controllers\OvertimeExcessReportController;
 use App\Http\Controllers\OvertimePactController;
 use App\Http\Controllers\OvertimeRequestController;
 use App\Http\Controllers\OvertimeRestDayBalanceController;
+use App\Http\Controllers\PayrollExportHistoryController;
 use App\Http\Controllers\PayrollSummaryReportController;
 use App\Http\Controllers\PeriodMovementsReportController;
 use App\Http\Controllers\PositionController;
@@ -252,6 +253,10 @@ Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])
         Route::get('weekly-detail', [WeeklyDetailReportController::class, 'index'])->name('weekly-detail');
         Route::get('period-movements', [PeriodMovementsReportController::class, 'index'])->name('period-movements');
         Route::get('overtime-excess', [OvertimeExcessReportController::class, 'index'])->name('overtime-excess');
+        // Export audit trail (RF-6, KOL-17): read-only history of every payroll
+        // report export, gated by the same permission as viewing the reports
+        // themselves — visible to the tenant admin, not only superadmin.
+        Route::get('history', [PayrollExportHistoryController::class, 'index'])->name('history');
     });
 
 // Producing the actual export file is a more sensitive action than viewing

@@ -7,6 +7,7 @@ import {
     CalendarRange,
     ClipboardList,
     FileText,
+    History,
     IdCard,
     LayoutGrid,
     LayoutTemplate,
@@ -50,6 +51,7 @@ import { edit as organizationSettingsEdit } from '@/routes/organization-settings
 import { index as overtimeIndex } from '@/routes/overtime';
 import { index as overtimeRequestsIndex } from '@/routes/overtime/requests';
 import {
+    history as payrollReportsHistory,
     overtimeExcess as payrollReportsOvertimeExcess,
     periodMovements as payrollReportsPeriodMovements,
     summary as payrollReportsSummary,
@@ -284,6 +286,11 @@ export function AppSidebar() {
                               title: t('ui.payroll_reports.types.overtime-excess'),
                               href: payrollReportsOvertimeExcess(),
                               icon: BarChart3,
+                          },
+                          {
+                              title: t('ui.nav.payroll_export_history'),
+                              href: payrollReportsHistory(),
+                              icon: History,
                           },
                       ],
                   },

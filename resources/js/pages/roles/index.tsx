@@ -68,7 +68,7 @@ export default function RolesIndex({ roles, filters }: Props) {
                 header: () => null,
                 cell: ({ row }) => (
                     <Link
-                        href={show(row.original.id)}
+                        href={show(String(row.original.id))}
                         className="text-sm text-primary underline-offset-4 hover:underline"
                     >
                         {t('ui.roles.actions.manage')}

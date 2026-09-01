@@ -121,6 +121,7 @@ class WeeklyDetailReportController extends Controller
             $userIds,
             $readiness,
             $confirmed,
+            [...$this->reportEmployeeFiltersProp($filters), 'select_all' => $selection->selectAll],
         );
 
         return $exporter->download($format, $period->start(), $period->end(), $userIds);

@@ -43,6 +43,7 @@ return [
         'overtime_requests' => 'Pending overtime requests',
         'reports' => 'Reports',
         'payroll_reports' => 'Payroll reports',
+        'payroll_export_history' => 'Export history',
     ],
 
     'user_menu' => [
@@ -2798,6 +2799,41 @@ return [
                 'payable_total' => 'Pactada total',
                 'unauthorized' => 'Unauthorized overtime',
                 'cap_exceeded' => 'Weekly cap',
+            ],
+        ],
+
+        'history' => [
+            'title' => 'Export history',
+            'description' => 'Who exported which report, when, and with what filters — for internal audit.',
+            'empty' => 'No report has been exported yet.',
+            'filters' => [
+                'date_from' => 'From',
+                'date_to' => 'To',
+                'report_type' => 'Report type',
+                'all_report_types' => 'All types',
+            ],
+            'columns' => [
+                'timestamp' => 'Date & time',
+                'user' => 'User',
+                'report_type' => 'Report',
+                'period' => 'Period',
+                'format' => 'Format',
+                'employees' => 'Employees',
+                'status' => 'Status',
+                'details' => 'Details',
+            ],
+            'status' => [
+                'clean' => 'No warnings',
+                'warned_confirmed' => 'Warned and confirmed',
+                'warned' => 'Warned',
+            ],
+            'view_details' => 'View details',
+            'details_dialog' => [
+                'title' => 'Export details',
+                'description' => 'Filters applied and unresolved findings at the time of export.',
+                'filters_heading' => 'Filters applied',
+                'findings_heading' => 'Unresolved findings',
+                'no_findings' => 'There were no unresolved findings.',
             ],
         ],
     ],

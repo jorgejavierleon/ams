@@ -56,7 +56,7 @@ export default function RolesShow({ role, permissionGroups }: Props) {
                     </p>
                 ) : (
                     <Form
-                        {...RoleController.update.form(role)}
+                        {...RoleController.update.form({ id: String(role.id) })}
                         options={{ preserveScroll: true }}
                     >
                         {({ processing }) => (
