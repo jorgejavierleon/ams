@@ -37,7 +37,7 @@ type PayrollExport = {
     warned: boolean;
     confirmed: boolean;
     finding_types: string[];
-    filters: Record<string, unknown>;
+    employees: { id: number; name: string; rut: string | null }[] | null;
     created_at: string;
 };
 
@@ -327,16 +327,25 @@ export default function PayrollExportHistoryIndex({
                         <div>
                             <h4 className="mb-1 text-sm font-medium">
                                 {t(
-                                    'ui.payroll_reports.history.details_dialog.filters_heading',
+                                    'ui.payroll_reports.history.details_dialog.employees_heading',
                                 )}
                             </h4>
-                            <pre className="max-h-48 overflow-auto rounded-md bg-muted p-3 text-xs">
-                                {JSON.stringify(
-                                    detailsTarget?.filters ?? {},
-                                    null,
-                                    2,
-                                )}
-                            </pre>
+                            {detailsTarget?.employees?.length ? (
+                                <ul className="max-h-48 list-inside list-disc overflow-auto text-sm text-muted-foreground">
+                                    {detailsTarget.employees.map((employee) => (
+                                        <li key={employee.id}>
+                                            {employee.name}
+                                            {employee.rut ? ` — ${employee.rut}` : ''}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    {t(
+                                        'ui.payroll_reports.history.details_dialog.no_employees',
+                                    )}
+                                </p>
+                            )}
                         </div>
 
                         <div>

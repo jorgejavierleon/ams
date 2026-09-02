@@ -77,23 +77,44 @@ class PayrollExportHistoryController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
+        $employeesById = User::query()
+            ->whereIn('id', $exports->getCollection()
+                ->flatMap(fn (Activity $activity) => $activity->properties['employee_ids'] ?? [])
+                ->unique())
+            ->get(['id', 'name', 'rut'])
+            ->keyBy('id');
+
         return Inertia::render('payroll-reports/history', [
-            'exports' => $exports->through(fn (Activity $activity) => [
-                'id' => $activity->id,
-                'causer' => $activity->causer instanceof User
-                    ? ['name' => $activity->causer->name, 'email' => $activity->causer->email]
-                    : null,
-                'report_type' => $activity->properties['report_type'] ?? null,
-                'period_start' => $this->formatDate($activity->properties['period_start'] ?? null),
-                'period_end' => $this->formatDate($activity->properties['period_end'] ?? null),
-                'format' => $activity->properties['format'] ?? null,
-                'employee_count' => count($activity->properties['employee_ids'] ?? []),
-                'warned' => (bool) ($activity->properties['warned'] ?? false),
-                'confirmed' => (bool) ($activity->properties['confirmed'] ?? false),
-                'finding_types' => $activity->properties['finding_types'] ?? [],
-                'filters' => $activity->properties['filters'] ?? [],
-                'created_at' => $activity->created_at?->format('Y-m-d H:i:s') ?? '',
-            ]),
+            'exports' => $exports->through(function (Activity $activity) use ($employeesById) {
+                $employeeIds = $activity->properties['employee_ids'] ?? [];
+
+                $employees = collect($employeeIds)
+                    ->map(fn ($id) => $employeesById->get($id))
+                    ->filter()
+                    ->map(fn (User $user): array => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'rut' => $user->formatted_rut,
+                    ])
+                    ->values();
+
+                return [
+                    'id' => $activity->id,
+                    'causer' => $activity->causer instanceof User
+                        ? ['name' => $activity->causer->name, 'email' => $activity->causer->email]
+                        : null,
+                    'report_type' => $activity->properties['report_type'] ?? null,
+                    'period_start' => $this->formatDate($activity->properties['period_start'] ?? null),
+                    'period_end' => $this->formatDate($activity->properties['period_end'] ?? null),
+                    'format' => $activity->properties['format'] ?? null,
+                    'employee_count' => count($employeeIds),
+                    'warned' => (bool) ($activity->properties['warned'] ?? false),
+                    'confirmed' => (bool) ($activity->properties['confirmed'] ?? false),
+                    'finding_types' => $activity->properties['finding_types'] ?? [],
+                    'employees' => $employees->isEmpty() ? null : $employees->all(),
+                    'created_at' => $activity->created_at?->format('Y-m-d H:i:s') ?? '',
+                ];
+            }),
             'reportTypes' => self::REPORT_TYPES,
             'filters' => [
                 'date_from' => $dateFrom,

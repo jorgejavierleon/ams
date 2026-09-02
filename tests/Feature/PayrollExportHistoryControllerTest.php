@@ -46,7 +46,7 @@ function historySummaryExportUrl(array $query = []): string
     ]);
 }
 
-test('an export is recorded with its report type, period, format, employee count and filters, visible in the history', function () {
+test('an export is recorded with its report type, period, format and the employees it covered, visible in the history', function () {
     $admin = historyAdmin();
     $employee = User::factory()->for($admin->organization)->employee()->create();
 
@@ -65,8 +65,27 @@ test('an export is recorded with its report type, period, format, employee count
                 ->where('exports.data.0.format', 'excel')
                 ->where('exports.data.0.employee_count', 1)
                 ->where('exports.data.0.warned', false)
-                ->where('exports.data.0.filters.select_all', true)
+                ->has('exports.data.0.employees', 1)
+                ->where('exports.data.0.employees.0.name', $employee->name)
                 ->has('exports.data.0.causer.name'),
+        );
+});
+
+test('an export that covered no employees is recorded with a null employees list', function () {
+    $admin = historyAdmin();
+
+    $this->actingAs($admin)
+        ->get(historyPeriodMovementsExportUrl(['selectAll' => 0]))
+        ->assertOk();
+
+    $this->actingAs($admin)
+        ->get(route('payroll-reports.history'))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->has('exports.data', 1)
+                ->where('exports.data.0.employee_count', 0)
+                ->where('exports.data.0.employees', null),
         );
 });
 

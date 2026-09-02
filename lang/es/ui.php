@@ -2833,8 +2833,9 @@ return [
             'view_details' => 'Ver detalle',
             'details_dialog' => [
                 'title' => 'Detalle de la exportación',
-                'description' => 'Filtros aplicados y hallazgos sin resolver al momento de exportar.',
-                'filters_heading' => 'Filtros aplicados',
+                'description' => 'Trabajadores incluidos y hallazgos sin resolver al momento de exportar.',
+                'employees_heading' => 'Trabajadores incluidos',
+                'no_employees' => 'No hay trabajadores registrados para esta exportación.',
                 'findings_heading' => 'Hallazgos sin resolver',
                 'no_findings' => 'No había hallazgos sin resolver.',
             ],

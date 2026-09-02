@@ -2830,8 +2830,9 @@ return [
             'view_details' => 'View details',
             'details_dialog' => [
                 'title' => 'Export details',
-                'description' => 'Filters applied and unresolved findings at the time of export.',
-                'filters_heading' => 'Filters applied',
+                'description' => 'Employees included and unresolved findings at the time of export.',
+                'employees_heading' => 'Employees included',
+                'no_employees' => 'No employees were recorded for this export.',
                 'findings_heading' => 'Unresolved findings',
                 'no_findings' => 'There were no unresolved findings.',
             ],
