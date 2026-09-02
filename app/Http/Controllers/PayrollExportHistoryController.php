@@ -79,14 +79,14 @@ class PayrollExportHistoryController extends Controller
 
         $employeesById = User::query()
             ->whereIn('id', $exports->getCollection()
-                ->flatMap(fn (Activity $activity) => $activity->properties['employee_ids'] ?? [])
+                ->flatMap(fn (Activity $activity) => $this->employeeIds($activity))
                 ->unique())
             ->get(['id', 'name', 'rut'])
             ->keyBy('id');
 
         return Inertia::render('payroll-reports/history', [
             'exports' => $exports->through(function (Activity $activity) use ($employeesById) {
-                $employeeIds = $activity->properties['employee_ids'] ?? [];
+                $employeeIds = $this->employeeIds($activity);
 
                 $employees = collect($employeeIds)
                     ->map(fn ($id) => $employeesById->get($id))
@@ -129,5 +129,15 @@ class PayrollExportHistoryController extends Controller
     private function formatDate(?string $date): ?string
     {
         return $date === null ? null : Carbon::parse($date)->format('d-m-Y');
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function employeeIds(Activity $activity): array
+    {
+        $ids = $activity->properties['employee_ids'] ?? [];
+
+        return is_array($ids) ? array_values(array_map(intval(...), $ids)) : [];
     }
 }
