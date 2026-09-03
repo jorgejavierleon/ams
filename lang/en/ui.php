@@ -1164,6 +1164,36 @@ return [
             ],
         ],
 
+        'import' => [
+            'title' => 'Import employees',
+            'description' => 'Upload an Excel or CSV file to bulk create or update employees.',
+            'nav' => 'Import',
+
+            'template' => [
+                'title' => 'Employee import template',
+                'excel' => 'Download template (.xlsx)',
+                'csv' => 'Download template (.csv)',
+            ],
+
+            'upload' => [
+                'dropzone_title' => 'Drag a file here, or browse',
+                'dropzone_hint' => '.xlsx or .csv, following the template\'s column order.',
+                'browse' => 'Browse files',
+                'selected' => 'Selected: :name',
+                'submit' => 'Upload file',
+            ],
+
+            'errors' => [
+                'unsupported_format' => 'The file must be a valid Excel (.xlsx) or CSV file.',
+                'too_many_rows' => 'The file has too many rows. The maximum allowed is :max.',
+            ],
+
+            'show' => [
+                'mapping_review_title' => 'File uploaded',
+                'mapping_review_description' => ':count columns detected in :filename. Mapping review will be available soon.',
+            ],
+        ],
+
         'tabs' => [
             'personal' => 'Personal',
             'labor' => 'Labor',

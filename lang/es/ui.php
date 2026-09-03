@@ -1167,6 +1167,36 @@ return [
             ],
         ],
 
+        'import' => [
+            'title' => 'Importar empleados',
+            'description' => 'Sube un archivo Excel o CSV para crear o actualizar empleados en bloque.',
+            'nav' => 'Importar',
+
+            'template' => [
+                'title' => 'Plantilla de importación de empleados',
+                'excel' => 'Descargar plantilla (.xlsx)',
+                'csv' => 'Descargar plantilla (.csv)',
+            ],
+
+            'upload' => [
+                'dropzone_title' => 'Arrastra un archivo aquí, o selecciona uno',
+                'dropzone_hint' => 'Formato .xlsx o .csv, siguiendo el orden de columnas de la plantilla.',
+                'browse' => 'Seleccionar archivo',
+                'selected' => 'Seleccionado: :name',
+                'submit' => 'Subir archivo',
+            ],
+
+            'errors' => [
+                'unsupported_format' => 'El archivo debe ser Excel (.xlsx) o CSV en un formato válido.',
+                'too_many_rows' => 'El archivo tiene demasiadas filas. El máximo permitido es :max.',
+            ],
+
+            'show' => [
+                'mapping_review_title' => 'Archivo cargado',
+                'mapping_review_description' => 'Se detectaron :count columnas en :filename. La revisión de mapeo estará disponible próximamente.',
+            ],
+        ],
+
         'tabs' => [
             'personal' => 'Personal',
             'labor' => 'Laboral',

@@ -1,6 +1,6 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Download, Plus } from 'lucide-react';
+import { Download, Plus, Upload } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
@@ -26,6 +26,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
+import { filenameFromContentDisposition } from '@/lib/download';
 import {
     create,
     destroy,
@@ -35,15 +36,8 @@ import {
     show,
     toggleActive,
 } from '@/routes/employees';
+import { create as createImport } from '@/routes/imports/employee';
 import type { Paginated } from '@/types/ui';
-
-function filenameFrom(response: Response): string {
-    const match = /filename="?([^"]+)"?/.exec(
-        response.headers.get('content-disposition') ?? '',
-    );
-
-    return match?.[1] ?? 'export';
-}
 
 type Employee = {
     id: number;
@@ -87,6 +81,8 @@ export default function EmployeesIndex({
     contractTypeOptions,
 }: Props) {
     const { t } = useTranslations();
+    const { auth } = usePage().props;
+    const canImport = auth.permissions.includes('Import:Employee');
     const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
     const [pendingExport, setPendingExport] = useState(false);
 
@@ -152,7 +148,7 @@ export default function EmployeesIndex({
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = filenameFrom(response);
+            link.download = filenameFromContentDisposition(response, 'export');
             link.click();
             URL.revokeObjectURL(url);
         } finally {
@@ -326,7 +322,10 @@ export default function EmployeesIndex({
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" disabled={pendingExport}>
+                                <Button
+                                    variant="outline"
+                                    disabled={pendingExport}
+                                >
                                     <Download className="size-4" />
                                     {t('ui.employees.export.button')}
                                 </Button>
@@ -344,6 +343,15 @@ export default function EmployeesIndex({
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+
+                        {canImport && (
+                            <Button variant="outline" asChild>
+                                <Link href={createImport()}>
+                                    <Upload className="size-4" />
+                                    {t('ui.employees.import.nav')}
+                                </Link>
+                            </Button>
+                        )}
 
                         <Button asChild>
                             <Link href={create()}>

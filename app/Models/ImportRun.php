@@ -22,6 +22,8 @@ use Illuminate\Support\Carbon;
  * @property array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>|null $column_mapping
  * @property ImportStrategy|null $strategy
  * @property string|null $match_key
+ * @property string|null $disk_path
+ * @property string|null $original_filename
  * @property array{ready: int, warning: int, error: int, skipped: int}|null $preview_counts
  * @property int|null $committed_through
  * @property int $created_count
@@ -33,7 +35,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['organization_id', 'status', 'column_mapping', 'strategy', 'match_key', 'preview_counts', 'committed_through', 'created_count', 'updated_count', 'skipped_count', 'errored_count', 'error_report_path', 'expires_at'])]
+#[Fillable(['organization_id', 'status', 'column_mapping', 'strategy', 'match_key', 'disk_path', 'original_filename', 'preview_counts', 'committed_through', 'created_count', 'updated_count', 'skipped_count', 'errored_count', 'error_report_path', 'expires_at'])]
 class ImportRun extends Model
 {
     /** @use HasFactory<ImportRunFactory> */

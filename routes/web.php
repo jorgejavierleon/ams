@@ -17,6 +17,7 @@ use App\Http\Controllers\Dt\ReportController as DtReportController;
 use App\Http\Controllers\Dt\ReportExportDownloadController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
+use App\Http\Controllers\ImportWizardController;
 use App\Http\Controllers\LeaveCalendarController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LocaleController;
@@ -270,6 +271,20 @@ Route::middleware(['auth', 'verified', 'permission:Export:PayrollReport'])
         Route::get('weekly-detail/export/{format}', [WeeklyDetailReportController::class, 'export'])->name('weekly-detail.export');
         Route::get('period-movements/export/{format}', [PeriodMovementsReportController::class, 'export'])->name('period-movements.export');
         Route::get('overtime-excess/export/{format}', [OvertimeExcessReportController::class, 'export'])->name('overtime-excess.export');
+    });
+
+// Employee bulk-import wizard (KOL-94), gated by its own permission per
+// KOL-94.6 rather than role:admin — a tenant admin can grant it to another
+// role later via the Roles screen. One route per wizard step (KOL-94.5);
+// only the upload step exists so far (KOL-98).
+Route::middleware(['auth', 'verified', 'permission:Import:Employee'])
+    ->prefix('imports')
+    ->name('imports.')
+    ->group(function () {
+        Route::get('employee/create', [ImportWizardController::class, 'create'])->name('employee.create');
+        Route::get('employee/template/{format}', [ImportWizardController::class, 'template'])->name('employee.template');
+        Route::post('employee', [ImportWizardController::class, 'store'])->name('employee.store');
+        Route::get('{importRun}', [ImportWizardController::class, 'show'])->name('show');
     });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)
