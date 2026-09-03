@@ -438,6 +438,7 @@ return [
             'Manage:OvertimeAuthorization' => 'Manage overtime policy and pactos',
             'View:PayrollReport' => 'View payroll reports',
             'Export:PayrollReport' => 'Export payroll reports',
+            'Import:Employee' => 'Bulk import employees',
         ],
     ],
 
@@ -1182,6 +1183,7 @@ return [
             'last_name' => 'Last name',
             'second_last_name' => 'Second last name',
             'rut' => 'RUT',
+            'id' => 'ID',
             'email' => 'Email',
             'password' => 'Password',
             'password_hint' => 'Leave blank to keep the current password.',

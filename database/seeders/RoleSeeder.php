@@ -43,6 +43,12 @@ class RoleSeeder extends Seeder
      * without the other, even though today only `admin` (the RRHH/tenant-admin
      * role) holds both.
      *
+     * `Import:Employee` (KOL-94.6) gates the whole bulk-import wizard. Admin
+     * only by default — supervisors hold no Employee-record permissions
+     * today, and bulk-creating/overwriting records is a bigger capability
+     * jump than anything they currently have; a tenant admin can grant it to
+     * another role later via the Roles screen.
+     *
      * @var array<int, string>
      */
     private const ADMIN_PERMISSIONS = [
@@ -51,6 +57,7 @@ class RoleSeeder extends Seeder
         'Manage:OvertimeAuthorization',
         'View:PayrollReport',
         'Export:PayrollReport',
+        'Import:Employee',
     ];
 
     /**

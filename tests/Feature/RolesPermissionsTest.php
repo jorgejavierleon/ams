@@ -57,3 +57,16 @@ it('clears permission cache without error', function () {
 
     expect($exitCode)->toBe(0);
 });
+
+it('seeds Import:Employee to the admin role only', function () {
+    $this->seed(RoleSeeder::class);
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $employee = User::factory()->create();
+    $employee->assignRole('employee');
+
+    expect($admin->hasPermissionTo('Import:Employee'))->toBeTrue()
+        ->and($employee->hasPermissionTo('Import:Employee'))->toBeFalse();
+});

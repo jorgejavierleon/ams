@@ -441,6 +441,7 @@ return [
             'Manage:OvertimeAuthorization' => 'Administrar política y pactos de horas extra',
             'View:PayrollReport' => 'Ver reportes de remuneraciones',
             'Export:PayrollReport' => 'Exportar reportes de remuneraciones',
+            'Import:Employee' => 'Importar trabajadores en lote',
         ],
     ],
 
@@ -1185,6 +1186,7 @@ return [
             'last_name' => 'Apellido',
             'second_last_name' => 'Segundo apellido',
             'rut' => 'RUT',
+            'id' => 'ID',
             'email' => 'Email',
             'password' => 'Contraseña',
             'password_hint' => 'Déjalo en blanco para mantener la contraseña actual.',
