@@ -4,6 +4,7 @@ import Heading from '@/components/heading';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { MappingReviewStep } from './mapping-review-step';
+import { PreviewStep } from './preview-step';
 import { StrategyStep } from './strategy-step';
 
 type ColumnMapping = {
@@ -20,6 +21,13 @@ type SchemaField = {
     isMatchKeyEligible: boolean;
 };
 
+type PreviewCounts = {
+    ready: number;
+    warning: number;
+    error: number;
+    skipped: number;
+};
+
 type ImportRun = {
     id: number;
     status: string;
@@ -27,6 +35,7 @@ type ImportRun = {
     column_mapping: ColumnMapping[];
     strategy: 'create_only' | 'update_only' | 'create_and_update' | null;
     match_key: string | null;
+    preview_counts: PreviewCounts | null;
 };
 
 type Props = {
@@ -36,21 +45,34 @@ type Props = {
 
 /**
  * The wizard shell's status-driven step display (KOL-94.5): which step
- * renders is entirely a function of ImportRun's status. Upload (KOL-98) and
- * mapping review (KOL-99) are reachable today; strategy/preview/commit
- * belong to steps this wizard doesn't have yet (KOL-100..102).
+ * renders is entirely a function of ImportRun's status. Upload (KOL-98),
+ * mapping review (KOL-99), strategy (KOL-100), and preview (KOL-101) are
+ * reachable today; commit belongs to a step this wizard doesn't have yet
+ * (KOL-102).
  */
 export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
     const { t } = useTranslations();
 
-    // A client-only sub-step: mapping and strategy both happen while the
-    // run's own status stays MappingReview (there's no separate status for
-    // strategy, KOL-100), so which one renders isn't derived from the
-    // server at all. Landing on 'strategy' when a strategy is already saved
-    // avoids re-showing a review the user already finished on every visit.
-    const [step, setStep] = useState<'mapping' | 'strategy'>(
-        importRun.strategy ? 'strategy' : 'mapping',
+    // MappingReview and PreviewReady share the same three-step client-only
+    // sub-flow (mapping/strategy/preview) — there's no separate server
+    // status for each of those (KOL-100, KOL-101), so which one renders
+    // isn't derived from the server at all. Resubmitting mapping/strategy
+    // while PreviewReady demotes the run back to MappingReview server-side
+    // (KOL-101 AC #3) without needing this local state to change: the user
+    // is already looking at the mapping/strategy step when that happens.
+    // Landing straight on 'preview' when a run already has preview_counts
+    // avoids re-showing steps the user already finished on every visit.
+    const [step, setStep] = useState<'mapping' | 'strategy' | 'preview'>(
+        importRun.status === 'preview_ready'
+            ? 'preview'
+            : importRun.strategy
+              ? 'strategy'
+              : 'mapping',
     );
+
+    const isEditable =
+        importRun.status === 'mapping_review' ||
+        importRun.status === 'preview_ready';
 
     return (
         <>
@@ -61,12 +83,12 @@ export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
 
                 <div
                     className={
-                        importRun.status === 'mapping_review'
+                        isEditable && step === 'mapping'
                             ? 'max-w-5xl'
                             : 'max-w-3xl'
                     }
                 >
-                    {importRun.status === 'mapping_review' ? (
+                    {isEditable ? (
                         step === 'mapping' ? (
                             <MappingReviewStep
                                 importRunId={importRun.id}
@@ -75,13 +97,20 @@ export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
                                 schemaFields={schemaFields}
                                 onSaved={() => setStep('strategy')}
                             />
-                        ) : (
+                        ) : step === 'strategy' ? (
                             <StrategyStep
                                 importRunId={importRun.id}
                                 strategy={importRun.strategy}
                                 matchKey={importRun.match_key}
                                 schemaFields={schemaFields}
                                 onBack={() => setStep('mapping')}
+                                onSaved={() => setStep('preview')}
+                            />
+                        ) : (
+                            <PreviewStep
+                                importRunId={importRun.id}
+                                previewCounts={importRun.preview_counts}
+                                onBack={() => setStep('strategy')}
                             />
                         )
                     ) : (

@@ -1193,6 +1193,8 @@ return [
                 'duplicate_target_field' => 'Dos columnas no pueden mapearse al mismo campo.',
                 'required_field_unmapped' => 'Estos campos deben mapearse antes de continuar: :fields.',
                 'invalid_mapping_shape' => 'El mapeo enviado no corresponde a las columnas del archivo cargado.',
+                'strategy_required' => 'Elige una estrategia de importación antes de ejecutar la previsualización.',
+                'match_key_required' => 'Elige una clave de coincidencia antes de ejecutar la previsualización.',
             ],
 
             'mapping' => [
@@ -1236,6 +1238,24 @@ return [
                         'description' => 'Las filas que coincidan actualizan al empleado existente; las que no coincidan crean uno nuevo. Las celdas en blanco nunca borran un valor.',
                     ],
                 ],
+            ],
+
+            'preview' => [
+                'run_title' => 'Ejecuta la previsualización de validación',
+                'run_description' => 'Esto evalúa cada fila del archivo según el mapeo y la estrategia elegidos. Solo se muestran los totales a continuación — nunca una lista fila por fila.',
+                'run_submit' => 'Ejecutar previsualización',
+                'back' => '← Estrategia',
+                'counts' => [
+                    'ready' => 'Listas',
+                    'warning' => 'Advertencia',
+                    'error' => 'Error',
+                    'skipped' => 'Omitidas',
+                ],
+                'has_errors_title' => ':count de :total filas quedarán excluidas',
+                'has_errors_description' => 'Las filas con Error quedan excluidas al confirmar y nunca se escriben. El resto de las filas se importa normalmente.',
+                'no_errors_title' => 'Sin errores bloqueantes',
+                'no_errors_description_with_warnings' => ':count filas tienen una advertencia pero se importarán igualmente.',
+                'no_errors_description_clean' => 'Todas las filas están listas para importarse.',
             ],
         ],
 

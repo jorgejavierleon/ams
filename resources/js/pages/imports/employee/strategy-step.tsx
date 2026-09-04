@@ -27,6 +27,7 @@ type Props = {
     matchKey: string | null;
     schemaFields: SchemaField[];
     onBack: () => void;
+    onSaved: () => void;
 };
 
 const STRATEGIES: ImportStrategy[] = [
@@ -54,6 +55,7 @@ export function StrategyStep({
     matchKey,
     schemaFields,
     onBack,
+    onSaved,
 }: Props) {
     const { t } = useTranslations();
 
@@ -85,7 +87,10 @@ export function StrategyStep({
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
-        patch(updateStrategy(importRunId).url, { preserveScroll: true });
+        patch(updateStrategy(importRunId).url, {
+            preserveScroll: true,
+            onSuccess: onSaved,
+        });
     }
 
     return (
