@@ -1,5 +1,11 @@
 # Manual QA checklist
 
+### KOL-103 — Add the Employee import error-report download
+
+- [ ] Upload a file that produces both warnings and errors, commit the import, and confirm "Descargar reporte de errores" appears on the result screen once it's Completed.
+- [ ] Download it and open in Excel/Sheets — confirm accents render correctly (BOM), columns are Fila/Columna/Severidad/Mensaje, and the rows match what you expect.
+- [ ] Confirm the button is absent when an import completes with zero errors.
+
 ## Pending
 
 ### KOL-100 — Add the strategy and match-key selection step to the Employee import wizard
