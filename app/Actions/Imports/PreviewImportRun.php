@@ -2,14 +2,9 @@
 
 namespace App\Actions\Imports;
 
-use App\Enums\ColumnMappingStatus;
 use App\Enums\ImportRunStatus;
 use App\Models\ImportRun;
 use App\Services\Imports\ImportSchema;
-use App\Support\Imports\ColumnMapping;
-use Illuminate\Support\Facades\Storage;
-use PhpOffice\PhpSpreadsheet\Reader\Csv as CsvReader;
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 
 /**
  * Runs every uploaded data row through {@see EvaluateImportRow} synchronously
@@ -20,15 +15,19 @@ use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
  */
 class PreviewImportRun
 {
-    public function __construct(private EvaluateImportRow $evaluateImportRow) {}
+    public function __construct(
+        private EvaluateImportRow $evaluateImportRow,
+        private ReadImportFileRows $readImportFileRows,
+        private BuildColumnMappings $buildColumnMappings,
+    ) {}
 
     public function handle(ImportRun $importRun, ImportSchema $schema): void
     {
-        $columnMappings = $this->columnMappings($importRun);
+        $columnMappings = $this->buildColumnMappings->handle($importRun);
 
         $counts = ['ready' => 0, 'warning' => 0, 'error' => 0, 'skipped' => 0];
 
-        foreach ($this->readDataRows($importRun) as $index => $rawRow) {
+        foreach ($this->readImportFileRows->handle($importRun) as $index => $rawRow) {
             $result = $this->evaluateImportRow->handle(
                 $schema,
                 $columnMappings,
@@ -45,45 +44,5 @@ class PreviewImportRun
             'preview_counts' => $counts,
             'status' => ImportRunStatus::PreviewReady,
         ]);
-    }
-
-    /**
-     * @return list<ColumnMapping>
-     */
-    private function columnMappings(ImportRun $importRun): array
-    {
-        return array_values(array_map(
-            fn (array $row): ColumnMapping => new ColumnMapping(
-                $row['sourceColumnIndex'],
-                $row['sourceHeaderLabel'],
-                $row['targetField'],
-                ColumnMappingStatus::from($row['status']),
-            ),
-            $importRun->column_mapping ?? [],
-        ));
-    }
-
-    /**
-     * @return list<list<mixed>>
-     */
-    private function readDataRows(ImportRun $importRun): array
-    {
-        $path = Storage::disk('local')->path($importRun->disk_path);
-        $extension = pathinfo((string) $importRun->disk_path, PATHINFO_EXTENSION);
-
-        $reader = $extension === 'csv' ? new CsvReader : new XlsxReader;
-
-        if ($reader instanceof CsvReader) {
-            $reader->setInputEncoding(CsvReader::GUESS_ENCODING);
-        }
-
-        $reader->setReadDataOnly(true);
-
-        $rows = $reader->load($path)->getActiveSheet()->toArray(null, true, true, false);
-
-        return array_values(array_map(
-            fn (array $row): array => array_values($row),
-            array_slice($rows, 1),
-        ));
     }
 }

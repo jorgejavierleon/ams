@@ -141,4 +141,22 @@ return [
         'heading' => 'Report not generated',
         'body' => 'Something went wrong generating the report you requested. Try generating it again; if the problem persists, contact support.',
     ],
+
+    'import_run_completed' => [
+        'subject' => 'Your employee import has finished',
+        'heading' => 'Import completed',
+        'body' => 'The employee import you ran has finished processing.',
+        'created' => 'Created: :count',
+        'updated' => 'Updated: :count',
+        'skipped' => 'Skipped: :count',
+        'errored' => 'Errored: :count',
+        'action' => 'View result',
+    ],
+
+    'import_run_failed' => [
+        'subject' => 'We could not complete your employee import',
+        'heading' => 'Import not completed',
+        'body' => 'Something went wrong processing the employee import you ran. You can review the details and try a new import.',
+        'action' => 'View details',
+    ],
 ];

@@ -1256,6 +1256,21 @@ return [
                 'no_errors_title' => 'Sin errores bloqueantes',
                 'no_errors_description_with_warnings' => ':count filas tienen una advertencia pero se importarán igualmente.',
                 'no_errors_description_clean' => 'Todas las filas están listas para importarse.',
+                'confirm_submit' => 'Confirmar e importar',
+            ],
+
+            'result' => [
+                'processing_title' => 'Importando…',
+                'processing_description' => 'Esto puede tardar unos minutos según el tamaño del archivo. Puedes salir de esta página — se te notificará por correo al terminar.',
+                'completed_title' => 'Importación completada',
+                'failed_title' => 'La importación no se completó',
+                'failed_description' => 'Ocurrió un error inesperado al procesar el archivo. Revisa tu correo para más detalles o intenta una nueva importación.',
+                'counts' => [
+                    'created' => 'Creados',
+                    'updated' => 'Actualizados',
+                    'skipped' => 'Omitidos',
+                    'errored' => 'Con error',
+                ],
             ],
         ],
 

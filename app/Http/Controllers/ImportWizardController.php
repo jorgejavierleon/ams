@@ -7,6 +7,7 @@ use App\Actions\Imports\PreviewImportRun;
 use App\Enums\ColumnMappingStatus;
 use App\Enums\ImportRunStatus;
 use App\Enums\ImportStrategy;
+use App\Jobs\ProcessImportRun;
 use App\Models\ImportRun;
 use App\Services\Imports\EmployeeImportSchema;
 use App\Services\Imports\EmployeeImportTemplate;
@@ -25,10 +26,9 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 /**
  * The Employee bulk-import wizard (KOL-94), one route per step per KOL-94.5's
  * locked contract. Upload (KOL-98), mapping review (KOL-99),
- * strategy/match-key (KOL-100), and preview (KOL-101) exist so far — commit
- * and the error-report download are later tickets (KOL-102, KOL-103), each
- * adding their own action to {@see show}'s status switch without touching
- * what's already here.
+ * strategy/match-key (KOL-100), preview (KOL-101), and commit (KOL-102) exist
+ * so far — the error-report download is a later ticket (KOL-103), adding its
+ * own action without touching what's already here.
  */
 class ImportWizardController extends Controller
 {
@@ -90,6 +90,10 @@ class ImportWizardController extends Controller
                 'strategy' => $importRun->strategy?->value,
                 'match_key' => $importRun->match_key,
                 'preview_counts' => $importRun->preview_counts,
+                'created_count' => $importRun->created_count,
+                'updated_count' => $importRun->updated_count,
+                'skipped_count' => $importRun->skipped_count,
+                'errored_count' => $importRun->errored_count,
             ],
             'schemaFields' => collect($schema->fields())
                 ->map(fn (ImportField $field): array => [
@@ -197,6 +201,32 @@ class ImportWizardController extends Controller
         $this->assertReadyForPreview($importRun, $schema);
 
         $previewImportRun->handle($importRun, $schema);
+
+        return back();
+    }
+
+    /**
+     * `POST imports/{importRun}/commit` (KOL-94.5, KOL-102): the run must
+     * already have a preview computed against the exact mapping/strategy it
+     * commits with, so this is only reachable from PreviewReady — editing
+     * mapping/strategy again after this point demotes the run back to
+     * MappingReview (see {@see demotionFrom}) before it can reach here.
+     * Flips to Processing itself, before dispatch (AC #1). The transition is
+     * a single conditional UPDATE rather than a fetch-then-write, so two
+     * near-simultaneous requests can't both observe PreviewReady and both
+     * dispatch ProcessImportRun — only the request whose UPDATE actually
+     * changes a row gets to dispatch; the other 409s.
+     */
+    public function commit(ImportRun $importRun): RedirectResponse
+    {
+        $transitioned = ImportRun::query()
+            ->whereKey($importRun->id)
+            ->where('status', ImportRunStatus::PreviewReady)
+            ->update(['status' => ImportRunStatus::Processing]);
+
+        abort_unless($transitioned === 1, 409);
+
+        ProcessImportRun::dispatch($importRun->id);
 
         return back();
     }

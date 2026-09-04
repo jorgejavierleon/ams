@@ -34,4 +34,18 @@ return [
 
     'expiry_hours' => (int) env('IMPORT_EXPIRY_HOURS', 24),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Commit Chunk Size
+    |--------------------------------------------------------------------------
+    |
+    | How many data rows ProcessImportRun (KOL-94.4, KOL-102) upserts per
+    | DB::transaction() during the commit pass. Each chunk's row writes and
+    | its committed_through/count updates land in one transaction, so this
+    | is also the most work a retry can ever redo.
+    |
+    */
+
+    'commit_chunk_size' => (int) env('IMPORT_COMMIT_CHUNK_SIZE', 200),
+
 ];
