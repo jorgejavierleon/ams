@@ -42,3 +42,8 @@ Schedule::command('overtime:rest-day-balances:notify')->dailyAt('07:00');
 // download link has lapsed. Hourly is frequent enough given links are
 // measured in hours/days, not minutes.
 Schedule::command('report-exports:prune-expired')->hourly();
+
+// KOL-104: an Employee import abandoned before it reaches Processing must not
+// keep its uploaded file and row around forever. Hourly matches the
+// import's own expiry window (KOL-94.4), which is measured in hours.
+Schedule::command('import-runs:prune-abandoned')->hourly();
