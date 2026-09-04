@@ -40,6 +40,7 @@ type Props = {
     originalFilename: string | null;
     columnMapping: MappingRow[];
     schemaFields: SchemaField[];
+    onSaved: () => void;
 };
 
 /**
@@ -54,6 +55,7 @@ export function MappingReviewStep({
     originalFilename,
     columnMapping,
     schemaFields,
+    onSaved,
 }: Props) {
     const { t } = useTranslations();
 
@@ -107,7 +109,10 @@ export function MappingReviewStep({
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
-        patch(updateMapping(importRunId).url, { preserveScroll: true });
+        patch(updateMapping(importRunId).url, {
+            preserveScroll: true,
+            onSuccess: onSaved,
+        });
     }
 
     return (
@@ -275,7 +280,7 @@ export function MappingReviewStep({
                 type="submit"
                 disabled={missingRequired.length > 0 || processing}
             >
-                {t('ui.employees.import.mapping.submit')}
+                {t('ui.employees.import.mapping.submit_and_continue')}
             </Button>
         </form>
     );

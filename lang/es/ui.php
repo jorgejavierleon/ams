@@ -1213,7 +1213,29 @@ return [
                 'status_ignored' => 'Ignorado',
                 'required_missing_title' => 'Campos requeridos sin mapear',
                 'required_missing_description' => 'Estos campos deben mapearse antes de continuar: :fields.',
-                'submit' => 'Guardar mapeo',
+                'submit_and_continue' => 'Guardar y continuar',
+            ],
+
+            'strategy' => [
+                'strategy_label' => 'Estrategia de importación',
+                'match_key_label' => 'Clave de coincidencia — se usa para encontrar al empleado existente en cada fila',
+                'back' => '← Mapeo de columnas',
+                'submit' => 'Guardar estrategia',
+                'saved' => 'Guardado.',
+                'options' => [
+                    'create_only' => [
+                        'title' => 'Solo crear',
+                        'description' => 'Cada fila crea un nuevo empleado. Las filas que coincidan con un registro existente serán un error.',
+                    ],
+                    'update_only' => [
+                        'title' => 'Solo actualizar',
+                        'description' => 'Cada fila debe coincidir con un empleado existente. Las filas sin coincidencia serán un error. Las celdas en blanco nunca borran un valor.',
+                    ],
+                    'create_and_update' => [
+                        'title' => 'Crear y actualizar',
+                        'description' => 'Las filas que coincidan actualizan al empleado existente; las que no coincidan crean uno nuevo. Las celdas en blanco nunca borran un valor.',
+                    ],
+                ],
             ],
         ],
 

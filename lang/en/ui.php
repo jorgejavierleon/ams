@@ -1210,7 +1210,29 @@ return [
                 'status_ignored' => 'Ignored',
                 'required_missing_title' => 'Required fields not mapped',
                 'required_missing_description' => 'These fields must be mapped before continuing: :fields.',
-                'submit' => 'Save mapping',
+                'submit_and_continue' => 'Save and continue',
+            ],
+
+            'strategy' => [
+                'strategy_label' => 'Import strategy',
+                'match_key_label' => 'Match key — used to find the existing employee for each row',
+                'back' => '← Column mapping',
+                'submit' => 'Save strategy',
+                'saved' => 'Saved.',
+                'options' => [
+                    'create_only' => [
+                        'title' => 'Create only',
+                        'description' => 'Every row creates a new employee. Rows matching an existing record are an error.',
+                    ],
+                    'update_only' => [
+                        'title' => 'Update only',
+                        'description' => 'Every row must match an existing employee. Unmatched rows are an error. Blank cells never clear a value.',
+                    ],
+                    'create_and_update' => [
+                        'title' => 'Create and update',
+                        'description' => 'Matched rows update the existing employee; unmatched rows create a new one. Blank cells never clear a value.',
+                    ],
+                ],
             ],
         ],
 

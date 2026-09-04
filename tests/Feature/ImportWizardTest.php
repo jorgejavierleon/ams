@@ -2,6 +2,7 @@
 
 use App\Enums\ColumnMappingStatus;
 use App\Enums\ImportRunStatus;
+use App\Enums\ImportStrategy;
 use App\Models\ImportRun;
 use App\Models\Organization;
 use App\Models\User;
@@ -207,6 +208,96 @@ test('updating the mapping on an import run outside MappingReview/PreviewReady i
     $this->actingAs($admin)
         ->patch(route('imports.mapping.update', $importRun), ['mapping' => $importRun->column_mapping])
         ->assertStatus(409);
+});
+
+test('saving CreateOnly without a match key succeeds', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->assertRedirect();
+
+    $importRun->refresh();
+    expect($importRun->strategy)->toBe(ImportStrategy::CreateOnly)
+        ->and($importRun->match_key)->toBeNull()
+        ->and($importRun->status)->toBe(ImportRunStatus::MappingReview);
+});
+
+test('saving UpdateOnly without a match key is rejected', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'update_only'])
+        ->assertSessionHasErrors('match_key');
+
+    expect($importRun->fresh()->strategy)->toBeNull();
+});
+
+test('saving strategy and match key persists correctly and keeps the run at MappingReview', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.strategy.update', $importRun), [
+            'strategy' => 'create_and_update',
+            'match_key' => 'email',
+        ])
+        ->assertRedirect();
+
+    $importRun->refresh();
+    expect($importRun->strategy)->toBe(ImportStrategy::CreateAndUpdate)
+        ->and($importRun->match_key)->toBe('email')
+        ->and($importRun->status)->toBe(ImportRunStatus::MappingReview);
+});
+
+test('a match key submitted with CreateOnly is dropped rather than persisted', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.strategy.update', $importRun), [
+            'strategy' => 'create_only',
+            'match_key' => 'rut',
+        ])
+        ->assertRedirect();
+
+    expect($importRun->fresh()->match_key)->toBeNull();
+});
+
+test('an unsupported match key is rejected', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.strategy.update', $importRun), [
+            'strategy' => 'update_only',
+            'match_key' => 'supervisor',
+        ])
+        ->assertSessionHasErrors('match_key');
+});
+
+test('updating the strategy on an import run outside MappingReview/PreviewReady is refused', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+    $importRun->update(['status' => ImportRunStatus::Processing]);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->assertStatus(409);
+});
+
+test('a second user in the same organization cannot update another user\'s strategy', function () {
+    $organization = Organization::factory()->create();
+    $owner = importAdmin($organization);
+    $otherUser = importAdmin($organization);
+
+    $importRun = mappingRunFor($owner);
+
+    $this->actingAs($otherUser)
+        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->assertNotFound();
 });
 
 test('an over-threshold file is rejected without creating an ImportRun', function () {
