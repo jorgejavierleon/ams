@@ -120,6 +120,6 @@ final class ColumnAutoMapper
 
     private function normalize(string $value): string
     {
-        return trim((string) preg_replace('/[^a-z0-9]+/', ' ', Str::lower(Str::ascii($value))));
+        return Str::slug($value, ' ');
     }
 }

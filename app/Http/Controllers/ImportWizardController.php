@@ -80,7 +80,7 @@ class ImportWizardController extends Controller
                 'id' => $importRun->id,
                 'status' => $importRun->status->value,
                 'original_filename' => $importRun->original_filename,
-                'column_mapping' => $importRun->column_mapping,
+                'column_mapping' => $importRun->column_mapping ?? [],
             ],
             'schemaFields' => collect($schema->fields())
                 ->map(fn (ImportField $field): array => [
@@ -111,7 +111,7 @@ class ImportWizardController extends Controller
         $fieldsByName = collect($schema->fields())->keyBy(fn (ImportField $field): string => $field->name);
 
         $validated = $request->validate([
-            'mapping' => ['required', 'array', 'size:'.count($importRun->column_mapping ?? []), $this->mappingValidator($fieldsByName)],
+            'mapping' => ['required', 'array', 'size:'.count($importRun->column_mapping ?? []), $this->mappingValidator($importRun, $fieldsByName)],
             'mapping.*.sourceColumnIndex' => ['required', 'integer', 'min:0'],
             'mapping.*.sourceHeaderLabel' => ['nullable', 'string'],
             'mapping.*.targetField' => ['nullable', 'string'],
@@ -126,11 +126,48 @@ class ImportWizardController extends Controller
     /**
      * @param  Collection<string, ImportField>  $fieldsByName
      */
-    private function mappingValidator(Collection $fieldsByName): Closure
+    private function mappingValidator(ImportRun $importRun, Collection $fieldsByName): Closure
     {
-        return function (string $attribute, mixed $value, Closure $fail) use ($fieldsByName): void {
+        /** @var Collection<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}> $originalByIndex */
+        $originalByIndex = collect($importRun->column_mapping ?? [])->keyBy('sourceColumnIndex');
+
+        return function (string $attribute, mixed $value, Closure $fail) use ($originalByIndex, $fieldsByName): void {
             /** @var array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}> $value */
-            $mappedTargets = collect($value)
+            $rows = collect($value);
+
+            // sourceColumnIndex/sourceHeaderLabel describe the uploaded file
+            // itself — only targetField/status are the user's to edit. A
+            // duplicate, missing, or relabeled index would otherwise let a
+            // crafted request silently corrupt what EvaluateImportRow later
+            // reads each column as (KOL-101+).
+            $submittedIndices = $rows->pluck('sourceColumnIndex')->map(fn (mixed $i): int => (int) $i);
+
+            if ($submittedIndices->unique()->count() !== $submittedIndices->count()
+                || $submittedIndices->diff($originalByIndex->keys())->isNotEmpty()) {
+                $fail(__('ui.employees.import.errors.invalid_mapping_shape'));
+
+                return;
+            }
+
+            foreach ($rows as $row) {
+                $original = $originalByIndex->get((int) $row['sourceColumnIndex']);
+
+                if ($original['sourceHeaderLabel'] !== $row['sourceHeaderLabel']) {
+                    $fail(__('ui.employees.import.errors.invalid_mapping_shape'));
+
+                    return;
+                }
+
+                $isMapped = $row['status'] === ColumnMappingStatus::Mapped->value;
+
+                if ($isMapped !== ($row['targetField'] !== null)) {
+                    $fail(__('ui.employees.import.errors.invalid_mapping_shape'));
+
+                    return;
+                }
+            }
+
+            $mappedTargets = $rows
                 ->where('status', ColumnMappingStatus::Mapped->value)
                 ->pluck('targetField');
 

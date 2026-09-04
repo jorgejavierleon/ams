@@ -45,15 +45,21 @@ export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
             <div className="space-y-6 p-6">
                 <Heading title={t('ui.employees.import.title')} />
 
-                {importRun.status === 'mapping_review' ? (
-                    <MappingReviewStep
-                        importRunId={importRun.id}
-                        originalFilename={importRun.original_filename}
-                        columnMapping={importRun.column_mapping}
-                        schemaFields={schemaFields}
-                    />
-                ) : (
-                    <div className="max-w-3xl">
+                <div
+                    className={
+                        importRun.status === 'mapping_review'
+                            ? 'max-w-5xl'
+                            : 'max-w-3xl'
+                    }
+                >
+                    {importRun.status === 'mapping_review' ? (
+                        <MappingReviewStep
+                            importRunId={importRun.id}
+                            originalFilename={importRun.original_filename}
+                            columnMapping={importRun.column_mapping}
+                            schemaFields={schemaFields}
+                        />
+                    ) : (
                         <Card>
                             <CardContent>
                                 <p className="text-sm text-muted-foreground">
@@ -61,8 +67,8 @@ export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
                                 </p>
                             </CardContent>
                         </Card>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </>
     );

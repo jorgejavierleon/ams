@@ -1192,6 +1192,7 @@ return [
                 'unknown_target_field' => 'Una o más columnas están mapeadas a un campo inexistente.',
                 'duplicate_target_field' => 'Dos columnas no pueden mapearse al mismo campo.',
                 'required_field_unmapped' => 'Estos campos deben mapearse antes de continuar: :fields.',
+                'invalid_mapping_shape' => 'El mapeo enviado no corresponde a las columnas del archivo cargado.',
             ],
 
             'mapping' => [

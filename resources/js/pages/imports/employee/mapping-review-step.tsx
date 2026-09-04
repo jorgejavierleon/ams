@@ -181,7 +181,11 @@ export function MappingReviewStep({
                                         <TableCell className="w-72">
                                             <Combobox
                                                 options={options}
-                                                value={row.targetField ?? ''}
+                                                value={
+                                                    row.status === 'ignored'
+                                                        ? IGNORE_VALUE
+                                                        : (row.targetField ?? '')
+                                                }
                                                 onChange={(value) => {
                                                     if (value === IGNORE_VALUE) {
                                                         setRow(index, {

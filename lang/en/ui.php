@@ -1189,6 +1189,7 @@ return [
                 'unknown_target_field' => 'One or more columns are mapped to a field that does not exist.',
                 'duplicate_target_field' => 'Two columns cannot be mapped to the same field.',
                 'required_field_unmapped' => 'These fields must be mapped before continuing: :fields.',
+                'invalid_mapping_shape' => 'The submitted mapping does not match the uploaded file\'s columns.',
             ],
 
             'mapping' => [
