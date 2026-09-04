@@ -1,10 +1,10 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
-import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { MappingReviewStep } from './mapping-review-step';
 import { PreviewStep } from './preview-step';
+import { ResultStep } from './result-step';
 import { StrategyStep } from './strategy-step';
 
 type ColumnMapping = {
@@ -36,6 +36,10 @@ type ImportRun = {
     strategy: 'create_only' | 'update_only' | 'create_and_update' | null;
     match_key: string | null;
     preview_counts: PreviewCounts | null;
+    created_count: number;
+    updated_count: number;
+    skipped_count: number;
+    errored_count: number;
 };
 
 type Props = {
@@ -46,9 +50,8 @@ type Props = {
 /**
  * The wizard shell's status-driven step display (KOL-94.5): which step
  * renders is entirely a function of ImportRun's status. Upload (KOL-98),
- * mapping review (KOL-99), strategy (KOL-100), and preview (KOL-101) are
- * reachable today; commit belongs to a step this wizard doesn't have yet
- * (KOL-102).
+ * mapping review (KOL-99), strategy (KOL-100), preview (KOL-101), and the
+ * commit result (KOL-102) are all reachable today.
  */
 export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
     const { t } = useTranslations();
@@ -113,15 +116,17 @@ export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
                                 onBack={() => setStep('strategy')}
                             />
                         )
-                    ) : (
-                        <Card>
-                            <CardContent>
-                                <p className="text-sm text-muted-foreground">
-                                    {importRun.status}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    )}
+                    ) : importRun.status === 'processing' ||
+                      importRun.status === 'completed' ||
+                      importRun.status === 'failed' ? (
+                        <ResultStep
+                            status={importRun.status}
+                            createdCount={importRun.created_count}
+                            updatedCount={importRun.updated_count}
+                            skippedCount={importRun.skipped_count}
+                            erroredCount={importRun.errored_count}
+                        />
+                    ) : null}
                 </div>
             </div>
         </>

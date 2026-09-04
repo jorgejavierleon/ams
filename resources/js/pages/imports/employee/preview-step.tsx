@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
+import { store as commitImport } from '@/routes/imports/commit';
 import { store as runPreview } from '@/routes/imports/preview';
 
 type PreviewCounts = {
@@ -59,9 +60,16 @@ function StatTile({
 export function PreviewStep({ importRunId, previewCounts, onBack }: Props) {
     const { t } = useTranslations();
     const { post, processing, errors } = useForm<Record<string, never>>({});
+    const { post: postCommit, processing: committing } = useForm<
+        Record<string, never>
+    >({});
 
     function handleRunPreview() {
         post(runPreview(importRunId).url, { preserveScroll: true });
+    }
+
+    function handleCommit() {
+        postCommit(commitImport(importRunId).url, { preserveScroll: true });
     }
 
     if (!previewCounts) {
@@ -157,9 +165,12 @@ export function PreviewStep({ importRunId, previewCounts, onBack }: Props) {
                 </Alert>
             )}
 
-            <div className="flex justify-start">
-                <Button variant="outline" onClick={onBack}>
+            <div className="flex items-center justify-between">
+                <Button variant="outline" onClick={onBack} disabled={committing}>
                     {t('ui.employees.import.preview.back')}
+                </Button>
+                <Button onClick={handleCommit} disabled={committing}>
+                    {t('ui.employees.import.preview.confirm_submit')}
                 </Button>
             </div>
         </div>

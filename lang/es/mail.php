@@ -150,4 +150,22 @@ return [
         'heading' => 'Reporte no generado',
         'body' => 'Ocurrió un error al generar el reporte que solicitaste. Intenta generarlo nuevamente; si el problema persiste, contacta a soporte.',
     ],
+
+    'import_run_completed' => [
+        'subject' => 'Tu importación de empleados terminó',
+        'heading' => 'Importación completada',
+        'body' => 'La importación de empleados que ejecutaste ya terminó de procesarse.',
+        'created' => 'Creados: :count',
+        'updated' => 'Actualizados: :count',
+        'skipped' => 'Omitidos: :count',
+        'errored' => 'Con error: :count',
+        'action' => 'Ver resultado',
+    ],
+
+    'import_run_failed' => [
+        'subject' => 'No pudimos completar tu importación de empleados',
+        'heading' => 'Importación no completada',
+        'body' => 'Ocurrió un error al procesar la importación de empleados que ejecutaste. Puedes revisar el detalle e intentar una nueva importación.',
+        'action' => 'Ver detalle',
+    ],
 ];

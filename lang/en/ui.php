@@ -1253,6 +1253,21 @@ return [
                 'no_errors_title' => 'No blocking errors',
                 'no_errors_description_with_warnings' => ':count rows have a warning but will still import.',
                 'no_errors_description_clean' => 'Every row is ready to import.',
+                'confirm_submit' => 'Confirm and import',
+            ],
+
+            'result' => [
+                'processing_title' => 'Importing…',
+                'processing_description' => 'This can take a few minutes depending on the file size. You can leave this page — you\'ll be notified by email once it finishes.',
+                'completed_title' => 'Import completed',
+                'failed_title' => 'The import did not complete',
+                'failed_description' => 'An unexpected error occurred while processing the file. Check your email for details or try a new import.',
+                'counts' => [
+                    'created' => 'Created',
+                    'updated' => 'Updated',
+                    'skipped' => 'Skipped',
+                    'errored' => 'Errored',
+                ],
             ],
         ],
 

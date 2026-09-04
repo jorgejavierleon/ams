@@ -3,6 +3,7 @@
 use App\Enums\ColumnMappingStatus;
 use App\Enums\ImportRunStatus;
 use App\Enums\ImportStrategy;
+use App\Jobs\ProcessImportRun;
 use App\Models\ImportRun;
 use App\Models\Organization;
 use App\Models\User;
@@ -11,6 +12,7 @@ use App\Support\Imports\ImportField;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
@@ -606,4 +608,56 @@ test('resubmitting strategy while PreviewReady demotes the run and clears previe
     expect($importRun->status)->toBe(ImportRunStatus::MappingReview)
         ->and($importRun->preview_counts)->toBeNull()
         ->and($importRun->strategy)->toBe(ImportStrategy::CreateOnly);
+});
+
+test('committing a PreviewReady run flips it to Processing and dispatches ProcessImportRun', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+    $importRun->update([
+        'status' => ImportRunStatus::PreviewReady,
+        'preview_counts' => ['ready' => 1, 'warning' => 0, 'error' => 0, 'skipped' => 0],
+    ]);
+
+    Queue::fake();
+
+    $this->actingAs($admin)
+        ->post(route('imports.commit.store', $importRun))
+        ->assertRedirect();
+
+    Queue::assertPushed(ProcessImportRun::class, fn (ProcessImportRun $job): bool => $job->importRunId === $importRun->id);
+
+    expect($importRun->fresh()->status)->toBe(ImportRunStatus::Processing);
+});
+
+test('committing an import run outside PreviewReady is refused', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+
+    Queue::fake();
+
+    $this->actingAs($admin)
+        ->post(route('imports.commit.store', $importRun))
+        ->assertStatus(409);
+
+    Queue::assertNothingPushed();
+});
+
+test('a second user in the same organization cannot commit another user\'s import run', function () {
+    $organization = Organization::factory()->create();
+    $owner = importAdmin($organization);
+    $otherUser = importAdmin($organization);
+
+    $importRun = mappingRunFor($owner);
+    $importRun->update([
+        'status' => ImportRunStatus::PreviewReady,
+        'preview_counts' => ['ready' => 1, 'warning' => 0, 'error' => 0, 'skipped' => 0],
+    ]);
+
+    Queue::fake();
+
+    $this->actingAs($otherUser)
+        ->post(route('imports.commit.store', $importRun))
+        ->assertNotFound();
+
+    Queue::assertNothingPushed();
 });
