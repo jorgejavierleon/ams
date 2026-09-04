@@ -8,6 +8,17 @@
 
 ## Pending
 
+### KOL-104 — Add scheduled pruning of abandoned Employee import runs
+
+- **Branch:** `feature/kol-104-prune-abandoned-import-runs` (merged to `master`)
+- **Deferred on:** 2026-09-04
+- **Where:** N/A — backend console command, no screen involved
+- **Automated coverage:** Pest (`tests/Feature/PruneAbandonedImportRunsTest.php`) covers a stale Pending/MappingReview/PreviewReady run and its file being deleted, a stale Processing run left untouched, a non-expired run left untouched, and stale Completed/Failed runs left untouched — all against `Storage::fake('local')`.
+
+- [ ] Run `sail artisan schedule:list` and confirm `import-runs:prune-abandoned` is listed running hourly.
+- [ ] Manually create a real (non-faked) local-disk import run past its `expires_at` in `Pending`/`MappingReview`/`PreviewReady`, run `sail artisan import-runs:prune-abandoned`, and confirm the row is gone and the actual uploaded file under `storage/app/import-runs/...` was deleted from disk.
+- [ ] Confirm the command's `$this->info(...)` output count matches how many rows you expected pruned.
+
 ### KOL-100 — Add the strategy and match-key selection step to the Employee import wizard
 
 - **Branch:** `feature/kol-100-strategy-match-key-step` (merged to `master`)
