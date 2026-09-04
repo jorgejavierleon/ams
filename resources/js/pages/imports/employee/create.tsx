@@ -149,12 +149,14 @@ export default function CreateEmployeeImport() {
                             </Alert>
                         )}
 
-                        <Button
-                            type="submit"
-                            disabled={!data.file || processing}
-                        >
-                            {t('ui.employees.import.upload.submit')}
-                        </Button>
+                        <div className="flex justify-end">
+                            <Button
+                                type="submit"
+                                disabled={!data.file || processing}
+                            >
+                                {t('ui.employees.import.upload.submit')}
+                            </Button>
+                        </div>
                     </form>
                 </div>
             </div>

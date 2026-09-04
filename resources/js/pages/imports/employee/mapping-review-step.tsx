@@ -276,12 +276,14 @@ export function MappingReviewStep({
                 </CardContent>
             </Card>
 
-            <Button
-                type="submit"
-                disabled={missingRequired.length > 0 || processing}
-            >
-                {t('ui.employees.import.mapping.submit_and_continue')}
-            </Button>
+            <div className="flex justify-end">
+                <Button
+                    type="submit"
+                    disabled={missingRequired.length > 0 || processing}
+                >
+                    {t('ui.employees.import.mapping.submit_and_continue')}
+                </Button>
+            </div>
         </form>
     );
 }
