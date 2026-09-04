@@ -4,6 +4,7 @@ use App\Enums\ImportRunStatus;
 use App\Enums\ImportStrategy;
 use App\Models\ImportRun;
 use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -35,6 +36,19 @@ test('an ImportRun is scoped to its organization', function () {
     ImportRun::factory()->create(['organization_id' => $theirs->id]);
 
     session(['organization_id' => $mine->id]);
+
+    expect(ImportRun::count())->toBe(1);
+});
+
+test('an ImportRun is scoped to its user', function () {
+    $organization = Organization::factory()->create();
+    $mine = User::factory()->create(['organization_id' => $organization->id]);
+    $theirs = User::factory()->create(['organization_id' => $organization->id]);
+
+    ImportRun::factory()->create(['organization_id' => $organization->id, 'user_id' => $mine->id]);
+    ImportRun::factory()->create(['organization_id' => $organization->id, 'user_id' => $theirs->id]);
+
+    $this->actingAs($mine);
 
     expect(ImportRun::count())->toBe(1);
 });

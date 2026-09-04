@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ImportRunStatus;
 use App\Enums\ImportStrategy;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Models\Concerns\BelongsToUser;
 use Database\Factories\ImportRunFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,10 +15,14 @@ use Illuminate\Support\Carbon;
 /**
  * A bulk data import (KOL-94): one uploaded file moving through mapping,
  * preview, and a queued commit, mirroring {@see ReportExport}'s
- * status-flip + queued-job pattern.
+ * status-flip + queued-job pattern. Scoped to both the current organization
+ * and the requesting user (KOL-105) so route-model-binding 404s a request
+ * for another user's run in the same org, without every wizard route having
+ * to check ownership itself.
  *
  * @property int $id
  * @property int $organization_id
+ * @property int $user_id
  * @property ImportRunStatus $status
  * @property array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>|null $column_mapping
  * @property ImportStrategy|null $strategy
@@ -34,12 +39,13 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $expires_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read User $user
  */
-#[Fillable(['organization_id', 'status', 'column_mapping', 'strategy', 'match_key', 'disk_path', 'original_filename', 'preview_counts', 'committed_through', 'created_count', 'updated_count', 'skipped_count', 'errored_count', 'error_report_path', 'expires_at'])]
+#[Fillable(['organization_id', 'user_id', 'status', 'column_mapping', 'strategy', 'match_key', 'disk_path', 'original_filename', 'preview_counts', 'committed_through', 'created_count', 'updated_count', 'skipped_count', 'errored_count', 'error_report_path', 'expires_at'])]
 class ImportRun extends Model
 {
     /** @use HasFactory<ImportRunFactory> */
-    use BelongsToOrganization, HasFactory;
+    use BelongsToOrganization, BelongsToUser, HasFactory;
 
     /**
      * A new run always starts life at Pending with nothing committed yet.

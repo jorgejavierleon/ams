@@ -78,6 +78,7 @@ test('a valid upload creates an ImportRun scoped to the organization and reaches
     $response->assertRedirect(route('imports.show', $importRun));
 
     expect($importRun->organization_id)->toBe($organization->id)
+        ->and($importRun->user_id)->toBe($admin->id)
         ->and($importRun->status)->toBe(ImportRunStatus::MappingReview)
         ->and($importRun->expires_at)->not->toBeNull()
         ->and($importRun->original_filename)->toBe('empleados.csv')
@@ -123,6 +124,7 @@ function mappingRunFor(User $admin, array $overrides = []): ImportRun
 {
     $importRun = ImportRun::factory()->create([
         'organization_id' => $admin->organization_id,
+        'user_id' => $admin->id,
         'status' => ImportRunStatus::MappingReview,
         'column_mapping' => [
             ['sourceColumnIndex' => 0, 'sourceHeaderLabel' => 'Nombre', 'targetField' => null, 'status' => 'unmapped'],
@@ -249,6 +251,7 @@ test('a user outside the ImportRun organization cannot view it', function () {
     $owner = importAdmin();
     $importRun = ImportRun::factory()->create([
         'organization_id' => $owner->organization_id,
+        'user_id' => $owner->id,
         'status' => ImportRunStatus::MappingReview,
     ]);
 
@@ -256,6 +259,22 @@ test('a user outside the ImportRun organization cannot view it', function () {
 
     $this->actingAs($outsider)
         ->get(route('imports.show', $importRun))
+        ->assertNotFound();
+});
+
+test('a second user in the same organization cannot view or update another user\'s ImportRun', function () {
+    $organization = Organization::factory()->create();
+    $owner = importAdmin($organization);
+    $otherUser = importAdmin($organization);
+
+    $importRun = mappingRunFor($owner);
+
+    $this->actingAs($otherUser)
+        ->get(route('imports.show', $importRun))
+        ->assertNotFound();
+
+    $this->actingAs($otherUser)
+        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $importRun->column_mapping])
         ->assertNotFound();
 });
 

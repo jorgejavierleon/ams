@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\ImportRunStatus;
 use App\Models\ImportRun;
 use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,6 +20,7 @@ class ImportRunFactory extends Factory
     {
         return [
             'organization_id' => Organization::factory(),
+            'user_id' => User::factory(),
             'status' => ImportRunStatus::Pending,
         ];
     }
