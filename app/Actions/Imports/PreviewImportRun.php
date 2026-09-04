@@ -52,14 +52,15 @@ class PreviewImportRun
      */
     private function columnMappings(ImportRun $importRun): array
     {
-        return collect($importRun->column_mapping ?? [])
-            ->map(fn (array $row): ColumnMapping => new ColumnMapping(
+        return array_values(array_map(
+            fn (array $row): ColumnMapping => new ColumnMapping(
                 $row['sourceColumnIndex'],
                 $row['sourceHeaderLabel'],
                 $row['targetField'],
                 ColumnMappingStatus::from($row['status']),
-            ))
-            ->all();
+            ),
+            $importRun->column_mapping ?? [],
+        ));
     }
 
     /**
@@ -80,6 +81,9 @@ class PreviewImportRun
 
         $rows = $reader->load($path)->getActiveSheet()->toArray(null, true, true, false);
 
-        return array_slice($rows, 1);
+        return array_values(array_map(
+            fn (array $row): array => array_values($row),
+            array_slice($rows, 1),
+        ));
     }
 }
