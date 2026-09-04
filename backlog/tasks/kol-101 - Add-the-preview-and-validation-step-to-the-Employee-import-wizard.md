@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jorge'
 created_date: '2026-09-03 20:44'
-updated_date: '2026-09-04 14:47'
+updated_date: '2026-09-04 14:50'
 labels:
   - bulk-import
 milestone: m-3
@@ -61,6 +61,8 @@ Fourth wizard step: run every row through EvaluateImportRow synchronously and sh
 Implemented PreviewImportRun action + ImportWizardController::preview() endpoint (POST imports/{importRun}/preview), guarded by MappingReview status plus a server-side prerequisite check (required fields mapped, strategy set, match key when needed). updateMapping/updateStrategy now demote PreviewReady -> MappingReview and clear preview_counts on resubmit (AC #3). Frontend: new preview-step.tsx showing only aggregate stat tiles; show.tsx now treats MappingReview+PreviewReady as one editable superstatus driving a local mapping/strategy/preview sub-step. Added 12 new Pest tests (clean fixture all-Ready, mixed fixture with unresolved-reference/required-field-gap/duplicate-match-key all landing as Error, guard/prerequisite tests, demotion tests). Pint clean, npm run types:check clean (2 pre-existing unrelated failures in roles/index.tsx and roles/show.tsx confirmed present on master too), full sa test --compact: 1381 passed / 4 skipped / 0 failed.
 
 Code review (medium) surfaced 7 findings; fixed the 3 real ones: preview-step.tsx now renders errors.preview (previously silently swallowed validation failures from the preview endpoint); show.tsx's card-width class now also checks isEditable so a non-editable run with no strategy set doesn't get the wide 5xl layout; extracted a shared missingRequiredFields() helper in ImportWizardController so mappingValidator and assertReadyForPreview can't drift on what 'required' means. Left as out-of-scope/accepted: cross-tab staleness of client step state (pre-existing pattern since KOL-99/100, not introduced here), no direct re-preview-without-edit path from PreviewReady (not required by AC, matches KOL-94.5's locked transition contract), and the Warning bucket being permanently 0 (EvaluateImportRow, built in KOL-94.3, never emits it — out of this ticket's scope to change). Re-ran pint/types:check/full sa test --compact after fixes: still clean, 1381 passed / 4 skipped / 0 failed.
+
+Merged to master; pre-push composer types:check (phpstan) caught two list<> return-type inference gaps in PreviewImportRun (array_map/array_values over a nested array isn't automatically proven list<list<mixed>>) — fixed with explicit array_values() wrapping in commit e0a4184 and pushed. Final state on master: 3361ab6 (merge) + e0a4184 (phpstan fix).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
