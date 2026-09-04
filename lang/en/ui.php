@@ -1186,11 +1186,29 @@ return [
             'errors' => [
                 'unsupported_format' => 'The file must be a valid Excel (.xlsx) or CSV file.',
                 'too_many_rows' => 'The file has too many rows. The maximum allowed is :max.',
+                'unknown_target_field' => 'One or more columns are mapped to a field that does not exist.',
+                'duplicate_target_field' => 'Two columns cannot be mapped to the same field.',
+                'required_field_unmapped' => 'These fields must be mapped before continuing: :fields.',
             ],
 
-            'show' => [
-                'mapping_review_title' => 'File uploaded',
-                'mapping_review_description' => ':count columns detected in :filename. Mapping review will be available soon.',
+            'mapping' => [
+                'title' => 'Column mapping review',
+                'description' => ':count columns detected in :filename. Confirm or fix which field each one maps to.',
+                'summary' => ':mapped of :total columns mapped automatically.',
+                'column_header' => 'Uploaded column',
+                'target_header' => 'Maps to',
+                'status_header' => 'Status',
+                'blank_header' => '(blank header)',
+                'select_placeholder' => 'Select a field...',
+                'search_placeholder' => 'Search fields...',
+                'empty_results' => 'No matching field.',
+                'ignore_option' => 'Ignore this column',
+                'status_mapped' => 'Mapped',
+                'status_unmapped' => 'Unmapped',
+                'status_ignored' => 'Ignored',
+                'required_missing_title' => 'Required fields not mapped',
+                'required_missing_description' => 'These fields must be mapped before continuing: :fields.',
+                'submit' => 'Save mapping',
             ],
         ],
 

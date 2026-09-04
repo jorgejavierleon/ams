@@ -1189,11 +1189,29 @@ return [
             'errors' => [
                 'unsupported_format' => 'El archivo debe ser Excel (.xlsx) o CSV en un formato válido.',
                 'too_many_rows' => 'El archivo tiene demasiadas filas. El máximo permitido es :max.',
+                'unknown_target_field' => 'Una o más columnas están mapeadas a un campo inexistente.',
+                'duplicate_target_field' => 'Dos columnas no pueden mapearse al mismo campo.',
+                'required_field_unmapped' => 'Estos campos deben mapearse antes de continuar: :fields.',
             ],
 
-            'show' => [
-                'mapping_review_title' => 'Archivo cargado',
-                'mapping_review_description' => 'Se detectaron :count columnas en :filename. La revisión de mapeo estará disponible próximamente.',
+            'mapping' => [
+                'title' => 'Revisión de mapeo de columnas',
+                'description' => 'Se detectaron :count columnas en :filename. Confirma o corrige a qué campo corresponde cada una.',
+                'summary' => ':mapped de :total columnas mapeadas automáticamente.',
+                'column_header' => 'Columna cargada',
+                'target_header' => 'Corresponde a',
+                'status_header' => 'Estado',
+                'blank_header' => '(encabezado en blanco)',
+                'select_placeholder' => 'Selecciona un campo...',
+                'search_placeholder' => 'Buscar campo...',
+                'empty_results' => 'No se encontraron campos.',
+                'ignore_option' => 'Ignorar esta columna',
+                'status_mapped' => 'Mapeado',
+                'status_unmapped' => 'Sin mapear',
+                'status_ignored' => 'Ignorado',
+                'required_missing_title' => 'Campos requeridos sin mapear',
+                'required_missing_description' => 'Estos campos deben mapearse antes de continuar: :fields.',
+                'submit' => 'Guardar mapeo',
             ],
         ],
 

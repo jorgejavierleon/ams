@@ -2,9 +2,9 @@
 
 namespace App\Actions\Imports;
 
-use App\Enums\ColumnMappingStatus;
 use App\Enums\ImportRunStatus;
 use App\Models\ImportRun;
+use App\Services\Imports\EmployeeImportSchema;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -20,12 +20,13 @@ use Throwable;
  * {@see IOFactory} (never trusting the extension, per KOL-94.1), enforces
  * the sync-preview row threshold before anything is persisted (KOL-94.1
  * AC #4 — an over-threshold file must never create a run), then stores the
- * file and parses its header row into an initial, fully-Unmapped
- * ColumnMapping — the real auto-mapping guess is KOL-99's ColumnAutoMapper,
- * not this ticket's concern.
+ * file and parses its header row into an initial ColumnMapping seeded by
+ * {@see ColumnAutoMapper}'s guesses (KOL-99).
  */
 class CreateImportRunFromUpload
 {
+    public function __construct(private ColumnAutoMapper $autoMapper, private EmployeeImportSchema $schema) {}
+
     /**
      * @throws ValidationException
      */
@@ -90,7 +91,7 @@ class CreateImportRunFromUpload
             'status' => ImportRunStatus::MappingReview,
             'disk_path' => $diskPath,
             'original_filename' => $file->getClientOriginalName(),
-            'column_mapping' => $this->columnMappingSkeleton($header),
+            'column_mapping' => $this->autoMapper->map($header, $this->schema->fields()),
         ]);
 
         return $importRun;
@@ -147,22 +148,5 @@ class CreateImportRunFromUpload
         throw ValidationException::withMessages([
             'file' => __('ui.employees.import.errors.too_many_rows', ['max' => $threshold]),
         ]);
-    }
-
-    /**
-     * @param  array<int, mixed>  $header
-     * @return array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>
-     */
-    private function columnMappingSkeleton(array $header): array
-    {
-        return collect($header)
-            ->values()
-            ->map(fn (mixed $label, int $index): array => [
-                'sourceColumnIndex' => $index,
-                'sourceHeaderLabel' => $label === null ? null : (string) $label,
-                'targetField' => null,
-                'status' => ColumnMappingStatus::Unmapped->value,
-            ])
-            ->all();
     }
 }

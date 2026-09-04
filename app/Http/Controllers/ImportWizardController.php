@@ -3,20 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Imports\CreateImportRunFromUpload;
+use App\Enums\ColumnMappingStatus;
+use App\Enums\ImportRunStatus;
 use App\Models\ImportRun;
+use App\Services\Imports\EmployeeImportSchema;
 use App\Services\Imports\EmployeeImportTemplate;
+use App\Support\Imports\ImportField;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
  * The Employee bulk-import wizard (KOL-94), one route per step per KOL-94.5's
- * locked contract. Only the upload step exists so far (KOL-98) — mapping
- * review, strategy/match-key, preview, commit and the error-report download
- * are later tickets (KOL-99..103), each adding their own action to
+ * locked contract. Upload (KOL-98) and mapping review (KOL-99) exist so
+ * far — strategy/match-key, preview, commit and the error-report download
+ * are later tickets (KOL-100..103), each adding their own action to
  * {@see show}'s status switch without touching what's already here.
  */
 class ImportWizardController extends Controller
@@ -66,15 +73,89 @@ class ImportWizardController extends Controller
      * scope), so a cross-org id 404s before this method runs; the
      * `Import:Employee` route middleware handles the 403 case.
      */
-    public function show(ImportRun $importRun): Response
+    public function show(ImportRun $importRun, EmployeeImportSchema $schema): Response
     {
         return Inertia::render('imports/employee/show', [
             'importRun' => [
                 'id' => $importRun->id,
                 'status' => $importRun->status->value,
                 'original_filename' => $importRun->original_filename,
-                'column_count' => count($importRun->column_mapping ?? []),
+                'column_mapping' => $importRun->column_mapping,
             ],
+            'schemaFields' => collect($schema->fields())
+                ->map(fn (ImportField $field): array => [
+                    'name' => $field->name,
+                    'label' => $field->label,
+                    'requiredForCreateOnly' => $field->requiredForCreateOnly,
+                ])
+                ->values(),
         ]);
+    }
+
+    /**
+     * `PATCH imports/{importRun}/mapping` (KOL-94.5, KOL-99): persists the
+     * reviewed ColumnMapping array. Strategy (KOL-100) isn't chosen yet at
+     * this step, so every one of EmployeeImportSchema's CreateOnly-required
+     * fields must always be mapped, regardless of which strategy gets picked
+     * later. Allowed while MappingReview or PreviewReady; demoting a
+     * PreviewReady run back to MappingReview on resubmit is KOL-101's job —
+     * preview doesn't exist yet, so this never actually sees PreviewReady.
+     */
+    public function updateMapping(Request $request, ImportRun $importRun, EmployeeImportSchema $schema): RedirectResponse
+    {
+        abort_unless(
+            in_array($importRun->status, [ImportRunStatus::MappingReview, ImportRunStatus::PreviewReady], true),
+            409,
+        );
+
+        $fieldsByName = collect($schema->fields())->keyBy(fn (ImportField $field): string => $field->name);
+
+        $validated = $request->validate([
+            'mapping' => ['required', 'array', 'size:'.count($importRun->column_mapping ?? []), $this->mappingValidator($fieldsByName)],
+            'mapping.*.sourceColumnIndex' => ['required', 'integer', 'min:0'],
+            'mapping.*.sourceHeaderLabel' => ['nullable', 'string'],
+            'mapping.*.targetField' => ['nullable', 'string'],
+            'mapping.*.status' => ['required', Rule::enum(ColumnMappingStatus::class)],
+        ]);
+
+        $importRun->update(['column_mapping' => $validated['mapping']]);
+
+        return back();
+    }
+
+    /**
+     * @param  Collection<string, ImportField>  $fieldsByName
+     */
+    private function mappingValidator(Collection $fieldsByName): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($fieldsByName): void {
+            /** @var array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}> $value */
+            $mappedTargets = collect($value)
+                ->where('status', ColumnMappingStatus::Mapped->value)
+                ->pluck('targetField');
+
+            if ($mappedTargets->diff($fieldsByName->keys())->isNotEmpty()) {
+                $fail(__('ui.employees.import.errors.unknown_target_field'));
+
+                return;
+            }
+
+            if ($mappedTargets->duplicates()->isNotEmpty()) {
+                $fail(__('ui.employees.import.errors.duplicate_target_field'));
+
+                return;
+            }
+
+            $missingRequired = $fieldsByName
+                ->filter(fn (ImportField $field): bool => $field->requiredForCreateOnly)
+                ->keys()
+                ->diff($mappedTargets);
+
+            if ($missingRequired->isNotEmpty()) {
+                $fail(__('ui.employees.import.errors.required_field_unmapped', [
+                    'fields' => $missingRequired->map(fn (string $name): string => $fieldsByName[$name]->label)->implode(', '),
+                ]));
+            }
+        };
     }
 }

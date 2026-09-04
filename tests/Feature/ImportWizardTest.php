@@ -85,11 +85,126 @@ test('a valid upload creates an ImportRun scoped to the organization and reaches
         ->and($importRun->column_mapping[0])->toMatchArray([
             'sourceColumnIndex' => 0,
             'sourceHeaderLabel' => 'Nombre',
-            'targetField' => null,
-            'status' => ColumnMappingStatus::Unmapped->value,
+            'targetField' => 'first_name',
+            'status' => ColumnMappingStatus::Mapped->value,
         ]);
 
     Storage::disk('local')->assertExists($importRun->disk_path);
+});
+
+test('auto-mapping a fixture header set produces the expected Mapped/Unmapped split', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    // 'Nombre'..'Zona horaria' are exact schema-field-label matches (score
+    // 1.0). 'Apellido paterno' is deliberately ambiguous (0.5 token-overlap
+    // against both last_name's and second_last_name's labels — below the
+    // 0.6 threshold). 'xyz' matches nothing.
+    $header = ['Nombre', 'Apellido paterno', 'RUT', 'Email', 'Zona horaria', 'xyz'];
+    $file = csvUploadFixture($header, 2);
+
+    $this->actingAs($admin)->post(route('imports.employee.store'), ['file' => $file]);
+
+    $importRun = ImportRun::sole();
+
+    expect($importRun->column_mapping)->toHaveCount(6)
+        ->and($importRun->column_mapping[0])->toMatchArray(['targetField' => 'first_name', 'status' => 'mapped'])
+        ->and($importRun->column_mapping[1])->toMatchArray(['targetField' => null, 'status' => 'unmapped'])
+        ->and($importRun->column_mapping[2])->toMatchArray(['targetField' => 'rut', 'status' => 'mapped'])
+        ->and($importRun->column_mapping[3])->toMatchArray(['targetField' => 'email', 'status' => 'mapped'])
+        ->and($importRun->column_mapping[4])->toMatchArray(['targetField' => 'timezone', 'status' => 'mapped'])
+        ->and($importRun->column_mapping[5])->toMatchArray(['targetField' => null, 'status' => 'unmapped']);
+});
+
+/**
+ * @param  array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>  $overrides  keyed by sourceColumnIndex, merged over the run's stored skeleton
+ */
+function mappingRunFor(User $admin, array $overrides = []): ImportRun
+{
+    $importRun = ImportRun::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'status' => ImportRunStatus::MappingReview,
+        'column_mapping' => [
+            ['sourceColumnIndex' => 0, 'sourceHeaderLabel' => 'Nombre', 'targetField' => null, 'status' => 'unmapped'],
+            ['sourceColumnIndex' => 1, 'sourceHeaderLabel' => 'Apellido', 'targetField' => null, 'status' => 'unmapped'],
+            ['sourceColumnIndex' => 2, 'sourceHeaderLabel' => 'RUT', 'targetField' => null, 'status' => 'unmapped'],
+            ['sourceColumnIndex' => 3, 'sourceHeaderLabel' => 'Email', 'targetField' => null, 'status' => 'unmapped'],
+            ['sourceColumnIndex' => 4, 'sourceHeaderLabel' => 'Zona horaria', 'targetField' => null, 'status' => 'unmapped'],
+            ['sourceColumnIndex' => 5, 'sourceHeaderLabel' => 'Notas', 'targetField' => null, 'status' => 'unmapped'],
+        ],
+    ]);
+
+    return $importRun;
+}
+
+test('saving a mapping with all required fields mapped succeeds', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+
+    $mapping = [
+        ['sourceColumnIndex' => 0, 'sourceHeaderLabel' => 'Nombre', 'targetField' => 'first_name', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 1, 'sourceHeaderLabel' => 'Apellido', 'targetField' => 'last_name', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 2, 'sourceHeaderLabel' => 'RUT', 'targetField' => 'rut', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 3, 'sourceHeaderLabel' => 'Email', 'targetField' => 'email', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 4, 'sourceHeaderLabel' => 'Zona horaria', 'targetField' => 'timezone', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 5, 'sourceHeaderLabel' => 'Notas', 'targetField' => null, 'status' => 'ignored'],
+    ];
+
+    $this->actingAs($admin)
+        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $mapping])
+        ->assertRedirect();
+
+    expect($importRun->fresh()->column_mapping)->toEqual($mapping);
+});
+
+test('saving a mapping with a required field still Unmapped is rejected', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+    $original = $importRun->column_mapping;
+
+    $mapping = [
+        ['sourceColumnIndex' => 0, 'sourceHeaderLabel' => 'Nombre', 'targetField' => 'first_name', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 1, 'sourceHeaderLabel' => 'Apellido', 'targetField' => 'last_name', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 2, 'sourceHeaderLabel' => 'RUT', 'targetField' => 'rut', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 3, 'sourceHeaderLabel' => 'Email', 'targetField' => 'email', 'status' => 'mapped'],
+        // timezone left unmapped
+        ['sourceColumnIndex' => 4, 'sourceHeaderLabel' => 'Zona horaria', 'targetField' => null, 'status' => 'unmapped'],
+        ['sourceColumnIndex' => 5, 'sourceHeaderLabel' => 'Notas', 'targetField' => null, 'status' => 'ignored'],
+    ];
+
+    $this->actingAs($admin)
+        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $mapping])
+        ->assertSessionHasErrors('mapping');
+
+    expect($importRun->fresh()->column_mapping)->toEqual($original);
+});
+
+test('saving a mapping with two columns mapped to the same field is rejected', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+
+    $mapping = [
+        ['sourceColumnIndex' => 0, 'sourceHeaderLabel' => 'Nombre', 'targetField' => 'first_name', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 1, 'sourceHeaderLabel' => 'Apellido', 'targetField' => 'first_name', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 2, 'sourceHeaderLabel' => 'RUT', 'targetField' => 'rut', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 3, 'sourceHeaderLabel' => 'Email', 'targetField' => 'email', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 4, 'sourceHeaderLabel' => 'Zona horaria', 'targetField' => 'timezone', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 5, 'sourceHeaderLabel' => 'Notas', 'targetField' => null, 'status' => 'ignored'],
+    ];
+
+    $this->actingAs($admin)
+        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $mapping])
+        ->assertSessionHasErrors('mapping');
+});
+
+test('updating the mapping on an import run outside MappingReview/PreviewReady is refused', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+    $importRun->update(['status' => ImportRunStatus::Processing]);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $importRun->column_mapping])
+        ->assertStatus(409);
 });
 
 test('an over-threshold file is rejected without creating an ImportRun', function () {
