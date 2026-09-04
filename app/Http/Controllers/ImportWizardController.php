@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Imports\CreateImportRunFromUpload;
+use App\Actions\Imports\PreviewImportRun;
 use App\Enums\ColumnMappingStatus;
 use App\Enums\ImportRunStatus;
 use App\Enums\ImportStrategy;
@@ -16,17 +17,18 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
  * The Employee bulk-import wizard (KOL-94), one route per step per KOL-94.5's
- * locked contract. Upload (KOL-98), mapping review (KOL-99), and
- * strategy/match-key (KOL-100) exist so far — preview, commit and the
- * error-report download are later tickets (KOL-101..103), each adding their
- * own action to {@see show}'s status switch without touching what's already
- * here.
+ * locked contract. Upload (KOL-98), mapping review (KOL-99),
+ * strategy/match-key (KOL-100), and preview (KOL-101) exist so far — commit
+ * and the error-report download are later tickets (KOL-102, KOL-103), each
+ * adding their own action to {@see show}'s status switch without touching
+ * what's already here.
  */
 class ImportWizardController extends Controller
 {
@@ -87,6 +89,7 @@ class ImportWizardController extends Controller
                 'column_mapping' => $importRun->column_mapping ?? [],
                 'strategy' => $importRun->strategy?->value,
                 'match_key' => $importRun->match_key,
+                'preview_counts' => $importRun->preview_counts,
             ],
             'schemaFields' => collect($schema->fields())
                 ->map(fn (ImportField $field): array => [
@@ -125,7 +128,10 @@ class ImportWizardController extends Controller
             'mapping.*.status' => ['required', Rule::enum(ColumnMappingStatus::class)],
         ]);
 
-        $importRun->update(['column_mapping' => $validated['mapping']]);
+        $importRun->update([
+            'column_mapping' => $validated['mapping'],
+            ...$this->demotionFrom($importRun),
+        ]);
 
         return back();
     }
@@ -167,9 +173,80 @@ class ImportWizardController extends Controller
         $importRun->update([
             'strategy' => $strategy,
             'match_key' => $strategy->allowsMatching() ? $validated['match_key'] : null,
+            ...$this->demotionFrom($importRun),
         ]);
 
         return back();
+    }
+
+    /**
+     * `POST imports/{importRun}/preview` (KOL-94.5, KOL-101): evaluates
+     * every uploaded data row through EvaluateImportRow synchronously and
+     * persists the aggregate preview_counts; MappingReview -> PreviewReady.
+     * Reachable only from MappingReview — reaching PreviewReady again after
+     * a demotion (AC #3) requires rerunning this endpoint deliberately, not
+     * an implicit re-preview. The mapping/strategy prerequisites are
+     * re-checked here even though the client already gates on them, so a
+     * request that bypasses that gate still fails cleanly instead of
+     * evaluating incomplete data.
+     */
+    public function preview(ImportRun $importRun, EmployeeImportSchema $schema, PreviewImportRun $previewImportRun): RedirectResponse
+    {
+        abort_unless($importRun->status === ImportRunStatus::MappingReview, 409);
+
+        $this->assertReadyForPreview($importRun, $schema);
+
+        $previewImportRun->handle($importRun, $schema);
+
+        return back();
+    }
+
+    /**
+     * A resubmitted mapping/strategy while the run is already PreviewReady
+     * invalidates that preview (KOL-101 AC #3): demote back to
+     * MappingReview and clear preview_counts so the commit step re-locks
+     * until preview reruns against the new mapping/strategy.
+     *
+     * @return array{status?: ImportRunStatus, preview_counts?: null}
+     */
+    private function demotionFrom(ImportRun $importRun): array
+    {
+        if ($importRun->status !== ImportRunStatus::PreviewReady) {
+            return [];
+        }
+
+        return ['status' => ImportRunStatus::MappingReview, 'preview_counts' => null];
+    }
+
+    private function assertReadyForPreview(ImportRun $importRun, EmployeeImportSchema $schema): void
+    {
+        $fieldsByName = collect($schema->fields())->keyBy(fn (ImportField $field): string => $field->name);
+
+        $mappedTargets = collect($importRun->column_mapping ?? [])
+            ->where('status', ColumnMappingStatus::Mapped->value)
+            ->pluck('targetField');
+
+        $missingRequired = $this->missingRequiredFields($fieldsByName, $mappedTargets);
+
+        if ($missingRequired->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'preview' => __('ui.employees.import.errors.required_field_unmapped', [
+                    'fields' => $missingRequired->map(fn (string $name): string => $fieldsByName[$name]->label)->implode(', '),
+                ]),
+            ]);
+        }
+
+        if ($importRun->strategy === null) {
+            throw ValidationException::withMessages([
+                'preview' => __('ui.employees.import.errors.strategy_required'),
+            ]);
+        }
+
+        if ($importRun->strategy->allowsMatching() && $importRun->match_key === null) {
+            throw ValidationException::withMessages([
+                'preview' => __('ui.employees.import.errors.match_key_required'),
+            ]);
+        }
     }
 
     /**
@@ -232,10 +309,7 @@ class ImportWizardController extends Controller
                 return;
             }
 
-            $missingRequired = $fieldsByName
-                ->filter(fn (ImportField $field): bool => $field->requiredForCreateOnly)
-                ->keys()
-                ->diff($mappedTargets);
+            $missingRequired = $this->missingRequiredFields($fieldsByName, $mappedTargets);
 
             if ($missingRequired->isNotEmpty()) {
                 $fail(__('ui.employees.import.errors.required_field_unmapped', [
@@ -243,5 +317,24 @@ class ImportWizardController extends Controller
                 ]));
             }
         };
+    }
+
+    /**
+     * The set of CreateOnly-required field names not present among
+     * `$mappedTargets` — shared by {@see mappingValidator}'s submitted-row
+     * check and {@see assertReadyForPreview}'s stored-mapping check so the
+     * "required" definition can't drift between the two.
+     *
+     * @param  Collection<string, ImportField>  $fieldsByName
+     * @param  Collection<int, string>  $mappedTargets
+     * @return Collection<int, string>
+     */
+    private function missingRequiredFields(Collection $fieldsByName, Collection $mappedTargets): Collection
+    {
+        return $fieldsByName
+            ->filter(fn (ImportField $field): bool => $field->requiredForCreateOnly)
+            ->keys()
+            ->diff($mappedTargets)
+            ->values();
     }
 }

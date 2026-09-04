@@ -405,3 +405,205 @@ test('an unsupported template format 404s', function () {
         ->get(route('imports.employee.template', ['format' => 'pdf']))
         ->assertNotFound();
 });
+
+/**
+ * @param  list<string>  $header
+ * @param  list<list<string>>  $rows
+ * @param  array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>  $mapping
+ */
+function previewRunFor(
+    User $admin,
+    array $header,
+    array $rows,
+    array $mapping,
+    ?ImportStrategy $strategy = null,
+    ?string $matchKey = null,
+): ImportRun {
+    $importRun = ImportRun::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $admin->id,
+        'status' => ImportRunStatus::MappingReview,
+        'column_mapping' => $mapping,
+        'strategy' => $strategy,
+        'match_key' => $matchKey,
+    ]);
+
+    $path = tempnam(sys_get_temp_dir(), 'import').'.csv';
+    $handle = fopen($path, 'w');
+    fputcsv($handle, $header);
+
+    foreach ($rows as $row) {
+        fputcsv($handle, $row);
+    }
+
+    fclose($handle);
+
+    $diskPath = "import-runs/{$importRun->organization_id}/{$importRun->id}.csv";
+    Storage::disk('local')->put($diskPath, file_get_contents($path));
+    unlink($path);
+
+    $importRun->update(['disk_path' => $diskPath]);
+
+    return $importRun;
+}
+
+/**
+ * @return array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>
+ */
+function fullyMappedCoreFields(): array
+{
+    return [
+        ['sourceColumnIndex' => 0, 'sourceHeaderLabel' => 'Nombre', 'targetField' => 'first_name', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 1, 'sourceHeaderLabel' => 'Apellido', 'targetField' => 'last_name', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 2, 'sourceHeaderLabel' => 'RUT', 'targetField' => 'rut', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 3, 'sourceHeaderLabel' => 'Email', 'targetField' => 'email', 'status' => 'mapped'],
+        ['sourceColumnIndex' => 4, 'sourceHeaderLabel' => 'Zona horaria', 'targetField' => 'timezone', 'status' => 'mapped'],
+    ];
+}
+
+test('previewing a clean fixture yields all-Ready counts', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria'];
+    $rows = [
+        ['Juan', 'Perez', validRut(11111111), 'juan@example.com', 'America/Santiago'],
+        ['Maria', 'Lopez', validRut(22222222), 'maria@example.com', 'America/Santiago'],
+    ];
+
+    $importRun = previewRunFor($admin, $header, $rows, fullyMappedCoreFields(), ImportStrategy::CreateOnly);
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertRedirect();
+
+    $importRun->refresh();
+    expect($importRun->status)->toBe(ImportRunStatus::PreviewReady)
+        ->and($importRun->preview_counts)->toEqual(['ready' => 2, 'warning' => 0, 'error' => 0, 'skipped' => 0]);
+});
+
+test('previewing a fixture with an unresolved reference, a required-field gap, and a duplicate match-key yields the expected Error breakdown', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $existingRut = validRut(99999999);
+    User::factory()->create(['organization_id' => $admin->organization_id, 'rut' => $existingRut]);
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria', 'Centro de costo'];
+    $mapping = [
+        ...fullyMappedCoreFields(),
+        ['sourceColumnIndex' => 5, 'sourceHeaderLabel' => 'Centro de costo', 'targetField' => 'cost_center', 'status' => 'mapped'],
+    ];
+
+    $rows = [
+        // Clean row.
+        ['Juan', 'Perez', validRut(11111111), 'juan@example.com', 'America/Santiago', ''],
+        // Unresolved reference: no CostCenter named "No existe".
+        ['Ana', 'Diaz', validRut(22222222), 'ana@example.com', 'America/Santiago', 'No existe'],
+        // Required-field gap: rut left blank.
+        ['Pedro', 'Soto', '', 'pedro@example.com', 'America/Santiago', ''],
+        // Duplicate match-key: rut already belongs to an existing employee, CreateOnly can't reuse it.
+        ['Otro', 'Empleado', $existingRut, 'otro@example.com', 'America/Santiago', ''],
+    ];
+
+    $importRun = previewRunFor($admin, $header, $rows, $mapping, ImportStrategy::CreateOnly);
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertRedirect();
+
+    $importRun->refresh();
+    expect($importRun->status)->toBe(ImportRunStatus::PreviewReady)
+        ->and($importRun->preview_counts)->toEqual(['ready' => 1, 'warning' => 0, 'error' => 3, 'skipped' => 0]);
+});
+
+test('running preview outside MappingReview is refused', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+    $importRun->update(['status' => ImportRunStatus::Processing]);
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertStatus(409);
+});
+
+test('running preview with a required field still unmapped is rejected', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $mapping = [
+        ...array_slice(fullyMappedCoreFields(), 0, 4),
+        // timezone left unmapped.
+        ['sourceColumnIndex' => 4, 'sourceHeaderLabel' => 'Zona horaria', 'targetField' => null, 'status' => 'unmapped'],
+    ];
+
+    $importRun = previewRunFor($admin, ['Nombre'], [], $mapping, ImportStrategy::CreateOnly);
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertSessionHasErrors('preview');
+
+    expect($importRun->fresh()->status)->toBe(ImportRunStatus::MappingReview);
+});
+
+test('running preview without a strategy set is rejected', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $importRun = previewRunFor($admin, ['Nombre'], [], fullyMappedCoreFields(), null);
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertSessionHasErrors('preview');
+});
+
+test('running preview when the strategy needs a match key but none is set is rejected', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $importRun = previewRunFor($admin, ['Nombre'], [], fullyMappedCoreFields(), ImportStrategy::UpdateOnly, null);
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertSessionHasErrors('preview');
+});
+
+test('resubmitting mapping while PreviewReady demotes the run and clears preview_counts', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+    $importRun->update([
+        'status' => ImportRunStatus::PreviewReady,
+        'preview_counts' => ['ready' => 1, 'warning' => 0, 'error' => 0, 'skipped' => 0],
+    ]);
+
+    $mapping = [
+        ...fullyMappedCoreFields(),
+        ['sourceColumnIndex' => 5, 'sourceHeaderLabel' => 'Notas', 'targetField' => null, 'status' => 'ignored'],
+    ];
+
+    $this->actingAs($admin)
+        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $mapping])
+        ->assertRedirect();
+
+    $importRun->refresh();
+    expect($importRun->status)->toBe(ImportRunStatus::MappingReview)
+        ->and($importRun->preview_counts)->toBeNull();
+});
+
+test('resubmitting strategy while PreviewReady demotes the run and clears preview_counts', function () {
+    $admin = importAdmin();
+    $importRun = mappingRunFor($admin);
+    $importRun->update([
+        'status' => ImportRunStatus::PreviewReady,
+        'preview_counts' => ['ready' => 1, 'warning' => 0, 'error' => 0, 'skipped' => 0],
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->assertRedirect();
+
+    $importRun->refresh();
+    expect($importRun->status)->toBe(ImportRunStatus::MappingReview)
+        ->and($importRun->preview_counts)->toBeNull()
+        ->and($importRun->strategy)->toBe(ImportStrategy::CreateOnly);
+});

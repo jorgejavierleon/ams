@@ -1190,6 +1190,8 @@ return [
                 'duplicate_target_field' => 'Two columns cannot be mapped to the same field.',
                 'required_field_unmapped' => 'These fields must be mapped before continuing: :fields.',
                 'invalid_mapping_shape' => 'The submitted mapping does not match the uploaded file\'s columns.',
+                'strategy_required' => 'Choose an import strategy before running the preview.',
+                'match_key_required' => 'Choose a match key before running the preview.',
             ],
 
             'mapping' => [
@@ -1233,6 +1235,24 @@ return [
                         'description' => 'Matched rows update the existing employee; unmatched rows create a new one. Blank cells never clear a value.',
                     ],
                 ],
+            ],
+
+            'preview' => [
+                'run_title' => 'Run the validation preview',
+                'run_description' => 'This evaluates every row in the file against the mapping and strategy you chose. Only the counts below are shown — never a row-by-row list.',
+                'run_submit' => 'Run preview',
+                'back' => '← Strategy',
+                'counts' => [
+                    'ready' => 'Ready',
+                    'warning' => 'Warning',
+                    'error' => 'Error',
+                    'skipped' => 'Skipped',
+                ],
+                'has_errors_title' => ':count of :total rows will be excluded',
+                'has_errors_description' => 'Rows with an Error are excluded at commit and never written. The remaining rows import normally.',
+                'no_errors_title' => 'No blocking errors',
+                'no_errors_description_with_warnings' => ':count rows have a warning but will still import.',
+                'no_errors_description_clean' => 'Every row is ready to import.',
             ],
         ],
 
