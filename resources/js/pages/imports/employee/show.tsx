@@ -1,8 +1,10 @@
 import { Head } from '@inertiajs/react';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { MappingReviewStep } from './mapping-review-step';
+import { StrategyStep } from './strategy-step';
 
 type ColumnMapping = {
     sourceColumnIndex: number;
@@ -15,6 +17,7 @@ type SchemaField = {
     name: string;
     label: string;
     requiredForCreateOnly: boolean;
+    isMatchKeyEligible: boolean;
 };
 
 type ImportRun = {
@@ -22,6 +25,8 @@ type ImportRun = {
     status: string;
     original_filename: string | null;
     column_mapping: ColumnMapping[];
+    strategy: 'create_only' | 'update_only' | 'create_and_update' | null;
+    match_key: string | null;
 };
 
 type Props = {
@@ -38,6 +43,15 @@ type Props = {
 export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
     const { t } = useTranslations();
 
+    // A client-only sub-step: mapping and strategy both happen while the
+    // run's own status stays MappingReview (there's no separate status for
+    // strategy, KOL-100), so which one renders isn't derived from the
+    // server at all. Landing on 'strategy' when a strategy is already saved
+    // avoids re-showing a review the user already finished on every visit.
+    const [step, setStep] = useState<'mapping' | 'strategy'>(
+        importRun.strategy ? 'strategy' : 'mapping',
+    );
+
     return (
         <>
             <Head title={t('ui.employees.import.title')} />
@@ -53,12 +67,23 @@ export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
                     }
                 >
                     {importRun.status === 'mapping_review' ? (
-                        <MappingReviewStep
-                            importRunId={importRun.id}
-                            originalFilename={importRun.original_filename}
-                            columnMapping={importRun.column_mapping}
-                            schemaFields={schemaFields}
-                        />
+                        step === 'mapping' ? (
+                            <MappingReviewStep
+                                importRunId={importRun.id}
+                                originalFilename={importRun.original_filename}
+                                columnMapping={importRun.column_mapping}
+                                schemaFields={schemaFields}
+                                onSaved={() => setStep('strategy')}
+                            />
+                        ) : (
+                            <StrategyStep
+                                importRunId={importRun.id}
+                                strategy={importRun.strategy}
+                                matchKey={importRun.match_key}
+                                schemaFields={schemaFields}
+                                onBack={() => setStep('mapping')}
+                            />
+                        )
                     ) : (
                         <Card>
                             <CardContent>

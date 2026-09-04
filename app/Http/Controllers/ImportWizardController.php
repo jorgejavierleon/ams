@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Imports\CreateImportRunFromUpload;
 use App\Enums\ColumnMappingStatus;
 use App\Enums\ImportRunStatus;
+use App\Enums\ImportStrategy;
 use App\Models\ImportRun;
 use App\Services\Imports\EmployeeImportSchema;
 use App\Services\Imports\EmployeeImportTemplate;
@@ -21,10 +22,11 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
  * The Employee bulk-import wizard (KOL-94), one route per step per KOL-94.5's
- * locked contract. Upload (KOL-98) and mapping review (KOL-99) exist so
- * far — strategy/match-key, preview, commit and the error-report download
- * are later tickets (KOL-100..103), each adding their own action to
- * {@see show}'s status switch without touching what's already here.
+ * locked contract. Upload (KOL-98), mapping review (KOL-99), and
+ * strategy/match-key (KOL-100) exist so far — preview, commit and the
+ * error-report download are later tickets (KOL-101..103), each adding their
+ * own action to {@see show}'s status switch without touching what's already
+ * here.
  */
 class ImportWizardController extends Controller
 {
@@ -83,12 +85,15 @@ class ImportWizardController extends Controller
                 'status' => $importRun->status->value,
                 'original_filename' => $importRun->original_filename,
                 'column_mapping' => $importRun->column_mapping ?? [],
+                'strategy' => $importRun->strategy?->value,
+                'match_key' => $importRun->match_key,
             ],
             'schemaFields' => collect($schema->fields())
                 ->map(fn (ImportField $field): array => [
                     'name' => $field->name,
                     'label' => $field->label,
                     'requiredForCreateOnly' => $field->requiredForCreateOnly,
+                    'isMatchKeyEligible' => $field->isMatchKeyEligible,
                 ])
                 ->values(),
         ]);
@@ -121,6 +126,48 @@ class ImportWizardController extends Controller
         ]);
 
         $importRun->update(['column_mapping' => $validated['mapping']]);
+
+        return back();
+    }
+
+    /**
+     * `PATCH imports/{importRun}/strategy` (KOL-94.5, KOL-100): persists
+     * which strategy the run is allowed to take and, when that strategy
+     * matches existing rows at all ({@see ImportStrategy::allowsMatching()}),
+     * which field identifies them. Guarded exactly like {@see updateMapping}.
+     * A valid match key submitted alongside CreateOnly is silently dropped
+     * rather than persisted — CreateOnly never looks one up, so keeping it
+     * would only leave stale state behind if the user switches strategy
+     * back; an unrecognized match key is still rejected regardless of
+     * strategy, same as any other invalid input.
+     */
+    public function updateStrategy(Request $request, ImportRun $importRun, EmployeeImportSchema $schema): RedirectResponse
+    {
+        abort_unless(
+            in_array($importRun->status, [ImportRunStatus::MappingReview, ImportRunStatus::PreviewReady], true),
+            409,
+        );
+
+        $matchKeyEligible = collect($schema->fields())
+            ->filter(fn (ImportField $field): bool => $field->isMatchKeyEligible)
+            ->map(fn (ImportField $field): string => $field->name);
+
+        $needsMatchKey = ImportStrategy::tryFrom((string) $request->input('strategy'))?->allowsMatching() ?? false;
+
+        $validated = $request->validate([
+            'strategy' => ['required', Rule::enum(ImportStrategy::class)],
+            'match_key' => [
+                Rule::requiredIf($needsMatchKey),
+                'nullable', 'string', Rule::in($matchKeyEligible),
+            ],
+        ]);
+
+        $strategy = ImportStrategy::from($validated['strategy']);
+
+        $importRun->update([
+            'strategy' => $strategy,
+            'match_key' => $strategy->allowsMatching() ? $validated['match_key'] : null,
+        ]);
 
         return back();
     }
