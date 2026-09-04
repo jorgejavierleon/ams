@@ -1198,7 +1198,8 @@ return [
             'mapping' => [
                 'title' => 'Revisión de mapeo de columnas',
                 'description' => 'Se detectaron :count columnas en :filename. Confirma o corrige a qué campo corresponde cada una.',
-                'summary' => ':mapped de :total columnas mapeadas automáticamente.',
+                'summary_needs_review' => ':mapped de :total columnas mapeadas automáticamente — :unmapped requieren tu revisión.',
+                'summary_reviewed' => 'Se revisaron las :total columnas.',
                 'column_header' => 'Columna cargada',
                 'target_header' => 'Corresponde a',
                 'status_header' => 'Estado',

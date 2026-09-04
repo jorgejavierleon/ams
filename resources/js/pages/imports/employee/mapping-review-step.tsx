@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useMemo } from 'react';
 import { Combobox } from '@/components/combobox';
@@ -91,6 +91,9 @@ export function MappingReviewStep({
     const mappedCount = data.mapping.filter(
         (row) => row.status === 'mapped',
     ).length;
+    const unmappedCount = data.mapping.filter(
+        (row) => row.status === 'unmapped',
+    ).length;
 
     function setRow(
         index: number,
@@ -116,12 +119,30 @@ export function MappingReviewStep({
                         filename: originalFilename ?? '',
                     })}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                    {t('ui.employees.import.mapping.summary', {
-                        mapped: mappedCount,
-                        total: data.mapping.length,
-                    })}
-                </p>
+                <div
+                    className={
+                        unmappedCount > 0
+                            ? 'flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-500'
+                            : 'flex items-center gap-1.5 text-sm text-muted-foreground'
+                    }
+                >
+                    {unmappedCount > 0 ? (
+                        <AlertTriangle className="size-4 shrink-0" />
+                    ) : (
+                        <CheckCircle2 className="size-4 shrink-0 text-green-600 dark:text-green-500" />
+                    )}
+                    <span>
+                        {unmappedCount > 0
+                            ? t('ui.employees.import.mapping.summary_needs_review', {
+                                  mapped: mappedCount,
+                                  total: data.mapping.length,
+                                  unmapped: unmappedCount,
+                              })
+                            : t('ui.employees.import.mapping.summary_reviewed', {
+                                  total: data.mapping.length,
+                              })}
+                    </span>
+                </div>
             </div>
 
             {missingRequired.length > 0 && (
@@ -231,7 +252,11 @@ export function MappingReviewStep({
                                                 </Badge>
                                             )}
                                             {row.status === 'unmapped' && (
-                                                <Badge variant="destructive">
+                                                <Badge
+                                                    variant="outline"
+                                                    className="gap-1 border-amber-500/50 text-amber-600 dark:text-amber-400"
+                                                >
+                                                    <AlertTriangle className="size-3" />
                                                     {t(
                                                         'ui.employees.import.mapping.status_unmapped',
                                                     )}

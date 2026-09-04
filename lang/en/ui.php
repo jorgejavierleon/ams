@@ -1195,7 +1195,8 @@ return [
             'mapping' => [
                 'title' => 'Column mapping review',
                 'description' => ':count columns detected in :filename. Confirm or fix which field each one maps to.',
-                'summary' => ':mapped of :total columns mapped automatically.',
+                'summary_needs_review' => ':mapped of :total columns mapped automatically — :unmapped need your review.',
+                'summary_reviewed' => 'All :total columns have been reviewed.',
                 'column_header' => 'Uploaded column',
                 'target_header' => 'Maps to',
                 'status_header' => 'Status',

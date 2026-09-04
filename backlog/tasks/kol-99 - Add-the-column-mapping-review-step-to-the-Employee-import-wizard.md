@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jorge'
 created_date: '2026-09-03 20:44'
-updated_date: '2026-09-04 01:36'
+updated_date: '2026-09-04 10:38'
 labels:
   - bulk-import
 milestone: m-3
@@ -68,6 +68,19 @@ Verification: tests/Feature/ImportWizardTest.php extended with 6 new tests (auto
 Manually verified in-browser (Chrome DevTools MCP, localhost): uploaded the real Employee template CSV -> 26/26 columns auto-mapped correctly; Combobox search-and-select and the Ignore option both work; clearing a required field's mapping correctly re-shows the "required fields missing" alert and disables Guardar mapeo; saving a valid mapping persists column_mapping via the PATCH endpoint with no console errors.
 
 npm run types:check: no new errors from this ticket. Same two pre-existing failures KOL-98 already documented (resources/js/pages/roles/index.tsx, roles/show.tsx — unrelated Wayfinder id-type mismatch). DoD #3 left unchecked for the same reason KOL-98 left it unchecked: the command itself doesn't fully pass, though nothing here regressed it.
+
+Post-implementation /code-review (8 finder angles) surfaced 10 findings; fixed the 6 real correctness/consistency issues, adopted 1 simplification, deferred 2 as premature for a not-yet-built future ticket / acceptable minor duplication:
+- Fixed: Combobox showed the placeholder instead of "Ignorar esta columna" for an already-Ignored row (value was compared against targetField, not status) — verified in-browser.
+- Fixed: PATCH validation only checked status='mapped' rows, so a crafted request could submit an inconsistent row (e.g. status=ignored with a non-null targetField) or a relabeled/duplicated sourceColumnIndex that EvaluateImportRow (KOL-101+) would silently misread. Now cross-checks every submitted row's index/header against the run's original upload and enforces status/targetField consistency.
+- Fixed: the ternary restructuring in show.tsx had dropped the max-w-3xl wrapper for the mapping-review branch (would render full-width on wide screens) — restored a shared wrapper (max-w-5xl for the wider table, max-w-3xl for other steps).
+- Fixed: show() passed column_mapping to Inertia with no `?? []` guard, unlike its nullable-JSON-column sibling in updateMapping().
+- Simplified: ColumnAutoMapper::normalize() now calls Str::slug($value, ' ') instead of duplicating accent-strip/lowercase/non-alnum-strip logic Laravel already provides.
+- Added: tests/Unit/ColumnAutoMapperTest.php covering the tie-break winner branch (two headers both scoring >=0.6 for one field; higher scorer wins regardless of input order) and the blank/null-header branch — neither had a test before.
+- Deferred (not fixed): extracting the mapping-required-fields check into a reusable app/Rules class for KOL-101's future preview endpoint to share — premature until KOL-101 exists and its actual reuse shape is known. Deferred: collapsing the three status-badge JSX blocks into a lookup table — three short conditionals, not worth the added indirection per project convention (three similar lines over premature abstraction).
+
+Re-verified after fixes: full suite 1368 tests / 1364 passed / 4 pre-existing skips / 0 failures; Pint and full-app PHPStan clean; npm run types:check shows only the same two pre-existing unrelated failures; manual in-browser re-test of the Ignore-combobox fix and the PATCH round-trip, no console errors.
+
+Follow-up UX polish (user feedback after review): the mapping-review summary line and per-row 'Sin mapear' badge now use amber (the app's existing needs-attention convention, e.g. workdays/index.tsx, my/workdays/index.tsx) instead of plain muted text/red, and switch to a green check + 'reviewed' message once every column has an explicit Mapped/Ignored decision. Red stays reserved for the actual blocking required-field Alert, so severity now reads at a glance: green = nothing to do, amber = optional review recommended, red = blocks Guardar mapeo. Verified in-browser (temporarily forced two Unmapped rows via tinker, confirmed amber summary + amber badges + red blocking alert render together correctly, then reverted). Pint clean; ImportWizardTest + ColumnAutoMapperTest (14 tests) still pass; npm run types:check shows only the same pre-existing unrelated failures.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
