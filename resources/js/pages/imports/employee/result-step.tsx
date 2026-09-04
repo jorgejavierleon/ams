@@ -1,5 +1,5 @@
-import { usePoll } from '@inertiajs/react';
-import { CheckCircle2, Download, XCircle } from 'lucide-react';
+import { Link, usePoll } from '@inertiajs/react';
+import { CheckCircle2, Download, Users, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslations } from '@/hooks/use-translations';
 import { filenameFromContentDisposition } from '@/lib/download';
+import { index as employeesIndex } from '@/routes/employees';
 import { errorReport } from '@/routes/imports';
 
 type Props = {
@@ -140,6 +141,7 @@ export function ResultStep({
     }
 
     const total = createdCount + updatedCount + skippedCount + erroredCount;
+    const hasImportedEmployees = createdCount + updatedCount > 0;
 
     return (
         <div className="space-y-6">
@@ -181,16 +183,40 @@ export function ResultStep({
                 />
             </div>
 
-            {erroredCount > 0 && (
-                <Button
-                    type="button"
-                    variant="outline"
-                    disabled={pendingErrorReport}
-                    onClick={handleErrorReportDownload}
-                >
-                    <Download />
-                    {t('ui.employees.import.result.download_error_report')}
-                </Button>
+            {(hasImportedEmployees || erroredCount > 0) && (
+                <div className="flex flex-wrap gap-2">
+                    {hasImportedEmployees && (
+                        <Button asChild>
+                            <Link
+                                href={employeesIndex({
+                                    query: {
+                                        sort: 'created_at',
+                                        direction: 'desc',
+                                    },
+                                })}
+                            >
+                                <Users />
+                                {t(
+                                    'ui.employees.import.result.view_employees',
+                                )}
+                            </Link>
+                        </Button>
+                    )}
+
+                    {erroredCount > 0 && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={pendingErrorReport}
+                            onClick={handleErrorReportDownload}
+                        >
+                            <Download />
+                            {t(
+                                'ui.employees.import.result.download_error_report',
+                            )}
+                        </Button>
+                    )}
+                </div>
             )}
         </div>
     );

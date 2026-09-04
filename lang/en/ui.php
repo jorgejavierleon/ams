@@ -1270,6 +1270,7 @@ return [
                     'errored' => 'Errored',
                 ],
                 'download_error_report' => 'Download error report',
+                'view_employees' => 'View employees',
             ],
         ],
 

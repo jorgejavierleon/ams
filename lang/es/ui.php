@@ -1273,6 +1273,7 @@ return [
                     'errored' => 'Con error',
                 ],
                 'download_error_report' => 'Descargar reporte de errores',
+                'view_employees' => 'Ver empleados',
             ],
         ],
 
