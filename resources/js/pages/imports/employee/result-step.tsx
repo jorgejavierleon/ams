@@ -1,11 +1,16 @@
 import { usePoll } from '@inertiajs/react';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, Download, XCircle } from 'lucide-react';
+import { useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslations } from '@/hooks/use-translations';
+import { filenameFromContentDisposition } from '@/lib/download';
+import { errorReport } from '@/routes/imports';
 
 type Props = {
+    importRunId: number;
     status: 'processing' | 'completed' | 'failed';
     createdCount: number;
     updatedCount: number;
@@ -79,6 +84,7 @@ function ProcessingView() {
  * contract.
  */
 export function ResultStep({
+    importRunId,
     status,
     createdCount,
     updatedCount,
@@ -86,6 +92,34 @@ export function ResultStep({
     erroredCount,
 }: Props) {
     const { t } = useTranslations();
+    const [pendingErrorReport, setPendingErrorReport] = useState(false);
+
+    async function handleErrorReportDownload() {
+        setPendingErrorReport(true);
+
+        try {
+            const response = await fetch(
+                errorReport({ importRun: importRunId }).url,
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filenameFromContentDisposition(
+                response,
+                'errores.csv',
+            );
+            link.click();
+            URL.revokeObjectURL(url);
+        } finally {
+            setPendingErrorReport(false);
+        }
+    }
 
     if (status === 'processing') {
         return <ProcessingView />;
@@ -146,6 +180,18 @@ export function ResultStep({
                     tone="error"
                 />
             </div>
+
+            {erroredCount > 0 && (
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={pendingErrorReport}
+                    onClick={handleErrorReportDownload}
+                >
+                    <Download />
+                    {t('ui.employees.import.result.download_error_report')}
+                </Button>
+            )}
         </div>
     );
 }

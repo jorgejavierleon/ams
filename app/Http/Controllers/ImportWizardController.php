@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Imports\CreateImportRunFromUpload;
+use App\Actions\Imports\DownloadImportErrorReport;
 use App\Actions\Imports\PreviewImportRun;
 use App\Enums\ColumnMappingStatus;
 use App\Enums\ImportRunStatus;
@@ -25,10 +26,9 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
  * The Employee bulk-import wizard (KOL-94), one route per step per KOL-94.5's
- * locked contract. Upload (KOL-98), mapping review (KOL-99),
- * strategy/match-key (KOL-100), preview (KOL-101), and commit (KOL-102) exist
- * so far — the error-report download is a later ticket (KOL-103), adding its
- * own action without touching what's already here.
+ * locked contract: upload (KOL-98), mapping review (KOL-99),
+ * strategy/match-key (KOL-100), preview (KOL-101), commit (KOL-102), and the
+ * error-report download (KOL-103).
  */
 class ImportWizardController extends Controller
 {
@@ -229,6 +229,18 @@ class ImportWizardController extends Controller
         ProcessImportRun::dispatch($importRun->id);
 
         return back();
+    }
+
+    /**
+     * `GET imports/{importRun}/error-report` (KOL-94.5, KOL-94.8, KOL-103):
+     * streams the CSV ProcessImportRun wrote during its commit pass. Same
+     * org+user route-model-binding scope as every other wizard route;
+     * {@see DownloadImportErrorReport} itself refuses a run with nothing to
+     * report.
+     */
+    public function errorReport(ImportRun $importRun, DownloadImportErrorReport $download): HttpResponse
+    {
+        return $download->handle($importRun);
     }
 
     /**

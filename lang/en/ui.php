@@ -1269,6 +1269,7 @@ return [
                     'skipped' => 'Skipped',
                     'errored' => 'Errored',
                 ],
+                'download_error_report' => 'Download error report',
             ],
         ],
 

@@ -120,6 +120,7 @@ export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
                       importRun.status === 'completed' ||
                       importRun.status === 'failed' ? (
                         <ResultStep
+                            importRunId={importRun.id}
                             status={importRun.status}
                             createdCount={importRun.created_count}
                             updatedCount={importRun.updated_count}

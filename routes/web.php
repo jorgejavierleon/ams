@@ -277,7 +277,8 @@ Route::middleware(['auth', 'verified', 'permission:Export:PayrollReport'])
 // KOL-94.6 rather than role:admin — a tenant admin can grant it to another
 // role later via the Roles screen. One route per wizard step (KOL-94.5);
 // upload (KOL-98), mapping review (KOL-99), strategy/match-key (KOL-100),
-// preview (KOL-101), and commit (KOL-102) exist so far.
+// preview (KOL-101), commit (KOL-102), and the error-report download
+// (KOL-103) exist so far.
 Route::middleware(['auth', 'verified', 'permission:Import:Employee'])
     ->prefix('imports')
     ->name('imports.')
@@ -290,6 +291,7 @@ Route::middleware(['auth', 'verified', 'permission:Import:Employee'])
         Route::patch('{importRun}/strategy', [ImportWizardController::class, 'updateStrategy'])->name('strategy.update');
         Route::post('{importRun}/preview', [ImportWizardController::class, 'preview'])->name('preview.store');
         Route::post('{importRun}/commit', [ImportWizardController::class, 'commit'])->name('commit.store');
+        Route::get('{importRun}/error-report', [ImportWizardController::class, 'errorReport'])->name('error-report');
     });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)

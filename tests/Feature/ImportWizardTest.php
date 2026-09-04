@@ -661,3 +661,89 @@ test('a second user in the same organization cannot commit another user\'s impor
 
     Queue::assertNothingPushed();
 });
+
+/**
+ * A Completed run with the given errored count and, unless overridden, a
+ * matching error-report CSV already on the (faked) local disk — the state
+ * ProcessImportRun's commit pass (KOL-103) leaves behind.
+ */
+function completedRunFor(User $admin, int $erroredCount, array $overrides = []): ImportRun
+{
+    $importRun = ImportRun::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $admin->id,
+        'status' => ImportRunStatus::Completed,
+        'errored_count' => $erroredCount,
+        'error_report_path' => null,
+        ...$overrides,
+    ]);
+
+    if ($erroredCount > 0 && ! array_key_exists('error_report_path', $overrides)) {
+        $path = "import-runs/{$importRun->organization_id}/{$importRun->id}-errores.csv";
+        Storage::disk('local')->put($path, "\xEF\xBB\xBFFila,Columna,Severidad,Mensaje\n2,RUT,Error,boom\n");
+        $importRun->update(['error_report_path' => $path]);
+    }
+
+    return $importRun;
+}
+
+test('downloading the error report streams the CSV once the run has errored rows', function () {
+    Storage::fake('local');
+
+    $admin = importAdmin();
+    $importRun = completedRunFor($admin, 1);
+
+    $response = $this->actingAs($admin)
+        ->get(route('imports.error-report', $importRun))
+        ->assertOk();
+
+    expect($response->streamedContent())->toContain('Fila,Columna,Severidad,Mensaje');
+});
+
+test('the error-report route 404s while the run has no errored rows', function () {
+    Storage::fake('local');
+
+    $admin = importAdmin();
+    $importRun = completedRunFor($admin, 0);
+
+    $this->actingAs($admin)
+        ->get(route('imports.error-report', $importRun))
+        ->assertNotFound();
+});
+
+test('the error-report route 404s while the run is still Processing, even with errored rows already counted', function () {
+    Storage::fake('local');
+
+    $admin = importAdmin();
+    $importRun = completedRunFor($admin, 1, ['status' => ImportRunStatus::Processing]);
+
+    $this->actingAs($admin)
+        ->get(route('imports.error-report', $importRun))
+        ->assertNotFound();
+});
+
+test('a user outside the run\'s organization cannot download its error report', function () {
+    Storage::fake('local');
+
+    $owner = importAdmin();
+    $importRun = completedRunFor($owner, 1);
+
+    $outsider = importAdmin();
+
+    $this->actingAs($outsider)
+        ->get(route('imports.error-report', $importRun))
+        ->assertNotFound();
+});
+
+test('a user without Import:Employee cannot download an error report', function () {
+    Storage::fake('local');
+
+    $organization = Organization::factory()->create();
+    $user = User::factory()->create(['organization_id' => $organization->id]);
+
+    $importRun = completedRunFor($user, 1);
+
+    $this->actingAs($user)
+        ->get(route('imports.error-report', $importRun))
+        ->assertForbidden();
+});

@@ -218,6 +218,17 @@ test('a mid-file unique-constraint race is caught as that row\'s error, the chun
 
     expect(User::query()->where('email', 'juan@example.com')->exists())->toBeTrue()
         ->and(User::query()->where('email', 'pedro@example.com')->exists())->toBeTrue();
+
+    // The race is invisible to EvaluateImportRow (it only surfaces at
+    // save()-time, inside applyRow) — the errored row still needs its own
+    // report line, not just a bump to errored_count with nothing to explain
+    // it.
+    $csv = Storage::disk('local')->get($importRun->error_report_path);
+    $lines = array_map('str_getcsv', explode("\n", rtrim(substr($csv, 3), "\n")));
+
+    expect($lines)->toHaveCount(2) // header + the raced row's error
+        ->and($lines[1][0])->toBe('3')
+        ->and($lines[1][2])->toBe('Error');
 });
 
 test('a non-row-level failure is not swallowed, and failed() moves the run to Failed and notifies the requester', function () {
@@ -248,6 +259,91 @@ test('a non-row-level failure is not swallowed, and failed() moves the run to Fa
     expect($importRun->status)->toBe(ImportRunStatus::Failed);
 
     Notification::assertSentTo($requester, ImportRunFailed::class);
+});
+
+/**
+ * @param  list<array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>  $mapping
+ */
+function costCenterMapping(array $mapping): array
+{
+    return [
+        ...$mapping,
+        ['sourceColumnIndex' => 5, 'sourceHeaderLabel' => 'Centro de costo', 'targetField' => 'cost_center', 'status' => 'mapped'],
+    ];
+}
+
+test('a mix of warnings and errors produces an error-report CSV with the right rows, columns, and values, in order', function () {
+    Storage::fake('local');
+
+    $organization = Organization::factory()->create();
+    $requester = User::factory()->create(['organization_id' => $organization->id]);
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria', 'Centro de costo'];
+    $rows = [
+        // No existing employee has this RUT -> UpdateOnly Warning (Skipped).
+        ['Juan', 'Perez', validRut(11111111), 'juan@example.com', 'America/Santiago', ''],
+        // No CostCenter named "Ventas" exists in this org -> unresolved
+        // reference, a whole-row Error.
+        ['Maria', 'Lopez', validRut(22222222), 'maria@example.com', 'America/Santiago', 'Ventas'],
+    ];
+
+    $importRun = commitRunFor($organization, $requester, $header, $rows, costCenterMapping(commitMapping()), ImportStrategy::UpdateOnly, 'rut');
+
+    app()->call([new ProcessImportRun($importRun->id), 'handle']);
+
+    $importRun->refresh();
+
+    expect($importRun->status)->toBe(ImportRunStatus::Completed)
+        ->and($importRun->skipped_count)->toBe(1)
+        ->and($importRun->errored_count)->toBe(1)
+        ->and($importRun->error_report_path)->toBe("import-runs/{$organization->id}/{$importRun->id}-errores.csv");
+
+    $csv = Storage::disk('local')->get($importRun->error_report_path);
+
+    expect($csv)->toStartWith("\xEF\xBB\xBF");
+
+    $lines = array_map('str_getcsv', explode("\n", rtrim(substr($csv, 3), "\n")));
+
+    expect($lines)->toHaveCount(3) // header + one issue per row
+        ->and($lines[0])->toBe(['Fila', 'Columna', 'Severidad', 'Mensaje'])
+        ->and($lines[1])->toBe(['2', 'RUT', 'Advertencia', 'No existing record found to update.'])
+        ->and($lines[2])->toBe(['3', 'Centro de costo', 'Error', 'No matching cost_center found for "Ventas".']);
+});
+
+test('a retry re-derives the error report for rows an earlier attempt already committed', function () {
+    Storage::fake('local');
+
+    $organization = Organization::factory()->create();
+    $requester = User::factory()->create(['organization_id' => $organization->id]);
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria', 'Centro de costo'];
+    $rows = [
+        ['Juan', 'Perez', validRut(11111111), 'juan@example.com', 'America/Santiago', ''],
+        ['Maria', 'Lopez', validRut(22222222), 'maria@example.com', 'America/Santiago', 'Ventas'],
+    ];
+
+    $importRun = commitRunFor($organization, $requester, $header, $rows, costCenterMapping(commitMapping()), ImportStrategy::UpdateOnly, 'rut');
+
+    // Simulate a prior attempt that already committed row 1 (its Warning)
+    // and died before reaching row 2 — a fresh attempt only re-runs row 2
+    // through EvaluateImportRow below, so row 1's issue has to be
+    // re-derived, not lost, to keep the file complete.
+    $importRun->update(['committed_through' => 1, 'skipped_count' => 1]);
+
+    app()->call([new ProcessImportRun($importRun->id), 'handle']);
+
+    $importRun->refresh();
+
+    expect($importRun->status)->toBe(ImportRunStatus::Completed)
+        ->and($importRun->skipped_count)->toBe(1)
+        ->and($importRun->errored_count)->toBe(1);
+
+    $csv = Storage::disk('local')->get($importRun->error_report_path);
+    $lines = array_map('str_getcsv', explode("\n", rtrim(substr($csv, 3), "\n")));
+
+    expect($lines)->toHaveCount(3) // header + both rows' issues, despite row 1 not being re-applied
+        ->and($lines[1])->toBe(['2', 'RUT', 'Advertencia', 'No existing record found to update.'])
+        ->and($lines[2])->toBe(['3', 'Centro de costo', 'Error', 'No matching cost_center found for "Ventas".']);
 });
 
 test('a retried job resumes from committed_through without re-applying already-committed rows', function () {
