@@ -69,9 +69,11 @@ class ImportWizardController extends Controller
     /**
      * `GET imports/{importRun}` (KOL-94.5): renders whatever step the run's
      * current status implies. Implicit route-model binding already scopes
-     * to the current organization (ImportRun's BelongsToOrganization global
-     * scope), so a cross-org id 404s before this method runs; the
-     * `Import:Employee` route middleware handles the 403 case.
+     * to the current organization and the requesting user (ImportRun's
+     * BelongsToOrganization and BelongsToUser global scopes, KOL-105), so a
+     * cross-org id or another user's run in the same org 404s before this
+     * method runs; the `Import:Employee` route middleware handles the 403
+     * case.
      */
     public function show(ImportRun $importRun, EmployeeImportSchema $schema): Response
     {
