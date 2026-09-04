@@ -1260,6 +1260,7 @@ return [
                 'processing_title' => 'Importing…',
                 'processing_description' => 'This can take a few minutes depending on the file size. You can leave this page — you\'ll be notified by email once it finishes.',
                 'completed_title' => 'Import completed',
+                'completed_description' => ':total rows in the file were processed.',
                 'failed_title' => 'The import did not complete',
                 'failed_description' => 'An unexpected error occurred while processing the file. Check your email for details or try a new import.',
                 'counts' => [

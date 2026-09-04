@@ -105,14 +105,24 @@ export function ResultStep({
         );
     }
 
+    const total = createdCount + updatedCount + skippedCount + erroredCount;
+
     return (
         <div className="space-y-6">
-            <Alert>
-                <CheckCircle2 className="size-4" />
-                <AlertTitle>
-                    {t('ui.employees.import.result.completed_title')}
-                </AlertTitle>
-            </Alert>
+            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 className="size-5 shrink-0" />
+                <div>
+                    <p className="font-medium">
+                        {t('ui.employees.import.result.completed_title')}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                        {t(
+                            'ui.employees.import.result.completed_description',
+                            { total },
+                        )}
+                    </p>
+                </div>
+            </div>
 
             <div className="grid gap-3 sm:grid-cols-4">
                 <StatTile

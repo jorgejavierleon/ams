@@ -1263,6 +1263,7 @@ return [
                 'processing_title' => 'Importando…',
                 'processing_description' => 'Esto puede tardar unos minutos según el tamaño del archivo. Puedes salir de esta página — se te notificará por correo al terminar.',
                 'completed_title' => 'Importación completada',
+                'completed_description' => 'Se procesaron :total filas del archivo.',
                 'failed_title' => 'La importación no se completó',
                 'failed_description' => 'Ocurrió un error inesperado al procesar el archivo. Revisa tu correo para más detalles o intenta una nueva importación.',
                 'counts' => [
