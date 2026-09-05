@@ -1,5 +1,11 @@
 # Manual QA checklist
 
+### Employees list — Created at / Updated at columns
+
+- [ ] Open the Employees list and confirm "Created at" and "Updated at" are absent by default.
+- [ ] Open the "Columns" toggle, enable both, and confirm they render and match expected values for a known employee.
+- [ ] Click each header to sort asc/desc and confirm the rows reorder correctly.
+
 ### KOL-103 — Add the Employee import error-report download
 
 - [ ] Upload a file that produces both warnings and errors, commit the import, and confirm "Descargar reporte de errores" appears on the result screen once it's Completed.
