@@ -1112,6 +1112,8 @@ return [
             'is_admin' => 'Admin',
             'is_active' => 'Active',
             'admin_badge' => 'Admin',
+            'created_at' => 'Created at',
+            'updated_at' => 'Updated at',
         ],
 
         'filters' => [

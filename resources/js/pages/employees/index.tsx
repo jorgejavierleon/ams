@@ -51,6 +51,8 @@ type Employee = {
     contract_type_label: string | null;
     is_active: boolean;
     is_admin: boolean;
+    created_at: string | null;
+    updated_at: string | null;
 };
 
 type Props = {
@@ -280,6 +282,28 @@ export default function EmployeesIndex({
                 ),
             },
             {
+                accessorKey: 'created_at',
+                meta: { title: t('ui.employees.columns.created_at') },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.employees.columns.created_at')}
+                    />
+                ),
+                cell: ({ row }) => row.original.created_at ?? '—',
+            },
+            {
+                accessorKey: 'updated_at',
+                meta: { title: t('ui.employees.columns.updated_at') },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.employees.columns.updated_at')}
+                    />
+                ),
+                cell: ({ row }) => row.original.updated_at ?? '—',
+            },
+            {
                 id: 'actions',
                 enableHiding: false,
                 meta: {
@@ -371,6 +395,10 @@ export default function EmployeesIndex({
                     only={['employees', 'filters']}
                     searchPlaceholder={t('ui.employees.search_placeholder')}
                     emptyLabel={t('ui.employees.empty')}
+                    initialColumnVisibility={{
+                        created_at: false,
+                        updated_at: false,
+                    }}
                     toolbar={
                         <div className="flex flex-wrap items-center gap-2">
                             <Select

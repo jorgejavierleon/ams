@@ -41,6 +41,8 @@ type UseServerTableOptions<T> = {
     searchDebounce?: number;
     /** Stable identity for each row, used for selection state. */
     getRowId?: (row: T, index: number) => string;
+    /** Columns hidden until the user opts in via the view-options toggle. */
+    initialColumnVisibility?: VisibilityState;
 };
 
 export type UseServerTableReturn<T> = {
@@ -64,6 +66,7 @@ export function useServerTable<T>({
     enableRowSelection = false,
     searchDebounce = 300,
     getRowId,
+    initialColumnVisibility,
 }: UseServerTableOptions<T>): UseServerTableReturn<T> {
     // React Compiler must not memoize the TanStack table instance this hook
     // builds; see DataTable for the full rationale.
@@ -78,7 +81,7 @@ export function useServerTable<T>({
     );
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-        {},
+        initialColumnVisibility ?? {},
     );
 
     const isFirstRender = useRef(true);

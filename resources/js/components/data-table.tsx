@@ -1,5 +1,5 @@
 import { flexRender } from '@tanstack/react-table';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { DataTableViewOptions } from '@/components/data-table-view-options';
@@ -40,6 +40,8 @@ type DataTableProps<TData> = {
     showPagination?: boolean;
     enableRowSelection?: boolean;
     getRowId?: (row: TData, index: number) => string;
+    /** Columns hidden until the user opts in via the view-options toggle. */
+    initialColumnVisibility?: VisibilityState;
     /** Extra controls rendered on the left of the toolbar row. */
     toolbar?: ReactNode;
     /**
@@ -73,6 +75,7 @@ export function DataTable<TData>({
     showPagination = true,
     enableRowSelection,
     getRowId,
+    initialColumnVisibility,
     toolbar,
     renderSelectionActions,
 }: DataTableProps<TData>) {
@@ -90,6 +93,7 @@ export function DataTable<TData>({
         only,
         enableRowSelection,
         getRowId,
+        initialColumnVisibility,
     });
 
     const columnCount = table.getAllLeafColumns().length;

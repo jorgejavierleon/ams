@@ -40,7 +40,7 @@ class EmployeeController extends Controller
     {
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
-            ['name', 'email', 'rut', 'created_at'],
+            ['name', 'email', 'rut', 'created_at', 'updated_at'],
             'name',
         );
 
@@ -73,6 +73,8 @@ class EmployeeController extends Controller
                 'contract_type_label' => $employee->contract_type?->label(),
                 'is_active' => $employee->is_active,
                 'is_admin' => $employee->is_admin,
+                'created_at' => $employee->created_at?->format('Y-m-d H:i'),
+                'updated_at' => $employee->updated_at?->format('Y-m-d H:i'),
             ]),
             'filters' => [
                 'search' => $search,
@@ -106,7 +108,7 @@ class EmployeeController extends Controller
 
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
-            ['name', 'email', 'rut', 'created_at'],
+            ['name', 'email', 'rut', 'created_at', 'updated_at'],
             'name',
         );
 
