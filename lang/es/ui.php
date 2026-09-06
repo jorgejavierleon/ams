@@ -1186,6 +1186,18 @@ return [
                 'browse' => 'Seleccionar archivo',
                 'selected' => 'Seleccionado: :name',
                 'submit' => 'Subir archivo',
+                'cancel' => 'Cancelar',
+            ],
+
+            'cancel' => [
+                'button' => 'Cancelar',
+                'dialog_title' => '¿Cancelar esta importación?',
+                'dialog_description' => 'Se eliminará el archivo cargado y todo el progreso de esta importación. Esta acción no se puede deshacer.',
+                'confirm' => 'Sí, cancelar importación',
+            ],
+
+            'flash' => [
+                'cancelled' => 'Se canceló la importación.',
             ],
 
             'errors' => [

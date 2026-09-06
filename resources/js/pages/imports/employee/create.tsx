@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { Download, Upload as UploadIcon } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useRef, useState } from 'react';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { filenameFromContentDisposition } from '@/lib/download';
+import { index as employeesIndex } from '@/routes/employees';
 import { store, template } from '@/routes/imports/employee';
 
 export default function CreateEmployeeImport() {
@@ -54,8 +55,8 @@ export default function CreateEmployeeImport() {
                     description={t('ui.employees.import.description')}
                 />
 
-                <div className="max-w-3xl space-y-6">
-                    <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-6">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:max-w-xl">
                         <Button
                             type="button"
                             variant="outline"
@@ -149,7 +150,12 @@ export default function CreateEmployeeImport() {
                             </Alert>
                         )}
 
-                        <div className="flex justify-end">
+                        <div className="flex items-center justify-between">
+                            <Button variant="outline" asChild>
+                                <Link href={employeesIndex().url}>
+                                    {t('ui.employees.import.upload.cancel')}
+                                </Link>
+                            </Button>
                             <Button
                                 type="submit"
                                 disabled={!data.file || processing}

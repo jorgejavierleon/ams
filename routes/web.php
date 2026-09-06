@@ -292,6 +292,7 @@ Route::middleware(['auth', 'verified', 'permission:Import:Employee'])
         Route::post('{importRun}/preview', [ImportWizardController::class, 'preview'])->name('preview.store');
         Route::post('{importRun}/commit', [ImportWizardController::class, 'commit'])->name('commit.store');
         Route::get('{importRun}/error-report', [ImportWizardController::class, 'errorReport'])->name('error-report');
+        Route::delete('{importRun}', [ImportWizardController::class, 'destroy'])->name('destroy');
     });
 
 // Employee self-service routes (gated by Spatie permissions, not roles)

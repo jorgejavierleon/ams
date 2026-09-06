@@ -41,6 +41,7 @@ type Props = {
     columnMapping: MappingRow[];
     schemaFields: SchemaField[];
     onSaved: () => void;
+    onCancel: () => void;
 };
 
 /**
@@ -56,6 +57,7 @@ export function MappingReviewStep({
     columnMapping,
     schemaFields,
     onSaved,
+    onCancel,
 }: Props) {
     const { t } = useTranslations();
 
@@ -88,7 +90,8 @@ export function MappingReviewStep({
             .map((row) => row.targetField),
     );
     const missingRequired = schemaFields.filter(
-        (field) => field.requiredForCreateOnly && !mappedTargets.has(field.name),
+        (field) =>
+            field.requiredForCreateOnly && !mappedTargets.has(field.name),
     );
     const mappedCount = data.mapping.filter(
         (row) => row.status === 'mapped',
@@ -103,7 +106,9 @@ export function MappingReviewStep({
     ) {
         setData(
             'mapping',
-            data.mapping.map((row, i) => (i === index ? { ...row, ...next } : row)),
+            data.mapping.map((row, i) =>
+                i === index ? { ...row, ...next } : row,
+            ),
         );
     }
 
@@ -138,14 +143,20 @@ export function MappingReviewStep({
                     )}
                     <span>
                         {unmappedCount > 0
-                            ? t('ui.employees.import.mapping.summary_needs_review', {
-                                  mapped: mappedCount,
-                                  total: data.mapping.length,
-                                  unmapped: unmappedCount,
-                              })
-                            : t('ui.employees.import.mapping.summary_reviewed', {
-                                  total: data.mapping.length,
-                              })}
+                            ? t(
+                                  'ui.employees.import.mapping.summary_needs_review',
+                                  {
+                                      mapped: mappedCount,
+                                      total: data.mapping.length,
+                                      unmapped: unmappedCount,
+                                  },
+                              )
+                            : t(
+                                  'ui.employees.import.mapping.summary_reviewed',
+                                  {
+                                      total: data.mapping.length,
+                                  },
+                              )}
                     </span>
                 </div>
             </div>
@@ -154,12 +165,18 @@ export function MappingReviewStep({
                 <Alert variant="destructive">
                     <AlertTriangle className="size-4" />
                     <AlertTitle>
-                        {t('ui.employees.import.mapping.required_missing_title')}
+                        {t(
+                            'ui.employees.import.mapping.required_missing_title',
+                        )}
                     </AlertTitle>
                     <AlertDescription>
                         {t(
                             'ui.employees.import.mapping.required_missing_description',
-                            { fields: missingRequired.map((f) => f.label).join(', ') },
+                            {
+                                fields: missingRequired
+                                    .map((f) => f.label)
+                                    .join(', '),
+                            },
                         )}
                     </AlertDescription>
                 </Alert>
@@ -177,13 +194,19 @@ export function MappingReviewStep({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>
-                                    {t('ui.employees.import.mapping.column_header')}
+                                    {t(
+                                        'ui.employees.import.mapping.column_header',
+                                    )}
                                 </TableHead>
                                 <TableHead>
-                                    {t('ui.employees.import.mapping.target_header')}
+                                    {t(
+                                        'ui.employees.import.mapping.target_header',
+                                    )}
                                 </TableHead>
                                 <TableHead>
-                                    {t('ui.employees.import.mapping.status_header')}
+                                    {t(
+                                        'ui.employees.import.mapping.status_header',
+                                    )}
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -210,10 +233,13 @@ export function MappingReviewStep({
                                                 value={
                                                     row.status === 'ignored'
                                                         ? IGNORE_VALUE
-                                                        : (row.targetField ?? '')
+                                                        : (row.targetField ??
+                                                          '')
                                                 }
                                                 onChange={(value) => {
-                                                    if (value === IGNORE_VALUE) {
+                                                    if (
+                                                        value === IGNORE_VALUE
+                                                    ) {
                                                         setRow(index, {
                                                             targetField: null,
                                                             status: 'ignored',
@@ -239,16 +265,17 @@ export function MappingReviewStep({
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            {row.status === 'mapped' && field && (
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="text-green-700 dark:text-green-400"
-                                                >
-                                                    {t(
-                                                        'ui.employees.import.mapping.status_mapped',
-                                                    )}
-                                                </Badge>
-                                            )}
+                                            {row.status === 'mapped' &&
+                                                field && (
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="text-green-700 dark:text-green-400"
+                                                    >
+                                                        {t(
+                                                            'ui.employees.import.mapping.status_mapped',
+                                                        )}
+                                                    </Badge>
+                                                )}
                                             {row.status === 'ignored' && (
                                                 <Badge variant="outline">
                                                     {t(
@@ -276,7 +303,10 @@ export function MappingReviewStep({
                 </CardContent>
             </Card>
 
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end gap-3">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                    {t('ui.employees.import.cancel.button')}
+                </Button>
                 <Button
                     type="submit"
                     disabled={missingRequired.length > 0 || processing}
