@@ -1241,7 +1241,7 @@ return [
 
             'preview' => [
                 'run_title' => 'Run the validation preview',
-                'run_description' => 'This evaluates every row in the file against the mapping and strategy you chose. Only the counts below are shown — never a row-by-row list.',
+                'run_description' => 'This evaluates every row in the file against the mapping and strategy you chose.',
                 'run_submit' => 'Run preview',
                 'back' => '← Strategy',
                 'counts' => [
@@ -1256,6 +1256,16 @@ return [
                 'no_errors_description_with_warnings' => ':count rows have a warning but will still import.',
                 'no_errors_description_clean' => 'Every row is ready to import.',
                 'confirm_submit' => 'Confirm and import',
+                'issues' => [
+                    'title' => 'Row-by-row detail',
+                    'empty' => 'No rows with issues.',
+                    'columns' => [
+                        'row' => 'Row',
+                        'column' => 'Column',
+                        'severity' => 'Severity',
+                        'message' => 'Message',
+                    ],
+                ],
             ],
 
             'result' => [

@@ -1,11 +1,17 @@
 import { useForm } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useMemo } from 'react';
+import { DataTable } from '@/components/data-table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
+import { show as showImportRun } from '@/routes/imports';
 import { store as commitImport } from '@/routes/imports/commit';
 import { store as runPreview } from '@/routes/imports/preview';
+import type { Paginated } from '@/types/ui';
+import type { ImportRowIssue } from './show';
 
 type PreviewCounts = {
     ready: number;
@@ -17,6 +23,7 @@ type PreviewCounts = {
 type Props = {
     importRunId: number;
     previewCounts: PreviewCounts | null;
+    issues: Paginated<ImportRowIssue> | null;
     onBack: () => void;
 };
 
@@ -50,19 +57,63 @@ function StatTile({
 }
 
 /**
- * The Employee import wizard's preview step (KOL-101): only ever shows the
- * aggregate Ready/Warning/Error/Skipped counts persisted on ImportRun —
- * there is no per-row grid to show, server or client side. Before the
- * counts exist yet (run.status is still MappingReview), this renders the
- * "run preview" call to action instead; POSTing there flips the run to
- * PreviewReady and this same component re-renders with the counts.
+ * The Employee import wizard's preview step (KOL-101, KOL-111): shows the
+ * aggregate Ready/Warning/Error/Skipped counts persisted on ImportRun, plus
+ * a paginated per-row issue table once the preview found anything wrong
+ * (KOL-111) — so a user can see exactly what to fix without downloading the
+ * CSV or committing the import. Before the counts exist yet (run.status is
+ * still MappingReview), this renders the "run preview" call to action
+ * instead; POSTing there flips the run to PreviewReady and this same
+ * component re-renders with the counts.
  */
-export function PreviewStep({ importRunId, previewCounts, onBack }: Props) {
+export function PreviewStep({
+    importRunId,
+    previewCounts,
+    issues,
+    onBack,
+}: Props) {
     const { t } = useTranslations();
     const { post, processing, errors } = useForm<Record<string, never>>({});
     const { post: postCommit, processing: committing } = useForm<
         Record<string, never>
     >({});
+
+    const issueColumns = useMemo<ColumnDef<ImportRowIssue>[]>(
+        () => [
+            {
+                accessorKey: 'row',
+                header: t('ui.employees.import.preview.issues.columns.row'),
+                cell: ({ row }) => row.original.row,
+            },
+            {
+                accessorKey: 'column',
+                header: t('ui.employees.import.preview.issues.columns.column'),
+                cell: ({ row }) => row.original.column || '—',
+            },
+            {
+                accessorKey: 'severity',
+                header: t(
+                    'ui.employees.import.preview.issues.columns.severity',
+                ),
+                cell: ({ row }) =>
+                    row.original.severity === 'Error' ? (
+                        <span className="font-medium text-destructive">
+                            {row.original.severity}
+                        </span>
+                    ) : (
+                        <span className="font-medium text-amber-600 dark:text-amber-400">
+                            {row.original.severity}
+                        </span>
+                    ),
+            },
+            {
+                accessorKey: 'message',
+                header: t('ui.employees.import.preview.issues.columns.message'),
+                cell: ({ row }) => row.original.message,
+            },
+        ],
+        [t],
+    );
 
     function handleRunPreview() {
         post(runPreview(importRunId).url, { preserveScroll: true });
@@ -165,8 +216,31 @@ export function PreviewStep({ importRunId, previewCounts, onBack }: Props) {
                 </Alert>
             )}
 
+            {(previewCounts.error > 0 || previewCounts.warning > 0) &&
+                issues && (
+                    <div className="space-y-2">
+                        <h2 className="text-sm font-medium">
+                            {t('ui.employees.import.preview.issues.title')}
+                        </h2>
+                        <DataTable
+                            data={issues}
+                            columns={issueColumns}
+                            routeUrl={showImportRun(importRunId).url}
+                            only={['issues']}
+                            getRowId={(issue) => String(issue.id)}
+                            emptyLabel={t(
+                                'ui.employees.import.preview.issues.empty',
+                            )}
+                        />
+                    </div>
+                )}
+
             <div className="flex items-center justify-between">
-                <Button variant="outline" onClick={onBack} disabled={committing}>
+                <Button
+                    variant="outline"
+                    onClick={onBack}
+                    disabled={committing}
+                >
                     {t('ui.employees.import.preview.back')}
                 </Button>
                 <Button onClick={handleCommit} disabled={committing}>

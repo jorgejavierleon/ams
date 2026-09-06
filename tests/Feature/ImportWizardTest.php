@@ -1,10 +1,13 @@
 <?php
 
+use App\Actions\Imports\PreviewImportRun;
 use App\Enums\ColumnMappingStatus;
+use App\Enums\ImportIssueSeverity;
 use App\Enums\ImportRunStatus;
 use App\Enums\ImportStrategy;
 use App\Jobs\ProcessImportRun;
 use App\Models\ImportRun;
+use App\Models\ImportRunIssue;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Imports\EmployeeImportSchema;
@@ -555,6 +558,190 @@ test('previewing a fixture with an unresolved reference, a required-field gap, a
     $importRun->refresh();
     expect($importRun->status)->toBe(ImportRunStatus::PreviewReady)
         ->and($importRun->preview_counts)->toEqual(['ready' => 1, 'warning' => 0, 'error' => 3, 'skipped' => 0]);
+});
+
+/**
+ * @return array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>
+ */
+function coreFieldsWithCostCenter(): array
+{
+    return [
+        ...fullyMappedCoreFields(),
+        ['sourceColumnIndex' => 5, 'sourceHeaderLabel' => 'Centro de costo', 'targetField' => 'cost_center', 'status' => 'mapped'],
+    ];
+}
+
+test('previewing a fixture with a mix of clean, warning, and error rows persists the expected per-row issues, queryable in row order', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $existingRut = validRut(11111111);
+    User::factory()->create(['organization_id' => $admin->organization_id, 'rut' => $existingRut]);
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria', 'Centro de costo'];
+    $rows = [
+        // Row 2: matches the existing employee by RUT, cost_center left blank (no change) -> Ready.
+        ['Juan', 'Perez', $existingRut, 'juan@example.com', 'America/Santiago', ''],
+        // Row 3: no existing employee has this RUT -> UpdateOnly Warning (Skipped).
+        ['Maria', 'Lopez', validRut(22222222), 'maria@example.com', 'America/Santiago', ''],
+        // Row 4: no CostCenter named "Ventas" -> unresolved reference, a whole-row Error.
+        ['Ana', 'Diaz', validRut(33333333), 'ana@example.com', 'America/Santiago', 'Ventas'],
+    ];
+
+    $importRun = previewRunFor($admin, $header, $rows, coreFieldsWithCostCenter(), ImportStrategy::UpdateOnly, 'rut');
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertRedirect();
+
+    $importRun->refresh();
+    expect($importRun->preview_counts)->toEqual(['ready' => 1, 'warning' => 0, 'error' => 1, 'skipped' => 1]);
+
+    $issues = ImportRunIssue::query()->where('import_run_id', $importRun->id)->orderBy('row_number')->get();
+
+    expect($issues)->toHaveCount(2)
+        ->and($issues[0]->row_number)->toBe(3)
+        ->and($issues[0]->field)->toBe('rut')
+        ->and($issues[0]->severity)->toBe(ImportIssueSeverity::Warning)
+        ->and($issues[0]->message)->toBe('No existing record found to update.')
+        ->and($issues[1]->row_number)->toBe(4)
+        ->and($issues[1]->field)->toBe('cost_center')
+        ->and($issues[1]->severity)->toBe(ImportIssueSeverity::Error)
+        ->and($issues[1]->message)->toBe('No matching cost_center found for "Ventas".');
+
+    $response = $this->actingAs($admin)->get(route('imports.show', $importRun));
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('issues.data', [
+            ['id' => $issues[0]->id, 'row' => 3, 'column' => 'RUT', 'severity' => 'Advertencia', 'message' => 'No existing record found to update.'],
+            ['id' => $issues[1]->id, 'row' => 4, 'column' => 'Centro de costo', 'severity' => 'Error', 'message' => 'No matching cost_center found for "Ventas".'],
+        ])
+        ->where('issues.total', 2)
+    );
+});
+
+test('previewing a clean fixture shows no issue table because preview_counts.error and .warning are both 0', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria'];
+    $rows = [
+        ['Juan', 'Perez', validRut(11111111), 'juan@example.com', 'America/Santiago'],
+    ];
+
+    $importRun = previewRunFor($admin, $header, $rows, fullyMappedCoreFields(), ImportStrategy::CreateOnly);
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertRedirect();
+
+    expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(0);
+
+    $this->actingAs($admin)
+        ->get(route('imports.show', $importRun))
+        ->assertInertia(fn ($page) => $page->where('issues', null));
+});
+
+test('re-running the preview action replaces previously persisted issues rather than appending to them', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria', 'Centro de costo'];
+    $rows = [
+        ['Ana', 'Diaz', validRut(11111111), 'ana@example.com', 'America/Santiago', 'Ventas'],
+    ];
+
+    $importRun = previewRunFor($admin, $header, $rows, coreFieldsWithCostCenter(), ImportStrategy::CreateOnly);
+
+    $schema = app(EmployeeImportSchema::class);
+    $previewImportRun = app(PreviewImportRun::class);
+
+    // The preview.store route only allows a single MappingReview ->
+    // PreviewReady transition; a real re-preview goes through a demotion
+    // first (already covered by the resubmit-clears-issues tests below).
+    // Calling the action directly isolates AC #4 — replace, not append —
+    // from that HTTP-level guard.
+    $previewImportRun->handle($importRun, $schema);
+    expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(1);
+
+    $previewImportRun->handle($importRun, $schema);
+
+    $issues = ImportRunIssue::query()->where('import_run_id', $importRun->id)->get();
+
+    expect($issues)->toHaveCount(1)
+        ->and($issues[0]->row_number)->toBe(2);
+});
+
+test('resubmitting mapping while PreviewReady clears the previously persisted issues', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria', 'Centro de costo'];
+    $rows = [
+        ['Ana', 'Diaz', validRut(11111111), 'ana@example.com', 'America/Santiago', 'Ventas'],
+    ];
+
+    $importRun = previewRunFor($admin, $header, $rows, coreFieldsWithCostCenter(), ImportStrategy::CreateOnly);
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertRedirect();
+
+    expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(1);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.mapping.update', $importRun), ['mapping' => coreFieldsWithCostCenter()])
+        ->assertRedirect();
+
+    expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(0);
+});
+
+test('resubmitting strategy while PreviewReady clears the previously persisted issues', function () {
+    Storage::fake('local');
+    $admin = importAdmin();
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria', 'Centro de costo'];
+    $rows = [
+        ['Ana', 'Diaz', validRut(11111111), 'ana@example.com', 'America/Santiago', 'Ventas'],
+    ];
+
+    $importRun = previewRunFor($admin, $header, $rows, coreFieldsWithCostCenter(), ImportStrategy::CreateOnly);
+
+    $this->actingAs($admin)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertRedirect();
+
+    expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(1);
+
+    $this->actingAs($admin)
+        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->assertRedirect();
+
+    expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(0);
+});
+
+test('a user outside the ImportRun organization cannot read another org\'s persisted issues', function () {
+    Storage::fake('local');
+    $owner = importAdmin();
+
+    $header = ['Nombre', 'Apellido', 'RUT', 'Email', 'Zona horaria', 'Centro de costo'];
+    $rows = [
+        ['Ana', 'Diaz', validRut(11111111), 'ana@example.com', 'America/Santiago', 'Ventas'],
+    ];
+
+    $importRun = previewRunFor($owner, $header, $rows, coreFieldsWithCostCenter(), ImportStrategy::CreateOnly);
+
+    $this->actingAs($owner)
+        ->post(route('imports.preview.store', $importRun))
+        ->assertRedirect();
+
+    expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(1);
+
+    $outsider = importAdmin();
+
+    $this->actingAs($outsider)
+        ->get(route('imports.show', $importRun))
+        ->assertNotFound();
 });
 
 test('running preview outside MappingReview is refused', function () {
