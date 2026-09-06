@@ -1244,7 +1244,7 @@ return [
 
             'preview' => [
                 'run_title' => 'Ejecuta la previsualización de validación',
-                'run_description' => 'Esto evalúa cada fila del archivo según el mapeo y la estrategia elegidos. Solo se muestran los totales a continuación — nunca una lista fila por fila.',
+                'run_description' => 'Esto evalúa cada fila del archivo según el mapeo y la estrategia elegidos.',
                 'run_submit' => 'Ejecutar previsualización',
                 'back' => '← Estrategia',
                 'counts' => [
@@ -1259,6 +1259,16 @@ return [
                 'no_errors_description_with_warnings' => ':count filas tienen una advertencia pero se importarán igualmente.',
                 'no_errors_description_clean' => 'Todas las filas están listas para importarse.',
                 'confirm_submit' => 'Confirmar e importar',
+                'issues' => [
+                    'title' => 'Detalle por fila',
+                    'empty' => 'No hay filas con problemas.',
+                    'columns' => [
+                        'row' => 'Fila',
+                        'column' => 'Columna',
+                        'severity' => 'Severidad',
+                        'message' => 'Mensaje',
+                    ],
+                ],
             ],
 
             'result' => [

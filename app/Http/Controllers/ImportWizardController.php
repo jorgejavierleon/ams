@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use App\Actions\Imports\CreateImportRunFromUpload;
 use App\Actions\Imports\DownloadImportErrorReport;
 use App\Actions\Imports\PreviewImportRun;
+use App\Concerns\ResolvesTablePerPage;
 use App\Enums\ColumnMappingStatus;
 use App\Enums\ImportRunStatus;
 use App\Enums\ImportStrategy;
 use App\Jobs\ProcessImportRun;
 use App\Models\ImportRun;
+use App\Models\ImportRunIssue;
 use App\Services\Imports\EmployeeImportSchema;
 use App\Services\Imports\EmployeeImportTemplate;
 use App\Support\Imports\ImportField;
+use App\Support\Imports\ImportFieldLabels;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,6 +35,8 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  */
 class ImportWizardController extends Controller
 {
+    use ResolvesTablePerPage;
+
     /**
      * The wizard shell's first step: template downloads plus the upload
      * form. No ImportRun exists yet, mirroring every other resource's
@@ -79,7 +84,7 @@ class ImportWizardController extends Controller
      * method runs; the `Import:Employee` route middleware handles the 403
      * case.
      */
-    public function show(ImportRun $importRun, EmployeeImportSchema $schema): Response
+    public function show(Request $request, ImportRun $importRun, EmployeeImportSchema $schema): Response
     {
         return Inertia::render('imports/employee/show', [
             'importRun' => [
@@ -103,7 +108,38 @@ class ImportWizardController extends Controller
                     'isMatchKeyEligible' => $field->isMatchKeyEligible,
                 ])
                 ->values(),
+            'issues' => $this->issuesTable($request, $importRun, $schema),
         ]);
+    }
+
+    /**
+     * The preview step's per-row issue table (KOL-111): only queried once a
+     * preview actually found something wrong, mirroring the KOL-101 AC #2
+     * gate ("shown whenever preview_counts.error > 0 or .warning > 0"). Read
+     * through `$importRun->issues()` (never `ImportRunIssue::query()`
+     * directly) so it inherits ImportRun's org+user scope (KOL-105) for
+     * free.
+     */
+    private function issuesTable(Request $request, ImportRun $importRun, EmployeeImportSchema $schema): mixed
+    {
+        $counts = $importRun->preview_counts;
+
+        if ($counts === null || (($counts['error'] ?? 0) === 0 && ($counts['warning'] ?? 0) === 0)) {
+            return null;
+        }
+
+        $labels = ImportFieldLabels::build($schema);
+
+        return $importRun->issues()
+            ->paginate($this->resolveTablePerPage($request))
+            ->withQueryString()
+            ->through(fn (ImportRunIssue $issue): array => [
+                'id' => $issue->id,
+                'row' => $issue->row_number,
+                'column' => $issue->field !== null ? ($labels[$issue->field] ?? $issue->field) : '',
+                'severity' => $issue->severity->label(),
+                'message' => $issue->message,
+            ]);
     }
 
     /**
@@ -256,6 +292,8 @@ class ImportWizardController extends Controller
         if ($importRun->status !== ImportRunStatus::PreviewReady) {
             return [];
         }
+
+        $importRun->issues()->delete();
 
         return ['status' => ImportRunStatus::MappingReview, 'preview_counts' => null];
     }

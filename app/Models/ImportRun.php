@@ -10,6 +10,7 @@ use Database\Factories\ImportRunFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -72,5 +73,13 @@ class ImportRun extends Model
             'preview_counts' => 'array',
             'expires_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return HasMany<ImportRunIssue, $this>
+     */
+    public function issues(): HasMany
+    {
+        return $this->hasMany(ImportRunIssue::class)->orderBy('row_number');
     }
 }

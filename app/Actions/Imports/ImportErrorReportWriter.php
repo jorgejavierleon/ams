@@ -2,13 +2,10 @@
 
 namespace App\Actions\Imports;
 
-use App\Enums\ImportIssueSeverity;
 use App\Models\ImportRun;
-use App\Services\Imports\EmployeeImportTemplate;
 use App\Services\Imports\ImportSchema;
-use App\Support\Imports\ImportField;
+use App\Support\Imports\ImportFieldLabels;
 use App\Support\Imports\ImportIssue;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
@@ -47,7 +44,7 @@ final class ImportErrorReportWriter
         fwrite($this->handle, "\xEF\xBB\xBF");
         fputcsv($this->handle, ['Fila', 'Columna', 'Severidad', 'Mensaje']);
 
-        $this->labels = $this->buildLabels($schema);
+        $this->labels = ImportFieldLabels::build($schema);
     }
 
     /**
@@ -59,7 +56,7 @@ final class ImportErrorReportWriter
             fputcsv($this->handle, [
                 $rowNumber,
                 $issue->field !== null ? ($this->labels[$issue->field] ?? $issue->field) : '',
-                $issue->severity === ImportIssueSeverity::Error ? 'Error' : 'Advertencia',
+                $issue->severity->label(),
                 $issue->message,
             ]);
         }
@@ -73,39 +70,5 @@ final class ImportErrorReportWriter
     public static function diskPath(ImportRun $importRun): string
     {
         return "import-runs/{$importRun->organization_id}/{$importRun->id}-errores.csv";
-    }
-
-    /**
-     * The report is always in Spanish regardless of the acting locale (there
-     * is none in a queue worker anyway), mirroring
-     * {@see EmployeeImportTemplate}'s same defensive
-     * App::setLocale('es'). A reference field's issue is keyed by its
-     * resolved `{name}_id` column (EvaluateImportRow's validator runs
-     * post-resolution), so each isReference field's label is aliased under
-     * both its own name and that suffixed key.
-     *
-     * @return array<string, string>
-     */
-    private function buildLabels(ImportSchema $schema): array
-    {
-        $previousLocale = App::getLocale();
-        App::setLocale('es');
-
-        try {
-            $labels = [];
-
-            foreach ($schema->fields() as $field) {
-                /** @var ImportField $field */
-                $labels[$field->name] = $field->label;
-
-                if ($field->isReference) {
-                    $labels[$field->name.'_id'] = $field->label;
-                }
-            }
-
-            return $labels;
-        } finally {
-            App::setLocale($previousLocale);
-        }
     }
 }

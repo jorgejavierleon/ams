@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import { useTranslations } from '@/hooks/use-translations';
+import type { Paginated } from '@/types/ui';
 import { MappingReviewStep } from './mapping-review-step';
 import { PreviewStep } from './preview-step';
 import { ResultStep } from './result-step';
@@ -28,6 +29,14 @@ type PreviewCounts = {
     skipped: number;
 };
 
+export type ImportRowIssue = {
+    id: number;
+    row: number;
+    column: string;
+    severity: string;
+    message: string;
+};
+
 type ImportRun = {
     id: number;
     status: string;
@@ -45,6 +54,7 @@ type ImportRun = {
 type Props = {
     importRun: ImportRun;
     schemaFields: SchemaField[];
+    issues: Paginated<ImportRowIssue> | null;
 };
 
 /**
@@ -53,7 +63,11 @@ type Props = {
  * mapping review (KOL-99), strategy (KOL-100), preview (KOL-101), and the
  * commit result (KOL-102) are all reachable today.
  */
-export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
+export default function ShowEmployeeImport({
+    importRun,
+    schemaFields,
+    issues,
+}: Props) {
     const { t } = useTranslations();
 
     // MappingReview and PreviewReady share the same three-step client-only
@@ -86,7 +100,7 @@ export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
 
                 <div
                     className={
-                        isEditable && step === 'mapping'
+                        isEditable && step !== 'strategy'
                             ? 'max-w-5xl'
                             : 'max-w-3xl'
                     }
@@ -113,6 +127,7 @@ export default function ShowEmployeeImport({ importRun, schemaFields }: Props) {
                             <PreviewStep
                                 importRunId={importRun.id}
                                 previewCounts={importRun.preview_counts}
+                                issues={issues}
                                 onBack={() => setStep('strategy')}
                             />
                         )
