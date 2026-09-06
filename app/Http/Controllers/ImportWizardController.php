@@ -124,7 +124,7 @@ class ImportWizardController extends Controller
     {
         $counts = $importRun->preview_counts;
 
-        if ($counts === null || (($counts['error'] ?? 0) === 0 && ($counts['warning'] ?? 0) === 0)) {
+        if ($counts === null || ($counts['error'] === 0 && $counts['warning'] === 0)) {
             return null;
         }
 

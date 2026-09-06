@@ -37,6 +37,9 @@ class ImportRunIssue extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<ImportRun, $this>
+     */
     public function importRun(): BelongsTo
     {
         return $this->belongsTo(ImportRun::class);
