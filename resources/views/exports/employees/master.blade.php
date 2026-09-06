@@ -24,7 +24,6 @@
                 <th>{{ __('ui.employees.export.columns.phone') }}</th>
                 <th>{{ __('ui.employees.export.columns.nationality') }}</th>
                 <th>{{ __('ui.employees.export.columns.gender') }}</th>
-                <th>{{ __('ui.employees.export.columns.company') }}</th>
                 <th>{{ __('ui.employees.export.columns.cost_center') }}</th>
                 <th>{{ __('ui.employees.export.columns.premise') }}</th>
                 <th>{{ __('ui.employees.export.columns.position') }}</th>
@@ -34,30 +33,35 @@
                 <th>{{ __('ui.employees.export.columns.emergency_contact_name') }}</th>
                 <th>{{ __('ui.employees.export.columns.emergency_contact_phone') }}</th>
                 <th>{{ __('ui.employees.export.columns.is_active') }}</th>
+                <th>{{ __('ui.employees.export.columns.timezone') }}</th>
             </tr>
         </thead>
+        {{-- Empty cells stay empty, never a '—' placeholder: this file is meant
+             to be re-uploaded to the import wizard (KOL-110), and the importer
+             treats a literal '—' as a real value to look up (e.g. "no matching
+             contract_type found for '—'") rather than as blank/no-change. --}}
         <tbody>
             @foreach ($rows as $row)
                 <tr>
-                    <td>{{ $row['first_name'] ?? '—' }}</td>
-                    <td>{{ $row['last_name'] ?? '—' }}</td>
-                    <td>{{ $row['second_last_name'] ?? '—' }}</td>
-                    <td>{{ $row['rut'] ?? '—' }}</td>
-                    <td>{{ $row['email'] ?? '—' }}</td>
-                    <td>{{ $row['personal_email'] ?? '—' }}</td>
-                    <td>{{ $row['phone'] ?? '—' }}</td>
-                    <td>{{ $row['nationality'] ?? '—' }}</td>
-                    <td>{{ $row['gender'] ?? '—' }}</td>
-                    <td>{{ $row['company'] ?? '—' }}</td>
-                    <td>{{ $row['cost_center'] ?? '—' }}</td>
-                    <td>{{ $row['premise'] ?? '—' }}</td>
-                    <td>{{ $row['position'] ?? '—' }}</td>
-                    <td>{{ $row['contract_type'] ?? '—' }}</td>
-                    <td>{{ $row['contract_start_date'] ?? '—' }}</td>
-                    <td>{{ $row['contract_end_date'] ?? '—' }}</td>
-                    <td>{{ $row['emergency_contact_name'] ?? '—' }}</td>
-                    <td>{{ $row['emergency_contact_phone'] ?? '—' }}</td>
+                    <td>{{ $row['first_name'] }}</td>
+                    <td>{{ $row['last_name'] }}</td>
+                    <td>{{ $row['second_last_name'] }}</td>
+                    <td>{{ $row['rut'] }}</td>
+                    <td>{{ $row['email'] }}</td>
+                    <td>{{ $row['personal_email'] }}</td>
+                    <td>{{ $row['phone'] }}</td>
+                    <td>{{ $row['nationality'] }}</td>
+                    <td>{{ $row['gender'] }}</td>
+                    <td>{{ $row['cost_center'] }}</td>
+                    <td>{{ $row['premise'] }}</td>
+                    <td>{{ $row['position'] }}</td>
+                    <td>{{ $row['contract_type'] }}</td>
+                    <td>{{ $row['contract_start_date'] }}</td>
+                    <td>{{ $row['contract_end_date'] }}</td>
+                    <td>{{ $row['emergency_contact_name'] }}</td>
+                    <td>{{ $row['emergency_contact_phone'] }}</td>
                     <td>{{ $row['is_active'] ? __('ui.employees.export.yes') : __('ui.employees.export.no') }}</td>
+                    <td>{{ $row['timezone'] }}</td>
                 </tr>
             @endforeach
         </tbody>

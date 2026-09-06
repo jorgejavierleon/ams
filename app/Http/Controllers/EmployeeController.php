@@ -113,7 +113,7 @@ class EmployeeController extends Controller
         );
 
         $employees = $this->filteredEmployeesQuery($request)
-            ->with(['position:id,name', 'premise:id,name', 'costCenter:id,name', 'company:id,social_reason'])
+            ->with(['position:id,name', 'premise:id,name', 'costCenter:id,name'])
             ->orderBy($sort, $direction)
             ->get();
 

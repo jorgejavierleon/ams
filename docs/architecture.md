@@ -179,6 +179,8 @@ Two constraints that follow from `Company` being the employer of record — the 
 - The DT attendance reports emit an `employer` column (razón social + RUT) per Resolución 38, and `MarkObserver` freezes `employer_rut` / `employer_name` onto every mark for the fiscalizador validation endpoint.
 - The contract templates resolve `{{company_*}}` variables through `DocumentVariableResolver`.
 
+For the same reason, `company` has no field in `EmployeeImportSchema` (it is auto-assigned to the org's one `Company`) and, as of KOL-110, no column in `EmployeeMasterExporter` either — a per-row employer value would be constant and carries no information. More generally: `EmployeeMasterExporter`'s column labels are kept byte-for-byte identical to `EmployeeImportSchema`'s field labels (`lang/es/ui.php`'s `employees.export.columns.*` vs `employees.form.*`) wherever both exist, so a file downloaded from the Employees export re-uploads through the import wizard with every column auto-mapped. Renaming a form label without renaming its export counterpart (or vice versa) silently reopens this — `ImportWizardTest`'s KOL-110 round-trip test is the guard rail.
+
 ## Cost centres
 
 `CostCenter` is the accounting dimension the payroll reports call *centro de costo* — an org-scoped catalogue in the same shape as `Position`, with a name and an optional `code` (*código contable*) unique per organization. Employees reference at most one, optionally.

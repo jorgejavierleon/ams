@@ -720,6 +720,7 @@ test('the excel export contains the full ficha column set with a formatted rut',
         'contract_start_date' => '2026-01-05',
         'contract_end_date' => null,
         'is_active' => true,
+        'timezone' => 'America/Santiago',
     ]);
 
     $response = $this->actingAs($admin)
@@ -729,21 +730,22 @@ test('the excel export contains the full ficha column set with a formatted rut',
     $spreadsheet = employeeMasterSpreadsheetFromXlsxResponse($response->baseResponse);
     $rows = $spreadsheet->getActiveSheet()->toArray();
 
-    expect($rows[0])->toContain('RUT', 'Empresa', 'Centro de costo', 'Sucursal', 'Cargo', 'Tipo de contrato', 'Activo');
+    expect($rows[0])->toContain('RUT', 'Centro de costo', 'Sucursal', 'Cargo', 'Tipo de contrato', 'Activo', 'Zona horaria')
+        ->and($rows[0])->not->toContain('Empresa');
 
     $header = $rows[0];
     $dataRow = array_combine($header, $rows[1]);
 
     expect($dataRow['Nombre'])->toBe('Ana')
-        ->and($dataRow['Apellido paterno'])->toBe('Pérez')
-        ->and($dataRow['Apellido materno'])->toBe('Soto')
+        ->and($dataRow['Apellido'])->toBe('Pérez')
+        ->and($dataRow['Segundo apellido'])->toBe('Soto')
         ->and($dataRow['RUT'])->toBe(Rut::format(validRut(12345678)))
-        ->and($dataRow['Empresa'])->toBe('Acme SpA')
         ->and($dataRow['Centro de costo'])->toBe('CC-01')
         ->and($dataRow['Sucursal'])->toBe('Casa Matriz')
         ->and($dataRow['Cargo'])->toBe('Analista')
         ->and($dataRow['Tipo de contrato'])->toBe('Indefinido')
-        ->and($dataRow['Activo'])->toBe('Sí');
+        ->and($dataRow['Activo'])->toBe('Sí')
+        ->and($dataRow['Zona horaria'])->toBe('America/Santiago');
 });
 
 test('inactive employees are included and flagged rather than excluded by default', function () {
