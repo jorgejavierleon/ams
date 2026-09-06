@@ -120,6 +120,44 @@ test('auto-mapping a fixture header set produces the expected Mapped/Unmapped sp
         ->and($importRun->column_mapping[5])->toMatchArray(['targetField' => null, 'status' => 'unmapped']);
 });
 
+test('an Employee export re-uploaded unmodified auto-maps every column with no unmapped fields (KOL-110)', function () {
+    Storage::fake('local');
+    $organization = Organization::factory()->create();
+    $admin = importAdmin($organization);
+
+    User::factory()->employee()->create([
+        'organization_id' => $organization->id,
+        'first_name' => 'Ana',
+        'last_name' => 'Pérez',
+        'second_last_name' => 'Soto',
+        'rut' => validRut(12345678),
+        'email' => 'ana@example.com',
+    ]);
+
+    $exportResponse = $this->actingAs($admin)
+        ->get(route('employees.export', ['format' => 'csv']))
+        ->assertOk();
+
+    $csvPath = tempnam(sys_get_temp_dir(), 'export').'.csv';
+    file_put_contents($csvPath, TestResponse::fromBaseResponse($exportResponse->baseResponse)->streamedContent());
+    $file = new UploadedFile($csvPath, 'maestro-de-trabajadores.csv', 'text/csv', null, true);
+
+    $this->actingAs($admin)->post(route('imports.employee.store'), ['file' => $file])->assertRedirect();
+
+    $importRun = ImportRun::sole();
+    $statuses = collect($importRun->column_mapping)->pluck('status')->unique()->all();
+
+    expect($statuses)->toBe([ColumnMappingStatus::Mapped->value]);
+
+    $requiredFields = collect(app(EmployeeImportSchema::class)->fields())
+        ->filter(fn (ImportField $field): bool => $field->requiredForCreateOnly)
+        ->map(fn (ImportField $field): string => $field->name);
+
+    $mappedTargets = collect($importRun->column_mapping)->pluck('targetField');
+
+    expect($requiredFields->diff($mappedTargets))->toBeEmpty();
+});
+
 /**
  * @param  array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>  $overrides  keyed by sourceColumnIndex, merged over the run's stored skeleton
  */

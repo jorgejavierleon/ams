@@ -4,6 +4,7 @@ namespace App\Services\Reports;
 
 use App\Http\Controllers\EmployeeController;
 use App\Models\User;
+use App\Services\Imports\EmployeeImportSchema;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\View;
@@ -26,6 +27,12 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Always rendered in Spanish (AC #8), regardless of the requester's chosen
  * interface locale, matching every other payroll/DT exporter's convention.
+ *
+ * Column labels and set are kept in sync with {@see EmployeeImportSchema}
+ * (KOL-110) so a file downloaded here can be re-uploaded to the import wizard
+ * and auto-map cleanly. `company` is deliberately omitted: every organization
+ * has exactly one, so the column carries no information (KOL-32) and the
+ * import schema has no matching field for it.
  */
 class EmployeeMasterExporter
 {
@@ -70,7 +77,6 @@ class EmployeeMasterExporter
                 'phone' => $employee->phone,
                 'nationality' => $employee->nationality,
                 'gender' => $employee->gender,
-                'company' => $employee->company?->social_reason,
                 'cost_center' => $employee->costCenter?->name,
                 'premise' => $employee->premise?->name,
                 'position' => $employee->position?->name,
@@ -80,6 +86,7 @@ class EmployeeMasterExporter
                 'emergency_contact_name' => $employee->emergency_contact_name,
                 'emergency_contact_phone' => $employee->emergency_contact_phone,
                 'is_active' => $employee->is_active,
+                'timezone' => $employee->timezone,
             ])->all();
 
             $fragment = View::make('exports.employees.master', [
