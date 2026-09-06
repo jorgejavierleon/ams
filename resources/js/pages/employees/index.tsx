@@ -350,7 +350,7 @@ export default function EmployeesIndex({
                                     variant="outline"
                                     disabled={pendingExport}
                                 >
-                                    <Download className="size-4" />
+                                    <Upload className="size-4" />
                                     {t('ui.employees.export.button')}
                                 </Button>
                             </DropdownMenuTrigger>
@@ -371,7 +371,7 @@ export default function EmployeesIndex({
                         {canImport && (
                             <Button variant="outline" asChild>
                                 <Link href={createImport()}>
-                                    <Upload className="size-4" />
+                                    <Download className="size-4" />
                                     {t('ui.employees.import.nav')}
                                 </Link>
                             </Button>
