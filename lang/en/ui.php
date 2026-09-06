@@ -1183,6 +1183,18 @@ return [
                 'browse' => 'Browse files',
                 'selected' => 'Selected: :name',
                 'submit' => 'Upload file',
+                'cancel' => 'Cancel',
+            ],
+
+            'cancel' => [
+                'button' => 'Cancel',
+                'dialog_title' => 'Cancel this import?',
+                'dialog_description' => 'The uploaded file and all progress on this import will be deleted. This cannot be undone.',
+                'confirm' => 'Yes, cancel import',
+            ],
+
+            'flash' => [
+                'cancelled' => 'The import was cancelled.',
             ],
 
             'errors' => [

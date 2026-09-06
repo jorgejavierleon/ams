@@ -21,6 +21,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -277,6 +278,39 @@ class ImportWizardController extends Controller
     public function errorReport(ImportRun $importRun, DownloadImportErrorReport $download): HttpResponse
     {
         return $download->handle($importRun);
+    }
+
+    /**
+     * `DELETE imports/{importRun}` (KOL-109): lets the owning user abandon an
+     * in-progress run instead of waiting for PruneAbandonedImportRuns
+     * (KOL-104) to expire it. Only reachable while nothing has actually
+     * started committing yet — Pending is accepted for consistency even
+     * though it's never visible in the wizard UI (CreateImportRunFromUpload
+     * transitions it synchronously or deletes it on failure). Reuses the
+     * exact disk_path cleanup PruneAbandonedImportRuns already does; deleting
+     * the row cascades to its ImportRunIssue rows (KOL-111) at the database
+     * level.
+     */
+    public function destroy(ImportRun $importRun): RedirectResponse
+    {
+        abort_unless(
+            in_array($importRun->status, [
+                ImportRunStatus::Pending,
+                ImportRunStatus::MappingReview,
+                ImportRunStatus::PreviewReady,
+            ], true),
+            409,
+        );
+
+        if ($importRun->disk_path !== null) {
+            Storage::disk('local')->delete($importRun->disk_path);
+        }
+
+        $importRun->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.employees.import.flash.cancelled')]);
+
+        return to_route('employees.index');
     }
 
     /**

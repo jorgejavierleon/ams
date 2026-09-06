@@ -28,6 +28,7 @@ type Props = {
     schemaFields: SchemaField[];
     onBack: () => void;
     onSaved: () => void;
+    onCancel: () => void;
 };
 
 const STRATEGIES: ImportStrategy[] = [
@@ -56,6 +57,7 @@ export function StrategyStep({
     schemaFields,
     onBack,
     onSaved,
+    onCancel,
 }: Props) {
     const { t } = useTranslations();
 
@@ -149,9 +151,7 @@ export function StrategyStep({
                                 key={field.name}
                                 type="button"
                                 aria-pressed={data.match_key === field.name}
-                                onClick={() =>
-                                    setData('match_key', field.name)
-                                }
+                                onClick={() => setData('match_key', field.name)}
                                 className={cn(
                                     'rounded-md border px-4 py-2 text-sm transition-colors hover:bg-accent',
                                     data.match_key === field.name &&
@@ -180,6 +180,9 @@ export function StrategyStep({
                             {t('ui.employees.import.strategy.saved')}
                         </span>
                     )}
+                    <Button type="button" variant="outline" onClick={onCancel}>
+                        {t('ui.employees.import.cancel.button')}
+                    </Button>
                     <Button type="submit" disabled={!canSave || processing}>
                         {t('ui.employees.import.strategy.submit')}
                     </Button>

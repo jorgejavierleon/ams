@@ -25,6 +25,7 @@ type Props = {
     previewCounts: PreviewCounts | null;
     issues: Paginated<ImportRowIssue> | null;
     onBack: () => void;
+    onCancel: () => void;
 };
 
 function StatTile({
@@ -71,6 +72,7 @@ export function PreviewStep({
     previewCounts,
     issues,
     onBack,
+    onCancel,
 }: Props) {
     const { t } = useTranslations();
     const { post, processing, errors } = useForm<Record<string, never>>({});
@@ -143,9 +145,17 @@ export function PreviewStep({
                     <Button variant="outline" onClick={onBack}>
                         {t('ui.employees.import.preview.back')}
                     </Button>
-                    <Button onClick={handleRunPreview} disabled={processing}>
-                        {t('ui.employees.import.preview.run_submit')}
-                    </Button>
+                    <div className="flex items-center gap-3">
+                        <Button variant="outline" onClick={onCancel}>
+                            {t('ui.employees.import.cancel.button')}
+                        </Button>
+                        <Button
+                            onClick={handleRunPreview}
+                            disabled={processing}
+                        >
+                            {t('ui.employees.import.preview.run_submit')}
+                        </Button>
+                    </div>
                 </div>
             </div>
         );
@@ -243,9 +253,18 @@ export function PreviewStep({
                 >
                     {t('ui.employees.import.preview.back')}
                 </Button>
-                <Button onClick={handleCommit} disabled={committing}>
-                    {t('ui.employees.import.preview.confirm_submit')}
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={onCancel}
+                        disabled={committing}
+                    >
+                        {t('ui.employees.import.cancel.button')}
+                    </Button>
+                    <Button onClick={handleCommit} disabled={committing}>
+                        {t('ui.employees.import.preview.confirm_submit')}
+                    </Button>
+                </div>
             </div>
         </div>
     );

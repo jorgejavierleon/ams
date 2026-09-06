@@ -972,3 +972,84 @@ test('a user without Import:Employee cannot download an error report', function 
         ->get(route('imports.error-report', $importRun))
         ->assertForbidden();
 });
+
+test('cancelling a run deletes the row, its uploaded file, and any persisted issues', function (ImportRunStatus $status) {
+    Storage::fake('local');
+    Storage::disk('local')->put('import-runs/cancel-me.csv', 'contents');
+
+    $admin = importAdmin();
+    $importRun = ImportRun::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $admin->id,
+        'status' => $status,
+        'disk_path' => 'import-runs/cancel-me.csv',
+    ]);
+    ImportRunIssue::factory()->for($importRun)->create();
+
+    $this->actingAs($admin)
+        ->delete(route('imports.destroy', $importRun))
+        ->assertRedirect(route('employees.index'));
+
+    Storage::disk('local')->assertMissing('import-runs/cancel-me.csv');
+    expect(ImportRun::query()->whereKey($importRun->id)->exists())->toBeFalse()
+        ->and(ImportRunIssue::query()->where('import_run_id', $importRun->id)->exists())->toBeFalse();
+})->with([
+    'Pending' => ImportRunStatus::Pending,
+    'MappingReview' => ImportRunStatus::MappingReview,
+    'PreviewReady' => ImportRunStatus::PreviewReady,
+]);
+
+test('cancelling a run once it has moved to Processing, Completed, or Failed is rejected', function (ImportRunStatus $status) {
+    Storage::fake('local');
+    Storage::disk('local')->put('import-runs/keep-me.csv', 'contents');
+
+    $admin = importAdmin();
+    $importRun = ImportRun::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $admin->id,
+        'status' => $status,
+        'disk_path' => 'import-runs/keep-me.csv',
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('imports.destroy', $importRun))
+        ->assertStatus(409);
+
+    Storage::disk('local')->assertExists('import-runs/keep-me.csv');
+    expect(ImportRun::query()->whereKey($importRun->id)->exists())->toBeTrue();
+})->with([
+    'Processing' => ImportRunStatus::Processing,
+    'Completed' => ImportRunStatus::Completed,
+    'Failed' => ImportRunStatus::Failed,
+]);
+
+test('a user outside the run\'s organization cannot cancel it', function () {
+    Storage::fake('local');
+
+    $owner = importAdmin();
+    $importRun = mappingRunFor($owner);
+
+    $outsider = importAdmin();
+
+    $this->actingAs($outsider)
+        ->delete(route('imports.destroy', $importRun))
+        ->assertNotFound();
+
+    expect($importRun->fresh())->not->toBeNull();
+});
+
+test('a second user in the same organization cannot cancel another user\'s run', function () {
+    Storage::fake('local');
+
+    $organization = Organization::factory()->create();
+    $owner = importAdmin($organization);
+    $otherUser = importAdmin($organization);
+
+    $importRun = mappingRunFor($owner);
+
+    $this->actingAs($otherUser)
+        ->delete(route('imports.destroy', $importRun))
+        ->assertNotFound();
+
+    expect($importRun->fresh())->not->toBeNull();
+});

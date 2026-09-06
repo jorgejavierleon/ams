@@ -1,7 +1,9 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import { useTranslations } from '@/hooks/use-translations';
+import { destroy } from '@/routes/imports';
 import type { Paginated } from '@/types/ui';
 import { MappingReviewStep } from './mapping-review-step';
 import { PreviewStep } from './preview-step';
@@ -69,6 +71,18 @@ export default function ShowEmployeeImport({
     issues,
 }: Props) {
     const { t } = useTranslations();
+    const [confirmingCancel, setConfirmingCancel] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
+
+    function confirmCancel() {
+        setCancelling(true);
+        router.delete(destroy(importRun.id).url, {
+            onFinish: () => {
+                setCancelling(false);
+                setConfirmingCancel(false);
+            },
+        });
+    }
 
     // MappingReview and PreviewReady share the same three-step client-only
     // sub-flow (mapping/strategy/preview) — there's no separate server
@@ -98,52 +112,59 @@ export default function ShowEmployeeImport({
             <div className="space-y-6 p-6">
                 <Heading title={t('ui.employees.import.title')} />
 
-                <div
-                    className={
-                        isEditable && step !== 'strategy'
-                            ? 'max-w-5xl'
-                            : 'max-w-3xl'
-                    }
-                >
-                    {isEditable ? (
-                        step === 'mapping' ? (
-                            <MappingReviewStep
-                                importRunId={importRun.id}
-                                originalFilename={importRun.original_filename}
-                                columnMapping={importRun.column_mapping}
-                                schemaFields={schemaFields}
-                                onSaved={() => setStep('strategy')}
-                            />
-                        ) : step === 'strategy' ? (
-                            <StrategyStep
-                                importRunId={importRun.id}
-                                strategy={importRun.strategy}
-                                matchKey={importRun.match_key}
-                                schemaFields={schemaFields}
-                                onBack={() => setStep('mapping')}
-                                onSaved={() => setStep('preview')}
-                            />
-                        ) : (
-                            <PreviewStep
-                                importRunId={importRun.id}
-                                previewCounts={importRun.preview_counts}
-                                issues={issues}
-                                onBack={() => setStep('strategy')}
-                            />
-                        )
-                    ) : importRun.status === 'processing' ||
-                      importRun.status === 'completed' ||
-                      importRun.status === 'failed' ? (
-                        <ResultStep
+                <ConfirmDialog
+                    open={confirmingCancel}
+                    onOpenChange={setConfirmingCancel}
+                    title={t('ui.employees.import.cancel.dialog_title')}
+                    description={t(
+                        'ui.employees.import.cancel.dialog_description',
+                    )}
+                    confirmLabel={t('ui.employees.import.cancel.confirm')}
+                    onConfirm={confirmCancel}
+                    processing={cancelling}
+                />
+
+                {isEditable ? (
+                    step === 'mapping' ? (
+                        <MappingReviewStep
                             importRunId={importRun.id}
-                            status={importRun.status}
-                            createdCount={importRun.created_count}
-                            updatedCount={importRun.updated_count}
-                            skippedCount={importRun.skipped_count}
-                            erroredCount={importRun.errored_count}
+                            originalFilename={importRun.original_filename}
+                            columnMapping={importRun.column_mapping}
+                            schemaFields={schemaFields}
+                            onSaved={() => setStep('strategy')}
+                            onCancel={() => setConfirmingCancel(true)}
                         />
-                    ) : null}
-                </div>
+                    ) : step === 'strategy' ? (
+                        <StrategyStep
+                            importRunId={importRun.id}
+                            strategy={importRun.strategy}
+                            matchKey={importRun.match_key}
+                            schemaFields={schemaFields}
+                            onBack={() => setStep('mapping')}
+                            onSaved={() => setStep('preview')}
+                            onCancel={() => setConfirmingCancel(true)}
+                        />
+                    ) : (
+                        <PreviewStep
+                            importRunId={importRun.id}
+                            previewCounts={importRun.preview_counts}
+                            issues={issues}
+                            onBack={() => setStep('strategy')}
+                            onCancel={() => setConfirmingCancel(true)}
+                        />
+                    )
+                ) : importRun.status === 'processing' ||
+                  importRun.status === 'completed' ||
+                  importRun.status === 'failed' ? (
+                    <ResultStep
+                        importRunId={importRun.id}
+                        status={importRun.status}
+                        createdCount={importRun.created_count}
+                        updatedCount={importRun.updated_count}
+                        skippedCount={importRun.skipped_count}
+                        erroredCount={importRun.errored_count}
+                    />
+                ) : null}
             </div>
         </>
     );
