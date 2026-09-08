@@ -4,12 +4,14 @@ title: Add bulk import for shift assignments
 status: To Do
 assignee: []
 created_date: '2026-09-06 10:31'
-labels: []
+updated_date: '2026-09-08 09:30'
+labels:
+  - bulk-import
+milestone: m-3
 dependencies:
   - KOL-107
 ordinal: 95000
 ---
-
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
