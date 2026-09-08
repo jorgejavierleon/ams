@@ -206,15 +206,24 @@ final class EmployeeImportSchema implements ImportSchema
      * (both required) and update (an omitted blank cell leaves the existing
      * value in place, per the framework's blank-means-no-change policy), so
      * no separate "did this row touch the name" branch is needed.
+     *
+     * The `Model` parameter (from the shared ImportSchema interface) is
+     * always a User here — {@see targetModel()} and {@see newModel()} never
+     * produce anything else — so the instanceof narrows it for PHPStan
+     * rather than the schema ever actually handling a non-User model.
      */
     public function beforeSave(Model $model): void
     {
+        if (! $model instanceof User) {
+            return;
+        }
+
         $model->name = trim("{$model->first_name} {$model->last_name}");
     }
 
     public function afterSave(Model $model, bool $wasCreated): void
     {
-        if ($wasCreated) {
+        if ($wasCreated && $model instanceof User) {
             $model->assignRole('employee');
         }
     }
