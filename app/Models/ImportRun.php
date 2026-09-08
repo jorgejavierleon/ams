@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $organization_id
+ * @property string $resource_type
  * @property int $user_id
  * @property ImportRunStatus $status
  * @property array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}>|null $column_mapping
@@ -42,7 +43,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read User $user
  */
-#[Fillable(['organization_id', 'user_id', 'status', 'column_mapping', 'strategy', 'match_key', 'disk_path', 'original_filename', 'preview_counts', 'committed_through', 'created_count', 'updated_count', 'skipped_count', 'errored_count', 'error_report_path', 'expires_at'])]
+#[Fillable(['organization_id', 'resource_type', 'user_id', 'status', 'column_mapping', 'strategy', 'match_key', 'disk_path', 'original_filename', 'preview_counts', 'committed_through', 'created_count', 'updated_count', 'skipped_count', 'errored_count', 'error_report_path', 'expires_at'])]
 class ImportRun extends Model
 {
     /** @use HasFactory<ImportRunFactory> */

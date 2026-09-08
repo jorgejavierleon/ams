@@ -9,29 +9,29 @@ use App\Actions\Imports\ReadImportFileRows;
 use App\Enums\ImportIssueSeverity;
 use App\Enums\ImportRowStatus;
 use App\Enums\ImportRunStatus;
-use App\Models\Company;
 use App\Models\ImportRun;
-use App\Models\User;
 use App\Notifications\ImportRunCompleted;
 use App\Notifications\ImportRunFailed;
-use App\Services\Imports\EmployeeImportSchema;
+use App\Services\Imports\ImportResourceRegistry;
+use App\Services\Imports\ImportSchema;
 use App\Support\CurrentOrganization;
 use App\Support\Imports\ColumnMapping;
 use App\Support\Imports\ImportIssue;
 use App\Support\Imports\ImportRow;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * The Employee bulk-import wizard's commit pass (KOL-94.4, KOL-102): every
- * data row runs back through {@see EvaluateImportRow} — same evaluation as
- * the preview step (KOL-101), against the same mapping/strategy/match key —
- * and a Ready row is actually written. Chunked into its own
+ * The bulk-import wizard's commit pass (KOL-94.4, KOL-102, generalized
+ * beyond Employee by KOL-107): every data row runs back through
+ * {@see EvaluateImportRow} — same evaluation as the preview step (KOL-101),
+ * against the same mapping/strategy/match key — and a Ready row is actually
+ * written through whichever {@see ImportSchema} the run's own resource_type
+ * resolves to, via {@see ImportResourceRegistry}. Chunked into its own
  * DB::transaction() per `config('imports.commit_chunk_size')` rows, with
  * `committed_through` and the running counts persisted at the end of each
  * successful chunk so a retry ({@see self::$tries}) resumes rather than
@@ -46,13 +46,17 @@ class ProcessImportRun implements ShouldQueue
     public function __construct(public readonly int $importRunId) {}
 
     public function handle(
-        EmployeeImportSchema $schema,
         EvaluateImportRow $evaluateImportRow,
         ReadImportFileRows $readImportFileRows,
         BuildColumnMappings $buildColumnMappings,
         ImportErrorReportWriter $errorReportWriter,
     ): void {
         $importRun = ImportRun::findOrFail($this->importRunId);
+
+        // The schema is resolved from the run's own resource_type (KOL-107)
+        // rather than type-hinted here, since a queued job has no route to
+        // resolve a concrete ImportSchema class from the way a request does.
+        $schema = ImportResourceRegistry::findOrFail($importRun->resource_type)->schema();
 
         // A queued job has no HTTP session or authenticated user for the
         // schema's reference/match-key/uniqueness lookups to resolve a
@@ -66,7 +70,7 @@ class ProcessImportRun implements ShouldQueue
 
     private function commit(
         ImportRun $importRun,
-        EmployeeImportSchema $schema,
+        ImportSchema $schema,
         EvaluateImportRow $evaluateImportRow,
         ReadImportFileRows $readImportFileRows,
         BuildColumnMappings $buildColumnMappings,
@@ -133,7 +137,7 @@ class ProcessImportRun implements ShouldQueue
      * @param  list<mixed>  $rawRow
      */
     private function evaluateAndRecord(
-        EmployeeImportSchema $schema,
+        ImportSchema $schema,
         EvaluateImportRow $evaluateImportRow,
         array $columnMappings,
         array $rawRow,
@@ -161,15 +165,15 @@ class ProcessImportRun implements ShouldQueue
      * as Error without aborting the chunk or the job (AC #4) — MySQL, unlike
      * Postgres, does not poison the rest of an open transaction over one
      * failed statement, so the loop can keep using the same transaction.
-     * Only {@see self::save()}'s own write is guarded: the role assignment
-     * that follows a create is a system-level step, not row data, so a
-     * failure there is deliberately left to propagate as a real job failure
-     * (AC #5) rather than being miscounted as this row's Error while the
-     * User record it just wrote stays committed.
+     * Only {@see self::save()}'s own write is guarded: {@see ImportSchema::afterSave()}
+     * is a system-level step, not row data, so a failure there is
+     * deliberately left to propagate as a real job failure (AC #5) rather
+     * than being miscounted as this row's Error while the record it just
+     * wrote stays committed.
      *
      * @param  array{created: int, updated: int, skipped: int, errored: int}  $counts
      */
-    private function applyRow(EmployeeImportSchema $schema, ImportRow $result, ImportRun $importRun, array &$counts, ImportErrorReportWriter $errorReportWriter): void
+    private function applyRow(ImportSchema $schema, ImportRow $result, ImportRun $importRun, array &$counts, ImportErrorReportWriter $errorReportWriter): void
     {
         if ($result->status === ImportRowStatus::Error) {
             $counts['errored']++;
@@ -202,58 +206,34 @@ class ProcessImportRun implements ShouldQueue
             return;
         }
 
-        if ($model->wasRecentlyCreated) {
-            $model->assignRole('employee');
+        $wasCreated = $model->wasRecentlyCreated;
+
+        if ($wasCreated) {
             $counts['created']++;
         } else {
             $counts['updated']++;
         }
+
+        $schema->afterSave($model, $wasCreated);
     }
 
-    private function save(EmployeeImportSchema $schema, ImportRow $result, ImportRun $importRun): User
+    private function save(ImportSchema $schema, ImportRow $result, ImportRun $importRun): Model
     {
         $targetModelClass = $schema->targetModel();
 
-        /** @var User|null $existingMatch */
         $existingMatch = $result->matchedModelId !== null
             ? $targetModelClass::query()->find($result->matchedModelId)
             : null;
 
-        $model = $existingMatch ?? $this->newEmployee($importRun);
+        $model = $existingMatch ?? $schema->newModel($importRun);
 
         $model->fill($result->resolvedData);
-        // `name` isn't one of EmployeeImportSchema's fields (KOL-94.2) — it's
-        // derived, same as the manual create/edit form does
-        // (EmployeeController::prepareForStorage). Recomputing it from the
-        // model's own post-fill first_name/last_name works for both create
-        // (both required) and update (an omitted blank cell leaves the
-        // existing value in place, per the framework's blank-means-no-change
-        // policy), so no separate "did this row touch the name" branch is
-        // needed.
-        $model->name = trim("{$model->first_name} {$model->last_name}");
+
+        $schema->beforeSave($model);
 
         $model->save();
 
         return $model;
-    }
-
-    /**
-     * A newly imported employee needs several attributes the schema
-     * deliberately never collects (KOL-94.2 — `company` is excluded because
-     * it's "auto-assigned per organization", `password` and `avatar` are
-     * excluded entirely): the tenant/company stamp (User carries no
-     * BelongsToOrganization scope to do this automatically, unlike every
-     * other org-scoped model — EmployeeController::store() stamps it the
-     * same way), and a random password, since nothing in an imported file
-     * ever supplies one — the employee sets their own via "forgot password".
-     */
-    private function newEmployee(ImportRun $importRun): User
-    {
-        return new User([
-            'organization_id' => $importRun->organization_id,
-            'company_id' => Company::query()->where('organization_id', $importRun->organization_id)->value('id'),
-            'password' => Hash::make(Str::random(40)),
-        ]);
     }
 
     /**

@@ -51,6 +51,8 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\WeeklyDetailReportController;
 use App\Http\Controllers\WorkdayController;
+use App\Models\ImportRun;
+use Illuminate\Routing\Route as RouteMatch;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -273,19 +275,36 @@ Route::middleware(['auth', 'verified', 'permission:Export:PayrollReport'])
         Route::get('overtime-excess/export/{format}', [OvertimeExcessReportController::class, 'export'])->name('overtime-excess.export');
     });
 
-// Employee bulk-import wizard (KOL-94), gated by its own permission per
-// KOL-94.6 rather than role:admin — a tenant admin can grant it to another
-// role later via the Roles screen. One route per wizard step (KOL-94.5);
-// upload (KOL-98), mapping review (KOL-99), strategy/match-key (KOL-100),
-// preview (KOL-101), commit (KOL-102), and the error-report download
-// (KOL-103) exist so far.
-Route::middleware(['auth', 'verified', 'permission:Import:Employee'])
-    ->prefix('imports')
+// A run's own resource_type must match the `{resourceType}` URL segment
+// it's being accessed under (KOL-107) — centralized here, once, rather than
+// re-checked at the top of every wizard action, so a future action can't
+// forget the guard the way 6+ near-identical manual calls could. Runs
+// through ImportRun::query() (not ::findOrFail() on the model directly) so
+// its BelongsToOrganization/BelongsToUser global scopes (KOL-105) still
+// apply — a cross-org/cross-user id 404s here exactly as it did before.
+Route::bind('importRun', function (string $value, RouteMatch $route): ImportRun {
+    $importRun = ImportRun::query()->findOrFail($value);
+
+    abort_unless($importRun->resource_type === $route->parameter('resourceType'), 404);
+
+    return $importRun;
+});
+
+// The bulk-import wizard (KOL-94), gated per resource type by
+// EnsureImportPermission (KOL-107) rather than role:admin — a tenant admin
+// can grant a resource's import permission to another role later via the
+// Roles screen. {resourceType} resolves through ImportResourceRegistry, so
+// an unregistered resource type 404s before any wizard step runs. One route
+// per wizard step (KOL-94.5); upload (KOL-98), mapping review (KOL-99),
+// strategy/match-key (KOL-100), preview (KOL-101), commit (KOL-102), and the
+// error-report download (KOL-103) exist so far.
+Route::middleware(['auth', 'verified', 'import.permission'])
+    ->prefix('imports/{resourceType}')
     ->name('imports.')
     ->group(function () {
-        Route::get('employee/create', [ImportWizardController::class, 'create'])->name('employee.create');
-        Route::get('employee/template/{format}', [ImportWizardController::class, 'template'])->name('employee.template');
-        Route::post('employee', [ImportWizardController::class, 'store'])->name('employee.store');
+        Route::get('create', [ImportWizardController::class, 'create'])->name('create');
+        Route::get('template/{format}', [ImportWizardController::class, 'template'])->name('template');
+        Route::post('/', [ImportWizardController::class, 'store'])->name('store');
         Route::get('{importRun}', [ImportWizardController::class, 'show'])->name('show');
         Route::patch('{importRun}/mapping', [ImportWizardController::class, 'updateMapping'])->name('mapping.update');
         Route::patch('{importRun}/strategy', [ImportWizardController::class, 'updateStrategy'])->name('strategy.update');

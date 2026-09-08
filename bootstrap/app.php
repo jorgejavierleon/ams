@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureDtOrganizationSelected;
+use App\Http\Middleware\EnsureImportPermission;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\PasswordExpires;
@@ -43,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'password_expires' => PasswordExpires::class,
             'dt_organization_selected' => EnsureDtOrganizationSelected::class,
+            'import.permission' => EnsureImportPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -11,6 +11,7 @@ import { index as employeesIndex } from '@/routes/employees';
 import { errorReport } from '@/routes/imports';
 
 type Props = {
+    resourceType: string;
     importRunId: number;
     status: 'processing' | 'completed' | 'failed';
     createdCount: number;
@@ -85,6 +86,7 @@ function ProcessingView() {
  * contract.
  */
 export function ResultStep({
+    resourceType,
     importRunId,
     status,
     createdCount,
@@ -100,7 +102,7 @@ export function ResultStep({
 
         try {
             const response = await fetch(
-                errorReport({ importRun: importRunId }).url,
+                errorReport({ resourceType, importRun: importRunId }).url,
             );
 
             if (!response.ok) {

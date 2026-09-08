@@ -9,9 +9,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { filenameFromContentDisposition } from '@/lib/download';
 import { index as employeesIndex } from '@/routes/employees';
-import { store, template } from '@/routes/imports/employee';
+import { store, template } from '@/routes/imports';
 
-export default function CreateEmployeeImport() {
+type Props = {
+    resourceType: string;
+};
+
+export default function CreateEmployeeImport({ resourceType }: Props) {
     const { t } = useTranslations();
     const inputRef = useRef<HTMLInputElement>(null);
     const [pendingTemplate, setPendingTemplate] = useState(false);
@@ -24,7 +28,9 @@ export default function CreateEmployeeImport() {
         setPendingTemplate(true);
 
         try {
-            const response = await fetch(template(format).url);
+            const response = await fetch(
+                template({ resourceType, format }).url,
+            );
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -42,7 +48,7 @@ export default function CreateEmployeeImport() {
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
-        post(store().url, { forceFormData: true });
+        post(store({ resourceType }).url, { forceFormData: true });
     }
 
     return (

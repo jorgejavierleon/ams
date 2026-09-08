@@ -26,6 +26,23 @@ beforeEach(function () {
     $this->seed(RoleSeeder::class);
 });
 
+/**
+ * Every wizard route now carries a `{resourceType}` segment (KOL-107) ahead
+ * of whatever params the route itself needs — this test file only ever
+ * exercises the Employee resource, so the key is fixed here rather than
+ * repeated at every one of the call sites below.
+ */
+function importRoute(string $name, ImportRun|int|null $importRun = null, array $extra = []): string
+{
+    $params = ['resourceType' => 'employees', ...$extra];
+
+    if ($importRun !== null) {
+        $params['importRun'] = $importRun;
+    }
+
+    return route($name, $params);
+}
+
 function importAdmin(?Organization $organization = null): User
 {
     $organization ??= Organization::factory()->create();
@@ -78,10 +95,10 @@ test('a valid upload creates an ImportRun scoped to the organization and reaches
     $header = ['Nombre', 'Apellido paterno', 'RUT', 'Email'];
     $file = csvUploadFixture($header, 3);
 
-    $response = $this->actingAs($admin)->post(route('imports.employee.store'), ['file' => $file]);
+    $response = $this->actingAs($admin)->post(importRoute('imports.store'), ['file' => $file]);
 
     $importRun = ImportRun::sole();
-    $response->assertRedirect(route('imports.show', $importRun));
+    $response->assertRedirect(importRoute('imports.show', $importRun));
 
     expect($importRun->organization_id)->toBe($organization->id)
         ->and($importRun->user_id)->toBe($admin->id)
@@ -110,7 +127,7 @@ test('auto-mapping a fixture header set produces the expected Mapped/Unmapped sp
     $header = ['Nombre', 'Apellido paterno', 'RUT', 'Email', 'Zona horaria', 'xyz'];
     $file = csvUploadFixture($header, 2);
 
-    $this->actingAs($admin)->post(route('imports.employee.store'), ['file' => $file]);
+    $this->actingAs($admin)->post(importRoute('imports.store'), ['file' => $file]);
 
     $importRun = ImportRun::sole();
 
@@ -145,7 +162,7 @@ test('an Employee export re-uploaded unmodified auto-maps every column with no u
     file_put_contents($csvPath, TestResponse::fromBaseResponse($exportResponse->baseResponse)->streamedContent());
     $file = new UploadedFile($csvPath, 'maestro-de-trabajadores.csv', 'text/csv', null, true);
 
-    $this->actingAs($admin)->post(route('imports.employee.store'), ['file' => $file])->assertRedirect();
+    $this->actingAs($admin)->post(importRoute('imports.store'), ['file' => $file])->assertRedirect();
 
     $importRun = ImportRun::sole();
     $statuses = collect($importRun->column_mapping)->pluck('status')->unique()->all();
@@ -197,7 +214,7 @@ test('saving a mapping with all required fields mapped succeeds', function () {
     ];
 
     $this->actingAs($admin)
-        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $mapping])
+        ->patch(importRoute('imports.mapping.update', $importRun), ['mapping' => $mapping])
         ->assertRedirect();
 
     expect($importRun->fresh()->column_mapping)->toEqual($mapping);
@@ -219,7 +236,7 @@ test('saving a mapping with a required field still Unmapped is rejected', functi
     ];
 
     $this->actingAs($admin)
-        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $mapping])
+        ->patch(importRoute('imports.mapping.update', $importRun), ['mapping' => $mapping])
         ->assertSessionHasErrors('mapping');
 
     expect($importRun->fresh()->column_mapping)->toEqual($original);
@@ -239,7 +256,7 @@ test('saving a mapping with two columns mapped to the same field is rejected', f
     ];
 
     $this->actingAs($admin)
-        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $mapping])
+        ->patch(importRoute('imports.mapping.update', $importRun), ['mapping' => $mapping])
         ->assertSessionHasErrors('mapping');
 });
 
@@ -249,7 +266,7 @@ test('updating the mapping on an import run outside MappingReview/PreviewReady i
     $importRun->update(['status' => ImportRunStatus::Processing]);
 
     $this->actingAs($admin)
-        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $importRun->column_mapping])
+        ->patch(importRoute('imports.mapping.update', $importRun), ['mapping' => $importRun->column_mapping])
         ->assertStatus(409);
 });
 
@@ -258,7 +275,7 @@ test('saving CreateOnly without a match key succeeds', function () {
     $importRun = mappingRunFor($admin);
 
     $this->actingAs($admin)
-        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->patch(importRoute('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
         ->assertRedirect();
 
     $importRun->refresh();
@@ -272,7 +289,7 @@ test('saving UpdateOnly without a match key is rejected', function () {
     $importRun = mappingRunFor($admin);
 
     $this->actingAs($admin)
-        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'update_only'])
+        ->patch(importRoute('imports.strategy.update', $importRun), ['strategy' => 'update_only'])
         ->assertSessionHasErrors('match_key');
 
     expect($importRun->fresh()->strategy)->toBeNull();
@@ -283,7 +300,7 @@ test('saving strategy and match key persists correctly and keeps the run at Mapp
     $importRun = mappingRunFor($admin);
 
     $this->actingAs($admin)
-        ->patch(route('imports.strategy.update', $importRun), [
+        ->patch(importRoute('imports.strategy.update', $importRun), [
             'strategy' => 'create_and_update',
             'match_key' => 'email',
         ])
@@ -300,7 +317,7 @@ test('a match key submitted with CreateOnly is dropped rather than persisted', f
     $importRun = mappingRunFor($admin);
 
     $this->actingAs($admin)
-        ->patch(route('imports.strategy.update', $importRun), [
+        ->patch(importRoute('imports.strategy.update', $importRun), [
             'strategy' => 'create_only',
             'match_key' => 'rut',
         ])
@@ -314,7 +331,7 @@ test('an unsupported match key is rejected', function () {
     $importRun = mappingRunFor($admin);
 
     $this->actingAs($admin)
-        ->patch(route('imports.strategy.update', $importRun), [
+        ->patch(importRoute('imports.strategy.update', $importRun), [
             'strategy' => 'update_only',
             'match_key' => 'supervisor',
         ])
@@ -327,7 +344,7 @@ test('updating the strategy on an import run outside MappingReview/PreviewReady 
     $importRun->update(['status' => ImportRunStatus::Processing]);
 
     $this->actingAs($admin)
-        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->patch(importRoute('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
         ->assertStatus(409);
 });
 
@@ -339,7 +356,7 @@ test('a second user in the same organization cannot update another user\'s strat
     $importRun = mappingRunFor($owner);
 
     $this->actingAs($otherUser)
-        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->patch(importRoute('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
         ->assertNotFound();
 });
 
@@ -350,7 +367,7 @@ test('an over-threshold file is rejected without creating an ImportRun', functio
     $file = csvUploadFixture(['Nombre'], 3);
 
     $this->actingAs($admin)
-        ->post(route('imports.employee.store'), ['file' => $file])
+        ->post(importRoute('imports.store'), ['file' => $file])
         ->assertSessionHasErrors('file');
 
     expect(ImportRun::count())->toBe(0);
@@ -360,7 +377,7 @@ test('a renamed-extension file is rejected', function () {
     $admin = importAdmin();
 
     $this->actingAs($admin)
-        ->post(route('imports.employee.store'), ['file' => garbageXlsxUploadFixture()])
+        ->post(importRoute('imports.store'), ['file' => garbageXlsxUploadFixture()])
         ->assertSessionHasErrors('file');
 
     expect(ImportRun::count())->toBe(0);
@@ -371,14 +388,42 @@ test('a user without Import:Employee is forbidden from the upload step', functio
     $user = User::factory()->create(['organization_id' => $organization->id]);
 
     $this->actingAs($user)
-        ->get(route('imports.employee.create'))
+        ->get(importRoute('imports.create'))
         ->assertForbidden();
 
     $this->actingAs($user)
-        ->post(route('imports.employee.store'), ['file' => csvUploadFixture(['Nombre'], 1)])
+        ->post(importRoute('imports.store'), ['file' => csvUploadFixture(['Nombre'], 1)])
         ->assertForbidden();
 
     expect(ImportRun::count())->toBe(0);
+});
+
+test('an unregistered resource type 404s before any permission check (KOL-107)', function () {
+    $admin = importAdmin();
+
+    $this->actingAs($admin)
+        ->get(route('imports.create', ['resourceType' => 'not-a-real-resource']))
+        ->assertNotFound();
+
+    $unprivileged = User::factory()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($unprivileged)
+        ->get(route('imports.create', ['resourceType' => 'not-a-real-resource']))
+        ->assertNotFound();
+});
+
+test('an importRun created for a different resource type 404s under this resource type (KOL-107)', function () {
+    $admin = importAdmin();
+    $importRun = ImportRun::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $admin->id,
+        'resource_type' => 'shift-assignments',
+        'status' => ImportRunStatus::MappingReview,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('imports.show', ['resourceType' => 'employees', 'importRun' => $importRun]))
+        ->assertNotFound();
 });
 
 test('a user outside the ImportRun organization cannot view it', function () {
@@ -392,7 +437,7 @@ test('a user outside the ImportRun organization cannot view it', function () {
     $outsider = importAdmin();
 
     $this->actingAs($outsider)
-        ->get(route('imports.show', $importRun))
+        ->get(importRoute('imports.show', $importRun))
         ->assertNotFound();
 });
 
@@ -404,11 +449,11 @@ test('a second user in the same organization cannot view or update another user\
     $importRun = mappingRunFor($owner);
 
     $this->actingAs($otherUser)
-        ->get(route('imports.show', $importRun))
+        ->get(importRoute('imports.show', $importRun))
         ->assertNotFound();
 
     $this->actingAs($otherUser)
-        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $importRun->column_mapping])
+        ->patch(importRoute('imports.mapping.update', $importRun), ['mapping' => $importRun->column_mapping])
         ->assertNotFound();
 });
 
@@ -416,7 +461,7 @@ test('the template download has the expected header row and order', function () 
     $admin = importAdmin();
 
     $response = $this->actingAs($admin)
-        ->get(route('imports.employee.template', ['format' => 'excel']))
+        ->get(importRoute('imports.template', null, ['format' => 'excel']))
         ->assertOk();
 
     $path = tempnam(sys_get_temp_dir(), 'xlsx');
@@ -445,7 +490,7 @@ test('an unsupported template format 404s', function () {
     $admin = importAdmin();
 
     $this->actingAs($admin)
-        ->get(route('imports.employee.template', ['format' => 'pdf']))
+        ->get(importRoute('imports.template', null, ['format' => 'pdf']))
         ->assertNotFound();
 });
 
@@ -517,7 +562,7 @@ test('previewing a clean fixture yields all-Ready counts', function () {
     $importRun = previewRunFor($admin, $header, $rows, fullyMappedCoreFields(), ImportStrategy::CreateOnly);
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertRedirect();
 
     $importRun->refresh();
@@ -552,7 +597,7 @@ test('previewing a fixture with an unresolved reference, a required-field gap, a
     $importRun = previewRunFor($admin, $header, $rows, $mapping, ImportStrategy::CreateOnly);
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertRedirect();
 
     $importRun->refresh();
@@ -591,7 +636,7 @@ test('previewing a fixture with a mix of clean, warning, and error rows persists
     $importRun = previewRunFor($admin, $header, $rows, coreFieldsWithCostCenter(), ImportStrategy::UpdateOnly, 'rut');
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertRedirect();
 
     $importRun->refresh();
@@ -609,7 +654,7 @@ test('previewing a fixture with a mix of clean, warning, and error rows persists
         ->and($issues[1]->severity)->toBe(ImportIssueSeverity::Error)
         ->and($issues[1]->message)->toBe('No matching cost_center found for "Ventas".');
 
-    $response = $this->actingAs($admin)->get(route('imports.show', $importRun));
+    $response = $this->actingAs($admin)->get(importRoute('imports.show', $importRun));
 
     $response->assertInertia(fn ($page) => $page
         ->where('issues.data', [
@@ -632,13 +677,13 @@ test('previewing a clean fixture shows no issue table because preview_counts.err
     $importRun = previewRunFor($admin, $header, $rows, fullyMappedCoreFields(), ImportStrategy::CreateOnly);
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertRedirect();
 
     expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(0);
 
     $this->actingAs($admin)
-        ->get(route('imports.show', $importRun))
+        ->get(importRoute('imports.show', $importRun))
         ->assertInertia(fn ($page) => $page->where('issues', null));
 });
 
@@ -684,13 +729,13 @@ test('resubmitting mapping while PreviewReady clears the previously persisted is
     $importRun = previewRunFor($admin, $header, $rows, coreFieldsWithCostCenter(), ImportStrategy::CreateOnly);
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertRedirect();
 
     expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(1);
 
     $this->actingAs($admin)
-        ->patch(route('imports.mapping.update', $importRun), ['mapping' => coreFieldsWithCostCenter()])
+        ->patch(importRoute('imports.mapping.update', $importRun), ['mapping' => coreFieldsWithCostCenter()])
         ->assertRedirect();
 
     expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(0);
@@ -708,13 +753,13 @@ test('resubmitting strategy while PreviewReady clears the previously persisted i
     $importRun = previewRunFor($admin, $header, $rows, coreFieldsWithCostCenter(), ImportStrategy::CreateOnly);
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertRedirect();
 
     expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(1);
 
     $this->actingAs($admin)
-        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->patch(importRoute('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
         ->assertRedirect();
 
     expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(0);
@@ -732,7 +777,7 @@ test('a user outside the ImportRun organization cannot read another org\'s persi
     $importRun = previewRunFor($owner, $header, $rows, coreFieldsWithCostCenter(), ImportStrategy::CreateOnly);
 
     $this->actingAs($owner)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertRedirect();
 
     expect(ImportRunIssue::query()->where('import_run_id', $importRun->id)->count())->toBe(1);
@@ -740,7 +785,7 @@ test('a user outside the ImportRun organization cannot read another org\'s persi
     $outsider = importAdmin();
 
     $this->actingAs($outsider)
-        ->get(route('imports.show', $importRun))
+        ->get(importRoute('imports.show', $importRun))
         ->assertNotFound();
 });
 
@@ -750,7 +795,7 @@ test('running preview outside MappingReview is refused', function () {
     $importRun->update(['status' => ImportRunStatus::Processing]);
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertStatus(409);
 });
 
@@ -767,7 +812,7 @@ test('running preview with a required field still unmapped is rejected', functio
     $importRun = previewRunFor($admin, ['Nombre'], [], $mapping, ImportStrategy::CreateOnly);
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertSessionHasErrors('preview');
 
     expect($importRun->fresh()->status)->toBe(ImportRunStatus::MappingReview);
@@ -780,7 +825,7 @@ test('running preview without a strategy set is rejected', function () {
     $importRun = previewRunFor($admin, ['Nombre'], [], fullyMappedCoreFields(), null);
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertSessionHasErrors('preview');
 });
 
@@ -791,7 +836,7 @@ test('running preview when the strategy needs a match key but none is set is rej
     $importRun = previewRunFor($admin, ['Nombre'], [], fullyMappedCoreFields(), ImportStrategy::UpdateOnly, null);
 
     $this->actingAs($admin)
-        ->post(route('imports.preview.store', $importRun))
+        ->post(importRoute('imports.preview.store', $importRun))
         ->assertSessionHasErrors('preview');
 });
 
@@ -809,7 +854,7 @@ test('resubmitting mapping while PreviewReady demotes the run and clears preview
     ];
 
     $this->actingAs($admin)
-        ->patch(route('imports.mapping.update', $importRun), ['mapping' => $mapping])
+        ->patch(importRoute('imports.mapping.update', $importRun), ['mapping' => $mapping])
         ->assertRedirect();
 
     $importRun->refresh();
@@ -826,7 +871,7 @@ test('resubmitting strategy while PreviewReady demotes the run and clears previe
     ]);
 
     $this->actingAs($admin)
-        ->patch(route('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
+        ->patch(importRoute('imports.strategy.update', $importRun), ['strategy' => 'create_only'])
         ->assertRedirect();
 
     $importRun->refresh();
@@ -846,7 +891,7 @@ test('committing a PreviewReady run flips it to Processing and dispatches Proces
     Queue::fake();
 
     $this->actingAs($admin)
-        ->post(route('imports.commit.store', $importRun))
+        ->post(importRoute('imports.commit.store', $importRun))
         ->assertRedirect();
 
     Queue::assertPushed(ProcessImportRun::class, fn (ProcessImportRun $job): bool => $job->importRunId === $importRun->id);
@@ -861,7 +906,7 @@ test('committing an import run outside PreviewReady is refused', function () {
     Queue::fake();
 
     $this->actingAs($admin)
-        ->post(route('imports.commit.store', $importRun))
+        ->post(importRoute('imports.commit.store', $importRun))
         ->assertStatus(409);
 
     Queue::assertNothingPushed();
@@ -881,7 +926,7 @@ test('a second user in the same organization cannot commit another user\'s impor
     Queue::fake();
 
     $this->actingAs($otherUser)
-        ->post(route('imports.commit.store', $importRun))
+        ->post(importRoute('imports.commit.store', $importRun))
         ->assertNotFound();
 
     Queue::assertNothingPushed();
@@ -919,7 +964,7 @@ test('downloading the error report streams the CSV once the run has errored rows
     $importRun = completedRunFor($admin, 1);
 
     $response = $this->actingAs($admin)
-        ->get(route('imports.error-report', $importRun))
+        ->get(importRoute('imports.error-report', $importRun))
         ->assertOk();
 
     expect($response->streamedContent())->toContain('Fila,Columna,Severidad,Mensaje');
@@ -932,7 +977,7 @@ test('the error-report route 404s while the run has no errored rows', function (
     $importRun = completedRunFor($admin, 0);
 
     $this->actingAs($admin)
-        ->get(route('imports.error-report', $importRun))
+        ->get(importRoute('imports.error-report', $importRun))
         ->assertNotFound();
 });
 
@@ -943,7 +988,7 @@ test('the error-report route 404s while the run is still Processing, even with e
     $importRun = completedRunFor($admin, 1, ['status' => ImportRunStatus::Processing]);
 
     $this->actingAs($admin)
-        ->get(route('imports.error-report', $importRun))
+        ->get(importRoute('imports.error-report', $importRun))
         ->assertNotFound();
 });
 
@@ -956,7 +1001,7 @@ test('a user outside the run\'s organization cannot download its error report', 
     $outsider = importAdmin();
 
     $this->actingAs($outsider)
-        ->get(route('imports.error-report', $importRun))
+        ->get(importRoute('imports.error-report', $importRun))
         ->assertNotFound();
 });
 
@@ -969,7 +1014,7 @@ test('a user without Import:Employee cannot download an error report', function 
     $importRun = completedRunFor($user, 1);
 
     $this->actingAs($user)
-        ->get(route('imports.error-report', $importRun))
+        ->get(importRoute('imports.error-report', $importRun))
         ->assertForbidden();
 });
 
@@ -987,7 +1032,7 @@ test('cancelling a run deletes the row, its uploaded file, and any persisted iss
     ImportRunIssue::factory()->for($importRun)->create();
 
     $this->actingAs($admin)
-        ->delete(route('imports.destroy', $importRun))
+        ->delete(importRoute('imports.destroy', $importRun))
         ->assertRedirect(route('employees.index'));
 
     Storage::disk('local')->assertMissing('import-runs/cancel-me.csv');
@@ -1012,7 +1057,7 @@ test('cancelling a run once it has moved to Processing, Completed, or Failed is 
     ]);
 
     $this->actingAs($admin)
-        ->delete(route('imports.destroy', $importRun))
+        ->delete(importRoute('imports.destroy', $importRun))
         ->assertStatus(409);
 
     Storage::disk('local')->assertExists('import-runs/keep-me.csv');
@@ -1032,7 +1077,7 @@ test('a user outside the run\'s organization cannot cancel it', function () {
     $outsider = importAdmin();
 
     $this->actingAs($outsider)
-        ->delete(route('imports.destroy', $importRun))
+        ->delete(importRoute('imports.destroy', $importRun))
         ->assertNotFound();
 
     expect($importRun->fresh())->not->toBeNull();
@@ -1048,7 +1093,7 @@ test('a second user in the same organization cannot cancel another user\'s run',
     $importRun = mappingRunFor($owner);
 
     $this->actingAs($otherUser)
-        ->delete(route('imports.destroy', $importRun))
+        ->delete(importRoute('imports.destroy', $importRun))
         ->assertNotFound();
 
     expect($importRun->fresh())->not->toBeNull();

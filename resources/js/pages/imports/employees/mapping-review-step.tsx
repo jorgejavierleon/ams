@@ -36,6 +36,7 @@ type MappingRow = {
 };
 
 type Props = {
+    resourceType: string;
     importRunId: number;
     originalFilename: string | null;
     columnMapping: MappingRow[];
@@ -52,6 +53,7 @@ type Props = {
  * confidence tiers surfaced.
  */
 export function MappingReviewStep({
+    resourceType,
     importRunId,
     originalFilename,
     columnMapping,
@@ -114,7 +116,7 @@ export function MappingReviewStep({
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
-        patch(updateMapping(importRunId).url, {
+        patch(updateMapping({ resourceType, importRun: importRunId }).url, {
             preserveScroll: true,
             onSuccess: onSaved,
         });

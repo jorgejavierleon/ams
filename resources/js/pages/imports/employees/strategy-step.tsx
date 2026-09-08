@@ -22,6 +22,7 @@ type SchemaField = {
 };
 
 type Props = {
+    resourceType: string;
     importRunId: number;
     strategy: ImportStrategy | null;
     matchKey: string | null;
@@ -51,6 +52,7 @@ const STRATEGIES_NEEDING_MATCH_KEY: ImportStrategy[] = [
  * prototype (prototype/kol-94-9-import-wizard, step-strategy.tsx).
  */
 export function StrategyStep({
+    resourceType,
     importRunId,
     strategy,
     matchKey,
@@ -89,7 +91,7 @@ export function StrategyStep({
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
-        patch(updateStrategy(importRunId).url, {
+        patch(updateStrategy({ resourceType, importRun: importRunId }).url, {
             preserveScroll: true,
             onSuccess: onSaved,
         });

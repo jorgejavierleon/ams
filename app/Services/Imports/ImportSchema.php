@@ -4,6 +4,7 @@ namespace App\Services\Imports;
 
 use App\Actions\Imports\EvaluateImportRow;
 use App\Enums\ImportStrategy;
+use App\Models\ImportRun;
 use App\Support\Imports\ImportField;
 use App\Support\Imports\ReferenceResolution;
 use Illuminate\Database\Eloquent\Model;
@@ -54,4 +55,27 @@ interface ImportSchema
      * @return class-string<Model>
      */
     public function targetModel(): string;
+
+    /**
+     * A blank instance for a row with no existing match, pre-populated with
+     * whatever the schema deliberately never collects as a mapped field
+     * (tenant stamps, a random password, and the like) — never called for a
+     * row that already resolved an existing match via {@see findExisting()}.
+     */
+    public function newModel(ImportRun $importRun): Model;
+
+    /**
+     * Runs once the row's resolved data has been filled onto the model but
+     * before it's saved — for a derived attribute the schema's own
+     * {@see fields()} doesn't carry directly (e.g. a `name` computed from
+     * first/last name).
+     */
+    public function beforeSave(Model $model): void;
+
+    /**
+     * Runs once the model has been saved — for a side effect that must
+     * happen exactly once per created/updated row, outside the row's own
+     * mapped data (e.g. assigning a default role on create).
+     */
+    public function afterSave(Model $model, bool $wasCreated): void;
 }

@@ -20,6 +20,7 @@ class ImportRunFactory extends Factory
     {
         return [
             'organization_id' => Organization::factory(),
+            'resource_type' => 'employees',
             'user_id' => User::factory(),
             'status' => ImportRunStatus::Pending,
         ];

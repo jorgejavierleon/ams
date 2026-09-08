@@ -12,8 +12,8 @@ use App\Enums\ImportStrategy;
 use App\Jobs\ProcessImportRun;
 use App\Models\ImportRun;
 use App\Models\ImportRunIssue;
-use App\Services\Imports\EmployeeImportSchema;
-use App\Services\Imports\EmployeeImportTemplate;
+use App\Services\Imports\ImportResourceRegistry;
+use App\Services\Imports\ImportSchema;
 use App\Support\Imports\ImportField;
 use App\Support\Imports\ImportFieldLabels;
 use Closure;
@@ -29,10 +29,14 @@ use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
- * The Employee bulk-import wizard (KOL-94), one route per step per KOL-94.5's
- * locked contract: upload (KOL-98), mapping review (KOL-99),
- * strategy/match-key (KOL-100), preview (KOL-101), commit (KOL-102), and the
- * error-report download (KOL-103).
+ * The bulk-import wizard (KOL-94, generalized beyond Employee by KOL-107),
+ * one route per step per KOL-94.5's locked contract: upload (KOL-98),
+ * mapping review (KOL-99), strategy/match-key (KOL-100), preview (KOL-101),
+ * commit (KOL-102), and the error-report download (KOL-103). Every action
+ * resolves its ImportSchema/permission/template from the `{resourceType}`
+ * route segment via {@see ImportResourceRegistry} instead of type-hinting a
+ * concrete resource's classes, so a future resource (KOL-108's Shift
+ * Assignments) needs only a registry entry — no changes here.
  */
 class ImportWizardController extends Controller
 {
@@ -43,51 +47,61 @@ class ImportWizardController extends Controller
      * form. No ImportRun exists yet, mirroring every other resource's
      * create/store split in this app.
      */
-    public function create(): Response
+    public function create(string $resourceType): Response
     {
-        return Inertia::render('imports/employee/create');
+        return Inertia::render("imports/{$resourceType}/create", [
+            'resourceType' => $resourceType,
+        ]);
     }
 
     /**
-     * `GET imports/employee/template/{format}` (KOL-94.8): a headers-only
-     * file built from EmployeeImportSchema's field order, downloaded via the
-     * same ReportWriter path as the employee master export.
+     * `GET imports/{resourceType}/template/{format}` (KOL-94.8): a
+     * headers-only file built from the resource's schema field order,
+     * downloaded via the same ReportWriter path as the employee master
+     * export.
      */
-    public function template(string $format, EmployeeImportTemplate $template): HttpResponse
+    public function template(string $resourceType, string $format): HttpResponse
     {
-        abort_unless(in_array($format, EmployeeImportTemplate::FORMATS, true), 404);
+        $template = ImportResourceRegistry::findOrFail($resourceType)->template();
+
+        abort_unless(in_array($format, $template->formats(), true), 404);
 
         return $template->download($format);
     }
 
     /**
-     * `POST imports/employee` (KOL-94.5): validates the upload's real
+     * `POST imports/{resourceType}` (KOL-94.5): validates the upload's real
      * format and row count, then transitions Pending -> MappingReview.
      */
-    public function store(Request $request, CreateImportRunFromUpload $createImportRun): RedirectResponse
+    public function store(string $resourceType, Request $request, CreateImportRunFromUpload $createImportRun): RedirectResponse
     {
         $request->validate(['file' => ['required', 'file']]);
 
         /** @var UploadedFile $file */
         $file = $request->file('file');
 
-        $importRun = $createImportRun->handle($file);
+        $importRun = $createImportRun->handle($resourceType, $file);
 
-        return to_route('imports.show', $importRun);
+        return to_route('imports.show', [$resourceType, $importRun]);
     }
 
     /**
-     * `GET imports/{importRun}` (KOL-94.5): renders whatever step the run's
-     * current status implies. Implicit route-model binding already scopes
-     * to the current organization and the requesting user (ImportRun's
-     * BelongsToOrganization and BelongsToUser global scopes, KOL-105), so a
-     * cross-org id or another user's run in the same org 404s before this
-     * method runs; the `Import:Employee` route middleware handles the 403
-     * case.
+     * `GET imports/{resourceType}/{importRun}` (KOL-94.5): renders whatever
+     * step the run's current status implies. Implicit route-model binding
+     * already scopes to the current organization and the requesting user
+     * (ImportRun's BelongsToOrganization and BelongsToUser global scopes,
+     * KOL-105) and rejects a resourceType/importRun mismatch (KOL-107's
+     * `Route::bind('importRun', ...)` in routes/web.php), so a cross-org
+     * id, another user's run, or a run belonging to a different resource
+     * type all 404 before this method runs; the `import.permission` route
+     * middleware handles the 403 case.
      */
-    public function show(Request $request, ImportRun $importRun, EmployeeImportSchema $schema): Response
+    public function show(Request $request, string $resourceType, ImportRun $importRun): Response
     {
-        return Inertia::render('imports/employee/show', [
+        $schema = ImportResourceRegistry::findOrFail($resourceType)->schema();
+
+        return Inertia::render("imports/{$resourceType}/show", [
+            'resourceType' => $resourceType,
             'importRun' => [
                 'id' => $importRun->id,
                 'status' => $importRun->status->value,
@@ -121,7 +135,7 @@ class ImportWizardController extends Controller
      * directly) so it inherits ImportRun's org+user scope (KOL-105) for
      * free.
      */
-    private function issuesTable(Request $request, ImportRun $importRun, EmployeeImportSchema $schema): mixed
+    private function issuesTable(Request $request, ImportRun $importRun, ImportSchema $schema): mixed
     {
         $counts = $importRun->preview_counts;
 
@@ -144,25 +158,27 @@ class ImportWizardController extends Controller
     }
 
     /**
-     * `PATCH imports/{importRun}/mapping` (KOL-94.5, KOL-99): persists the
-     * reviewed ColumnMapping array. Strategy (KOL-100) isn't chosen yet at
-     * this step, so every one of EmployeeImportSchema's CreateOnly-required
-     * fields must always be mapped, regardless of which strategy gets picked
-     * later. Allowed while MappingReview or PreviewReady; demoting a
-     * PreviewReady run back to MappingReview on resubmit is KOL-101's job —
-     * preview doesn't exist yet, so this never actually sees PreviewReady.
+     * `PATCH imports/{resourceType}/{importRun}/mapping` (KOL-94.5, KOL-99):
+     * persists the reviewed ColumnMapping array. Strategy (KOL-100) isn't
+     * chosen yet at this step, so every one of the schema's
+     * CreateOnly-required fields must always be mapped, regardless of which
+     * strategy gets picked later. Allowed while MappingReview or
+     * PreviewReady; demoting a PreviewReady run back to MappingReview on
+     * resubmit is KOL-101's job — preview doesn't exist yet, so this never
+     * actually sees PreviewReady.
      */
-    public function updateMapping(Request $request, ImportRun $importRun, EmployeeImportSchema $schema): RedirectResponse
+    public function updateMapping(Request $request, string $resourceType, ImportRun $importRun): RedirectResponse
     {
         abort_unless(
             in_array($importRun->status, [ImportRunStatus::MappingReview, ImportRunStatus::PreviewReady], true),
             409,
         );
 
+        $schema = ImportResourceRegistry::findOrFail($resourceType)->schema();
         $fieldsByName = collect($schema->fields())->keyBy(fn (ImportField $field): string => $field->name);
 
         $validated = $request->validate([
-            'mapping' => ['required', 'array', 'size:'.count($importRun->column_mapping ?? []), $this->mappingValidator($importRun, $fieldsByName)],
+            'mapping' => ['required', 'array', 'size:'.count($importRun->column_mapping ?? []), $this->mappingValidator($importRun, $fieldsByName, $resourceType)],
             'mapping.*.sourceColumnIndex' => ['required', 'integer', 'min:0'],
             'mapping.*.sourceHeaderLabel' => ['nullable', 'string'],
             'mapping.*.targetField' => ['nullable', 'string'],
@@ -178,22 +194,25 @@ class ImportWizardController extends Controller
     }
 
     /**
-     * `PATCH imports/{importRun}/strategy` (KOL-94.5, KOL-100): persists
-     * which strategy the run is allowed to take and, when that strategy
-     * matches existing rows at all ({@see ImportStrategy::allowsMatching()}),
-     * which field identifies them. Guarded exactly like {@see updateMapping}.
-     * A valid match key submitted alongside CreateOnly is silently dropped
-     * rather than persisted — CreateOnly never looks one up, so keeping it
-     * would only leave stale state behind if the user switches strategy
-     * back; an unrecognized match key is still rejected regardless of
-     * strategy, same as any other invalid input.
+     * `PATCH imports/{resourceType}/{importRun}/strategy` (KOL-94.5,
+     * KOL-100): persists which strategy the run is allowed to take and,
+     * when that strategy matches existing rows at all
+     * ({@see ImportStrategy::allowsMatching()}), which field identifies
+     * them. Guarded exactly like {@see updateMapping}. A valid match key
+     * submitted alongside CreateOnly is silently dropped rather than
+     * persisted — CreateOnly never looks one up, so keeping it would only
+     * leave stale state behind if the user switches strategy back; an
+     * unrecognized match key is still rejected regardless of strategy, same
+     * as any other invalid input.
      */
-    public function updateStrategy(Request $request, ImportRun $importRun, EmployeeImportSchema $schema): RedirectResponse
+    public function updateStrategy(Request $request, string $resourceType, ImportRun $importRun): RedirectResponse
     {
         abort_unless(
             in_array($importRun->status, [ImportRunStatus::MappingReview, ImportRunStatus::PreviewReady], true),
             409,
         );
+
+        $schema = ImportResourceRegistry::findOrFail($resourceType)->schema();
 
         $matchKeyEligible = collect($schema->fields())
             ->filter(fn (ImportField $field): bool => $field->isMatchKeyEligible)
@@ -221,21 +240,23 @@ class ImportWizardController extends Controller
     }
 
     /**
-     * `POST imports/{importRun}/preview` (KOL-94.5, KOL-101): evaluates
-     * every uploaded data row through EvaluateImportRow synchronously and
-     * persists the aggregate preview_counts; MappingReview -> PreviewReady.
-     * Reachable only from MappingReview — reaching PreviewReady again after
-     * a demotion (AC #3) requires rerunning this endpoint deliberately, not
-     * an implicit re-preview. The mapping/strategy prerequisites are
-     * re-checked here even though the client already gates on them, so a
-     * request that bypasses that gate still fails cleanly instead of
-     * evaluating incomplete data.
+     * `POST imports/{resourceType}/{importRun}/preview` (KOL-94.5, KOL-101):
+     * evaluates every uploaded data row through EvaluateImportRow
+     * synchronously and persists the aggregate preview_counts; MappingReview
+     * -> PreviewReady. Reachable only from MappingReview — reaching
+     * PreviewReady again after a demotion (AC #3) requires rerunning this
+     * endpoint deliberately, not an implicit re-preview. The
+     * mapping/strategy prerequisites are re-checked here even though the
+     * client already gates on them, so a request that bypasses that gate
+     * still fails cleanly instead of evaluating incomplete data.
      */
-    public function preview(ImportRun $importRun, EmployeeImportSchema $schema, PreviewImportRun $previewImportRun): RedirectResponse
+    public function preview(string $resourceType, ImportRun $importRun, PreviewImportRun $previewImportRun): RedirectResponse
     {
         abort_unless($importRun->status === ImportRunStatus::MappingReview, 409);
 
-        $this->assertReadyForPreview($importRun, $schema);
+        $schema = ImportResourceRegistry::findOrFail($resourceType)->schema();
+
+        $this->assertReadyForPreview($importRun, $schema, $resourceType);
 
         $previewImportRun->handle($importRun, $schema);
 
@@ -243,18 +264,19 @@ class ImportWizardController extends Controller
     }
 
     /**
-     * `POST imports/{importRun}/commit` (KOL-94.5, KOL-102): the run must
-     * already have a preview computed against the exact mapping/strategy it
-     * commits with, so this is only reachable from PreviewReady — editing
-     * mapping/strategy again after this point demotes the run back to
-     * MappingReview (see {@see demotionFrom}) before it can reach here.
-     * Flips to Processing itself, before dispatch (AC #1). The transition is
-     * a single conditional UPDATE rather than a fetch-then-write, so two
-     * near-simultaneous requests can't both observe PreviewReady and both
-     * dispatch ProcessImportRun — only the request whose UPDATE actually
-     * changes a row gets to dispatch; the other 409s.
+     * `POST imports/{resourceType}/{importRun}/commit` (KOL-94.5, KOL-102):
+     * the run must already have a preview computed against the exact
+     * mapping/strategy it commits with, so this is only reachable from
+     * PreviewReady — editing mapping/strategy again after this point
+     * demotes the run back to MappingReview (see {@see demotionFrom})
+     * before it can reach here. Flips to Processing itself, before dispatch
+     * (AC #1). The transition is a single conditional UPDATE rather than a
+     * fetch-then-write, so two near-simultaneous requests can't both
+     * observe PreviewReady and both dispatch ProcessImportRun — only the
+     * request whose UPDATE actually changes a row gets to dispatch; the
+     * other 409s.
      */
-    public function commit(ImportRun $importRun): RedirectResponse
+    public function commit(string $resourceType, ImportRun $importRun): RedirectResponse
     {
         $transitioned = ImportRun::query()
             ->whereKey($importRun->id)
@@ -269,30 +291,32 @@ class ImportWizardController extends Controller
     }
 
     /**
-     * `GET imports/{importRun}/error-report` (KOL-94.5, KOL-94.8, KOL-103):
-     * streams the CSV ProcessImportRun wrote during its commit pass. Same
-     * org+user route-model-binding scope as every other wizard route;
-     * {@see DownloadImportErrorReport} itself refuses a run with nothing to
-     * report.
+     * `GET imports/{resourceType}/{importRun}/error-report` (KOL-94.5,
+     * KOL-94.8, KOL-103): streams the CSV ProcessImportRun wrote during its
+     * commit pass. Same org+user route-model-binding scope as every other
+     * wizard route; {@see DownloadImportErrorReport} itself refuses a run
+     * with nothing to report.
      */
-    public function errorReport(ImportRun $importRun, DownloadImportErrorReport $download): HttpResponse
+    public function errorReport(string $resourceType, ImportRun $importRun, DownloadImportErrorReport $download): HttpResponse
     {
         return $download->handle($importRun);
     }
 
     /**
-     * `DELETE imports/{importRun}` (KOL-109): lets the owning user abandon an
-     * in-progress run instead of waiting for PruneAbandonedImportRuns
-     * (KOL-104) to expire it. Only reachable while nothing has actually
-     * started committing yet — Pending is accepted for consistency even
-     * though it's never visible in the wizard UI (CreateImportRunFromUpload
-     * transitions it synchronously or deletes it on failure). Reuses the
-     * exact disk_path cleanup PruneAbandonedImportRuns already does; deleting
-     * the row cascades to its ImportRunIssue rows (KOL-111) at the database
-     * level.
+     * `DELETE imports/{resourceType}/{importRun}` (KOL-109): lets the
+     * owning user abandon an in-progress run instead of waiting for
+     * PruneAbandonedImportRuns (KOL-104) to expire it. Only reachable while
+     * nothing has actually started committing yet — Pending is accepted for
+     * consistency even though it's never visible in the wizard UI
+     * (CreateImportRunFromUpload transitions it synchronously or deletes it
+     * on failure). Reuses the exact disk_path cleanup
+     * PruneAbandonedImportRuns already does; deleting the row cascades to
+     * its ImportRunIssue rows (KOL-111) at the database level.
      */
-    public function destroy(ImportRun $importRun): RedirectResponse
+    public function destroy(string $resourceType, ImportRun $importRun): RedirectResponse
     {
+        $definition = ImportResourceRegistry::findOrFail($resourceType);
+
         abort_unless(
             in_array($importRun->status, [
                 ImportRunStatus::Pending,
@@ -308,9 +332,9 @@ class ImportWizardController extends Controller
 
         $importRun->delete();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.employees.import.flash.cancelled')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __("ui.{$resourceType}.import.flash.cancelled")]);
 
-        return to_route('employees.index');
+        return to_route($definition->indexRoute);
     }
 
     /**
@@ -332,7 +356,7 @@ class ImportWizardController extends Controller
         return ['status' => ImportRunStatus::MappingReview, 'preview_counts' => null];
     }
 
-    private function assertReadyForPreview(ImportRun $importRun, EmployeeImportSchema $schema): void
+    private function assertReadyForPreview(ImportRun $importRun, ImportSchema $schema, string $resourceType): void
     {
         $fieldsByName = collect($schema->fields())->keyBy(fn (ImportField $field): string => $field->name);
 
@@ -344,7 +368,7 @@ class ImportWizardController extends Controller
 
         if ($missingRequired->isNotEmpty()) {
             throw ValidationException::withMessages([
-                'preview' => __('ui.employees.import.errors.required_field_unmapped', [
+                'preview' => __("ui.{$resourceType}.import.errors.required_field_unmapped", [
                     'fields' => $missingRequired->map(fn (string $name): string => $fieldsByName[$name]->label)->implode(', '),
                 ]),
             ]);
@@ -352,13 +376,13 @@ class ImportWizardController extends Controller
 
         if ($importRun->strategy === null) {
             throw ValidationException::withMessages([
-                'preview' => __('ui.employees.import.errors.strategy_required'),
+                'preview' => __("ui.{$resourceType}.import.errors.strategy_required"),
             ]);
         }
 
         if ($importRun->strategy->allowsMatching() && $importRun->match_key === null) {
             throw ValidationException::withMessages([
-                'preview' => __('ui.employees.import.errors.match_key_required'),
+                'preview' => __("ui.{$resourceType}.import.errors.match_key_required"),
             ]);
         }
     }
@@ -366,12 +390,12 @@ class ImportWizardController extends Controller
     /**
      * @param  Collection<string, ImportField>  $fieldsByName
      */
-    private function mappingValidator(ImportRun $importRun, Collection $fieldsByName): Closure
+    private function mappingValidator(ImportRun $importRun, Collection $fieldsByName, string $resourceType): Closure
     {
         /** @var Collection<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}> $originalByIndex */
         $originalByIndex = collect($importRun->column_mapping ?? [])->keyBy('sourceColumnIndex');
 
-        return function (string $attribute, mixed $value, Closure $fail) use ($originalByIndex, $fieldsByName): void {
+        return function (string $attribute, mixed $value, Closure $fail) use ($originalByIndex, $fieldsByName, $resourceType): void {
             /** @var array<int, array{sourceColumnIndex: int, sourceHeaderLabel: ?string, targetField: ?string, status: string}> $value */
             $rows = collect($value);
 
@@ -384,7 +408,7 @@ class ImportWizardController extends Controller
 
             if ($submittedIndices->unique()->count() !== $submittedIndices->count()
                 || $submittedIndices->diff($originalByIndex->keys())->isNotEmpty()) {
-                $fail(__('ui.employees.import.errors.invalid_mapping_shape'));
+                $fail(__("ui.{$resourceType}.import.errors.invalid_mapping_shape"));
 
                 return;
             }
@@ -393,7 +417,7 @@ class ImportWizardController extends Controller
                 $original = $originalByIndex->get((int) $row['sourceColumnIndex']);
 
                 if ($original['sourceHeaderLabel'] !== $row['sourceHeaderLabel']) {
-                    $fail(__('ui.employees.import.errors.invalid_mapping_shape'));
+                    $fail(__("ui.{$resourceType}.import.errors.invalid_mapping_shape"));
 
                     return;
                 }
@@ -401,7 +425,7 @@ class ImportWizardController extends Controller
                 $isMapped = $row['status'] === ColumnMappingStatus::Mapped->value;
 
                 if ($isMapped !== ($row['targetField'] !== null)) {
-                    $fail(__('ui.employees.import.errors.invalid_mapping_shape'));
+                    $fail(__("ui.{$resourceType}.import.errors.invalid_mapping_shape"));
 
                     return;
                 }
@@ -412,13 +436,13 @@ class ImportWizardController extends Controller
                 ->pluck('targetField');
 
             if ($mappedTargets->diff($fieldsByName->keys())->isNotEmpty()) {
-                $fail(__('ui.employees.import.errors.unknown_target_field'));
+                $fail(__("ui.{$resourceType}.import.errors.unknown_target_field"));
 
                 return;
             }
 
             if ($mappedTargets->duplicates()->isNotEmpty()) {
-                $fail(__('ui.employees.import.errors.duplicate_target_field'));
+                $fail(__("ui.{$resourceType}.import.errors.duplicate_target_field"));
 
                 return;
             }
@@ -426,7 +450,7 @@ class ImportWizardController extends Controller
             $missingRequired = $this->missingRequiredFields($fieldsByName, $mappedTargets);
 
             if ($missingRequired->isNotEmpty()) {
-                $fail(__('ui.employees.import.errors.required_field_unmapped', [
+                $fail(__("ui.{$resourceType}.import.errors.required_field_unmapped", [
                     'fields' => $missingRequired->map(fn (string $name): string => $fieldsByName[$name]->label)->implode(', '),
                 ]));
             }

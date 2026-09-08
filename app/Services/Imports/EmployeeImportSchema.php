@@ -10,6 +10,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Models\Company;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\CostCenter;
+use App\Models\ImportRun;
 use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
@@ -18,6 +19,7 @@ use App\Support\Imports\ImportField;
 use App\Support\Imports\ReferenceResolution;
 use App\Support\Rut;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
@@ -175,6 +177,46 @@ final class EmployeeImportSchema implements ImportSchema
     public function targetModel(): string
     {
         return User::class;
+    }
+
+    /**
+     * A newly imported employee needs several attributes this schema
+     * deliberately never collects (KOL-94.2 — `company` is excluded because
+     * it's "auto-assigned per organization", `password` and `avatar` are
+     * excluded entirely): the tenant/company stamp (User carries no
+     * BelongsToOrganization scope to do this automatically, unlike every
+     * other org-scoped model — EmployeeController::store() stamps it the
+     * same way), and a random password, since nothing in an imported file
+     * ever supplies one — the employee sets their own via "forgot password".
+     */
+    public function newModel(ImportRun $importRun): Model
+    {
+        return new User([
+            'organization_id' => $importRun->organization_id,
+            'company_id' => Company::query()->where('organization_id', $importRun->organization_id)->value('id'),
+            'password' => Hash::make(Str::random(40)),
+        ]);
+    }
+
+    /**
+     * `name` isn't one of this schema's fields (KOL-94.2) — it's derived,
+     * same as the manual create/edit form does
+     * (EmployeeController::prepareForStorage). Recomputing it from the
+     * model's own post-fill first_name/last_name works for both create
+     * (both required) and update (an omitted blank cell leaves the existing
+     * value in place, per the framework's blank-means-no-change policy), so
+     * no separate "did this row touch the name" branch is needed.
+     */
+    public function beforeSave(Model $model): void
+    {
+        $model->name = trim("{$model->first_name} {$model->last_name}");
+    }
+
+    public function afterSave(Model $model, bool $wasCreated): void
+    {
+        if ($wasCreated) {
+            $model->assignRole('employee');
+        }
     }
 
     /**

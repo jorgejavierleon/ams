@@ -22,7 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
  * path, so the template needs no new file-generation code, per KOL-94.8
  * decision #1.
  */
-class EmployeeImportTemplate
+class EmployeeImportTemplate implements ImportTemplate
 {
     /**
      * @var list<string>
@@ -30,6 +30,14 @@ class EmployeeImportTemplate
     public const FORMATS = ['excel', 'csv'];
 
     public function __construct(private ReportWriter $writer, private EmployeeImportSchema $schema) {}
+
+    /**
+     * @return list<string>
+     */
+    public function formats(): array
+    {
+        return self::FORMATS;
+    }
 
     public function download(string $format): Response
     {

@@ -36,7 +36,7 @@ import {
     show,
     toggleActive,
 } from '@/routes/employees';
-import { create as createImport } from '@/routes/imports/employee';
+import { create as createImport } from '@/routes/imports';
 import type { Paginated } from '@/types/ui';
 
 type Employee = {
@@ -370,7 +370,11 @@ export default function EmployeesIndex({
 
                         {canImport && (
                             <Button variant="outline" asChild>
-                                <Link href={createImport()}>
+                                <Link
+                                    href={createImport({
+                                        resourceType: 'employees',
+                                    })}
+                                >
                                     <Download className="size-4" />
                                     {t('ui.employees.import.nav')}
                                 </Link>

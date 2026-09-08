@@ -4,7 +4,7 @@ namespace App\Actions\Imports;
 
 use App\Enums\ImportRunStatus;
 use App\Models\ImportRun;
-use App\Services\Imports\EmployeeImportSchema;
+use App\Services\Imports\ImportResourceRegistry;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -25,15 +25,17 @@ use Throwable;
  */
 class CreateImportRunFromUpload
 {
-    public function __construct(private ColumnAutoMapper $autoMapper, private EmployeeImportSchema $schema) {}
+    public function __construct(private ColumnAutoMapper $autoMapper) {}
 
     /**
      * @throws ValidationException
      */
-    public function handle(UploadedFile $file): ImportRun
+    public function handle(string $resourceType, UploadedFile $file): ImportRun
     {
+        $schema = ImportResourceRegistry::findOrFail($resourceType)->schema();
+
         $path = $file->getRealPath();
-        $reader = $this->resolveReader($path);
+        $reader = $this->resolveReader($resourceType, $path);
         $format = $reader instanceof CsvReader ? 'csv' : 'excel';
         $threshold = (int) config("imports.sync_preview_threshold.{$format}");
 
@@ -45,7 +47,7 @@ class CreateImportRunFromUpload
             // CSV row spans at least one physical line, so a line count at
             // or under the threshold guarantees the real row count is too.
             if ($this->csvLineCountExceeds($path, $threshold)) {
-                $this->rejectTooManyRows($threshold);
+                $this->rejectTooManyRows($resourceType, $threshold);
             }
         }
 
@@ -61,10 +63,11 @@ class CreateImportRunFromUpload
         $rowCount = count($rows) - 1;
 
         if ($rowCount > $threshold) {
-            $this->rejectTooManyRows($threshold);
+            $this->rejectTooManyRows($resourceType, $threshold);
         }
 
         $importRun = ImportRun::create([
+            'resource_type' => $resourceType,
             'status' => ImportRunStatus::Pending,
             'expires_at' => now()->addHours((int) config('imports.expiry_hours')),
         ]);
@@ -91,7 +94,7 @@ class CreateImportRunFromUpload
             'status' => ImportRunStatus::MappingReview,
             'disk_path' => $diskPath,
             'original_filename' => $file->getClientOriginalName(),
-            'column_mapping' => $this->autoMapper->map($header, $this->schema->fields()),
+            'column_mapping' => $this->autoMapper->map($header, $schema->fields()),
         ]);
 
         return $importRun;
@@ -100,7 +103,7 @@ class CreateImportRunFromUpload
     /**
      * @throws ValidationException
      */
-    private function resolveReader(string $path): CsvReader|XlsxReader
+    private function resolveReader(string $resourceType, string $path): CsvReader|XlsxReader
     {
         try {
             /** @var CsvReader|XlsxReader $reader */
@@ -109,7 +112,7 @@ class CreateImportRunFromUpload
             return $reader;
         } catch (SpreadsheetReaderException) {
             throw ValidationException::withMessages([
-                'file' => __('ui.employees.import.errors.unsupported_format'),
+                'file' => __("ui.{$resourceType}.import.errors.unsupported_format"),
             ]);
         }
     }
@@ -143,10 +146,10 @@ class CreateImportRunFromUpload
     /**
      * @throws ValidationException
      */
-    private function rejectTooManyRows(int $threshold): never
+    private function rejectTooManyRows(string $resourceType, int $threshold): never
     {
         throw ValidationException::withMessages([
-            'file' => __('ui.employees.import.errors.too_many_rows', ['max' => $threshold]),
+            'file' => __("ui.{$resourceType}.import.errors.too_many_rows", ['max' => $threshold]),
         ]);
     }
 }

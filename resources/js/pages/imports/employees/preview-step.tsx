@@ -21,6 +21,7 @@ type PreviewCounts = {
 };
 
 type Props = {
+    resourceType: string;
     importRunId: number;
     previewCounts: PreviewCounts | null;
     issues: Paginated<ImportRowIssue> | null;
@@ -68,6 +69,7 @@ function StatTile({
  * component re-renders with the counts.
  */
 export function PreviewStep({
+    resourceType,
     importRunId,
     previewCounts,
     issues,
@@ -118,11 +120,16 @@ export function PreviewStep({
     );
 
     function handleRunPreview() {
-        post(runPreview(importRunId).url, { preserveScroll: true });
+        post(runPreview({ resourceType, importRun: importRunId }).url, {
+            preserveScroll: true,
+        });
     }
 
     function handleCommit() {
-        postCommit(commitImport(importRunId).url, { preserveScroll: true });
+        postCommit(
+            commitImport({ resourceType, importRun: importRunId }).url,
+            { preserveScroll: true },
+        );
     }
 
     if (!previewCounts) {
@@ -235,7 +242,12 @@ export function PreviewStep({
                         <DataTable
                             data={issues}
                             columns={issueColumns}
-                            routeUrl={showImportRun(importRunId).url}
+                            routeUrl={
+                                showImportRun({
+                                    resourceType,
+                                    importRun: importRunId,
+                                }).url
+                            }
                             only={['issues']}
                             getRowId={(issue) => String(issue.id)}
                             emptyLabel={t(

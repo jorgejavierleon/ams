@@ -54,6 +54,7 @@ type ImportRun = {
 };
 
 type Props = {
+    resourceType: string;
     importRun: ImportRun;
     schemaFields: SchemaField[];
     issues: Paginated<ImportRowIssue> | null;
@@ -66,6 +67,7 @@ type Props = {
  * commit result (KOL-102) are all reachable today.
  */
 export default function ShowEmployeeImport({
+    resourceType,
     importRun,
     schemaFields,
     issues,
@@ -76,7 +78,7 @@ export default function ShowEmployeeImport({
 
     function confirmCancel() {
         setCancelling(true);
-        router.delete(destroy(importRun.id).url, {
+        router.delete(destroy({ resourceType, importRun: importRun.id }).url, {
             onFinish: () => {
                 setCancelling(false);
                 setConfirmingCancel(false);
@@ -127,6 +129,7 @@ export default function ShowEmployeeImport({
                 {isEditable ? (
                     step === 'mapping' ? (
                         <MappingReviewStep
+                            resourceType={resourceType}
                             importRunId={importRun.id}
                             originalFilename={importRun.original_filename}
                             columnMapping={importRun.column_mapping}
@@ -136,6 +139,7 @@ export default function ShowEmployeeImport({
                         />
                     ) : step === 'strategy' ? (
                         <StrategyStep
+                            resourceType={resourceType}
                             importRunId={importRun.id}
                             strategy={importRun.strategy}
                             matchKey={importRun.match_key}
@@ -146,6 +150,7 @@ export default function ShowEmployeeImport({
                         />
                     ) : (
                         <PreviewStep
+                            resourceType={resourceType}
                             importRunId={importRun.id}
                             previewCounts={importRun.preview_counts}
                             issues={issues}
@@ -157,6 +162,7 @@ export default function ShowEmployeeImport({
                   importRun.status === 'completed' ||
                   importRun.status === 'failed' ? (
                     <ResultStep
+                        resourceType={resourceType}
                         importRunId={importRun.id}
                         status={importRun.status}
                         createdCount={importRun.created_count}
