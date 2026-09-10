@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property float $overtime_weekly_anomaly_threshold_hours
  * @property int $overtime_retroactive_request_days
  * @property bool $overtime_counts_pre_shift_excess
+ * @property int $overtime_pending_alert_threshold_days
  */
 #[Fillable([
     'employee_missing_in_notification',
@@ -45,6 +46,7 @@ use Illuminate\Database\Eloquent\Model;
     'overtime_weekly_anomaly_threshold_hours',
     'overtime_retroactive_request_days',
     'overtime_counts_pre_shift_excess',
+    'overtime_pending_alert_threshold_days',
 ])]
 #[ObservedBy(SettingObserver::class)]
 class Setting extends Model
@@ -71,6 +73,7 @@ class Setting extends Model
         'overtime_weekly_anomaly_threshold_hours' => 10,
         'overtime_retroactive_request_days' => 7,
         'overtime_counts_pre_shift_excess' => false,
+        'overtime_pending_alert_threshold_days' => 15,
     ];
 
     protected function casts(): array
@@ -87,6 +90,7 @@ class Setting extends Model
             'overtime_weekly_anomaly_threshold_hours' => 'float',
             'overtime_retroactive_request_days' => 'integer',
             'overtime_counts_pre_shift_excess' => 'boolean',
+            'overtime_pending_alert_threshold_days' => 'integer',
         ];
     }
 }

@@ -31,6 +31,7 @@ type SettingsForm = {
     overtime_weekly_anomaly_threshold_hours: number;
     overtime_retroactive_request_days: number;
     overtime_counts_pre_shift_excess: boolean;
+    overtime_pending_alert_threshold_days: number;
 };
 
 /** The keys whose control is a plain on/off switch. */
@@ -216,6 +217,36 @@ export default function OrganizationSettings({
                                 onChange={(event) =>
                                     setData(
                                         'overtime_retroactive_request_days',
+                                        event.target.valueAsNumber,
+                                    )
+                                }
+                            />
+                        </FormField>
+
+                        <FormField
+                            label={t(
+                                'ui.organization_settings.fields.overtime_pending_alert_threshold_days.label',
+                            )}
+                            htmlFor="overtime_pending_alert_threshold_days"
+                            hint={t(
+                                'ui.organization_settings.fields.overtime_pending_alert_threshold_days.hint',
+                            )}
+                            error={
+                                errors.overtime_pending_alert_threshold_days
+                            }
+                        >
+                            <Input
+                                id="overtime_pending_alert_threshold_days"
+                                type="number"
+                                min={1}
+                                max={365}
+                                step={1}
+                                value={
+                                    data.overtime_pending_alert_threshold_days
+                                }
+                                onChange={(event) =>
+                                    setData(
+                                        'overtime_pending_alert_threshold_days',
                                         event.target.valueAsNumber,
                                     )
                                 }

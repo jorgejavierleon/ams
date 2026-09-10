@@ -53,6 +53,7 @@ function settingsPayload(array $overrides = []): array
         'overtime_weekly_anomaly_threshold_hours' => 10,
         'overtime_retroactive_request_days' => 7,
         'overtime_counts_pre_shift_excess' => false,
+        'overtime_pending_alert_threshold_days' => 15,
         ...$overrides,
     ];
 }
@@ -192,13 +193,15 @@ test('a brand-new organization gets the legal overtime defaults', function () {
             // JSON has no float/int distinction, so compare numerically.
             ->where('settings.overtime_weekly_anomaly_threshold_hours', fn ($hours) => (float) $hours === 10.0)
             ->where('settings.overtime_retroactive_request_days', 7)
+            ->where('settings.overtime_pending_alert_threshold_days', 15)
         );
 
     $setting = Setting::query()->where('organization_id', $admin->organization_id)->firstOrFail();
 
     expect($setting->overtime_authorization_mode)->toBe(OvertimeAuthorizationMode::Combined)
         ->and($setting->overtime_weekly_anomaly_threshold_hours)->toBe(10.0)
-        ->and($setting->overtime_retroactive_request_days)->toBe(7);
+        ->and($setting->overtime_retroactive_request_days)->toBe(7)
+        ->and($setting->overtime_pending_alert_threshold_days)->toBe(15);
 });
 
 test('the defaults are readable through the settings service without a query per read', function () {
@@ -214,6 +217,7 @@ test('the defaults are readable through the settings service without a query per
     expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::Combined)
         ->and($settings->get('overtime_weekly_anomaly_threshold_hours'))->toEqual(10.0)
         ->and($settings->get('overtime_retroactive_request_days'))->toEqual(7)
+        ->and($settings->overtimePendingAlertThresholdDays())->toEqual(15)
         ->and(DB::getQueryLog())->toBeEmpty();
 
     DB::disableQueryLog();
@@ -247,6 +251,7 @@ test('the whole overtime policy persists and is read back typed', function () {
         'overtime_authorization_mode' => OvertimeAuthorizationMode::Combined->value,
         'overtime_weekly_anomaly_threshold_hours' => 14.5,
         'overtime_retroactive_request_days' => 30,
+        'overtime_pending_alert_threshold_days' => 20,
     ]))->assertRedirect();
 
     $setting = Setting::query()->where('organization_id', $admin->organization_id)->firstOrFail();
@@ -254,7 +259,9 @@ test('the whole overtime policy persists and is read back typed', function () {
     expect($setting->overtime_authorization_mode)->toBe(OvertimeAuthorizationMode::Combined)
         ->and($setting->overtime_weekly_anomaly_threshold_hours)->toBe(14.5)
         ->and($setting->overtime_retroactive_request_days)->toBe(30)
-        ->and($settings->get('overtime_weekly_anomaly_threshold_hours'))->toEqual(14.5);
+        ->and($setting->overtime_pending_alert_threshold_days)->toBe(20)
+        ->and($settings->get('overtime_weekly_anomaly_threshold_hours'))->toEqual(14.5)
+        ->and($settings->overtimePendingAlertThresholdDays())->toEqual(20);
 });
 
 test('an unknown authorization mode or out-of-range value is rejected', function () {
@@ -265,11 +272,13 @@ test('an unknown authorization mode or out-of-range value is rejected', function
             'overtime_authorization_mode' => 'whenever',
             'overtime_weekly_anomaly_threshold_hours' => -1,
             'overtime_retroactive_request_days' => 'soon',
+            'overtime_pending_alert_threshold_days' => 0,
         ]))
         ->assertSessionHasErrors([
             'overtime_authorization_mode',
             'overtime_weekly_anomaly_threshold_hours',
             'overtime_retroactive_request_days',
+            'overtime_pending_alert_threshold_days',
         ]);
 });
 
@@ -282,6 +291,7 @@ test('every overtime field and option has a Spanish label', function () {
             'overtime_authorization_mode',
             'overtime_weekly_anomaly_threshold_hours',
             'overtime_retroactive_request_days',
+            'overtime_pending_alert_threshold_days',
         ])->flatMap(fn (string $field): array => [
             "ui.organization_settings.fields.{$field}.label",
             "ui.organization_settings.fields.{$field}.hint",

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AnomalyFlagReason;
 use App\Enums\MarkModificationStatus;
+use App\Enums\OvertimeAuthorizationStatus;
 use App\Enums\OvertimeCalculationState;
 use App\Enums\WorkdayStatus;
 use App\Models\Concerns\BelongsToOrganization;
@@ -236,6 +237,23 @@ class Workday extends Model
     }
 
     /**
+     * Whether this day's overtime still needs a human decision: calculated
+     * overtime exists and nothing currently approved covers it — no
+     * {@see OvertimeAuthorization} row at all, one left pending from a failed
+     * attempt, or one that was approved and then revoked.
+     * {@see WorkdayController::overtimeRowData()}'s `can_decide` condition;
+     * {@see self::scopeNeedsOvertimeDecision()} is its query form.
+     */
+    public function needsOvertimeDecision(): bool
+    {
+        if (! $this->calculated_overtime || $this->calculated_overtime === '00:00:00') {
+            return false;
+        }
+
+        return ! ($this->overtimeAuthorization?->isApproved() ?? false);
+    }
+
+    /**
      * Whether a human decision on this day's overtime has been overtaken by a
      * recalculation.
      *
@@ -291,5 +309,22 @@ class Workday extends Model
     {
         $query->whereNotNull('overtime_decided_at')
             ->whereRaw('NOT (overtime_decided_value <=> calculated_overtime)');
+    }
+
+    /**
+     * The query form of {@see self::needsOvertimeDecision()}, for KOL-52's
+     * stale-overtime alert — which days need one cannot be answered per row
+     * without a query once the count spans a whole organization.
+     *
+     * @param  Builder<Workday>  $query
+     */
+    public function scopeNeedsOvertimeDecision(Builder $query): void
+    {
+        $query->whereNotNull('calculated_overtime')
+            ->where('calculated_overtime', '!=', '00:00:00')
+            ->whereDoesntHave(
+                'overtimeAuthorization',
+                fn ($authorization) => $authorization->where('status', OvertimeAuthorizationStatus::Approved),
+            );
     }
 }

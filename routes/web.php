@@ -31,6 +31,7 @@ use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OvertimeExcessReportController;
 use App\Http\Controllers\OvertimePactController;
+use App\Http\Controllers\OvertimePendingReportController;
 use App\Http\Controllers\OvertimeRequestController;
 use App\Http\Controllers\OvertimeRestDayBalanceController;
 use App\Http\Controllers\PayrollExportHistoryController;
@@ -238,6 +239,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->group(function () {
             Route::get('/', [OvertimeRestDayBalanceController::class, 'index'])->name('index');
             Route::post('/consume', [OvertimeRestDayBalanceController::class, 'consume'])->name('consume');
+        });
+
+    // Stale-overtime alert report (KOL-52, PRD §12): a shift excess nobody has
+    // approved past the configured threshold, gated by the same permission as
+    // pactos and rest-day balances since it is an HR-facing compliance report.
+    Route::middleware('permission:Manage:OvertimeAuthorization')
+        ->prefix('overtime/pending')
+        ->name('overtime.pending.')
+        ->group(function () {
+            Route::get('/', [OvertimePendingReportController::class, 'index'])->name('index');
         });
 });
 

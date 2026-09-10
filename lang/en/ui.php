@@ -369,6 +369,10 @@ return [
                 'label' => 'Count early arrival as overtime',
                 'hint' => 'Time worked before the shift starts feeds the calculated overtime. Off by default: excess hours need the employer behind them. It is always recorded either way.',
             ],
+            'overtime_pending_alert_threshold_days' => [
+                'label' => 'Days before flagging pending overtime',
+                'hint' => 'Once a shift excess goes this many days without an approved decision, it appears on the pending report and whoever manages overtime is notified.',
+            ],
         ],
         'overtime_authorization_modes' => [
             'pre_authorization' => 'Pre-authorization',
@@ -2092,6 +2096,32 @@ return [
                     'expiry_date' => 'Expires',
                     'status' => 'Status',
                 ],
+            ],
+        ],
+
+        'pending' => [
+            'title' => 'Pending overtime alert',
+            'description' => 'Shift excess with no decision past the configured threshold — prolonged silence is legal exposure, not a neutral non-event (Código del Trabajo art. 32).',
+            'back' => 'Back to overtime',
+            'search_placeholder' => 'Search by employee...',
+            'empty' => 'No pending overtime is over the configured threshold.',
+            'no_supervisor' => 'No supervisor assigned',
+            'resolve' => 'Resolve',
+            'days_pending_value' => ':days days',
+
+            'columns' => [
+                'employee' => 'Employee',
+                'supervisor' => 'Supervisor',
+                'date' => 'Date',
+                'days_pending' => 'Days pending',
+                'calculated_hours' => 'Calculated hours',
+            ],
+
+            'stats' => [
+                'stale_count' => 'Records over threshold',
+                'threshold_days' => 'Configured threshold',
+                'average_resolution_days' => 'Average days to resolution',
+                'no_data' => 'No data yet',
             ],
         ],
     ],

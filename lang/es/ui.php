@@ -372,6 +372,10 @@ return [
                 'label' => 'Contar la llegada anticipada como hora extra',
                 'hint' => 'El tiempo trabajado antes del inicio del turno suma a las horas extra calculadas. Desactivado por defecto: las horas de exceso requieren conocimiento del empleador. En ambos casos queda registrado.',
             ],
+            'overtime_pending_alert_threshold_days' => [
+                'label' => 'Días para alertar por horas extra pendientes',
+                'hint' => 'Cuando un exceso de jornada lleva más de esta cantidad de días sin ser aprobado, aparece en el reporte de pendientes y se notifica a quienes gestionan horas extra.',
+            ],
         ],
         'overtime_authorization_modes' => [
             'pre_authorization' => 'Autorización previa',
@@ -2095,6 +2099,32 @@ return [
                     'expiry_date' => 'Vence',
                     'status' => 'Estado',
                 ],
+            ],
+        ],
+
+        'pending' => [
+            'title' => 'Alerta de horas extra pendientes',
+            'description' => 'Excesos de jornada sin decisión que superan el umbral configurado — el silencio prolongado es un riesgo legal, no un no-evento (art. 32 del Código del Trabajo).',
+            'back' => 'Volver a horas extra',
+            'search_placeholder' => 'Buscar por empleado...',
+            'empty' => 'No hay horas extra pendientes sobre el umbral configurado.',
+            'no_supervisor' => 'Sin supervisor asignado',
+            'resolve' => 'Resolver',
+            'days_pending_value' => ':days días',
+
+            'columns' => [
+                'employee' => 'Empleado',
+                'supervisor' => 'Supervisor',
+                'date' => 'Fecha',
+                'days_pending' => 'Días pendiente',
+                'calculated_hours' => 'Horas calculadas',
+            ],
+
+            'stats' => [
+                'stale_count' => 'Registros sobre el umbral',
+                'threshold_days' => 'Umbral configurado',
+                'average_resolution_days' => 'Promedio de días a resolución',
+                'no_data' => 'Sin datos aún',
             ],
         ],
     ],

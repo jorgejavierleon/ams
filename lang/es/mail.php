@@ -78,6 +78,15 @@ return [
         'action' => 'Ver pactos',
     ],
 
+    'overtime_pending_alert' => [
+        'subject' => 'Horas extra pendientes de decisión',
+        'heading' => 'Horas extra pendientes por revisar',
+        'body' => 'Hay :count registro(s) de horas extra sin una decisión aprobada por más de :days días. El silencio prolongado puede constituir un reconocimiento tácito de horas trabajadas bajo el criterio de realidad de la Dirección del Trabajo (art. 32 del Código del Trabajo).',
+        'oldest' => 'Registro más antiguo',
+        'days' => ':days días',
+        'action' => 'Ver horas extra pendientes',
+    ],
+
     'rest_day_balance_accrued' => [
         'subject' => 'Tus horas de descanso compensatorio y su vencimiento',
         'heading' => 'Saldo de descanso compensatorio',
