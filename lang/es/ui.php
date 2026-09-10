@@ -40,7 +40,7 @@ return [
         'my_documents' => 'Mis documentos',
         'team_leaves' => 'Permisos del equipo',
         'overtime' => 'Horas extra',
-        'overtime_requests' => 'Horas extra pendientes',
+        'overtime_requests' => 'Solicitudes de horas extra',
         'reports' => 'Reportes',
         'payroll_reports' => 'Remuneraciones',
         'payroll_export_history' => 'Historial de exportaciones',

@@ -40,7 +40,7 @@ return [
         'my_documents' => 'My documents',
         'team_leaves' => 'Team leaves',
         'overtime' => 'Overtime',
-        'overtime_requests' => 'Pending overtime requests',
+        'overtime_requests' => 'Overtime requests',
         'reports' => 'Reports',
         'payroll_reports' => 'Payroll reports',
         'payroll_export_history' => 'Export history',
