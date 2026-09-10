@@ -1,11 +1,11 @@
 ---
 id: KOL-107
 title: Generalize the bulk-import wizard to support resource types beyond Employee
-status: In Review
+status: Done
 assignee:
   - '@jorgejavierleon'
 created_date: '2026-09-06 10:30'
-updated_date: '2026-09-08 10:15'
+updated_date: '2026-09-08 22:57'
 labels:
   - bulk-import
 milestone: m-3
