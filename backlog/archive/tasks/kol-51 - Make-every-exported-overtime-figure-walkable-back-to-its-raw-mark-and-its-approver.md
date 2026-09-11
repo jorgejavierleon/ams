@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-06 02:55'
+updated_date: '2026-09-10 22:24'
 labels:
   - overtime
   - backend
@@ -14,7 +15,6 @@ labels:
 milestone: m-2
 dependencies:
   - KOL-46
-  - KOL-50
 documentation:
   - docs/PRD_Overtime_Module_Kolvi_EN.md
 priority: high
