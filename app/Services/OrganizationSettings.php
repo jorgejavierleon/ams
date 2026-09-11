@@ -119,17 +119,6 @@ class OrganizationSettings
     }
 
     /**
-     * How many days a day's overtime may sit without an approved decision
-     * before it is surfaced to HR as stale (PRD §12, KOL-52) — the DT's
-     * criterio de realidad (art. 32) means silence past this point is legal
-     * exposure, not a neutral non-event.
-     */
-    public function overtimePendingAlertThresholdDays(?int $organizationId = null): int
-    {
-        return (int) $this->get('overtime_pending_alert_threshold_days', 15, $organizationId);
-    }
-
-    /**
      * Drop the cached settings for an organization so the next read reloads it.
      * Called by the observer on every change.
      */

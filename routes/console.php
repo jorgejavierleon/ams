@@ -30,13 +30,6 @@ Schedule::command('overtime:pacts:notify-expiring')->dailyAt('07:00');
 // sweep is idempotent on `expired_at`.
 Schedule::command('overtime:rest-day-balances:sweep-expired')->dailyAt('07:00');
 
-// PRD §12, KOL-52: the DT's criterio de realidad (art. 32) means a shift
-// excess nobody decides on for too long is legal exposure, not a neutral
-// non-event. Unlike the pacto-expiry alert above, this is not idempotent on
-// purpose: it re-sends every day the condition holds, per organization, so
-// inaction stays visible for as long as it lasts.
-Schedule::command('overtime:pending:notify-stale')->dailyAt('07:45');
-
 // KOL-48, Resolución 38 art. 45.3: a hard compliance requirement, not a
 // convenience — the worker must be told every 30 days what rest-day balance
 // they hold and when each accrual expires. The cadence is per employee, not

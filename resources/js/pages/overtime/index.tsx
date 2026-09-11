@@ -1,12 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    CalendarClock,
-    FileText,
-    ListChecks,
-    Plus,
-    Timer,
-} from 'lucide-react';
+import { CalendarClock, FileText, ListChecks, Plus, Timer } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
@@ -16,7 +9,6 @@ import {
 } from '@/routes/my/overtime-requests';
 import { index as myRestDayBalanceIndex } from '@/routes/my/overtime-rest-day-balance';
 import { index as pactsIndex } from '@/routes/overtime/pacts';
-import { index as pendingIndex } from '@/routes/overtime/pending';
 import { index as requestsIndex } from '@/routes/overtime/requests';
 import { index as restDayBalancesIndex } from '@/routes/overtime/rest-day-balances';
 
@@ -27,7 +19,6 @@ type Props = {
         viewRequests: boolean;
         manageRestDayBalances: boolean;
         viewOwnRestDayBalance: boolean;
-        viewPendingAlerts: boolean;
     };
 };
 
@@ -74,14 +65,6 @@ export default function OvertimeIndex({ can }: Props) {
                                 <Link href={pactsIndex()}>
                                     <FileText className="size-4" />
                                     {t('ui.overtime.pacts.title')}
-                                </Link>
-                            </Button>
-                        )}
-                        {can.viewPendingAlerts && (
-                            <Button variant="outline" asChild>
-                                <Link href={pendingIndex()}>
-                                    <AlertTriangle className="size-4" />
-                                    {t('ui.overtime.pending.title')}
                                 </Link>
                             </Button>
                         )}

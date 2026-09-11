@@ -32,7 +32,6 @@ class SettingFactory extends Factory
             'overtime_weekly_anomaly_threshold_hours' => 10,
             'overtime_retroactive_request_days' => 7,
             'overtime_counts_pre_shift_excess' => false,
-            'overtime_pending_alert_threshold_days' => 15,
         ];
     }
 }

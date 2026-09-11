@@ -44,7 +44,6 @@ class SettingController extends Controller
     private const VALUE_RULES = [
         'overtime_weekly_anomaly_threshold_hours' => ['required', 'numeric', 'min:0', 'max:168'],
         'overtime_retroactive_request_days' => ['required', 'integer', 'min:0', 'max:365'],
-        'overtime_pending_alert_threshold_days' => ['required', 'integer', 'min:1', 'max:365'],
     ];
 
     public function index(): Response
@@ -59,7 +58,6 @@ class SettingController extends Controller
                 'overtime_authorization_mode' => $setting->overtime_authorization_mode->value,
                 'overtime_weekly_anomaly_threshold_hours' => (float) $setting->overtime_weekly_anomaly_threshold_hours,
                 'overtime_retroactive_request_days' => (int) $setting->overtime_retroactive_request_days,
-                'overtime_pending_alert_threshold_days' => (int) $setting->overtime_pending_alert_threshold_days,
             ],
             'overtimeAuthorizationModeOptions' => OvertimeAuthorizationMode::options(),
         ]);

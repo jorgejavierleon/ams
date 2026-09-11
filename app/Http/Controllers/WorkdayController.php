@@ -171,7 +171,7 @@ class WorkdayController extends Controller
             'status_label' => $authorization?->status->label() ?? __('ui.workdays.overtime.statuses.not_opened'),
             'status_badge' => $authorization?->status->badge() ?? 'outline',
             'compensation_eligible' => $workday->user->overtime_rest_day_eligible,
-            'can_decide' => $workday->needsOvertimeDecision() && Gate::allows('approve', $authorization ?? $this->provisionalAuthorization($workday)),
+            'can_decide' => ! $isApproved && Gate::allows('approve', $authorization ?? $this->provisionalAuthorization($workday)),
             'can_revoke' => $isApproved && Gate::allows('revoke', $authorization),
         ];
     }

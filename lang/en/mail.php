@@ -78,15 +78,6 @@ return [
         'action' => 'View pactos',
     ],
 
-    'overtime_pending_alert' => [
-        'subject' => 'Overtime records pending a decision',
-        'heading' => 'Pending overtime needs review',
-        'body' => 'There are :count overtime record(s) with no approved decision for more than :days days. Prolonged silence can amount to tacit acknowledgment of hours worked under the Dirección del Trabajo\'s reality criterion (Código del Trabajo art. 32).',
-        'oldest' => 'Oldest record',
-        'days' => ':days days',
-        'action' => 'View pending overtime',
-    ],
-
     'leave_approved' => [
         'subject' => 'Your leave request was approved',
         'heading' => 'Leave request approved',

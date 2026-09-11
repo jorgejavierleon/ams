@@ -99,7 +99,7 @@ class WorkdayPresenter
             'status_badge' => $authorization?->status->badge() ?? 'outline',
             'compensation_type_label' => $isApproved ? $authorization->compensation_type->label() : null,
             'compensation_eligible' => $workday->user->overtime_rest_day_eligible,
-            'can_decide' => $workday->needsOvertimeDecision() && Gate::allows('approve', $authorization ?? $this->provisionalAuthorization($workday)),
+            'can_decide' => ! $isApproved && Gate::allows('approve', $authorization ?? $this->provisionalAuthorization($workday)),
             'can_revoke' => $isApproved && Gate::allows('revoke', $authorization),
         ];
     }
@@ -188,7 +188,7 @@ class WorkdayPresenter
             'revoked_by' => $authorization->revokedBy?->name,
             'revoked_at' => $authorization->revoked_at?->format('d/m/Y H:i'),
             'revoked_ago' => $authorization->revoked_at?->diffForHumans(),
-            'can_decide' => $workday->needsOvertimeDecision() && Gate::allows('approve', $authorization),
+            'can_decide' => ! $isApproved && Gate::allows('approve', $authorization),
             'can_revoke' => $isApproved && Gate::allows('revoke', $authorization),
             'sort_at' => ($authorization->revoked_at ?? $authorization->reviewed_at ?? $authorization->created_at)->timestamp,
         ];

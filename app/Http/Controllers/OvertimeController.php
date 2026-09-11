@@ -37,9 +37,6 @@ class OvertimeController extends Controller
                 // own.
                 'manageRestDayBalances' => $request->user()->can('Manage:OvertimeAuthorization'),
                 'viewOwnRestDayBalance' => $request->user()->can('ViewOwn:OvertimeAuthorization'),
-                // KOL-52: the stale-overtime alert report, same audience as
-                // pactos and rest-day balances.
-                'viewPendingAlerts' => $request->user()->can('Manage:OvertimeAuthorization'),
             ],
         ]);
     }
