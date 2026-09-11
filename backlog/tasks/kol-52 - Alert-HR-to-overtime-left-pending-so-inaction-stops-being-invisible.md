@@ -1,11 +1,11 @@
 ---
 id: KOL-52
 title: 'Alert HR to overtime left pending, so inaction stops being invisible'
-status: Done
+status: To Do
 assignee:
   - '@jorge'
 created_date: '2026-08-06 02:56'
-updated_date: '2026-09-10 23:17'
+updated_date: '2026-09-11 09:12'
 labels:
   - overtime
   - backend
@@ -41,21 +41,21 @@ Follow the existing scheduled-command and mailable patterns, and put the report 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 A report lists overtime records pending beyond the configured threshold, grouped so the responsible supervisor is identifiable, not only the affected employee
-- [x] #2 HR is notified periodically while records remain over the threshold, and not notified when nothing is stale
-- [x] #3 The threshold is a per-tenant setting alongside the other overtime policy values
-- [x] #4 The average time between the marked day and its resolution is surfaced from the same data
-- [x] #5 The report is in Spanish, uses the shared DataTable foundation, and links to the queue where each record is resolved
-- [x] #6 The report is organization-scoped and bounded in query count for a large organization
-- [x] #7 Pest tests cover records inside and outside the threshold, an organization with nothing stale receiving no notification, and the resolution-time figure
+- [ ] #1 A report lists overtime records pending beyond the configured threshold, grouped so the responsible supervisor is identifiable, not only the affected employee
+- [ ] #2 HR is notified periodically while records remain over the threshold, and not notified when nothing is stale
+- [ ] #3 The threshold is a per-tenant setting alongside the other overtime policy values
+- [ ] #4 The average time between the marked day and its resolution is surfaced from the same data
+- [ ] #5 The report is in Spanish, uses the shared DataTable foundation, and links to the queue where each record is resolved
+- [ ] #6 The report is organization-scoped and bounded in query count for a large organization
+- [ ] #7 Pest tests cover records inside and outside the threshold, an organization with nothing stale receiving no notification, and the resolution-time figure
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [x] #1 vendor/bin/pint --dirty --format agent reports clean
-- [x] #2 sa test --compact passes
-- [x] #3 npm run types:check passes when TypeScript touched
-- [x] #4 Every PHP change has a Pest test
+- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
+- [ ] #2 sa test --compact passes
+- [ ] #3 npm run types:check passes when TypeScript touched
+- [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -97,6 +97,18 @@ Code review (fork) surfaced three real findings, all fixed:
 
 Added one regression test (stale-count stat agrees with an active search filter) for fix #1. Re-verified after fixes: 342 tests passing in the targeted overtime/workday/settings suite, pint clean, phpstan 0 errors on every touched file.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-09-11 09:12
+---
+Reverted per @jorge: the report + daily-digest notification "added too much noise and not real value." Full implementation (report, notifier, per-tenant threshold setting, hub link, migration, tests) removed in commit dec2330/8d051a9. The unrelated sidebar nav-label fix discovered along the way (overtime.requests mislabeled "Horas extra pendientes") was kept.
+
+Implementation Notes and Final Summary below are left as a historical record of what was built and how it was verified, in case a differently-scoped approach to PRD §12's underlying risk is revisited later — they no longer describe code that exists in the app.
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
