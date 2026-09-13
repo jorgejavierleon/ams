@@ -3,11 +3,11 @@ id: KOL-82
 title: >-
   Introduce spatie/laravel-activitylog and use it for overtime authorization
   events
-status: In Progress
+status: Done
 assignee:
   - jorgejavierleon@gmail.com
 created_date: '2026-08-21 09:39'
-updated_date: '2026-09-13 11:27'
+updated_date: '2026-09-13 22:49'
 labels:
   - overtime
   - backend
@@ -38,7 +38,7 @@ This is a specific case of a broader gap: several places in the app track 'curre
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [x] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
+- [x] #2 sa test --compact passes
 - [x] #3 npm run types:check passes when TypeScript touched
 - [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
@@ -62,10 +62,12 @@ This is a specific case of a broader gap: several places in the app track 'curre
 Discovered spatie/laravel-activitylog was already installed and used elsewhere (Documents, LegalHourLimit, PayrollExportHistory, Saas AuditLogController) with a causer-based org-attribution convention (no organization_id column on activity_log). Initially built a separate scoped App\Models\Activity + migration before finding this; reverted that in favor of matching the existing convention exactly.
 
 A code-review pass (mattpocock-skills:code-review, forked) surfaced real issues, all fixed: (1) records approved/revoked before this deploy have no logged activity — timeline now falls back to synthesizing an entry from the still-present columns when no matching activity exists, so pre-existing history doesn't vanish (new test: 'a decision recorded before KOL-82 shipped...'); (2) authorized_hours/final_hours/calculated_hours are now snapshotted into each logged activity's properties (not read live off the row), so a hypothetical re-approve-after-revoke cycle can't retroactively rewrite an earlier entry's displayed figures; (3) can_decide/can_revoke are now computed once in timeline() and applied only to the single most-recent overtime entry after the full merge+sort, not per-entry inside overtimeTimelineEntries(); (4) the 'overtimeAuthorization.activities.causer:id,name' eager load used the colon column-shorthand on a MorphTo, which Laravel does not honor (only wheres merge across morph types, never the select) — switched to MorphTo::constrain(). Declined as out of scope/inconsistent with existing conventions: adding an organization_id column to activity_log (app already attributes activities to a tenant via the causer, e.g. Saas AuditLogController); using Spatie's Config::activityModel() instead of a hardcoded Activity::class import (every other activity() call site in the app hardcodes the import too); a shared causer-name-resolution helper (the same ternary already exists independently in 3 other controllers, pre-dating this ticket).
+
+Full suite run after user confirmed the browser check (approve then revoke on a real Jornadas day showed both timeline entries): sa test --compact -> 1427 passed, 7 skipped (pre-existing, unrelated to this ticket), 0 failed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Added activity-log entries to OvertimeAuthorization::approve()/revoke() (event, causer, snapshotted hours/compensation_type/reason) and reworked WorkdayPresenter::timeline() to render one entry per logged decision instead of one summary-of-current-state entry, so approving then revoking a day shows both events. Pre-existing decisions with no logged activity (data from before this deploy) fall back to a column-derived entry so history isn't lost. Verified with: 2 new + 1 updated Pest test in OvertimeAuthorizationTest/WorkdayOvertimeTest (23+20 tests passing), full project-wide Larastan (0 errors), Pint clean, npm run types:check (only pre-existing unrelated failures in resources/js/pages/roles/*). Full 'sa test --compact' suite was not run, per standing preference to defer that until you review.
+Added activity-log entries to OvertimeAuthorization::approve()/revoke() (event, causer, snapshotted hours/compensation_type/reason) and reworked WorkdayPresenter::timeline() to render one entry per logged decision instead of one summary-of-current-state entry, so approving then revoking a day shows both events. Pre-existing decisions with no logged activity fall back to a column-derived entry so history isn't lost. Verified with: 2 new + 1 updated Pest test, full project-wide Larastan (0 errors), Pint clean, npm run types:check (touched files clean), full sa test --compact suite (1427 passed, 7 pre-existing skips, 0 failed), and a manual browser check confirmed by the user (approve then revoke on a real Jornadas day showed both timeline entries).
 <!-- SECTION:FINAL_SUMMARY:END -->
