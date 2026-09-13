@@ -112,7 +112,10 @@ class OvertimeRequestController extends Controller
         // whatever the client posted, so the stored request can never drift
         // from what was actually calculated.
         if (! empty($data['workday_id'])) {
-            $workday = Workday::query()->where('user_id', $user->id)->findOrFail($data['workday_id']);
+            $workday = Workday::query()
+                ->where('user_id', $user->id)
+                ->where('id', $data['workday_id'])
+                ->firstOrFail();
 
             if (! $workday->calculated_overtime || $workday->calculated_overtime === '00:00:00') {
                 throw ValidationException::withMessages([
@@ -172,7 +175,10 @@ class OvertimeRequestController extends Controller
             return null;
         }
 
-        $workday = Workday::query()->where('user_id', $request->user()->id)->find($workdayId);
+        $workday = Workday::query()
+            ->where('user_id', $request->user()->id)
+            ->where('id', $workdayId)
+            ->first();
 
         if ($workday === null || ! $workday->calculated_overtime || $workday->calculated_overtime === '00:00:00') {
             return null;
