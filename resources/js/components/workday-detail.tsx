@@ -73,6 +73,7 @@ export type WorkdayDetailData = {
     worked_time: string | null;
     extra_time: string | null;
     missing_time: string | null;
+    calculated_overtime: string | null;
 };
 
 export type Modification = {
@@ -140,6 +141,18 @@ export type OvertimeSummary = {
     compensation_eligible: boolean;
     can_decide: boolean;
     can_revoke: boolean;
+};
+
+/**
+ * KOL-79: the employee's own affordance to request overtime for a day that
+ * already carries calculated overtime — a request pre-filled from that
+ * figure, not a decision. Mutually exclusive with `OvertimeSummary`: the
+ * admin/supervisor view decides overtime, the employee's own view requests
+ * it.
+ */
+export type OvertimeRequestAction = {
+    hours: string;
+    href: string;
 };
 
 type Option = { value: string; label: string };
@@ -571,6 +584,9 @@ function MarkPanel({
  *   overtime stat section and merge the day's overtime decision into the
  *   same timeline as mark-modification requests; omitted entirely on the
  *   employee self-service page, which never decides overtime.
+ * - `overtimeRequest` (KOL-79) is the employee-only counterpart: a card
+ *   offering to request the day's already-calculated overtime, pre-filled
+ *   rather than decided.
  */
 export default function WorkdayDetail({
     workday,
@@ -583,6 +599,7 @@ export default function WorkdayDetail({
     onModifyMark,
     overtime,
     compensationTypeOptions = [],
+    overtimeRequest,
 }: {
     workday: WorkdayDetailData;
     modifications: TimelineEntry[];
@@ -597,6 +614,7 @@ export default function WorkdayDetail({
     onModifyMark?: () => void;
     overtime?: OvertimeSummary | null;
     compensationTypeOptions?: Option[];
+    overtimeRequest?: OvertimeRequestAction | null;
 }) {
     const { t } = useTranslations();
 
@@ -838,6 +856,26 @@ export default function WorkdayDetail({
                                     )}
                                 </div>
                             )}
+                        </div>
+                    </section>
+                )}
+
+                {overtimeRequest && (
+                    <section className="rounded-xl border bg-card p-4 shadow-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                <h2 className="text-[13px] font-semibold">
+                                    {t('ui.workdays.show.overtime.title')}
+                                </h2>
+                                <span className="text-lg font-semibold tracking-tight tabular-nums">
+                                    {hm(overtimeRequest.hours)}
+                                </span>
+                            </div>
+                            <Button size="sm" asChild>
+                                <Link href={overtimeRequest.href}>
+                                    {t('ui.workdays.show.overtime.request')}
+                                </Link>
+                            </Button>
                         </div>
                     </section>
                 )}

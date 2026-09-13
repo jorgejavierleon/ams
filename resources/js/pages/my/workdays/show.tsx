@@ -9,11 +9,13 @@ import type {
     WorkdayDetailData,
 } from '@/components/workday-detail';
 import { useTranslations } from '@/hooks/use-translations';
+import { create as createOvertimeRequest } from '@/routes/my/overtime-requests';
 import { index } from '@/routes/my/workdays';
 
 type Props = {
     workday: WorkdayDetailData;
     modifications: Modification[];
+    canRequestOvertime: boolean;
 };
 
 /**
@@ -22,8 +24,26 @@ type Props = {
  * ability to request mark changes. Pending corrections can still be approved or
  * declined inline, since the employee is their assigned reviewer.
  */
-export default function MyWorkdayShow({ workday, modifications }: Props) {
+export default function MyWorkdayShow({
+    workday,
+    modifications,
+    canRequestOvertime,
+}: Props) {
     const { t } = useTranslations();
+
+    // KOL-79: request overtime for this specific day, pre-filled from its
+    // already-calculated figure. `canRequestOvertime` already accounts for
+    // the day carrying calculated overtime, so `workday.calculated_overtime`
+    // is only re-checked here to satisfy the type.
+    const overtimeRequest =
+        canRequestOvertime && workday.calculated_overtime
+            ? {
+                  hours: workday.calculated_overtime,
+                  href: createOvertimeRequest({
+                      query: { workday: workday.id },
+                  }).url,
+              }
+            : null;
 
     return (
         <>
@@ -39,6 +59,7 @@ export default function MyWorkdayShow({ workday, modifications }: Props) {
                         ? approveModification
                         : declineModification)([workday.id, modificationId]).url
                 }
+                overtimeRequest={overtimeRequest}
             />
         </>
     );

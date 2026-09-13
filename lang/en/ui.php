@@ -1715,6 +1715,7 @@ return [
             'overtime' => [
                 'title' => 'Overtime',
                 'calculated_short' => 'Calculated:',
+                'request' => 'Request overtime',
                 'actions' => [
                     'approve' => 'Approve',
                     'revoke' => 'Revoke',
@@ -1862,6 +1863,7 @@ return [
             'validation' => [
                 'retroactive_window' => 'You can only request retroactive overtime within the last :days days.',
                 'positive_hours' => 'Requested hours must be greater than 0.',
+                'no_calculated_overtime' => 'This workday has no calculated overtime to request.',
             ],
 
             'flash' => [
@@ -1911,6 +1913,7 @@ return [
                     'requested_hours_hint' => 'Use decimals, e.g. 1.5 for an hour and a half.',
                     'reason' => 'Reason',
                     'retroactive_hint' => 'You can request past dates up to :days days back.',
+                    'from_workday_hint' => 'Date and hours taken from your workday; you cannot change them.',
                 ],
             ],
 

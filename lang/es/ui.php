@@ -1718,6 +1718,7 @@ return [
             'overtime' => [
                 'title' => 'Horas extra',
                 'calculated_short' => 'Calculadas:',
+                'request' => 'Solicitar horas extra',
                 'actions' => [
                     'approve' => 'Aprobar',
                     'revoke' => 'Eliminar',
@@ -1865,6 +1866,7 @@ return [
             'validation' => [
                 'retroactive_window' => 'Solo puedes solicitar horas extra retroactivas dentro de los últimos :days días.',
                 'positive_hours' => 'Las horas solicitadas deben ser mayores a 0.',
+                'no_calculated_overtime' => 'Esta jornada no tiene horas extra calculadas para solicitar.',
             ],
 
             'flash' => [
@@ -1914,6 +1916,7 @@ return [
                     'requested_hours_hint' => 'Usa decimales, por ejemplo 1.5 para una hora y media.',
                     'reason' => 'Motivo',
                     'retroactive_hint' => 'Puedes solicitar fechas pasadas hasta :days días atrás.',
+                    'from_workday_hint' => 'Fecha y horas tomadas de tu jornada; no puedes modificarlas.',
                 ],
             ],
 
