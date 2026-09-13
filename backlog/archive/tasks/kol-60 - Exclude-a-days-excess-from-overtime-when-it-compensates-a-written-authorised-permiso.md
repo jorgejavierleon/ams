@@ -35,7 +35,7 @@ Código del Trabajo art. 32, final paragraph: "No serán horas extraordinarias l
 
 This is the mirror image of KOL-55 (which lets a reviewer *include* excluded pre-shift excess into OHC): here a reviewer *excludes* excess that would otherwise be eligible, for a distinct legal reason, and the two mechanisms should not be confused or merged.
 
-Open question for whoever picks this up: whether the "permiso" being compensated must reference an existing Leave record (app/Models/Leave.php) or can be a free-standing written request — Leave today is date-range/business-day oriented, not hour-level, so research the closest fit before implementing rather than assuming.
+Decision: the permiso being compensated does not need to reference an existing Leave record (app/Models/Leave.php). In practice it is often an arrangement made directly between the employee and the employer with no trace in the system at all — a permiso granted informally, outside any Leave request the app tracked. The mark must therefore capture the permiso being compensated as a free-standing description (what was granted and when, as stated in the employee's written request), not as a foreign key to a Leave. If a matching Leave record happens to exist, allow referencing it for convenience, but never require one.
 
 Reference: Código del Trabajo art. 32 (final paragraph, not currently cited in docs/PRD_Overtime_Module_Kolvi_EN.md). See also KOL-38 (calculated excess), KOL-46 (MIN payable rule), KOL-41 (legal caps), KOL-55 (the inclusion mirror case).
 
@@ -81,15 +81,16 @@ Feature: Exclude permiso make-up hours from overtime
 <!-- AC:BEGIN -->
 - [ ] #1 An authorised reviewer can mark a day's calculated excess (pre-shift and/or post-shift) as compensating an employee's permiso instead of routing it as overtime
 - [ ] #2 Marking requires recording both legal conditions: the employee's written request for the compensation and the employer's authorisation, each attributed to a person and a timestamp; missing either refuses the action
-- [ ] #3 A day marked as permiso compensation has its excess excluded from OHC/HHEE and from the payable overtime figure (KOL-46 MIN rule), and never becomes a pending OvertimeAuthorization
-- [ ] #4 Hours excluded as permiso compensation do not count toward the daily or weekly legal overtime caps (KOL-41)
-- [ ] #5 Hours excluded as permiso compensation never appear as extraordinary hours in overtime reports or exports (KOL-49, KOL-50)
-- [ ] #6 Marking is per day and cannot be applied in bulk, so it cannot become a blanket policy hiding real overtime
-- [ ] #7 A day already carrying an approved OvertimeAuthorization cannot be marked as permiso compensation without first reversing or objecting the approval
-- [ ] #8 Recalculating a day that carries a permiso-compensation mark preserves the mark, its written request and its authorisation, or surfaces the day for re-review rather than silently discarding it
-- [ ] #9 A reviewer without the permission, or outside the employee's team scope, cannot mark a day as permiso compensation
-- [ ] #10 The mark, the written request and who authorised it are visible in Spanish from the pending-overtime queue or the day detail
-- [ ] #11 Pest tests cover: marking excludes the excess from OHC/HHEE, marking refused without a written request, marking refused without authorisation, excluded hours excluded from legal cap totals, recalculation preserves the mark, an unauthorised or out-of-scope reviewer is refused, bulk marking is unavailable, and a day with an existing approved authorisation cannot be marked without reversal
+- [ ] #3 The permiso being compensated is recorded as a free-standing description (what was granted, when) and is never required to reference an existing Leave record, since it may have been granted entirely outside the system; a Leave record may optionally be linked when one exists
+- [ ] #4 A day marked as permiso compensation has its excess excluded from OHC/HHEE and from the payable overtime figure (KOL-46 MIN rule), and never becomes a pending OvertimeAuthorization
+- [ ] #5 Hours excluded as permiso compensation do not count toward the daily or weekly legal overtime caps (KOL-41)
+- [ ] #6 Hours excluded as permiso compensation never appear as extraordinary hours in overtime reports or exports (KOL-49, KOL-50)
+- [ ] #7 Marking is per day and cannot be applied in bulk, so it cannot become a blanket policy hiding real overtime
+- [ ] #8 A day already carrying an approved OvertimeAuthorization cannot be marked as permiso compensation without first reversing or objecting the approval
+- [ ] #9 Recalculating a day that carries a permiso-compensation mark preserves the mark, its written request and its authorisation, or surfaces the day for re-review rather than silently discarding it
+- [ ] #10 A reviewer without the permission, or outside the employee's team scope, cannot mark a day as permiso compensation
+- [ ] #11 The mark, the written request and who authorised it are visible in Spanish from the pending-overtime queue or the day detail
+- [ ] #12 Pest tests cover: marking excludes the excess from OHC/HHEE, marking refused without a written request, marking refused without authorisation, excluded hours excluded from legal cap totals, recalculation preserves the mark, an unauthorised or out-of-scope reviewer is refused, bulk marking is unavailable, and a day with an existing approved authorisation cannot be marked without reversal, marking without a linked Leave record still succeeds when the written request and authorisation are recorded
 <!-- AC:END -->
 
 ## Definition of Done
