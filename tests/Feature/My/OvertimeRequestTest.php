@@ -6,9 +6,11 @@ use App\Models\Organization;
 use App\Models\OvertimeRequest;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\Workday;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
@@ -235,6 +237,137 @@ test('an employee sees only their own request history and status', function () {
             ->component('my/overtime-requests/index')
             ->has('requests.data', 1)
             ->where('requests.data.0.status', OvertimeRequestStatus::Pending->value));
+});
+
+// --- Requesting from a specific Workday (KOL-79) ---
+
+test('requesting from a day with calculated overtime succeeds with matching hours regardless of the posted value', function () {
+    $employee = otEmployee();
+    $workday = Workday::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'date' => now()->toDateString(),
+        'calculated_overtime' => '02:30:00',
+    ]);
+
+    $this->actingAs($employee)
+        ->post(route('my.overtime-requests.store'), [
+            'date' => $workday->date->toDateString(),
+            // A tampered/stale value must be ignored in favour of the
+            // workday's own calculated figure.
+            'requested_hours' => '00:15',
+            'workday_id' => $workday->id,
+            'reason' => 'Cierre de mes.',
+        ])
+        ->assertRedirect(route('my.overtime-requests.index'));
+
+    $request = OvertimeRequest::first();
+
+    expect($request)->not->toBeNull()
+        ->and($request->user_id)->toBe($employee->id)
+        ->and($request->requested_hours)->toBe('02:30:00')
+        ->and($request->reason)->toBe('Cierre de mes.');
+});
+
+test('the create page pre-fills the date and hours from the given workday', function () {
+    $employee = otEmployee();
+    $workday = Workday::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'date' => now()->toDateString(),
+        'calculated_overtime' => '01:45:00',
+    ]);
+
+    $this->actingAs($employee)
+        ->get(route('my.overtime-requests.create', ['workday' => $workday->id]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('my/overtime-requests/create')
+            ->where('prefill.workday_id', $workday->id)
+            ->where('prefill.date', $workday->date->format('Y-m-d'))
+            ->where('prefill.hours', '01:45'));
+});
+
+test('the create page ignores a workday with no calculated overtime and falls back to a blank form', function () {
+    $employee = otEmployee();
+    $workday = Workday::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'calculated_overtime' => null,
+    ]);
+
+    $this->actingAs($employee)
+        ->get(route('my.overtime-requests.create', ['workday' => $workday->id]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('prefill', null));
+});
+
+test('a day with zero calculated overtime is refused', function () {
+    $employee = otEmployee();
+    $workday = Workday::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'date' => now()->toDateString(),
+        'calculated_overtime' => '00:00:00',
+    ]);
+
+    $response = $this->actingAs($employee)
+        ->post(route('my.overtime-requests.store'), [
+            'date' => $workday->date->toDateString(),
+            'requested_hours' => '02:00',
+            'workday_id' => $workday->id,
+        ]);
+
+    $response->assertSessionHasErrors([
+        'workday_id' => 'Esta jornada no tiene horas extra calculadas para solicitar.',
+    ]);
+
+    expect(OvertimeRequest::count())->toBe(0);
+});
+
+test('a workday outside the retroactive window is refused with the existing message', function () {
+    $employee = otEmployee(OvertimeAuthorizationMode::Combined, [
+        'overtime_retroactive_request_days' => 5,
+    ]);
+    $workday = Workday::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'date' => now()->subDays(10)->toDateString(),
+        'calculated_overtime' => '02:00:00',
+    ]);
+
+    $response = $this->actingAs($employee)
+        ->post(route('my.overtime-requests.store'), [
+            'date' => $workday->date->toDateString(),
+            'requested_hours' => '02:00',
+            'workday_id' => $workday->id,
+        ]);
+
+    $response->assertSessionHasErrors([
+        'date' => 'Solo puedes solicitar horas extra retroactivas dentro de los últimos 5 días.',
+    ]);
+
+    expect(OvertimeRequest::count())->toBe(0);
+});
+
+test('an employee cannot request overtime from another employee workday', function () {
+    $employee = otEmployee();
+    $intruder = otEmployee();
+    $workday = Workday::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'date' => now()->toDateString(),
+        'calculated_overtime' => '02:00:00',
+    ]);
+
+    $this->actingAs($intruder)
+        ->post(route('my.overtime-requests.store'), [
+            'date' => $workday->date->toDateString(),
+            'requested_hours' => '02:00',
+            'workday_id' => $workday->id,
+        ])
+        ->assertNotFound();
+
+    expect(OvertimeRequest::count())->toBe(0);
 });
 
 // --- Permission seeding ---

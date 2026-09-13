@@ -6,11 +6,14 @@ use App\Enums\MarkModificationStatus;
 use App\Http\Controllers\Controller;
 use App\Managers\MarkModificationManager;
 use App\Models\MarkModification;
+use App\Models\OvertimeRequest;
 use App\Models\Workday;
+use App\Services\OrganizationSettings;
 use App\Services\WorkdayPresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -85,7 +88,7 @@ class WorkdayController extends Controller
      * ability to request mark changes. The employee can still approve or decline
      * the corrections an admin has opened against the day.
      */
-    public function show(Request $request, Workday $workday, WorkdayPresenter $presenter): Response
+    public function show(Request $request, Workday $workday, WorkdayPresenter $presenter, OrganizationSettings $settings): Response
     {
         abort_unless($workday->user_id === $request->user()->id, 403);
 
@@ -105,7 +108,22 @@ class WorkdayController extends Controller
         return Inertia::render('my/workdays/show', [
             'workday' => $presenter->workday($workday),
             'modifications' => $presenter->modifications($workday),
+            'canRequestOvertime' => $this->canRequestOvertime($workday, $settings),
         ]);
+    }
+
+    /**
+     * KOL-79: whether the employee may request overtime for this specific
+     * day from its detail page — the day already carries calculated
+     * overtime, the tenant mode allows requests (mirrors 'Solicitar horas
+     * extra' on the overtime hub), and the employee holds the permission.
+     */
+    private function canRequestOvertime(Workday $workday, OrganizationSettings $settings): bool
+    {
+        return $workday->calculated_overtime
+            && $workday->calculated_overtime !== '00:00:00'
+            && $settings->overtimeAuthorizationMode()->allowsRequests()
+            && Gate::allows('create', OvertimeRequest::class);
     }
 
     /**

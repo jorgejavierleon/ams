@@ -2,9 +2,11 @@
 
 use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
+use App\Enums\OvertimeAuthorizationMode;
 use App\Models\Mark;
 use App\Models\MarkModification;
 use App\Models\Organization;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\Workday;
 use Database\Seeders\RoleSeeder;
@@ -124,6 +126,56 @@ test('the employee sees the detail of their own workday with its timeline', func
             ->has('modifications', 1)
             // As the assigned reviewer, the employee may act on it inline.
             ->where('modifications.0.can_review', true));
+});
+
+// --- KOL-79: request overtime for a specific worked day ---
+
+test('the detail page offers to request overtime for a day with calculated overtime', function () {
+    $employee = reviewingEmployee();
+    $workday = Workday::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'calculated_overtime' => '02:00:00',
+    ]);
+
+    $this->actingAs($employee)
+        ->get(route('my.workdays.show', $workday->id))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('canRequestOvertime', true)
+            ->where('workday.calculated_overtime', '02:00'));
+});
+
+test('the detail page does not offer to request overtime for a day with no calculated overtime', function () {
+    $employee = reviewingEmployee();
+    $workday = Workday::factory()->create([
+        'organization_id' => $employee->organization_id,
+        'user_id' => $employee->id,
+        'calculated_overtime' => null,
+    ]);
+
+    $this->actingAs($employee)
+        ->get(route('my.workdays.show', $workday->id))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('canRequestOvertime', false));
+});
+
+test('the detail page hides the request action under pure post-hoc mode', function () {
+    $organization = Organization::factory()->create();
+    Setting::factory()->create([
+        'organization_id' => $organization->id,
+        'overtime_authorization_mode' => OvertimeAuthorizationMode::PostHoc,
+    ]);
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+    $workday = Workday::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'calculated_overtime' => '02:00:00',
+    ]);
+
+    $this->actingAs($employee)
+        ->get(route('my.workdays.show', $workday->id))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('canRequestOvertime', false));
 });
 
 test('the employee cannot view another employee workday detail', function () {

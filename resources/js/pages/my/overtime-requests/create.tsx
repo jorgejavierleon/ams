@@ -6,29 +6,47 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
-import { decimalHoursToTime } from '@/lib/overtime-duration';
+import {
+    decimalHoursToTime,
+    timeToDecimalHours,
+} from '@/lib/overtime-duration';
 import { index, store } from '@/routes/my/overtime-requests';
+
+type Prefill = {
+    workday_id: number;
+    date: string;
+    hours: string;
+};
 
 type Props = {
     retroactiveWindowDays: number;
+    prefill: Prefill | null;
 };
 
 type OvertimeRequestForm = {
     date: string;
     requested_hours: string;
     reason: string;
+    workday_id: number | null;
 };
 
 export default function CreateMyOvertimeRequest({
     retroactiveWindowDays,
+    prefill,
 }: Props) {
     const { t } = useTranslations();
 
+    // KOL-79: reached from a specific Workday's own detail page — the date
+    // and hours are locked to that day's already-calculated figure, so the
+    // employee isn't guessing or retyping what they worked.
+    const isFromWorkday = prefill !== null;
+
     const { data, setData, transform, post, processing, errors } =
         useForm<OvertimeRequestForm>({
-            date: '',
-            requested_hours: '',
+            date: prefill?.date ?? '',
+            requested_hours: prefill ? timeToDecimalHours(prefill.hours) : '',
             reason: '',
+            workday_id: prefill?.workday_id ?? null,
         });
 
     function submit(event: FormEvent) {
@@ -64,21 +82,26 @@ export default function CreateMyOvertimeRequest({
                     noValidate
                     className="grid max-w-4xl gap-6"
                 >
-                    <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="grid items-start gap-6 sm:grid-cols-2">
                         <FormField
                             label={t('ui.overtime.requests.my.form.date')}
                             htmlFor="date"
                             required
                             error={errors.date}
-                            hint={t(
-                                'ui.overtime.requests.my.form.retroactive_hint',
-                                { days: String(retroactiveWindowDays) },
-                            )}
+                            hint={
+                                isFromWorkday
+                                    ? undefined
+                                    : t(
+                                          'ui.overtime.requests.my.form.retroactive_hint',
+                                          { days: String(retroactiveWindowDays) },
+                                      )
+                            }
                         >
                             <Input
                                 id="date"
                                 type="date"
                                 value={data.date}
+                                disabled={isFromWorkday}
                                 onChange={(event) =>
                                     setData('date', event.target.value)
                                 }
@@ -92,9 +115,13 @@ export default function CreateMyOvertimeRequest({
                             htmlFor="requested_hours"
                             required
                             error={errors.requested_hours}
-                            hint={t(
-                                'ui.overtime.requests.my.form.requested_hours_hint',
-                            )}
+                            hint={
+                                isFromWorkday
+                                    ? undefined
+                                    : t(
+                                          'ui.overtime.requests.my.form.requested_hours_hint',
+                                      )
+                            }
                         >
                             <Input
                                 id="requested_hours"
@@ -103,6 +130,7 @@ export default function CreateMyOvertimeRequest({
                                 step="0.25"
                                 className="w-28"
                                 value={data.requested_hours}
+                                disabled={isFromWorkday}
                                 onChange={(event) =>
                                     setData(
                                         'requested_hours',
@@ -111,6 +139,14 @@ export default function CreateMyOvertimeRequest({
                                 }
                             />
                         </FormField>
+
+                        {isFromWorkday && (
+                            <p className="text-xs text-muted-foreground sm:col-span-2">
+                                {t(
+                                    'ui.overtime.requests.my.form.from_workday_hint',
+                                )}
+                            </p>
+                        )}
 
                         <FormField
                             label={t('ui.overtime.requests.my.form.reason')}

@@ -6,6 +6,7 @@ use App\Concerns\ResolvesTableSort;
 use App\Enums\OvertimeRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\OvertimeRequest;
+use App\Models\Workday;
 use App\Notifications\OvertimeRequestSubmitted;
 use App\Services\OrganizationSettings;
 use App\Services\OvertimeRequestApprovers;
@@ -79,12 +80,13 @@ class OvertimeRequestController extends Controller
         ]);
     }
 
-    public function create(OrganizationSettings $settings): Response
+    public function create(Request $request, OrganizationSettings $settings): Response
     {
         $this->assertModeAllowsRequests($settings);
 
         return Inertia::render('my/overtime-requests/create', [
             'retroactiveWindowDays' => $settings->overtimeRetroactiveRequestDays(),
+            'prefill' => $this->resolvePrefill($request),
         ]);
     }
 
@@ -98,9 +100,28 @@ class OvertimeRequestController extends Controller
             'date' => ['required', 'date'],
             'requested_hours' => ['required', 'date_format:H:i', 'after:00:00'],
             'reason' => ['nullable', 'string', 'max:1000'],
+            'workday_id' => ['nullable', 'integer'],
         ], [
             'requested_hours.after' => __('ui.overtime.requests.validation.positive_hours'),
         ]);
+
+        $requestedHours = $data['requested_hours'].':00';
+
+        // KOL-79: submitted from a specific Workday's own detail page — the
+        // hours come from that day's already-computed figure rather than
+        // whatever the client posted, so the stored request can never drift
+        // from what was actually calculated.
+        if (! empty($data['workday_id'])) {
+            $workday = Workday::query()->where('user_id', $user->id)->findOrFail($data['workday_id']);
+
+            if (! $workday->calculated_overtime || $workday->calculated_overtime === '00:00:00') {
+                throw ValidationException::withMessages([
+                    'workday_id' => __('ui.overtime.requests.validation.no_calculated_overtime'),
+                ]);
+            }
+
+            $requestedHours = $workday->calculated_overtime;
+        }
 
         // Parsed in the same timezone as `$timeZone->today()` so both sides of
         // the comparison below land on actual Chilean calendar days, not on
@@ -118,7 +139,7 @@ class OvertimeRequestController extends Controller
         $overtimeRequest = OvertimeRequest::create([
             'user_id' => $user->id,
             'date' => $date,
-            'requested_hours' => $data['requested_hours'].':00',
+            'requested_hours' => $requestedHours,
             'reason' => $data['reason'] ?? null,
             'status' => OvertimeRequestStatus::Pending,
         ]);
@@ -131,6 +152,37 @@ class OvertimeRequestController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.overtime.requests.flash.created')]);
 
         return to_route('my.overtime-requests.index');
+    }
+
+    /**
+     * KOL-79: when reached from a specific Workday (`?workday=`) with
+     * calculated overtime, the figure to pre-fill the form with — the date
+     * and hours the employee is not required to type themselves. Silently
+     * null for a missing, foreign, or zero-overtime workday: the GET request
+     * is not a security boundary (`store()` re-derives the hours itself), so
+     * an invalid id just falls back to a blank form rather than a 404.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function resolvePrefill(Request $request): ?array
+    {
+        $workdayId = $request->integer('workday');
+
+        if ($workdayId === 0) {
+            return null;
+        }
+
+        $workday = Workday::query()->where('user_id', $request->user()->id)->find($workdayId);
+
+        if ($workday === null || ! $workday->calculated_overtime || $workday->calculated_overtime === '00:00:00') {
+            return null;
+        }
+
+        return [
+            'workday_id' => $workday->id,
+            'date' => $workday->date->format('Y-m-d'),
+            'hours' => Carbon::parse($workday->calculated_overtime)->format('H:i'),
+        ];
     }
 
     /**

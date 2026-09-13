@@ -55,6 +55,12 @@ class WorkdayPresenter
             'worked_time' => $this->trimSeconds($workday->worked_time),
             'extra_time' => $this->trimSeconds($workday->extra_time),
             'missing_time' => $this->trimSeconds($workday->missing_time),
+            // KOL-79: the day's raw calculated overtime, so the employee's own
+            // detail page can offer to request it without recalculating what
+            // they worked. `overtime()` below carries the fuller admin/
+            // supervisor picture (authorization status, decide/revoke), which
+            // does not apply to the employee's own view.
+            'calculated_overtime' => $this->trimSeconds($workday->calculated_overtime),
         ];
     }
 
