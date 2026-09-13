@@ -17,7 +17,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use Spatie\Activitylog\Models\Activity;
 
 /**
  * One employee's overtime for one day, and the human decision on it — the
@@ -209,6 +211,14 @@ class OvertimeAuthorization extends Model
             'compensation_type' => $resolvedCompensationType,
         ])->save();
 
+        $this->logDecision('approved', $reviewer, [
+            'calculated_hours' => $this->calculated_hours,
+            'authorized_hours' => $this->authorized_hours,
+            'final_hours' => $this->final_hours,
+            'compensation_type' => $resolvedCompensationType->value,
+            'reason' => $reason,
+        ]);
+
         $this->stampWorkdayDecision();
 
         if ($resolvedCompensationType === OvertimeCompensationType::RestDays && ! $this->authorizedOvertime()->isZero()) {
@@ -246,7 +256,35 @@ class OvertimeAuthorization extends Model
             'revoked_reason' => $reason,
         ])->save();
 
+        $this->logDecision('revoked', $reviewer, [
+            'calculated_hours' => $this->calculated_hours,
+            'authorized_hours' => $this->authorized_hours,
+            'final_hours' => $this->final_hours,
+            'reason' => $reason,
+        ]);
+
         return $this;
+    }
+
+    /**
+     * KOL-82: record `$event` (`approved`/`revoked`) as its own append-only
+     * activity-log entry, so a later decision on this record never overwrites
+     * the visibility of an earlier one the way the plain columns do (see
+     * {@see WorkdayPresenter::timeline()}). `$reviewer` is asserted to share
+     * this record's organization before either caller reaches here, so the
+     * activity's causer already attributes it to the correct tenant the same
+     * way every other `activity()` call in the app does (KOL-82 AC #1).
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    private function logDecision(string $event, User $reviewer, array $properties): void
+    {
+        activity()
+            ->causedBy($reviewer)
+            ->performedOn($this)
+            ->event($event)
+            ->withProperties($properties)
+            ->log("Overtime authorization {$event}");
     }
 
     /**
@@ -415,6 +453,18 @@ class OvertimeAuthorization extends Model
     public function revokedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'revoked_by');
+    }
+
+    /**
+     * KOL-82: every approve/revoke decision ever logged against this record,
+     * oldest first — the append-only history {@see WorkdayPresenter::timeline()}
+     * reads instead of the single current-state columns.
+     *
+     * @return MorphMany<Activity, $this>
+     */
+    public function activities(): MorphMany
+    {
+        return $this->morphMany(Activity::class, 'subject')->oldest('id');
     }
 
     /**

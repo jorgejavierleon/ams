@@ -98,11 +98,14 @@ export type Modification = {
 };
 
 /**
- * KOL-71: the day's overtime decision, rendered in the same timeline as
- * mark-modification requests on the admin/supervisor detail page. There is
- * only ever one per workday — a summary of current state, not a log of
- * requests like `Modification` — so it carries hours and a status rather
- * than a time correction.
+ * KOL-82: one logged decision (approve or revoke) on the day's overtime,
+ * rendered in the same timeline as mark-modification requests on the
+ * admin/supervisor detail page. Unlike KOL-71's original single
+ * current-state summary, there is one of these per decision ever logged, so
+ * approving a day and later revoking it renders as two entries rather than
+ * the revocation replacing the approval. `reviewed_by`/`reviewed_at` name
+ * whoever caused *this* entry's event, not necessarily the day's current
+ * approver.
  */
 export type OvertimeTimelineEntry = {
     id: number;
@@ -120,9 +123,6 @@ export type OvertimeTimelineEntry = {
     reviewed_by: string | null;
     reviewed_at: string | null;
     reviewed_ago: string | null;
-    revoked_by: string | null;
-    revoked_at: string | null;
-    revoked_ago: string | null;
     can_decide: boolean;
     can_revoke: boolean;
 };

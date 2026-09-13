@@ -312,14 +312,64 @@ test('an admin revokes a days approved overtime, and it appears in the timeline'
         ->and($authorization->revoked_by)->toBe($admin->id)
         ->and($workday->fresh()->authorizedOvertime()->isZero())->toBeTrue();
 
+    // KOL-82: the approval stays visible as its own entry once revoked,
+    // rather than the revocation replacing it in the timeline.
+    $this->actingAs($admin)
+        ->get(route('workdays.show', $workday->id))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('timeline', 2)
+            ->where('timeline.0.kind', 'overtime')
+            ->where('timeline.0.status', 'revoked')
+            ->where('timeline.0.reviewed_by', $admin->name)
+            ->where('timeline.1.kind', 'overtime')
+            ->where('timeline.1.status', 'approved')
+            ->where('timeline.1.reviewed_by', $admin->name));
+});
+
+test('a decision recorded before KOL-82 shipped, with no logged activity, still surfaces in the timeline from its columns', function () {
+    $organization = Organization::factory()->create();
+    $admin = workdayOvertimeAdmin($organization);
+    $employee = workdayOvertimeEmployee($organization);
+
+    $workday = workdayOvertimeDay($employee, '2026-08-03', '01:00:00');
+
+    // Simulates a record approved by a pre-KOL-82 deploy: the columns are
+    // set exactly as approve() would leave them, but nothing was ever
+    // logged to activity_log for it.
+    OvertimeAuthorization::factory()->approved($admin)->create([
+        'organization_id' => $organization->id,
+        'workday_id' => $workday->id,
+        'user_id' => $employee->id,
+        'reason' => 'Autorización histórica.',
+    ]);
+
     $this->actingAs($admin)
         ->get(route('workdays.show', $workday->id))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->has('timeline', 1)
             ->where('timeline.0.kind', 'overtime')
+            ->where('timeline.0.status', 'approved')
+            ->where('timeline.0.reviewed_by', $admin->name)
+            ->where('timeline.0.reason', 'Autorización histórica.')
+            ->where('timeline.0.can_revoke', true));
+
+    // Revoking it afterwards logs only the revocation — the pre-existing
+    // approval keeps surfacing from its columns rather than disappearing.
+    $this->actingAs($admin)
+        ->post(route('workdays.overtime.revoke', $workday->id), ['reason' => 'Revocada tras el despliegue de KOL-82.'])
+        ->assertRedirect();
+
+    $this->actingAs($admin)
+        ->get(route('workdays.show', $workday->id))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('timeline', 2)
             ->where('timeline.0.status', 'revoked')
-            ->where('timeline.0.revoked_by', $admin->name));
+            ->where('timeline.0.reason', 'Revocada tras el despliegue de KOL-82.')
+            ->where('timeline.1.status', 'approved')
+            ->where('timeline.1.reason', 'Autorización histórica.'));
 });
 
 test('revoking a day with no approved record is refused', function () {

@@ -21,6 +21,7 @@ use App\Services\BusinessDayResolver;
 use App\Services\WorkdayPresenter;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -354,8 +355,12 @@ class WorkdayController extends Controller
             'markModifications.createdBy:id,name',
             'markModifications.reviewedBy:id,name',
             'overtimeAuthorization.user:id,supervisor_id',
-            'overtimeAuthorization.reviewedBy:id,name',
-            'overtimeAuthorization.revokedBy:id,name',
+            // The colon column-shorthand is a no-op on a MorphTo relation
+            // (Laravel only merges `where`s across morph types, never the
+            // select), so `causer`'s column restriction needs `constrain()`.
+            'overtimeAuthorization.activities.causer' => fn (MorphTo $morphTo) => $morphTo->constrain([
+                User::class => fn (Builder $query) => $query->select('id', 'name'),
+            ]),
         ]);
 
         return Inertia::render('workdays/show', [

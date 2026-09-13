@@ -2,6 +2,7 @@
 
 use App\Enums\OvertimeAuthorizationStatus;
 use App\Enums\OvertimeCalculationState;
+use App\Enums\OvertimeCompensationType;
 use App\Exceptions\OvertimeDecisionRefused;
 use App\Models\Organization;
 use App\Models\OvertimeAuthorization;
@@ -200,6 +201,42 @@ test('a revoked day pays nothing and leaves every worked hour visible as unautho
         ->and($authorization->reason)->toBe('Autorización de prueba.');
 
     expect(OvertimeAuthorization::approved()->count())->toBe(0);
+});
+
+test('approving logs its own activity with the actor and the decision details', function () {
+    [$workday, $supervisor] = overtimeDay('03:00:00');
+
+    $authorization = OvertimeAuthorization::openFor($workday)
+        ->approve($supervisor, authorizedHours: '02:00:00', reason: 'Continuidad de servicio crítico.', compensationType: OvertimeCompensationType::Payment);
+
+    expect($authorization->activities)->toHaveCount(1);
+
+    $activity = $authorization->activities->first();
+
+    expect($activity->event)->toBe('approved')
+        ->and($activity->causer_id)->toBe($supervisor->id)
+        ->and($activity->causer_type)->toBe(User::class)
+        ->and($activity->getProperty('authorized_hours'))->toBe('02:00:00')
+        ->and($activity->getProperty('compensation_type'))->toBe(OvertimeCompensationType::Payment->value)
+        ->and($activity->getProperty('reason'))->toBe('Continuidad de servicio crítico.');
+});
+
+test('revoking logs its own activity with the actor and the reason, separate from the approval activity', function () {
+    [$workday, $supervisor] = overtimeDay('02:30:00');
+
+    $authorization = OvertimeAuthorization::openFor($workday)
+        ->approve($supervisor, reason: 'Autorización de prueba.')
+        ->revoke($supervisor, 'Aprobación registrada por error.');
+
+    $activities = $authorization->activities()->orderBy('id')->get();
+
+    expect($activities)->toHaveCount(2)
+        ->and($activities[0]->event)->toBe('approved')
+        ->and($activities[1]->event)->toBe('revoked')
+        ->and($activities[1]->causer_id)->toBe($supervisor->id)
+        ->and($activities[1]->getProperty('reason'))->toBe('Aprobación registrada por error.')
+        // The two events stay independently timestamped and ordered.
+        ->and($activities[0]->created_at->lessThanOrEqualTo($activities[1]->created_at))->toBeTrue();
 });
 
 test('revoking a record that was never approved is refused', function () {

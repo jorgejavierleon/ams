@@ -4,14 +4,19 @@ namespace App\Services;
 
 use App\Enums\MarkModificationStatus;
 use App\Enums\MarkType;
+use App\Enums\OvertimeAuthorizationStatus;
+use App\Enums\OvertimeCompensationType;
 use App\Models\MarkModification;
 use App\Models\OvertimeAuthorization;
+use App\Models\User;
 use App\Models\Workday;
 use App\Support\Rut;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Spatie\Activitylog\Models\Activity;
 
 /**
  * Shapes a workday and its mark-modification history for the detail screens.
@@ -127,11 +132,11 @@ class WorkdayPresenter
     }
 
     /**
-     * KOL-71: the mark-modification history and the day's overtime decision
+     * KOL-71: the mark-modification history and the day's overtime decisions
      * merged into one chronological feed, most recently acted-on first — so
      * the Jornadas detail page reads as a single audit trail rather than two
-     * disconnected lists. `overtimeAuthorization.user`/`.reviewedBy` must
-     * already be eager-loaded on `$workday`.
+     * disconnected lists. `overtimeAuthorization.activities.causer` must
+     * already be eager-loaded on `$workday` (KOL-82).
      *
      * @return array<int, array<string, mixed>>
      */
@@ -140,63 +145,172 @@ class WorkdayPresenter
         $entries = $workday->markModifications
             ->map(fn (MarkModification $modification) => [
                 'sort_at' => ($modification->reviewed_at ?? $modification->created_at)->timestamp,
+                'sort_seq' => $modification->id,
                 ...$this->modification($modification),
             ])
             ->all();
 
-        $overtimeEntry = $this->overtimeTimelineEntry($workday);
-
-        if ($overtimeEntry !== null) {
-            $entries[] = $overtimeEntry;
+        foreach ($this->overtimeTimelineEntries($workday) as $entry) {
+            $entries[] = $entry;
         }
 
-        return collect($entries)
-            ->sortByDesc('sort_at')
-            ->values()
-            ->map(fn (array $entry) => Arr::except($entry, ['sort_at']))
+        // KOL-82: `created_at` only has second precision, so two activities
+        // logged within the same second (an approval immediately revoked)
+        // would otherwise tie on `sort_at` and fall back to array order. The
+        // row's own auto-increment id breaks that tie correctly.
+        $sorted = collect($entries)
+            ->sortByDesc(['sort_at', 'sort_seq'])
+            ->values();
+
+        // can_decide/can_revoke reflect the record's *current* state, so only
+        // the most recent overtime entry — wherever it lands once merged with
+        // the mark-modification history — carries them; older entries are
+        // pure history.
+        $currentOvertimeIndex = $sorted->search(fn (array $entry) => $entry['kind'] === 'overtime');
+
+        if ($currentOvertimeIndex !== false) {
+            $authorization = $workday->overtimeAuthorization;
+            $isApproved = $authorization->isApproved();
+            $canDecide = ! $isApproved && Gate::allows('approve', $authorization);
+            $canRevoke = $isApproved && Gate::allows('revoke', $authorization);
+
+            $sorted = $sorted->map(function (array $entry, int $index) use ($currentOvertimeIndex, $canDecide, $canRevoke) {
+                if ($index !== $currentOvertimeIndex) {
+                    return $entry;
+                }
+
+                $entry['can_decide'] = $canDecide;
+                $entry['can_revoke'] = $canRevoke;
+
+                return $entry;
+            });
+        }
+
+        return $sorted
+            ->map(fn (array $entry) => Arr::except($entry, ['sort_at', 'sort_seq']))
             ->all();
     }
 
     /**
-     * The day's overtime decision as a single timeline entry — there is only
-     * ever one decision per day, never a request history like mark
-     * modifications, so this is a summary of current state rather than a log
-     * of events. Null when the day has no OvertimeAuthorization row yet.
+     * KOL-82: every approve/revoke decision logged against the day's overtime
+     * as its own timeline entry, oldest first — so approving a day and later
+     * revoking it shows both events instead of the revocation silently
+     * replacing the approval the way the plain status columns would.
+     * Empty when the day has no OvertimeAuthorization row.
      *
-     * @return array<string, mixed>|null
+     * A record decided before this feature shipped logged nothing for that
+     * decision, so its `approved`/`revoked` entry is synthesised from the
+     * still-present columns instead — the log is additive, so history that
+     * predates it must not simply vanish from the timeline.
+     *
+     * @return array<int, array<string, mixed>>
      */
-    private function overtimeTimelineEntry(Workday $workday): ?array
+    private function overtimeTimelineEntries(Workday $workday): array
     {
         $authorization = $workday->overtimeAuthorization;
 
         if ($authorization === null) {
-            return null;
+            return [];
         }
 
-        $isApproved = $authorization->isApproved();
+        $activities = $authorization->activities;
+
+        $entries = $activities
+            ->map(fn (Activity $activity) => $this->overtimeEntry(
+                id: $activity->id,
+                event: $activity->event,
+                calculatedHours: $activity->getProperty('calculated_hours') ?? $authorization->calculated_hours,
+                authorizedHours: $activity->getProperty('authorized_hours'),
+                finalHours: $activity->getProperty('final_hours'),
+                compensationType: $activity->getProperty('compensation_type'),
+                reason: $activity->getProperty('reason'),
+                causerName: ($causer = $activity->causer) instanceof User ? $causer->name : null,
+                occurredAt: $activity->created_at,
+                sortSeq: $activity->id,
+            ))
+            ->all();
+
+        if (! $activities->contains('event', 'approved') && $authorization->reviewed_by !== null) {
+            $entries[] = $this->overtimeEntry(
+                id: -($authorization->id * 2),
+                event: 'approved',
+                calculatedHours: $authorization->calculated_hours,
+                authorizedHours: $authorization->authorized_hours,
+                finalHours: $authorization->final_hours,
+                compensationType: $authorization->compensation_type->value,
+                reason: $authorization->reason,
+                causerName: $authorization->reviewedBy?->name,
+                occurredAt: $authorization->reviewed_at,
+                sortSeq: -1,
+            );
+        }
+
+        if (! $activities->contains('event', 'revoked') && $authorization->revoked_by !== null) {
+            $entries[] = $this->overtimeEntry(
+                id: -($authorization->id * 2 + 1),
+                event: 'revoked',
+                calculatedHours: $authorization->calculated_hours,
+                authorizedHours: $authorization->authorized_hours,
+                finalHours: $authorization->final_hours,
+                compensationType: $authorization->compensation_type->value,
+                reason: $authorization->revoked_reason,
+                causerName: $authorization->revokedBy?->name,
+                occurredAt: $authorization->revoked_at,
+                sortSeq: -1,
+            );
+        }
+
+        return $entries;
+    }
+
+    /**
+     * Shape one `approved`/`revoked` overtime timeline entry from already-
+     * resolved values, whichever source they came from (a logged
+     * {@see Activity} or, for a decision predating KOL-82, the record's own
+     * columns). `can_decide`/`can_revoke` are always false here — the caller
+     * ({@see self::timeline()}) grants them only to the single most recent
+     * overtime entry once every entry is merged and sorted.
+     *
+     * @return array<string, mixed>
+     */
+    private function overtimeEntry(
+        int $id,
+        string $event,
+        ?string $calculatedHours,
+        ?string $authorizedHours,
+        ?string $finalHours,
+        ?string $compensationType,
+        ?string $reason,
+        ?string $causerName,
+        ?CarbonInterface $occurredAt,
+        int $sortSeq,
+    ): array {
+        $status = OvertimeAuthorizationStatus::from($event);
+        $occurredAtLabel = $occurredAt?->format('d/m/Y H:i');
+        $occurredAgo = $occurredAt?->diffForHumans();
 
         return [
-            'id' => $authorization->id,
+            'id' => $id,
             'kind' => 'overtime',
-            'status' => $authorization->status->value,
-            'status_label' => $authorization->status->label(),
-            'status_badge' => $authorization->status->badge(),
-            'calculated_hours' => $this->trimSeconds($authorization->calculated_hours),
-            'authorized_hours' => $this->trimSeconds($authorization->authorized_hours),
-            'final_hours' => $this->trimSeconds($authorization->final_hours),
-            'compensation_type_label' => $isApproved ? $authorization->compensation_type->label() : null,
-            'reason' => $authorization->isRevoked() ? $authorization->revoked_reason : $authorization->reason,
-            'created_at' => $authorization->created_at?->format('d/m/Y H:i'),
-            'created_ago' => $authorization->created_at?->diffForHumans(),
-            'reviewed_by' => $authorization->reviewedBy?->name,
-            'reviewed_at' => $authorization->reviewed_at?->format('d/m/Y H:i'),
-            'reviewed_ago' => $authorization->reviewed_at?->diffForHumans(),
-            'revoked_by' => $authorization->revokedBy?->name,
-            'revoked_at' => $authorization->revoked_at?->format('d/m/Y H:i'),
-            'revoked_ago' => $authorization->revoked_at?->diffForHumans(),
-            'can_decide' => ! $isApproved && Gate::allows('approve', $authorization),
-            'can_revoke' => $isApproved && Gate::allows('revoke', $authorization),
-            'sort_at' => ($authorization->revoked_at ?? $authorization->reviewed_at ?? $authorization->created_at)->timestamp,
+            'status' => $status->value,
+            'status_label' => $status->label(),
+            'status_badge' => $status->badge(),
+            'calculated_hours' => $this->trimSeconds($calculatedHours),
+            'authorized_hours' => $this->trimSeconds($authorizedHours),
+            'final_hours' => $this->trimSeconds($finalHours),
+            'compensation_type_label' => $compensationType === null
+                ? null
+                : OvertimeCompensationType::from($compensationType)->label(),
+            'reason' => $reason,
+            'created_at' => $occurredAtLabel,
+            'created_ago' => $occurredAgo,
+            'reviewed_by' => $causerName,
+            'reviewed_at' => $occurredAtLabel,
+            'reviewed_ago' => $occurredAgo,
+            'can_decide' => false,
+            'can_revoke' => false,
+            'sort_at' => $occurredAt === null ? 0 : $occurredAt->timestamp,
+            'sort_seq' => $sortSeq,
         ];
     }
 
