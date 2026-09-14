@@ -83,7 +83,9 @@ La documentación pública de la API de GeoVictoria (API-GV3, wiki.geovictoria.c
 - Bloquea la venta a cualquier PYME que ya tenga un proceso de remuneraciones externo (la inmensa mayoría del segmento objetivo).
 - Fuerza a los prospectos actuales a evaluar Buk/Talana/GeoVictoria solo por este feature, aunque Kolvi sea superior en compliance DT.
 - Es una brecha marcada como "MISSING" y de alta prioridad en el MVP Gap Analysis (#9 Payroll Integration Preparation) y como "Alta" en el Gap Analysis vs GeoVictoria.
-**Oportunidad:** Convertir esta brecha en un diferenciador de "confiabilidad de datos para nómina" — aprovechando que Kolvi ya tiene el motor de cálculo de horas/atrasos/HHEE construido para los reportes DT, el trabajo incremental es de **capa de presentación, validación y exportación**, no de recalcular nada desde cero.
+**Oportunidad:** Convertir esta brecha en un diferenciador de "confiabilidad de datos para nómina" — aprovechando que Kolvi ya tiene el motor de cálculo de horas/atrasos construido para los reportes DT, gran parte del trabajo incremental es de **capa de presentación, validación y exportación**.
+
+**Excepción — horas extra:** esto no aplicaba a HHEE. `workdays.extra_time` era, al momento de escribir este PRD, el desborde crudo del reloj calculado por `app/Services/WorkdayCalculator.php` — sin autorización, sin distinción pactada/no pactada y sin desglose por porcentaje. El alcance del MVP (§5.1) y RF-4 necesitan exactamente eso (HHEE 50%/100%, filas separadas por concepto), así que ese tramo sí requería motor nuevo, no solo presentación. KOL-11 (registro de autorización) y KOL-12 (clasificación en buckets legales 50%/100%) cubrieron ese trabajo.
  
 ---
  
@@ -165,6 +167,7 @@ El sistema debe ofrecer, como mínimo, estos reportes predefinidos (nombres suje
 ### RF-7: Filtros y Segmentación
 - Por sucursal, centro de costo, cargo, tipo de contrato, trabajador individual, rango de fechas.
 - Selección masiva con exclusión (patrón "Excluir" de Talana: seleccionar todo menos X).
+- **Nota:** ni centro de costo ni tipo de contrato existían en el esquema al momento de escribir este RF. KOL-30 agregó el modelo de centro de costo (distinto de `Premise`/sucursal) y KOL-10 agregó el tipo de contrato al registro del trabajador.
 ---
  
 ## 7. Requisitos No Funcionales
@@ -176,13 +179,14 @@ El sistema debe ofrecer, como mínimo, estos reportes predefinidos (nombres suje
 - **Compatibilidad de formato**: el CSV exportado debe usar codificación UTF-8 y separador configurable (coma vs. punto y coma), dado que Excel en configuración regional chilena a menudo requiere punto y coma.
 ---
  
-## 8. Consideraciones Técnicas (Laravel Filament)
+## 8. Consideraciones Técnicas (Inertia + React)
  
-- **Generación de reportes**: usar jobs en cola (`ShouldQueue`) para cualquier exportación que involucre más de N trabajadores o rangos de fecha amplios. Considerar `maatwebsite/excel` (Laravel Excel) para Excel/CSV, y la librería PDF que ya se use en los 4 reportes DT para mantener consistencia visual.
+- **Stack real**: esta aplicación es Inertia v3 + React 19 con Tailwind v4 sobre Laravel — no hay Filament ni admin panel server-rendered. Cualquier UI de este feature (builder de reportes, constructor de plantillas, historial de exportaciones) se implementa como páginas/componentes React bajo `resources/js/pages`, con `Inertia::render()` en el controlador, siguiendo el mismo patrón que el resto de la app.
+- **Generación de reportes**: usar jobs en cola (`ShouldQueue`) para cualquier exportación que involucre más de N trabajadores o rangos de fecha amplios. No hace falta agregar `maatwebsite/excel`: el proyecto ya trae `phpoffice/phpspreadsheet`, `phpoffice/phpword` y `barryvdh/laravel-dompdf`, integrados en `app/Services/Reports/DtReportExporter.php`, que renderiza un mismo fragmento Blade a Excel/PDF/Word para los 4 reportes DT. Los nuevos reportes de este PRD deben seguir ese mismo patrón (un exportador por reporte, reutilizando `ReportWriter`) en vez de introducir una librería nueva.
 - **Plantillas de mapeo**: modelar como tabla `export_templates` (tenant_id, name, field_mappings JSON, is_system_template bool) para diferenciar la plantilla Nubox (sistema, no editable) de las plantillas custom del usuario.
-- **API**: usar Laravel Sanctum con tokens por tenant en vez de OAuth completo para el MVP — más simple de implementar y suficiente para el caso de uso B2B server-to-server.
+- **API**: Sanctum ya está en uso en la app (`User` usa `HasApiTokens`, ver `app/Http/Controllers/Api/TokenController.php`), pero para **tokens de dispositivo del trabajador en la app móvil de marcaje** — un modelo de autenticación de usuario final, no de API key por tenant. La API B2B server-to-server de RF-5 (Fase 3) es un caso distinto: necesita su propio mecanismo de API Key por tenant (patrón Buk), que todavía no existe y hay que construir; no asumir que Sanctum ya deja este trabajo medio hecho.
 - **Auditoría**: aprovechar/extender el mismo mecanismo de audit log que ya deba existir para `MarkModification` (Art. 44 Res. 38) en vez de construir uno paralelo.
-- **Validación pre-exportación**: reutilizar el motor de detección de anomalías que ya alimenta el Reporte de Jornada Diaria DT — es el mismo dato, solo se re-consulta antes del traspaso.
+- **Validación pre-exportación**: sí existe un motor de detección de anomalías (`App\Enums\AnomalyFlagReason` — turno no asignado, marcas incompletas, contrato inactivo, fuera de geocerca, exceso de volumen semanal — calculado por `WorkdayCalculator::calculateAnomalyFlags()` y persistido en `workdays.anomaly_flags`), pero no alimenta el Reporte de Jornada Diaria DT: se construyó para bloquear la autorización de horas extra (KOL-11/KOL-12), no para ese reporte. RF-2 debe reutilizar esa misma señal — `workdays.anomaly_flags` junto con `workdays.status` y los `MarkModification` pendientes de aprobación — en vez de asumir que ya alimenta el reporte DT o construir una detección paralela.
 ---
  
 ## 9. Historias de Usuario (para desglose en Jira)
