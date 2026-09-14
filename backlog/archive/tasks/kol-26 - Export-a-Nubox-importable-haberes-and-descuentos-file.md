@@ -4,6 +4,7 @@ title: Export a Nubox-importable haberes and descuentos file
 status: To Do
 assignee: []
 created_date: '2026-08-04 11:16'
+updated_date: '2026-09-14 10:01'
 labels:
   - payroll-reports
   - backend
@@ -12,7 +13,6 @@ labels:
 milestone: m-1
 dependencies:
   - KOL-13
-  - KOL-25
 documentation:
   - docs/prd-reports.md
 priority: high
@@ -63,3 +63,9 @@ Verify the exact file format Nubox's importer expects — extension, header row,
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Archived 2026-09-14, same decision as KOL-25: this export's whole design depended on the KOL-25 template mechanism for the client-configured concept-code mapping (deliberately no hardcoded Nubox codes). With KOL-25 archived, there's no mapping mechanism for this to sit on. Users export the summary report and build the Nubox haberes/descuentos file in Excel themselves. Revisit only if real demand for a native Nubox path shows up, per PRD section 10's open question on validating that demand.
+<!-- SECTION:NOTES:END -->

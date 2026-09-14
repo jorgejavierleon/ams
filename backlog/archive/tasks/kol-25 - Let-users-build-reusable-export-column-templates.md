@@ -4,6 +4,7 @@ title: Let users build reusable export column templates
 status: To Do
 assignee: []
 created_date: '2026-08-04 11:15'
+updated_date: '2026-09-14 09:57'
 labels:
   - payroll-reports
   - backend
@@ -52,3 +53,9 @@ A template that references a field which later stops existing must fail visibly 
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Archived 2026-09-14: decided against building a reusable column-mapping template layer. The org's payroll users export the summary report and reshape it in Excel themselves when a destination needs different columns/names/order; the extra configuration UI and export_templates table aren't worth it for that. KOL-26 (Nubox export), which depended on this for its 'system template' concept, will need its own fixed mapping instead if it proceeds.
+<!-- SECTION:NOTES:END -->
