@@ -1,14 +1,20 @@
-import AppLogoIcon from '@/components/app-logo-icon';
-
 export default function AppLogo() {
     return (
         <>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                <AppLogoIcon className="size-5 fill-current text-white dark:text-black" />
-            </div>
-            <div className="ml-1 grid flex-1 text-left text-sm">
-                <span className="mb-0.5 truncate leading-tight font-semibold">
-                    Laravel Starter Kit
+            <svg
+                viewBox="0 0 288 288"
+                className="h-9! w-9! shrink-0"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <rect x="46" y="39" width="46" height="210" rx="23" fill="var(--brand-navy-deep)" />
+                <path
+                    d="M202 39 L112 144 L202 249 L202 185 L151 144 L202 103 Z"
+                    fill="var(--brand-coral)"
+                />
+            </svg>
+            <div className="ml-2 grid flex-1 text-left">
+                <span className="truncate text-lg leading-tight font-semibold tracking-tight text-[var(--brand-navy-deep)] lowercase">
+                    Kolvi
                 </span>
             </div>
         </>
