@@ -1,6 +1,7 @@
 import { Deferred, Head, Link } from '@inertiajs/react';
-import { Pencil } from 'lucide-react';
+import { Pencil, Shield } from 'lucide-react';
 import type { ReactNode } from 'react';
+import UserRoleController from '@/actions/App/Http/Controllers/UserRoleController';
 import type { ComboboxOption } from '@/components/combobox';
 import { EmployeeOvertimePacts } from '@/components/employee-overtime-pacts';
 import type { EmployeeOvertimePact } from '@/components/employee-overtime-pacts';
@@ -140,12 +141,20 @@ export default function ShowEmployee({
                             />
                         </div>
                     </div>
-                    <Button asChild>
-                        <Link href={edit(employee.id)}>
-                            <Pencil className="size-4" />
-                            {t('ui.employees.actions.edit')}
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href={UserRoleController.show(employee.id)}>
+                                <Shield className="size-4" />
+                                {t('ui.employees.actions.manage_roles')}
+                            </Link>
+                        </Button>
+                        <Button asChild>
+                            <Link href={edit(employee.id)}>
+                                <Pencil className="size-4" />
+                                {t('ui.employees.actions.edit')}
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <Tabs defaultValue="info">

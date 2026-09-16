@@ -51,6 +51,16 @@ it('blocks non-admin users from assigning user roles', function () {
     $this->actingAs($user)->get(route('users.roles', $target))->assertForbidden();
 });
 
+it('blocks non-admin users from submitting user role changes', function () {
+    $target = User::factory()->create();
+    $user = User::factory()->create();
+    $user->assignRole('employee');
+
+    $this->actingAs($user)
+        ->put(route('users.roles.update', $target), ['roles' => []])
+        ->assertForbidden();
+});
+
 // --- Protected roles ---
 
 it('admin cannot view the admin role detail', function () {
@@ -89,6 +99,27 @@ it('admin cannot update permissions on a protected role', function () {
     $this->actingAs($admin)
         ->put(route('roles.update', $role), ['permissions' => []])
         ->assertForbidden();
+});
+
+it('user role assignment page does not offer protected roles', function () {
+    Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'saas', 'guard_name' => 'web']);
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->get(route('users.roles', $target))
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $names = collect($page->toArray()['props']['roles'])->pluck('name')->all();
+            expect($names)->toContain('employee')
+                ->and($names)->not->toContain('admin')
+                ->and($names)->not->toContain('dt')
+                ->and($names)->not->toContain('saas');
+        });
 });
 
 it('roles index does not include protected roles', function () {
@@ -476,4 +507,37 @@ it('validates that role ids must exist in the database', function () {
     $this->actingAs($admin)
         ->put(route('users.roles.update', $target), ['roles' => [99999]])
         ->assertSessionHasErrors('roles.0');
+});
+
+it('preserves a protected role the user already holds when syncing other roles', function () {
+    Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create();
+    $target->assignRole('dt');
+    $employeeRole = Role::where('name', 'employee')->first();
+
+    $this->actingAs($admin)
+        ->put(route('users.roles.update', $target), ['roles' => [$employeeRole->id]])
+        ->assertRedirect(route('users.roles', $target));
+
+    expect($target->fresh()->hasRole('dt'))->toBeTrue()
+        ->and($target->fresh()->hasRole('employee'))->toBeTrue();
+});
+
+it('does not let a tampered payload assign a protected role', function () {
+    $adminRole = Role::where('name', 'admin')->first();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->put(route('users.roles.update', $target), ['roles' => [$adminRole->id]])
+        ->assertRedirect(route('users.roles', $target));
+
+    expect($target->fresh()->hasRole('admin'))->toBeFalse();
 });

@@ -14,7 +14,7 @@ class UserRoleController extends Controller
 {
     public function show(User $user): Response
     {
-        $allRoles = Role::orderBy('name')->get();
+        $allRoles = RolePresenter::excludeProtected(Role::query())->orderBy('name')->get();
         $assignedIds = $user->roles->pluck('id')->all();
 
         return Inertia::render('users/roles', [
@@ -35,7 +35,13 @@ class UserRoleController extends Controller
             'roles.*' => ['integer', 'exists:roles,id'],
         ]);
 
-        $user->syncRoles($validated['roles']);
+        // Protected roles (admin, dt, saas) are not shown on this screen, so any
+        // the user already holds must survive the sync untouched — and a
+        // tampered payload naming one of their ids must not add it either.
+        $protectedRoleIds = $user->roles()->whereIn('name', RolePresenter::PROTECTED_ROLES)->pluck('id');
+        $assignableRoleIds = RolePresenter::excludeProtected(Role::whereKey($validated['roles']))->pluck('id');
+
+        $user->syncRoles($assignableRoleIds->merge($protectedRoleIds));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Roles updated.')]);
 

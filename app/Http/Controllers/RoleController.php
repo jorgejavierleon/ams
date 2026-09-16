@@ -19,9 +19,6 @@ class RoleController extends Controller
     use ResolvesTablePerPage;
     use ResolvesTableSort;
 
-    /** Roles reserved for system use — admins cannot manage these. */
-    private const PROTECTED_ROLES = ['admin', 'dt', 'saas'];
-
     /**
      * Number of user avatars shown per role in the index list before the
      * remainder collapses into a "+N" overflow bubble.
@@ -52,7 +49,7 @@ class RoleController extends Controller
                 ->with('media')
                 ->orderBy('name')
                 ->limit(self::AVATAR_LIMIT)])
-            ->whereNotIn('name', self::PROTECTED_ROLES)
+            ->tap([RolePresenter::class, 'excludeProtected'])
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy($sort, $direction)
             ->paginate($perPage)
@@ -81,7 +78,7 @@ class RoleController extends Controller
 
     public function show(Role $role): Response
     {
-        abort_if(in_array($role->name, self::PROTECTED_ROLES), 403);
+        abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
 
         $allPermissions = Permission::orderBy('name')->get();
         $assignedIds = $role->permissions->pluck('id')->all();
@@ -111,7 +108,7 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role): RedirectResponse
     {
-        abort_if(in_array($role->name, self::PROTECTED_ROLES), 403);
+        abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
 
         $validated = $request->validate([
             'permissions' => ['present', 'array'],

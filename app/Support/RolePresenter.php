@@ -2,8 +2,10 @@
 
 namespace App\Support;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * Presents Spatie role and permission names as human-readable, localized labels
@@ -17,6 +19,20 @@ use Illuminate\Support\Str;
  */
 final class RolePresenter
 {
+    /** Roles reserved for system use — admins cannot manage these. */
+    public const PROTECTED_ROLES = ['admin', 'dt', 'saas'];
+
+    /**
+     * Scope a Role query down to roles admins are allowed to view or assign.
+     *
+     * @param  Builder<Role>  $query
+     * @return Builder<Role>
+     */
+    public static function excludeProtected(Builder $query): Builder
+    {
+        return $query->whereNotIn('name', self::PROTECTED_ROLES);
+    }
+
     /**
      * Localized display name for a role (e.g. `employee` → "Empleado").
      */
