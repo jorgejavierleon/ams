@@ -51,7 +51,7 @@ export default function PositionsIndex({ positions, filters }: Props) {
                 cell: ({ row }) => (
                     <Link
                         href={show(row.original.id)}
-                        className="font-medium text-primary underline-offset-4 hover:underline"
+                        className="font-medium hover:cursor-pointer"
                     >
                         {row.original.name}
                     </Link>

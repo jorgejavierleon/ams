@@ -193,7 +193,7 @@ export default function EmployeesIndex({
                                 {row.original.name.charAt(0).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium text-primary underline-offset-4 hover:underline">
+                        <span className="font-medium hover:cursor-pointer">
                             {row.original.name}
                         </span>
                     </Link>
