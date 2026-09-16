@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
-use App\Models\User;
 use App\Support\CurrentOrganization;
 use App\Support\RolePresenter;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -65,10 +65,14 @@ class RoleController extends Controller
                 'label' => RolePresenter::roleLabel($role->name),
                 'permissions_count' => $role->permissions_count,
                 'users_count' => $role->users_count,
-                'avatars' => $role->users->map(fn (User $user) => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'avatar' => $user->avatar,
+                // Role::users() is typed by Spatie as Collection<int, Model>
+                // (the related model is resolved dynamically per guard), so
+                // avatar fields are read through the generic Model accessor
+                // rather than a User-typed closure parameter.
+                'avatars' => $role->users->map(fn (Model $user): array => [
+                    'id' => (int) $user->getAttribute('id'),
+                    'name' => (string) $user->getAttribute('name'),
+                    'avatar' => $user->getAttribute('avatar'),
                 ])->all(),
             ]),
             'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],
