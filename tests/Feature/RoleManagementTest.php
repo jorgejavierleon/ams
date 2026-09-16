@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Organization;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -171,6 +172,108 @@ it('roles index ignores a disallowed sort column', function () {
             fn ($page) => $page
                 ->where('filters.sort', 'name')
                 ->where('filters.direction', 'asc')
+        );
+});
+
+// --- Users-per-role counts ---
+
+it('roles index shows zero users for a role with no one assigned', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin->assignRole('admin');
+    Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->get(route('roles.index'))
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $editor = collect($page->toArray()['props']['roles']['data'])
+                ->firstWhere('name', 'editor');
+
+            expect($editor['users_count'])->toBe(0)
+                ->and($editor['avatars'])->toBe([]);
+        });
+});
+
+it('roles index counts a single user holding a role', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin->assignRole('admin');
+
+    $employee = User::factory()->create(['organization_id' => $organization->id]);
+    $employee->assignRole('employee');
+
+    $this->actingAs($admin)
+        ->get(route('roles.index'))
+        ->assertOk()
+        ->assertInertia(function ($page) use ($employee) {
+            $role = collect($page->toArray()['props']['roles']['data'])
+                ->firstWhere('name', 'employee');
+
+            expect($role['users_count'])->toBe(1)
+                ->and(collect($role['avatars'])->pluck('id')->all())->toBe([$employee->id]);
+        });
+});
+
+it('roles index counts multiple users holding a role', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin->assignRole('admin');
+
+    $employees = User::factory()->count(3)->create(['organization_id' => $organization->id]);
+    $employees->each(fn (User $user) => $user->assignRole('employee'));
+
+    $this->actingAs($admin)
+        ->get(route('roles.index'))
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $role = collect($page->toArray()['props']['roles']['data'])
+                ->firstWhere('name', 'employee');
+
+            expect($role['users_count'])->toBe(3);
+        });
+});
+
+it('roles index never counts a user from another organization', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin->assignRole('admin');
+
+    $ownEmployee = User::factory()->create(['organization_id' => $organization->id]);
+    $ownEmployee->assignRole('employee');
+
+    $foreignEmployee = User::factory()->create(['organization_id' => Organization::factory()->create()->id]);
+    $foreignEmployee->assignRole('employee');
+
+    $this->actingAs($admin)
+        ->get(route('roles.index'))
+        ->assertOk()
+        ->assertInertia(function ($page) use ($ownEmployee) {
+            $role = collect($page->toArray()['props']['roles']['data'])
+                ->firstWhere('name', 'employee');
+
+            expect($role['users_count'])->toBe(1)
+                ->and(collect($role['avatars'])->pluck('id')->all())->toBe([$ownEmployee->id]);
+        });
+});
+
+it('roles index can be sorted by users count', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin->assignRole('admin');
+    Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+
+    $employees = User::factory()->count(2)->create(['organization_id' => $organization->id]);
+    $employees->each(fn (User $user) => $user->assignRole('employee'));
+
+    $this->actingAs($admin)
+        ->get(route('roles.index', ['sort' => 'users_count', 'direction' => 'desc']))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('roles.data.0.name', 'employee')
+                ->where('filters.sort', 'users_count')
+                ->where('filters.direction', 'desc')
         );
 });
 

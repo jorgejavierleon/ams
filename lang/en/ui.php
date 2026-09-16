@@ -389,6 +389,7 @@ return [
         'columns' => [
             'role' => 'Role',
             'permissions' => 'Permissions',
+            'users' => 'Users',
         ],
 
         'actions' => [

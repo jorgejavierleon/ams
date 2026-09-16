@@ -1,6 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
+import { AvatarGroup } from '@/components/avatar-group';
+import type { AvatarGroupUser } from '@/components/avatar-group';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import Heading from '@/components/heading';
@@ -14,6 +16,8 @@ type Role = {
     name: string;
     label: string;
     permissions_count: number;
+    users_count: number;
+    avatars: AvatarGroupUser[];
 };
 
 type Props = {
@@ -56,6 +60,22 @@ export default function RolesIndex({ roles, filters }: Props) {
                     <Badge variant="secondary">
                         {row.original.permissions_count}
                     </Badge>
+                ),
+            },
+            {
+                accessorKey: 'users_count',
+                meta: { title: t('ui.roles.columns.users') },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.roles.columns.users')}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <AvatarGroup
+                        users={row.original.avatars}
+                        total={row.original.users_count}
+                    />
                 ),
             },
             {

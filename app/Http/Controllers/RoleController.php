@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
+use App\Models\User;
+use App\Support\CurrentOrganization;
 use App\Support\RolePresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,17 +22,36 @@ class RoleController extends Controller
     /** Roles reserved for system use — admins cannot manage these. */
     private const PROTECTED_ROLES = ['admin', 'dt', 'saas'];
 
+    /**
+     * Number of user avatars shown per role in the index list before the
+     * remainder collapses into a "+N" overflow bubble.
+     */
+    private const AVATAR_LIMIT = 5;
+
     public function index(Request $request): Response
     {
         $search = $request->string('search')->trim()->value() ?: null;
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
-            ['name', 'permissions_count'],
+            ['name', 'permissions_count', 'users_count'],
             'name',
         );
         $perPage = $this->resolveTablePerPage($request);
 
-        $roles = Role::withCount('permissions')
+        // Spatie roles are shared globally across tenants, so the users
+        // relation must be scoped to the current organization explicitly —
+        // it is not covered by an org-scoped global scope like Position is.
+        $scopeToCurrentOrganization = fn ($query) => $query->where('organization_id', CurrentOrganization::id());
+
+        $roles = Role::withCount([
+            'permissions',
+            'users' => $scopeToCurrentOrganization,
+        ])
+            ->with(['users' => fn ($query) => $scopeToCurrentOrganization($query)
+                ->select('users.id', 'users.name')
+                ->with('media')
+                ->orderBy('name')
+                ->limit(self::AVATAR_LIMIT)])
             ->whereNotIn('name', self::PROTECTED_ROLES)
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy($sort, $direction)
@@ -43,6 +64,12 @@ class RoleController extends Controller
                 'name' => $role->name,
                 'label' => RolePresenter::roleLabel($role->name),
                 'permissions_count' => $role->permissions_count,
+                'users_count' => $role->users_count,
+                'avatars' => $role->users->map(fn (User $user) => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'avatar' => $user->avatar,
+                ])->all(),
             ]),
             'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],
         ]);
