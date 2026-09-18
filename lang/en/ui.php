@@ -47,6 +47,7 @@ return [
     ],
 
     'user_menu' => [
+        'open' => 'User menu',
         'settings' => 'Settings',
         'logout' => 'Log out',
     ],

@@ -47,6 +47,7 @@ return [
     ],
 
     'user_menu' => [
+        'open' => 'Menú de usuario',
         'settings' => 'Configuración',
         'logout' => 'Cerrar sesión',
     ],
