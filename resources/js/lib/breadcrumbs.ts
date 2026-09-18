@@ -2,9 +2,16 @@ import type { Page } from '@inertiajs/core';
 import type { InertiaLinkProps } from '@inertiajs/react';
 import { dashboard } from '@/routes';
 import { edit as appearanceEdit } from '@/routes/appearance';
+import { edit as companyEdit } from '@/routes/company';
+import { index as costCentersIndex } from '@/routes/cost-centers';
 import { index as documentTemplatesIndex } from '@/routes/document-templates';
 import { index as documentsIndex } from '@/routes/documents';
 import { index as employeesIndex } from '@/routes/employees';
+import { index as holidaysIndex } from '@/routes/holidays';
+import {
+    calendar as leavesCalendar,
+    index as leavesIndex,
+} from '@/routes/leaves';
 import { index as myDocumentsIndex } from '@/routes/my/documents';
 import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as myOvertimeRequestsIndex } from '@/routes/my/overtime-requests';
@@ -12,9 +19,13 @@ import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { summary as payrollReportsSummary } from '@/routes/payroll-reports';
+import { index as positionsIndex } from '@/routes/positions';
+import { index as premisesIndex } from '@/routes/premises';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as rolesIndex } from '@/routes/roles';
 import { edit as securityEdit } from '@/routes/security';
+import { index as shiftsIndex } from '@/routes/shifts';
+import { index as workdaysIndex } from '@/routes/workdays';
 
 /**
  * Builds a title resolver that reads a display field off a named prop on the
@@ -174,6 +185,77 @@ export const breadcrumbRegistry: Record<string, BreadcrumbRegistryEntry> = {
         title: 'ui.payroll_reports.history.title',
         href: '#',
         parent: 'payroll-reports/summary',
+    },
+    'companies/edit': {
+        title: 'ui.nav.company',
+        href: companyEdit(),
+    },
+    'cost-centers/index': {
+        title: 'ui.nav.cost_centers',
+        href: costCentersIndex(),
+    },
+    'holidays/index': {
+        title: 'ui.nav.holidays',
+        href: holidaysIndex(),
+    },
+    'leaves/index': {
+        title: 'ui.nav.leaves',
+        href: leavesIndex(),
+    },
+    'leaves/create': {
+        title: 'ui.leaves.new',
+        href: '#',
+        parent: 'leaves/index',
+    },
+    'leaves/calendar': {
+        title: 'ui.nav.leaves_calendar',
+        href: leavesCalendar(),
+    },
+    'positions/index': {
+        title: 'ui.nav.positions',
+        href: positionsIndex(),
+    },
+    'positions/show': {
+        title: propTitle('position', 'name'),
+        href: '#',
+        parent: 'positions/index',
+    },
+    'premises/index': {
+        title: 'ui.nav.premises',
+        href: premisesIndex(),
+    },
+    'premises/create': {
+        title: 'ui.premises.new',
+        href: '#',
+        parent: 'premises/index',
+    },
+    'premises/edit': {
+        title: propTitle('premise', 'name'),
+        href: '#',
+        parent: 'premises/index',
+    },
+    'shifts/index': {
+        title: 'ui.nav.shifts',
+        href: shiftsIndex(),
+    },
+    'shifts/create': {
+        title: 'ui.shifts.new',
+        href: '#',
+        parent: 'shifts/index',
+    },
+    'shifts/edit': {
+        title: propTitle('shift', 'name'),
+        href: '#',
+        parent: 'shifts/index',
+    },
+    'workdays/index': {
+        title: 'ui.nav.workdays_list',
+        href: workdaysIndex(),
+    },
+    'workdays/show': {
+        title: propTitle('workday', 'date_label'),
+        href: '#',
+        parent: 'workdays/index',
     },
     'my/workdays/index': {
         title: 'ui.nav.my_workdays',
