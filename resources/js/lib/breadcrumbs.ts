@@ -5,6 +5,10 @@ import { edit as appearanceEdit } from '@/routes/appearance';
 import { index as documentTemplatesIndex } from '@/routes/document-templates';
 import { index as documentsIndex } from '@/routes/documents';
 import { index as employeesIndex } from '@/routes/employees';
+import { index as myDocumentsIndex } from '@/routes/my/documents';
+import { index as myLeavesIndex } from '@/routes/my/leaves';
+import { index as myOvertimeRequestsIndex } from '@/routes/my/overtime-requests';
+import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { summary as payrollReportsSummary } from '@/routes/payroll-reports';
@@ -170,6 +174,48 @@ export const breadcrumbRegistry: Record<string, BreadcrumbRegistryEntry> = {
         title: 'ui.payroll_reports.history.title',
         href: '#',
         parent: 'payroll-reports/summary',
+    },
+    'my/workdays/index': {
+        title: 'ui.nav.my_workdays',
+        href: myWorkdaysIndex(),
+    },
+    'my/workdays/show': {
+        title: propTitle('workday', 'date_label'),
+        href: '#',
+        parent: 'my/workdays/index',
+    },
+    'my/leaves/index': {
+        title: 'ui.nav.my_leaves',
+        href: myLeavesIndex(),
+    },
+    'my/leaves/create': {
+        title: 'ui.leaves.my.create.title',
+        href: '#',
+        parent: 'my/leaves/index',
+    },
+    'my/documents/index': {
+        title: 'ui.nav.my_documents',
+        href: myDocumentsIndex(),
+    },
+    'my/documents/show': {
+        title: propTitle('document', 'title'),
+        href: '#',
+        parent: 'my/documents/index',
+    },
+    'my/overtime-requests/index': {
+        title: 'ui.overtime.requests.my.title',
+        href: myOvertimeRequestsIndex(),
+        parent: 'overtime/index',
+    },
+    'my/overtime-requests/create': {
+        title: 'ui.overtime.requests.my.create.title',
+        href: '#',
+        parent: 'my/overtime-requests/index',
+    },
+    'my/overtime-rest-day-balance/index': {
+        title: 'ui.overtime.rest_day_balances.my.title',
+        href: '#',
+        parent: 'overtime/index',
     },
     // Virtual: no page renders as "settings" — this only groups the three
     // pages below under a shared parent crumb.
