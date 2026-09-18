@@ -446,13 +446,6 @@ return [
         ],
     ],
 
-    'user_roles' => [
-        'description' => 'Asigne o quite roles para :email',
-        'breadcrumb' => 'Roles de usuario',
-        'save' => 'Guardar roles',
-        'saving' => 'Guardando…',
-    ],
-
     'holidays' => [
         'title' => 'Feriados',
         'description' => 'Feriados oficiales más los que agregue tu organización',
@@ -1144,7 +1137,6 @@ return [
         'actions' => [
             'edit' => 'Editar',
             'delete' => 'Eliminar',
-            'manage_roles' => 'Gestionar roles',
         ],
 
         'export' => [

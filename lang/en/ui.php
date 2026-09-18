@@ -443,13 +443,6 @@ return [
         ],
     ],
 
-    'user_roles' => [
-        'description' => 'Assign or remove roles for :email',
-        'breadcrumb' => 'User roles',
-        'save' => 'Save roles',
-        'saving' => 'Saving…',
-    ],
-
     'holidays' => [
         'title' => 'Holidays',
         'description' => 'Official public holidays plus any your organization adds',
@@ -1141,7 +1134,6 @@ return [
         'actions' => [
             'edit' => 'Edit',
             'delete' => 'Delete',
-            'manage_roles' => 'Manage roles',
         ],
 
         'export' => [

@@ -3,12 +3,10 @@ import {
     Briefcase,
     Phone,
     Settings as SettingsIcon,
-    Shield,
     User as UserIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import UserRoleController from '@/actions/App/Http/Controllers/UserRoleController';
 import AlertError from '@/components/alert-error';
 import { Combobox } from '@/components/combobox';
 import type { ComboboxOption } from '@/components/combobox';
@@ -24,6 +22,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslations } from '@/hooks/use-translations';
 import { index } from '@/routes/employees';
 
+export type RoleOption = {
+    id: number;
+    label: string;
+};
+
 export type EmployeeFormOptions = {
     costCenters: ComboboxOption[];
     premises: ComboboxOption[];
@@ -31,6 +34,7 @@ export type EmployeeFormOptions = {
     supervisors: ComboboxOption[];
     contractTypes: ComboboxOption[];
     timezones: ComboboxOption[];
+    roles: RoleOption[];
 };
 
 export type EmployeeFormData = {
@@ -62,6 +66,7 @@ export type EmployeeFormData = {
     emergency_contact_phone: string;
     timezone: string;
     avatar: File | null;
+    roles: number[];
 };
 
 type Props = {
@@ -72,8 +77,6 @@ type Props = {
     initial: EmployeeFormData;
     /** Existing avatar URL to preview in edit mode. */
     currentAvatar?: string | null;
-    /** Set only in edit mode — a new employee has no id to assign roles to yet. */
-    employeeId?: number;
 };
 
 /**
@@ -88,15 +91,26 @@ export default function EmployeeForm({
     options,
     initial,
     currentAvatar = null,
-    employeeId,
 }: Props) {
     const { t } = useTranslations();
-    const { data, setData, post, processing, errors } = useForm<
+    const { data, setData, post, processing, errors, transform } = useForm<
         EmployeeFormData & { _method?: string }
     >({
         ...initial,
         ...(method === 'patch' ? { _method: 'patch' } : {}),
     });
+
+    // An unchecked checkbox group vanishes entirely from multipart form data
+    // (nothing to serialize), which is indistinguishable from the field never
+    // having been sent. Encoding the selection as a JSON string instead
+    // guarantees `roles` is always transmitted, even as "[]" — but only on
+    // edit: create never renders the roles checkboxes, so there is nothing
+    // to submit there.
+    transform((formData) =>
+        method === 'patch'
+            ? { ...formData, roles: JSON.stringify(formData.roles) }
+            : formData,
+    );
 
     const fieldErrors = errors as Record<string, string>;
     const [avatarPreview, setAvatarPreview] = useState<string | null>(
@@ -111,6 +125,15 @@ export default function EmployeeForm({
     function submit(event: FormEvent) {
         event.preventDefault();
         post(action, { forceFormData: true, preserveScroll: true });
+    }
+
+    function toggleRole(roleId: number, checked: boolean) {
+        setData(
+            'roles',
+            checked
+                ? [...data.roles, roleId]
+                : data.roles.filter((id) => id !== roleId),
+        );
     }
 
     function onAvatarChange(file: File | null) {
@@ -661,15 +684,36 @@ export default function EmployeeForm({
                         </FormField>
                     </div>
 
-                    {employeeId && (
-                        <div className="grid gap-2">
+                    {method === 'patch' && (
+                        <div className="grid gap-3">
                             <Label>{t('ui.roles.title')}</Label>
-                            <Button variant="outline" asChild className="w-fit">
-                                <Link href={UserRoleController.show(employeeId)}>
-                                    <Shield className="size-4" />
-                                    {t('ui.employees.actions.manage_roles')}
-                                </Link>
-                            </Button>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                                {options.roles.map((role) => (
+                                    <div
+                                        key={role.id}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Checkbox
+                                            id={`role-${role.id}`}
+                                            checked={data.roles.includes(
+                                                role.id,
+                                            )}
+                                            onCheckedChange={(checked) =>
+                                                toggleRole(
+                                                    role.id,
+                                                    checked === true,
+                                                )
+                                            }
+                                        />
+                                        <Label
+                                            htmlFor={`role-${role.id}`}
+                                            className="cursor-pointer text-sm font-normal"
+                                        >
+                                            {role.label}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </TabsContent>

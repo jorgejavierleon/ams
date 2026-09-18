@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jorgejavierleon'
 created_date: '2026-08-18 10:26'
-updated_date: '2026-09-16 22:20'
+updated_date: '2026-09-18 13:01'
 labels:
   - roles
   - frontend
@@ -58,6 +58,10 @@ This ticket is about finishing and surfacing that existing flow, not building a 
 
 <!-- SECTION:NOTES:BEGIN -->
 Verified full flow live in the browser (admin@example.com): Empleados show page renders a localized 'Gestionar roles' button linking to /users/{id}/roles; toggled Supervisor on/off and confirmed the save persisted across a reload, then reverted the test toggle. Ran full Pest suite (1439 passed, 4 pre-existing skipped, 0 failed), Pint (clean), PHPStan (0 errors on touched files), ESLint (clean), tsc --noEmit (2 pre-existing failures in roles/index.tsx and roles/show.tsx, unrelated to this change and reproduced on master via git stash). Code review (mattpocock-skills:code-review) flagged two issues, both fixed: (1) the save button had been reusing ui.roles.save/saving ('Save permissions') instead of dedicated user_roles.save/saving copy ('Save roles'); (2) the protected-roles whereNotIn filter was duplicated across RoleController::index, UserRoleController::show and UserRoleController::update — centralized into RolePresenter::excludeProtected(Builder $query).
+
+Follow-up: moved the 'Manage roles' entry point from the Employees show-page header into the System tab of the shared employee create/edit form (resources/js/components/employee-form.tsx), next to the is_admin/timezone fields. Only rendered when editing (employeeId prop set) since a new employee has no id yet. Verified live in Chrome on both /employees/{id}/edit (link renders under Sistema tab, points to /users/{id}/roles) and /employees/create (section correctly absent).
+
+Follow-up: per user request, replaced the separate roles page/link with inline role checkboxes directly in the employee edit form's System tab (no more link to another page). Removed UserRoleController, users/roles.tsx, and the users.roles/users.roles.update routes entirely (approved by user — the standalone screen would otherwise become unreachable dead code again). Role sync now happens inside EmployeeController::update(), decoding 'roles' from either a plain array (tests) or a JSON string (the real browser payload, since an emptied checkbox group vanishes from multipart form data otherwise). A code-review pass caught a severe self-lockout bug in my first draft: the base 'employee' role was listed as a removable checkbox, but User::scopeEmployees()/EmployeeController::assertEmployee() hard-require it, and the only recovery path (UserRoleController) had just been deleted. Fixed by adding RolePresenter::BASE_EMPLOYEE_ROLE and a shared RolePresenter::syncAssignableRoles() helper that always preserves it (and protected roles) regardless of what's submitted; 'employee' is also excluded from the checkbox list. Verified the exact regression live in Chrome (unchecking everything and saving no longer removes the base role) and added Pest coverage for it.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

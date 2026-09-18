@@ -43,24 +43,6 @@ it('blocks non-admin users from updating role permissions', function () {
     $this->actingAs($user)->put(route('roles.update', $role), ['permissions' => []])->assertForbidden();
 });
 
-it('blocks non-admin users from assigning user roles', function () {
-    $target = User::factory()->create();
-    $user = User::factory()->create();
-    $user->assignRole('employee');
-
-    $this->actingAs($user)->get(route('users.roles', $target))->assertForbidden();
-});
-
-it('blocks non-admin users from submitting user role changes', function () {
-    $target = User::factory()->create();
-    $user = User::factory()->create();
-    $user->assignRole('employee');
-
-    $this->actingAs($user)
-        ->put(route('users.roles.update', $target), ['roles' => []])
-        ->assertForbidden();
-});
-
 // --- Protected roles ---
 
 it('admin cannot view the admin role detail', function () {
@@ -99,27 +81,6 @@ it('admin cannot update permissions on a protected role', function () {
     $this->actingAs($admin)
         ->put(route('roles.update', $role), ['permissions' => []])
         ->assertForbidden();
-});
-
-it('user role assignment page does not offer protected roles', function () {
-    Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'saas', 'guard_name' => 'web']);
-
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $target = User::factory()->create();
-
-    $this->actingAs($admin)
-        ->get(route('users.roles', $target))
-        ->assertOk()
-        ->assertInertia(function ($page) {
-            $names = collect($page->toArray()['props']['roles'])->pluck('name')->all();
-            expect($names)->toContain('employee')
-                ->and($names)->not->toContain('admin')
-                ->and($names)->not->toContain('dt')
-                ->and($names)->not->toContain('saas');
-        });
 });
 
 it('roles index does not include protected roles', function () {
@@ -350,23 +311,6 @@ it('role detail groups permissions under localized group and permission labels',
         });
 });
 
-it('user role assignment page exposes localized role labels', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $target = User::factory()->create();
-
-    $this->actingAs($admin)
-        ->get(route('users.roles', $target))
-        ->assertOk()
-        ->assertInertia(function ($page) {
-            $employee = collect($page->toArray()['props']['roles'])
-                ->firstWhere('name', 'employee');
-
-            expect($employee['label'])->toBe('Empleado');
-        });
-});
-
 // --- Role show ---
 
 it('admin can view role detail with permission groups', function () {
@@ -449,95 +393,4 @@ it('validates that permission ids must exist in the database', function () {
     $this->actingAs($admin)
         ->put(route('roles.update', $role), ['permissions' => [99999]])
         ->assertSessionHasErrors('permissions.0');
-});
-
-// --- User role assignment ---
-
-it('admin can view user role assignment page', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $target = User::factory()->create();
-
-    $this->actingAs($admin)
-        ->get(route('users.roles', $target))
-        ->assertOk()
-        ->assertInertia(
-            fn ($page) => $page
-                ->component('users/roles')
-                ->has('user')
-                ->has('roles')
-        );
-});
-
-it('admin can assign roles to a user', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $target = User::factory()->create();
-    $role = Role::where('name', 'employee')->first();
-
-    $this->actingAs($admin)
-        ->put(route('users.roles.update', $target), ['roles' => [$role->id]])
-        ->assertRedirect(route('users.roles', $target));
-
-    expect($target->fresh()->hasRole('employee'))->toBeTrue();
-});
-
-it('admin can remove all roles from a user', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $target = User::factory()->create();
-    $target->assignRole('employee');
-
-    $this->actingAs($admin)
-        ->put(route('users.roles.update', $target), ['roles' => []])
-        ->assertRedirect(route('users.roles', $target));
-
-    expect($target->fresh()->roles)->toBeEmpty();
-});
-
-it('validates that role ids must exist in the database', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $target = User::factory()->create();
-
-    $this->actingAs($admin)
-        ->put(route('users.roles.update', $target), ['roles' => [99999]])
-        ->assertSessionHasErrors('roles.0');
-});
-
-it('preserves a protected role the user already holds when syncing other roles', function () {
-    Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
-
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $target = User::factory()->create();
-    $target->assignRole('dt');
-    $employeeRole = Role::where('name', 'employee')->first();
-
-    $this->actingAs($admin)
-        ->put(route('users.roles.update', $target), ['roles' => [$employeeRole->id]])
-        ->assertRedirect(route('users.roles', $target));
-
-    expect($target->fresh()->hasRole('dt'))->toBeTrue()
-        ->and($target->fresh()->hasRole('employee'))->toBeTrue();
-});
-
-it('does not let a tampered payload assign a protected role', function () {
-    $adminRole = Role::where('name', 'admin')->first();
-
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $target = User::factory()->create();
-
-    $this->actingAs($admin)
-        ->put(route('users.roles.update', $target), ['roles' => [$adminRole->id]])
-        ->assertRedirect(route('users.roles', $target));
-
-    expect($target->fresh()->hasRole('admin'))->toBeFalse();
 });

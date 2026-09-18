@@ -500,6 +500,211 @@ test('admin cannot update an employee from another organization', function () {
         ->assertNotFound();
 });
 
+// --- Role assignment ---
+
+test('the edit form exposes assignable roles and the employee current role ids', function () {
+    Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web']);
+
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $employee->assignRole('employee');
+
+    $employeeRoleId = Role::where('name', 'employee')->value('id');
+    $supervisorRoleId = Role::where('name', 'supervisor')->value('id');
+
+    $this->actingAs($admin)
+        ->get(route('employees.edit', $employee))
+        ->assertOk()
+        ->assertInertia(function ($page) use ($employeeRoleId, $supervisorRoleId) {
+            $props = $page->toArray()['props'];
+
+            // The base "employee" role is never offered as a checkbox (see
+            // the lockout tests below), but the employee's current role ids
+            // still faithfully report that it's assigned.
+            expect(collect($props['options']['roles'])->pluck('id')->all())
+                ->toContain($supervisorRoleId)
+                ->not->toContain($employeeRoleId)
+                ->and($props['employee']['role_ids'])->toContain($employeeRoleId);
+        });
+});
+
+test('assignable roles on the edit form use localized labels', function () {
+    Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web']);
+
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $supervisorRoleId = Role::where('name', 'supervisor')->value('id');
+
+    $this->actingAs($admin)
+        ->get(route('employees.edit', $employee))
+        ->assertOk()
+        ->assertInertia(function ($page) use ($supervisorRoleId) {
+            $supervisor = collect($page->toArray()['props']['options']['roles'])
+                ->firstWhere('id', $supervisorRoleId);
+
+            expect($supervisor['label'])->toBe('Supervisor');
+        });
+});
+
+test('assignable roles on the edit form exclude protected roles and the base employee role', function () {
+    Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'saas', 'guard_name' => 'web']);
+
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $excludedIds = Role::whereIn('name', ['admin', 'dt', 'saas', 'employee'])->pluck('id')->all();
+
+    $this->actingAs($admin)
+        ->get(route('employees.edit', $employee))
+        ->assertOk()
+        ->assertInertia(function ($page) use ($excludedIds) {
+            $ids = collect($page->toArray()['props']['options']['roles'])->pluck('id')->all();
+
+            expect(array_intersect($ids, $excludedIds))->toBeEmpty();
+        });
+});
+
+test('admin can assign a role to an employee via the update form', function () {
+    Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web']);
+
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $role = Role::where('name', 'supervisor')->first();
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin, [
+            'roles' => [$role->id],
+        ]))
+        ->assertRedirect(route('employees.index'))
+        ->assertSessionHasNoErrors();
+
+    expect($employee->fresh()->hasRole('supervisor'))->toBeTrue();
+});
+
+test('the update form accepts roles encoded as a JSON string, as the browser sends them', function () {
+    Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web']);
+
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $role = Role::where('name', 'supervisor')->first();
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin, [
+            'roles' => json_encode([$role->id]),
+        ]))
+        ->assertRedirect(route('employees.index'))
+        ->assertSessionHasNoErrors();
+
+    expect($employee->fresh()->hasRole('supervisor'))->toBeTrue();
+});
+
+test('admin can remove all assignable roles from an employee via the update form', function () {
+    Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web']);
+
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $employee->assignRole(['employee', 'supervisor']);
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin, [
+            'roles' => [],
+        ]))
+        ->assertRedirect(route('employees.index'))
+        ->assertSessionHasNoErrors();
+
+    expect($employee->fresh()->hasRole('supervisor'))->toBeFalse();
+});
+
+test('the base employee role survives even when left out of the submitted roles', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $employee->assignRole('employee');
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin, [
+            'roles' => [],
+        ]))
+        ->assertRedirect(route('employees.index'))
+        ->assertSessionHasNoErrors();
+
+    // Removing this role would 404 every future request for the employee
+    // (assertEmployee(), User::scopeEmployees()) with no UI left to restore
+    // it — it must never be droppable from this form.
+    expect($employee->fresh()->hasRole('employee'))->toBeTrue();
+});
+
+test('omitting roles from the update payload leaves existing roles untouched', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $employee->assignRole('employee');
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin))
+        ->assertRedirect(route('employees.index'))
+        ->assertSessionHasNoErrors();
+
+    expect($employee->fresh()->hasRole('employee'))->toBeTrue();
+});
+
+test('validates that role ids submitted on the update form must exist', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin, [
+            'roles' => [99999],
+        ]))
+        ->assertSessionHasErrors('roles.0');
+});
+
+test('preserves a protected role the employee already holds when updating other roles', function () {
+    Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
+
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $employee->assignRole('dt');
+    $employeeRole = Role::where('name', 'employee')->first();
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin, [
+            'roles' => [$employeeRole->id],
+        ]))
+        ->assertRedirect(route('employees.index'))
+        ->assertSessionHasNoErrors();
+
+    expect($employee->fresh()->hasRole('dt'))->toBeTrue()
+        ->and($employee->fresh()->hasRole('employee'))->toBeTrue();
+});
+
+test('a tampered payload cannot assign a protected role via the update form', function () {
+    $adminRole = Role::where('name', 'admin')->first();
+
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin, [
+            'roles' => [$adminRole->id],
+        ]))
+        ->assertRedirect(route('employees.index'))
+        ->assertSessionHasNoErrors();
+
+    expect($employee->fresh()->hasRole('admin'))->toBeFalse();
+});
+
+test('non-admin users cannot update an employee', function () {
+    $organization = Organization::factory()->create();
+    $admin = employeeAdmin($organization);
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+
+    $nonAdmin = User::factory()->create(['organization_id' => $organization->id]);
+    $nonAdmin->assignRole('employee');
+
+    $this->actingAs($nonAdmin)
+        ->patch(route('employees.update', $employee), employeePayload($admin))
+        ->assertForbidden();
+});
+
 // --- Active toggle ---
 
 test('the is_active state can be toggled inline', function () {

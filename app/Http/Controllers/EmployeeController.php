@@ -20,6 +20,7 @@ use App\Rules\ValidRut;
 use App\Services\Reports\EmployeeMasterExporter;
 use App\Services\Reports\PayrollExportReadiness;
 use App\Services\Reports\PayrollExportReadinessService;
+use App\Support\RolePresenter;
 use App\Support\Rut;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -29,6 +30,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class EmployeeController extends Controller
@@ -251,6 +253,7 @@ class EmployeeController extends Controller
                 'emergency_contact_name' => $employee->emergency_contact_name,
                 'emergency_contact_phone' => $employee->emergency_contact_phone,
                 'timezone' => $employee->timezone,
+                'role_ids' => $employee->roles->pluck('id')->all(),
             ],
             'options' => $this->formOptions($employee),
         ]);
@@ -261,8 +264,13 @@ class EmployeeController extends Controller
         $this->assertEmployee($employee);
 
         $data = $this->validateEmployee($request, $employee);
+        $roleIds = $data['roles'];
 
         $employee->update($this->prepareForStorage($data, isCreate: false));
+
+        if ($roleIds !== null) {
+            RolePresenter::syncAssignableRoles($employee, $roleIds, [RolePresenter::BASE_EMPLOYEE_ROLE]);
+        }
 
         if ($request->hasFile('avatar')) {
             $employee->addMediaFromRequest('avatar')->toMediaCollection('avatar');
@@ -431,7 +439,7 @@ class EmployeeController extends Controller
             unset($data['password']);
         }
 
-        unset($data['avatar']);
+        unset($data['avatar'], $data['roles']);
 
         return $data;
     }
@@ -450,6 +458,12 @@ class EmployeeController extends Controller
             'is_admin' => $request->boolean('is_admin'),
             'has_additional_sundays' => $request->boolean('has_additional_sundays'),
             'overtime_rest_day_eligible' => $request->boolean('overtime_rest_day_eligible'),
+            // An unchecked checkbox group serializes to no `roles` field at
+            // all in multipart form data, indistinguishable from "not sent".
+            // The form works around this by always submitting `roles` as a
+            // JSON string (possibly "[]"); decode it back to an array here so
+            // null vs. [] keeps meaning "field absent" vs. "nothing selected".
+            'roles' => $this->decodeRoleIds($request->input('roles')),
         ]);
 
         return $request->validate([
@@ -497,7 +511,33 @@ class EmployeeController extends Controller
             'emergency_contact_phone' => ['nullable', 'string', 'max:255'],
             'timezone' => ['required', 'timezone'],
             'avatar' => ['nullable', 'image', 'max:2048'],
+            'roles' => ['nullable', 'array'],
+            'roles.*' => ['integer', 'exists:roles,id'],
         ]);
+    }
+
+    /**
+     * Normalize the `roles` input into a plain id list, or null when the
+     * field was not submitted at all. Accepts either a real array (Pest
+     * tests, or a non-multipart request) or the JSON string the edit form
+     * sends over multipart, so an empty selection round-trips as `[]` rather
+     * than disappearing.
+     *
+     * @return array<int, int>|null
+     */
+    private function decodeRoleIds(mixed $raw): ?array
+    {
+        if (is_array($raw)) {
+            return array_values(array_map('intval', $raw));
+        }
+
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+
+            return is_array($decoded) ? array_values(array_map('intval', $decoded)) : null;
+        }
+
+        return null;
     }
 
     /**
@@ -603,7 +643,26 @@ class EmployeeController extends Controller
             'supervisors' => $this->supervisorOptions($employee),
             'contractTypes' => ContractType::options(),
             'timezones' => $this->timezoneOptions(),
+            'roles' => $this->roleOptions(),
         ];
+    }
+
+    /**
+     * Assignable roles for the System tab's role checkboxes: protected roles
+     * (admin/dt/saas) are never offered, and neither is the base "employee"
+     * role — removing it would break every gate that requires
+     * hasRole('employee') to recognize the record as an employee at all.
+     *
+     * @return array<int, array{id: int, label: string}>
+     */
+    private function roleOptions(): array
+    {
+        return RolePresenter::excludeProtected(Role::query())
+            ->where('name', '!=', RolePresenter::BASE_EMPLOYEE_ROLE)
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Role $role) => ['id' => (int) $role->id, 'label' => RolePresenter::roleLabel($role->name)])
+            ->all();
     }
 
     /**

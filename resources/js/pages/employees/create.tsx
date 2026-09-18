@@ -41,6 +41,7 @@ const emptyEmployee: EmployeeFormData = {
     emergency_contact_phone: '',
     timezone: 'America/Santiago',
     avatar: null,
+    roles: [],
 };
 
 export default function CreateEmployee({ options }: Props) {

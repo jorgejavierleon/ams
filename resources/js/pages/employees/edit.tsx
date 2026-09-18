@@ -37,6 +37,7 @@ type Employee = {
     emergency_contact_name: string | null;
     emergency_contact_phone: string | null;
     timezone: string;
+    role_ids: number[];
 };
 
 type Props = {
@@ -80,6 +81,7 @@ export default function EditEmployee({ employee, options }: Props) {
         emergency_contact_phone: employee.emergency_contact_phone ?? '',
         timezone: employee.timezone,
         avatar: null,
+        roles: employee.role_ids,
     };
 
     return (
@@ -99,7 +101,6 @@ export default function EditEmployee({ employee, options }: Props) {
                     options={options}
                     initial={initial}
                     currentAvatar={employee.avatar}
-                    employeeId={employee.id}
                 />
             </div>
         </>

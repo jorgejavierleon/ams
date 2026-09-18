@@ -48,7 +48,6 @@ use App\Http\Controllers\Saas\OrganizationController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ShiftAssignmentController;
 use App\Http\Controllers\ShiftController;
-use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\WeeklyDetailReportController;
 use App\Http\Controllers\WorkdayController;
 use App\Models\ImportRun;
@@ -78,9 +77,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
     Route::get('roles/{role}', [RoleController::class, 'show'])->name('roles.show');
     Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-
-    Route::get('users/{user}/roles', [UserRoleController::class, 'show'])->name('users.roles');
-    Route::put('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');
 
     Route::get('organization-settings', [SettingController::class, 'index'])->name('organization-settings.edit');
     Route::patch('organization-settings', [SettingController::class, 'update'])->name('organization-settings.update');
