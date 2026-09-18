@@ -3,10 +3,12 @@ import {
     Briefcase,
     Phone,
     Settings as SettingsIcon,
+    Shield,
     User as UserIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import UserRoleController from '@/actions/App/Http/Controllers/UserRoleController';
 import AlertError from '@/components/alert-error';
 import { Combobox } from '@/components/combobox';
 import type { ComboboxOption } from '@/components/combobox';
@@ -70,6 +72,8 @@ type Props = {
     initial: EmployeeFormData;
     /** Existing avatar URL to preview in edit mode. */
     currentAvatar?: string | null;
+    /** Set only in edit mode — a new employee has no id to assign roles to yet. */
+    employeeId?: number;
 };
 
 /**
@@ -84,6 +88,7 @@ export default function EmployeeForm({
     options,
     initial,
     currentAvatar = null,
+    employeeId,
 }: Props) {
     const { t } = useTranslations();
     const { data, setData, post, processing, errors } = useForm<
@@ -655,6 +660,18 @@ export default function EmployeeForm({
                             />
                         </FormField>
                     </div>
+
+                    {employeeId && (
+                        <div className="grid gap-2">
+                            <Label>{t('ui.roles.title')}</Label>
+                            <Button variant="outline" asChild className="w-fit">
+                                <Link href={UserRoleController.show(employeeId)}>
+                                    <Shield className="size-4" />
+                                    {t('ui.employees.actions.manage_roles')}
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
                 </TabsContent>
             </Tabs>
 

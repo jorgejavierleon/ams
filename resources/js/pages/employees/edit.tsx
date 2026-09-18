@@ -99,6 +99,7 @@ export default function EditEmployee({ employee, options }: Props) {
                     options={options}
                     initial={initial}
                     currentAvatar={employee.avatar}
+                    employeeId={employee.id}
                 />
             </div>
         </>
