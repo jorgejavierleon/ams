@@ -6,6 +6,8 @@ import { index as documentTemplatesIndex } from '@/routes/document-templates';
 import { index as documentsIndex } from '@/routes/documents';
 import { index as employeesIndex } from '@/routes/employees';
 import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
+import { index as overtimeIndex } from '@/routes/overtime';
+import { summary as payrollReportsSummary } from '@/routes/payroll-reports';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as rolesIndex } from '@/routes/roles';
 import { edit as securityEdit } from '@/routes/security';
@@ -125,6 +127,49 @@ export const breadcrumbRegistry: Record<string, BreadcrumbRegistryEntry> = {
         title: propTitle('template', 'title'),
         href: '#',
         parent: 'document-templates/index',
+    },
+    'overtime/index': {
+        title: 'ui.nav.overtime',
+        href: overtimeIndex(),
+    },
+    'overtime/pacts/index': {
+        title: 'ui.overtime.pacts.title',
+        href: '#',
+        parent: 'overtime/index',
+    },
+    'overtime/requests/index': {
+        title: 'ui.overtime.requests.review.title',
+        href: '#',
+        parent: 'overtime/index',
+    },
+    'overtime/rest-day-balances/index': {
+        title: 'ui.overtime.rest_day_balances.title',
+        href: '#',
+        parent: 'overtime/index',
+    },
+    'payroll-reports/summary': {
+        title: 'ui.nav.payroll_reports',
+        href: payrollReportsSummary(),
+    },
+    'payroll-reports/weekly-detail': {
+        title: 'ui.payroll_reports.types.weekly-detail',
+        href: '#',
+        parent: 'payroll-reports/summary',
+    },
+    'payroll-reports/period-movements': {
+        title: 'ui.payroll_reports.types.period-movements',
+        href: '#',
+        parent: 'payroll-reports/summary',
+    },
+    'payroll-reports/overtime-excess': {
+        title: 'ui.payroll_reports.types.overtime-excess',
+        href: '#',
+        parent: 'payroll-reports/summary',
+    },
+    'payroll-reports/history': {
+        title: 'ui.payroll_reports.history.title',
+        href: '#',
+        parent: 'payroll-reports/summary',
     },
     // Virtual: no page renders as "settings" — this only groups the three
     // pages below under a shared parent crumb.
