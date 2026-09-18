@@ -1,9 +1,11 @@
 ---
 id: KOL-118
 title: Add a central breadcrumb registry driving the sidebar header on all views
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jj'
 created_date: '2026-09-18 18:52'
+updated_date: '2026-09-18 19:21'
 labels: []
 dependencies: []
 ordinal: 105000
@@ -122,7 +124,7 @@ Scenario: DT and SaaS areas are unaffected
 - [ ] #2 Detail and edit pages for the same record share an identical parent-chained trail with a record-derived trailing title (e.g. Employees > <employee name>)
 - [ ] #3 Create pages show a localized static trailing title chained under their index page (e.g. Employees > New employee)
 - [ ] #4 Dashboard, Organization Settings, Roles (index and show), and the three account Settings pages keep their current breadcrumb trails after migrating off the old per-page layout declaration onto the new registry
-- [ ] #5 Settings pages (Profile, Security, Appearance) show a shared Settings parent crumb
+- [x] #5 Settings pages (Profile, Security, Appearance) show a shared Settings parent crumb
 - [ ] #6 All breadcrumb titles are localized via the existing translation catalog and render correctly in both configured locales
 - [ ] #7 Breadcrumb trails render correctly on a fresh full-page load, not only after client-side navigation
 - [ ] #8 The DT and SaaS header bars are unaffected and still have no breadcrumb slot
@@ -130,8 +132,42 @@ Scenario: DT and SaaS areas are unaffected
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
 - [ ] #2 sa test --compact passes
-- [ ] #3 npm run types:check passes when TypeScript touched
+- [x] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Slice 1 (this pass): breadcrumb registry mechanism + migrate the pages that already declared breadcrumbs (Dashboard, Organization Settings, Roles index/show, Settings Profile/Security/Appearance) off the old per-page `.layout` declarations.
+
+1. Add resources/js/lib/breadcrumbs.ts: a registry keyed by Inertia page name (component string), entry = { title: translation-key | (props) => string, href: Wayfinder route, parent?: registry key }. Includes a virtual `settings` entry (no real page) so the three Settings pages share a "Settings" parent.
+2. Add resources/js/hooks/use-breadcrumbs.ts: reads usePage().component + props, walks the registry's parent chain root-first, resolves string titles via the existing translate() helper. Missing registry entry -> empty trail (matches current default-empty behavior for unmigrated pages).
+3. AppSidebarHeader calls useBreadcrumbs() itself instead of receiving a breadcrumbs prop; drop the prop from AppSidebarLayout and AdminLayout (and the unused starter-kit app-layout.tsx, kept typechecking).
+4. Remove Dashboard.layout / OrganizationSettings.layout / RolesIndex.layout / RolesShow.layout / Profile.layout / Security.layout / Appearance.layout and their now-unused imports; add matching registry entries. Reused the sidebar nav's own translation keys (ui.nav.*) instead of the old hand-duplicated/hardcoded strings, fixing the Organization Settings crumb ("Organization settings" -> "General settings", now consistent with the sidebar nav item) and the Security crumb (was an untranslated hardcoded string).
+5. Settings pages: use ui.settings.nav.profile/security/appearance (short labels) chained under the new virtual "settings" entry, per the ticket's "Settings > Profile" Gherkin scenario - a deliberate change from the old single-level "Profile settings" crumb.
+
+Remaining sections (Employees+Import wizard, Documents+Templates, Positions/Premises/Cost Centers/Holidays/Shifts/Workdays, Overtime+sub-views, Payroll Reports, the my/* self-service pages) are out of scope for this pass - see follow-up tasks.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Verified in browser (dev server, Chrome DevTools MCP) on both locales:
+- /dashboard -> "Dashboard"/"Panel", link resolves to itself
+- /roles -> "Roles"; /roles/2 -> "Roles > Permissions" (Roles links back), matches prior text exactly
+- /organization-settings -> "General settings" (was "Organization settings"; now matches sidebar nav label - deliberate fix, see plan)
+- /settings/profile, /settings/appearance -> "Settings > Profile" / "Settings > Appearance" in both locales (Settings links to Profile)
+- /employees (unmigrated page) -> no breadcrumb nav rendered, same as before (no regression)
+- DT/SaaS layouts untouched, no breadcrumb slot
+
+Automated: npm run types:check clean (2 pre-existing unrelated errors in roles/index.tsx and roles/show.tsx confirmed via git stash, not touched by this change); eslint clean; prettier clean; sail artisan test --compact --filter="DashboardTest|RoleManagementTest|RolesPermissionsTest|OrganizationSettingsTest|ProfileUpdateTest|SecurityTest" passed (66 passed, 3 skipped, 334 assertions). No PHP files changed, so no new Pest test required.
+
+User declined installing pestphp/pest-plugin-browser for this slice (not in the repo yet, dependency change needs approval) - verified the rendered trail manually via Chrome DevTools MCP instead of adding a browser-level Pest test.
+
+Code review (angle A) flagged AC #4 as incorrectly checked: it says the migrated pages "keep their current breadcrumb trails," but Organization Settings' text changed ("Organization settings" -> "General settings", now matching the sidebar nav label) and the three Settings pages changed shape (single crumb -> "Settings > <page>"). That's intentional and matches the ticket's own Implementation Decisions/User Story #15/Gherkin ("Settings > Security" etc.), not a regression - but it contradicts AC #4's literal wording, so I'm leaving it unchecked pending a sign-off from the user/ticket owner that the wording should be read as "keeps working," not "byte-identical text." Dashboard and Roles (index/show) text did stay identical.
+
+Also applied from the same review: typed the registry's function-title props via Inertia's own Page['props'] type instead of Record<string, unknown>; imported BreadcrumbRegistryEntry in the hook instead of re-deriving it structurally; added a visited-keys guard so a misconfigured parent cycle can't hang the render loop; added a dev-only console.warn when a `parent` key doesn't resolve (a real page being unmigrated is expected and silent, a dangling parent reference is always a typo); switched to useTranslations().t() instead of calling translate() directly, matching the rest of the codebase. Not applied: deduplicating title/href against app-sidebar.tsx's nav declarations (the registry is deliberately a separate concept per the ticket - e.g. Roles show's "Permissions" crumb has no nav equivalent) and adding a JS/TS test (no test runner is configured in this repo; adding one is a dependency change, same category the user already declined for pest-plugin-browser in this slice).
+<!-- SECTION:NOTES:END -->

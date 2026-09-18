@@ -2,9 +2,6 @@ import { Head } from '@inertiajs/react';
 import AppearanceTabs from '@/components/appearance-tabs';
 import Heading from '@/components/heading';
 import { useTranslations } from '@/hooks/use-translations';
-import { translate } from '@/lib/i18n';
-import { edit as editAppearance } from '@/routes/appearance';
-import type { Translations } from '@/types/i18n';
 
 export default function Appearance() {
     const { t } = useTranslations();
@@ -26,12 +23,3 @@ export default function Appearance() {
         </>
     );
 }
-
-Appearance.layout = (props: { translations: Translations }) => ({
-    breadcrumbs: [
-        {
-            title: translate(props.translations, 'ui.settings.appearance.head'),
-            href: editAppearance(),
-        },
-    ],
-});

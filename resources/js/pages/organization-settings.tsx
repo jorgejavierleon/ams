@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useTranslations } from '@/hooks/use-translations';
-import { edit, update } from '@/routes/organization-settings';
+import { update } from '@/routes/organization-settings';
 
 type Option = { value: string; label: string };
 
@@ -305,7 +305,3 @@ function SettingToggle({
         </div>
     );
 }
-
-OrganizationSettings.layout = {
-    breadcrumbs: [{ title: 'Organization settings', href: edit() }],
-};

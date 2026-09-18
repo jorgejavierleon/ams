@@ -1,12 +1,10 @@
-import { Form, Head, type LayoutCallback } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import RoleController from '@/actions/App/Http/Controllers/RoleController';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/hooks/use-translations';
-import { translate } from '@/lib/i18n';
-import { index } from '@/routes/roles';
 
 type Permission = {
     id: number;
@@ -112,15 +110,3 @@ export default function RolesShow({ role, permissionGroups }: Props) {
         </>
     );
 }
-
-const layout: LayoutCallback = (props) => ({
-    breadcrumbs: [
-        { title: 'Roles', href: index() },
-        {
-            title: translate(props.translations, 'ui.roles.columns.permissions'),
-            href: '#',
-        },
-    ],
-});
-
-RolesShow.layout = layout;

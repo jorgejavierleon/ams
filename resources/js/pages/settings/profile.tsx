@@ -11,11 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useInitials } from '@/hooks/use-initials';
 import { useTranslations } from '@/hooks/use-translations';
-import { translate } from '@/lib/i18n';
-import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import type { Auth } from '@/types';
-import type { Translations } from '@/types/i18n';
 
 type PageProps = {
     auth: Auth;
@@ -201,12 +198,3 @@ export default function Profile({
         </>
     );
 }
-
-Profile.layout = (props: { translations: Translations }) => ({
-    breadcrumbs: [
-        {
-            title: translate(props.translations, 'ui.settings.profile.head'),
-            href: edit(),
-        },
-    ],
-});

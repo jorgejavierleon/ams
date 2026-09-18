@@ -122,12 +122,3 @@ export default function RolesIndex({ roles, filters }: Props) {
         </>
     );
 }
-
-RolesIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Roles',
-            href: index(),
-        },
-    ],
-};

@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { dashboard } from '@/routes';
 import { store } from '@/routes/my/marks';
 
 type Shift = {
@@ -439,12 +438,3 @@ export default function Dashboard({ clock }: DashboardProps) {
         </>
     );
 }
-
-Dashboard.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-        },
-    ],
-};
