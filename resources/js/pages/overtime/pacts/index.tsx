@@ -1,16 +1,18 @@
 import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Plus, XCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ComboboxOption } from '@/components/combobox';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import Heading from '@/components/heading';
 import OvertimePactFormDialog from '@/components/overtime-pact-form-dialog';
 import type { OvertimePactFormTarget } from '@/components/overtime-pact-form-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/hooks/use-translations';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { activate, index, revoke } from '@/routes/overtime/pacts';
@@ -110,10 +112,10 @@ export default function OvertimePactsIndex({
                 },
                 header: () => null,
                 cell: ({ row }) => (
-                    <div className="flex justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => {
+                    <DataTableRowActions
+                        edit={{
+                            label: t('ui.overtime.pacts.actions.edit'),
+                            onClick: () => {
                                 setEditTarget({
                                     id: row.original.id,
                                     user_id: row.original.user_id,
@@ -121,36 +123,33 @@ export default function OvertimePactsIndex({
                                     end_date: row.original.end_date,
                                 });
                                 setFormOpen(true);
-                            }}
-                            className="text-sm text-primary underline-offset-4 hover:underline"
-                        >
-                            {t('ui.overtime.pacts.actions.edit')}
-                        </button>
+                            },
+                        }}
+                    >
                         {row.original.status.value === 'active' && (
-                            <button
-                                type="button"
-                                onClick={() => setRevokeTarget(row.original)}
-                                className="text-sm text-destructive underline-offset-4 hover:underline"
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => setRevokeTarget(row.original)}
                             >
+                                <XCircle className="size-4" />
                                 {t('ui.overtime.pacts.actions.revoke')}
-                            </button>
+                            </DropdownMenuItem>
                         )}
                         {row.original.status.value === 'revoked' && (
-                            <button
-                                type="button"
-                                onClick={() =>
+                            <DropdownMenuItem
+                                onSelect={() =>
                                     router.patch(
                                         activate(row.original.id).url,
                                         undefined,
                                         { preserveScroll: true },
                                     )
                                 }
-                                className="text-sm text-primary underline-offset-4 hover:underline"
                             >
+                                <CheckCircle2 className="size-4" />
                                 {t('ui.overtime.pacts.actions.activate')}
-                            </button>
+                            </DropdownMenuItem>
                         )}
-                    </div>
+                    </DataTableRowActions>
                 ),
             },
         ],

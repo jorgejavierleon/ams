@@ -7,6 +7,7 @@ import CostCenterFormDialog from '@/components/cost-center-form-dialog';
 import type { CostCenterFormTarget } from '@/components/cost-center-form-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
@@ -84,29 +85,23 @@ export default function CostCentersIndex({ costCenters, filters }: Props) {
                 },
                 header: () => null,
                 cell: ({ row }) => (
-                    <div className="flex justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => {
+                    <DataTableRowActions
+                        edit={{
+                            label: t('ui.cost_centers.actions.edit'),
+                            onClick: () => {
                                 setEditTarget({
                                     id: row.original.id,
                                     name: row.original.name,
                                     code: row.original.code,
                                 });
                                 setFormOpen(true);
-                            }}
-                            className="text-sm text-primary underline-offset-4 hover:underline"
-                        >
-                            {t('ui.cost_centers.actions.edit')}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setDeleteTarget(row.original)}
-                            className="text-sm text-destructive underline-offset-4 hover:underline"
-                        >
-                            {t('ui.cost_centers.actions.delete')}
-                        </button>
-                    </div>
+                            },
+                        }}
+                        delete={{
+                            label: t('ui.cost_centers.actions.delete'),
+                            onClick: () => setDeleteTarget(row.original),
+                        }}
+                    />
                 ),
             },
         ],

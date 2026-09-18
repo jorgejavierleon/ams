@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -129,9 +130,9 @@ export default function DocumentTemplatesIndex({ templates, filters }: Props) {
                     cellClassName: 'text-right',
                 },
                 header: () => null,
-                cell: ({ row }) => (
-                    <div className="flex justify-end gap-2">
-                        {row.original.trashed ? (
+                cell: ({ row }) =>
+                    row.original.trashed ? (
+                        <div className="flex justify-end gap-2">
                             <button
                                 type="button"
                                 onClick={() => restoreTemplate(row.original)}
@@ -139,27 +140,21 @@ export default function DocumentTemplatesIndex({ templates, filters }: Props) {
                             >
                                 {t('ui.document_templates.actions.restore')}
                             </button>
-                        ) : (
-                            <>
-                                <Link
-                                    href={edit(row.original.id)}
-                                    className="text-sm text-primary underline-offset-4 hover:underline"
-                                >
-                                    {t('ui.document_templates.actions.edit')}
-                                </Link>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setDeleteTarget(row.original)
-                                    }
-                                    className="text-sm text-destructive underline-offset-4 hover:underline"
-                                >
-                                    {t('ui.document_templates.actions.delete')}
-                                </button>
-                            </>
-                        )}
-                    </div>
-                ),
+                        </div>
+                    ) : (
+                        <DataTableRowActions
+                            edit={{
+                                label: t('ui.document_templates.actions.edit'),
+                                href: edit(row.original.id).url,
+                            }}
+                            delete={{
+                                label: t(
+                                    'ui.document_templates.actions.delete',
+                                ),
+                                onClick: () => setDeleteTarget(row.original),
+                            }}
+                        />
+                    ),
             },
         ],
         [t],

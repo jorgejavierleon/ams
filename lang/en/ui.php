@@ -72,6 +72,10 @@ return [
                 'rows_per_page' => 'Rows per page',
             ],
         ],
+
+        'actions' => [
+            'more' => 'More actions',
+        ],
     ],
 
     'dashboard' => [

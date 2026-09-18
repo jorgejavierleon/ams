@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import Heading from '@/components/heading';
 import HolidayFormDialog from '@/components/holiday-form-dialog';
 import type { HolidayFormTarget } from '@/components/holiday-form-dialog';
@@ -125,10 +126,10 @@ export default function HolidaysIndex({ holidays, filters }: Props) {
                     }
 
                     return (
-                        <div className="flex justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={() => {
+                        <DataTableRowActions
+                            edit={{
+                                label: t('ui.holidays.actions.edit'),
+                                onClick: () => {
                                     setEditTarget({
                                         id: row.original.id,
                                         name: row.original.name,
@@ -136,19 +137,13 @@ export default function HolidaysIndex({ holidays, filters }: Props) {
                                         mandatory: row.original.mandatory,
                                     });
                                     setFormOpen(true);
-                                }}
-                                className="text-sm text-primary underline-offset-4 hover:underline"
-                            >
-                                {t('ui.holidays.actions.edit')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setDeleteTarget(row.original)}
-                                className="text-sm text-destructive underline-offset-4 hover:underline"
-                            >
-                                {t('ui.holidays.actions.delete')}
-                            </button>
-                        </div>
+                                },
+                            }}
+                            delete={{
+                                label: t('ui.holidays.actions.delete'),
+                                onClick: () => setDeleteTarget(row.original),
+                            }}
+                        />
                     );
                 },
             },

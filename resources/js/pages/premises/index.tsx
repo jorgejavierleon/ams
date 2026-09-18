@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -103,21 +104,16 @@ export default function PremisesIndex({ premises, filters }: Props) {
                 },
                 header: () => null,
                 cell: ({ row }) => (
-                    <div className="flex justify-end gap-2">
-                        <Link
-                            href={edit(row.original.id)}
-                            className="text-sm text-primary underline-offset-4 hover:underline"
-                        >
-                            {t('ui.premises.actions.edit')}
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={() => setDeleteTarget(row.original)}
-                            className="text-sm text-destructive underline-offset-4 hover:underline"
-                        >
-                            {t('ui.premises.actions.delete')}
-                        </button>
-                    </div>
+                    <DataTableRowActions
+                        edit={{
+                            label: t('ui.premises.actions.edit'),
+                            href: edit(row.original.id).url,
+                        }}
+                        delete={{
+                            label: t('ui.premises.actions.delete'),
+                            onClick: () => setDeleteTarget(row.original),
+                        }}
+                    />
                 ),
             },
         ],

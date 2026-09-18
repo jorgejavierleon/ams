@@ -7,6 +7,7 @@ import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import type { FacetedOption } from '@/components/data-table-faceted-filter';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -312,21 +313,16 @@ export default function EmployeesIndex({
                 },
                 header: () => null,
                 cell: ({ row }) => (
-                    <div className="flex justify-end gap-2">
-                        <Link
-                            href={edit(row.original.id)}
-                            className="text-sm text-primary underline-offset-4 hover:underline"
-                        >
-                            {t('ui.employees.actions.edit')}
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={() => setDeleteTarget(row.original)}
-                            className="text-sm text-destructive underline-offset-4 hover:underline"
-                        >
-                            {t('ui.employees.actions.delete')}
-                        </button>
-                    </div>
+                    <DataTableRowActions
+                        edit={{
+                            label: t('ui.employees.actions.edit'),
+                            href: edit(row.original.id).url,
+                        }}
+                        delete={{
+                            label: t('ui.employees.actions.delete'),
+                            onClick: () => setDeleteTarget(row.original),
+                        }}
+                    />
                 ),
             },
         ],

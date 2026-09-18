@@ -7,6 +7,7 @@ import type { AvatarGroupUser } from '@/components/avatar-group';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import Heading from '@/components/heading';
 import PositionFormDialog from '@/components/position-form-dialog';
 import type { PositionFormTarget } from '@/components/position-form-dialog';
@@ -82,28 +83,22 @@ export default function PositionsIndex({ positions, filters }: Props) {
                 },
                 header: () => null,
                 cell: ({ row }) => (
-                    <div className="flex justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => {
+                    <DataTableRowActions
+                        edit={{
+                            label: t('ui.positions.actions.edit'),
+                            onClick: () => {
                                 setEditTarget({
                                     id: row.original.id,
                                     name: row.original.name,
                                 });
                                 setFormOpen(true);
-                            }}
-                            className="text-sm text-primary underline-offset-4 hover:underline"
-                        >
-                            {t('ui.positions.actions.edit')}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setDeleteTarget(row.original)}
-                            className="text-sm text-destructive underline-offset-4 hover:underline"
-                        >
-                            {t('ui.positions.actions.delete')}
-                        </button>
-                    </div>
+                            },
+                        }}
+                        delete={{
+                            label: t('ui.positions.actions.delete'),
+                            onClick: () => setDeleteTarget(row.original),
+                        }}
+                    />
                 ),
             },
         ],

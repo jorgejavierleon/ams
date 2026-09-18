@@ -72,6 +72,10 @@ return [
                 'rows_per_page' => 'Filas por página',
             ],
         ],
+
+        'actions' => [
+            'more' => 'Más acciones',
+        ],
     ],
 
     'dashboard' => [
