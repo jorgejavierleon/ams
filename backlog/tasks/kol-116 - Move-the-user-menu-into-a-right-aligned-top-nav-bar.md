@@ -1,11 +1,11 @@
 ---
 id: KOL-116
 title: Move the user menu into a right-aligned top nav bar
-status: In Review
+status: Done
 assignee:
   - '@jorgejavierleon@gmail.com'
 created_date: '2026-09-18 14:51'
-updated_date: '2026-09-18 15:20'
+updated_date: '2026-09-18 17:37'
 labels: []
 milestone: m-4
 dependencies: []
