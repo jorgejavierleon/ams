@@ -2,17 +2,25 @@ import type { Page } from '@inertiajs/core';
 import type { InertiaLinkProps } from '@inertiajs/react';
 import { dashboard } from '@/routes';
 import { edit as appearanceEdit } from '@/routes/appearance';
+import { index as documentTemplatesIndex } from '@/routes/document-templates';
+import { index as documentsIndex } from '@/routes/documents';
 import { index as employeesIndex } from '@/routes/employees';
 import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as rolesIndex } from '@/routes/roles';
 import { edit as securityEdit } from '@/routes/security';
 
-/** Reads the current record's display name off the page's own props. */
-function recordName(props: Page['props']): string {
-    const record = props.employee as { name?: unknown } | undefined;
+/**
+ * Builds a title resolver that reads a display field off a named prop on the
+ * current page, e.g. `propTitle('employee', 'name')` reads `props.employee.name`.
+ */
+function propTitle(prop: string, field: string): BreadcrumbTitle {
+    return (props: Page['props']) => {
+        const record = props[prop] as Record<string, unknown> | undefined;
+        const value = record?.[field];
 
-    return typeof record?.name === 'string' ? record.name : '';
+        return typeof value === 'string' ? value : '';
+    };
 }
 
 export type BreadcrumbTitle = string | ((props: Page['props']) => string);
@@ -66,12 +74,12 @@ export const breadcrumbRegistry: Record<string, BreadcrumbRegistryEntry> = {
         parent: 'employees/index',
     },
     'employees/show': {
-        title: recordName,
+        title: propTitle('employee', 'name'),
         href: '#',
         parent: 'employees/index',
     },
     'employees/edit': {
-        title: recordName,
+        title: propTitle('employee', 'name'),
         href: '#',
         parent: 'employees/index',
     },
@@ -84,6 +92,39 @@ export const breadcrumbRegistry: Record<string, BreadcrumbRegistryEntry> = {
         title: 'ui.employees.import.nav',
         href: '#',
         parent: 'employees/index',
+    },
+    'documents/index': {
+        title: 'ui.nav.documents_list',
+        href: documentsIndex(),
+    },
+    'documents/create': {
+        title: 'ui.documents.new',
+        href: '#',
+        parent: 'documents/index',
+    },
+    'documents/show': {
+        title: propTitle('document', 'title'),
+        href: '#',
+        parent: 'documents/index',
+    },
+    'documents/edit': {
+        title: propTitle('document', 'title'),
+        href: '#',
+        parent: 'documents/index',
+    },
+    'document-templates/index': {
+        title: 'ui.nav.document_templates',
+        href: documentTemplatesIndex(),
+    },
+    'document-templates/create': {
+        title: 'ui.document_templates.new',
+        href: '#',
+        parent: 'document-templates/index',
+    },
+    'document-templates/edit': {
+        title: propTitle('template', 'title'),
+        href: '#',
+        parent: 'document-templates/index',
     },
     // Virtual: no page renders as "settings" — this only groups the three
     // pages below under a shared parent crumb.
