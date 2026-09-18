@@ -226,6 +226,7 @@ class EmployeeController extends Controller
         return Inertia::render('employees/edit', [
             'employee' => [
                 'id' => $employee->id,
+                'name' => $employee->name,
                 'first_name' => $employee->first_name,
                 'last_name' => $employee->last_name,
                 'second_last_name' => $employee->second_last_name,

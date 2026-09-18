@@ -446,6 +446,21 @@ test('the employee detail page shows the translated contract type', function () 
             ->where('employee.contract_type', 'Por obra o faena'));
 });
 
+test('the edit form exposes the employee name for the breadcrumb trail', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'first_name' => 'Ana',
+        'last_name' => 'Soto',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.edit', $employee))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('employee.name', $employee->name));
+});
+
 test('the edit form receives the raw contract type value and its options', function () {
     $admin = employeeAdmin();
     $employee = User::factory()->employee()->contractType(ContractType::Indefinido)->create([

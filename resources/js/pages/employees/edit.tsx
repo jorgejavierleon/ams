@@ -10,6 +10,7 @@ import { update } from '@/routes/employees';
 
 type Employee = {
     id: number;
+    name: string;
     first_name: string | null;
     last_name: string | null;
     second_last_name: string | null;

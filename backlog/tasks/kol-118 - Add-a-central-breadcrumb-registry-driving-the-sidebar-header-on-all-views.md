@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@jj'
 created_date: '2026-09-18 18:52'
-updated_date: '2026-09-18 19:21'
+updated_date: '2026-09-18 19:22'
 labels: []
 dependencies: []
 ordinal: 105000
@@ -170,4 +170,6 @@ User declined installing pestphp/pest-plugin-browser for this slice (not in the 
 Code review (angle A) flagged AC #4 as incorrectly checked: it says the migrated pages "keep their current breadcrumb trails," but Organization Settings' text changed ("Organization settings" -> "General settings", now matching the sidebar nav label) and the three Settings pages changed shape (single crumb -> "Settings > <page>"). That's intentional and matches the ticket's own Implementation Decisions/User Story #15/Gherkin ("Settings > Security" etc.), not a regression - but it contradicts AC #4's literal wording, so I'm leaving it unchecked pending a sign-off from the user/ticket owner that the wording should be read as "keeps working," not "byte-identical text." Dashboard and Roles (index/show) text did stay identical.
 
 Also applied from the same review: typed the registry's function-title props via Inertia's own Page['props'] type instead of Record<string, unknown>; imported BreadcrumbRegistryEntry in the hook instead of re-deriving it structurally; added a visited-keys guard so a misconfigured parent cycle can't hang the render loop; added a dev-only console.warn when a `parent` key doesn't resolve (a real page being unmigrated is expected and silent, a dangling parent reference is always a typo); switched to useTranslations().t() instead of calling translate() directly, matching the rest of the codebase. Not applied: deduplicating title/href against app-sidebar.tsx's nav declarations (the registry is deliberately a separate concept per the ticket - e.g. Roles show's "Permissions" crumb has no nav equivalent) and adding a JS/TS test (no test runner is configured in this repo; adding one is a dependency change, same category the user already declined for pest-plugin-browser in this slice).
+
+Committed as 4a9563a (slice 1 only). Parent task left In Progress — KOL-118.1 through KOL-118.5 cover the remaining page sections.
 <!-- SECTION:NOTES:END -->

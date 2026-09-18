@@ -2,10 +2,18 @@ import type { Page } from '@inertiajs/core';
 import type { InertiaLinkProps } from '@inertiajs/react';
 import { dashboard } from '@/routes';
 import { edit as appearanceEdit } from '@/routes/appearance';
+import { index as employeesIndex } from '@/routes/employees';
 import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as rolesIndex } from '@/routes/roles';
 import { edit as securityEdit } from '@/routes/security';
+
+/** Reads the current record's display name off the page's own props. */
+function recordName(props: Page['props']): string {
+    const record = props.employee as { name?: unknown } | undefined;
+
+    return typeof record?.name === 'string' ? record.name : '';
+}
 
 export type BreadcrumbTitle = string | ((props: Page['props']) => string);
 
@@ -47,6 +55,35 @@ export const breadcrumbRegistry: Record<string, BreadcrumbRegistryEntry> = {
         title: 'ui.roles.columns.permissions',
         href: '#',
         parent: 'roles/index',
+    },
+    'employees/index': {
+        title: 'ui.nav.employees',
+        href: employeesIndex(),
+    },
+    'employees/create': {
+        title: 'ui.employees.new',
+        href: '#',
+        parent: 'employees/index',
+    },
+    'employees/show': {
+        title: recordName,
+        href: '#',
+        parent: 'employees/index',
+    },
+    'employees/edit': {
+        title: recordName,
+        href: '#',
+        parent: 'employees/index',
+    },
+    'imports/employees/create': {
+        title: 'ui.employees.import.nav',
+        href: '#',
+        parent: 'employees/index',
+    },
+    'imports/employees/show': {
+        title: 'ui.employees.import.nav',
+        href: '#',
+        parent: 'employees/index',
     },
     // Virtual: no page renders as "settings" — this only groups the three
     // pages below under a shared parent crumb.
