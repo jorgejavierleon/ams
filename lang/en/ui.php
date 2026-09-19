@@ -1384,11 +1384,8 @@ return [
             ],
 
             'contact' => [
-                'personal_email' => 'Personal',
                 'phone' => 'Phone',
                 'rut' => 'RUT',
-                'nationality' => 'Nationality',
-                'emergency' => 'Emergency',
             ],
 
             'sections' => [

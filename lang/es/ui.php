@@ -1387,11 +1387,8 @@ return [
             ],
 
             'contact' => [
-                'personal_email' => 'Personal',
                 'phone' => 'Teléfono',
                 'rut' => 'RUT',
-                'nationality' => 'Nacionalidad',
-                'emergency' => 'Emergencia',
             ],
 
             'sections' => [

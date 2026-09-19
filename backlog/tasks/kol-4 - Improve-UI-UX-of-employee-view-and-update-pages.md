@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jorgejavierleon'
 created_date: '2026-07-30 10:13'
-updated_date: '2026-09-19 10:39'
+updated_date: '2026-09-19 11:59'
 labels: []
 dependencies: []
 references:
@@ -142,6 +142,12 @@ Follow-up tweaks requested after initial review:
 2. Widened the profile card column from 272px to 340px.
 3. Removed the redundant name/email header row (Heading component) — the profile card already shows both; header is now just the Desactivar/Activar + Editar buttons, right-aligned.
 Re-verified in the browser (light + dark): card no longer wraps the personal email, header is clean, Información tab still shows Zona horaria under Contacto. pint + EmployeeManagementTest re-run and pass.
+
+Second round of follow-up tweaks:
+1. Removed Nacionalidad and Emergencia rows from the profile card's quick facts (still shown in the Información tab). Dropped the now-unused Flag/AlertTriangle icon imports, the emergencyContact computed value, and the contact.nationality/contact.emergency translation keys.
+2. Widened the profile card to 380px (was 340px) and tightened the InfoRow label column (w-24 -> w-16) and icon/label/value gap (gap-2.5 -> gap-2) so values sit closer to their labels.
+3. Profile card's email row now shows the account email (employee.email, reusing the form.email translation key) instead of the personal email — personal email is still shown in the Información tab's Contacto section. Removed the now-unused show.contact.personal_email translation key.
+Verified in the browser (light) with temporary tinker-seeded data (reverted after). pint clean, tsc clean, EmployeeManagementTest (64) + ShiftAssignmentManagementTest (13) pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

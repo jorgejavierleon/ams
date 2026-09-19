@@ -1,13 +1,5 @@
 import { Deferred, Head, Link, router } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    Flag,
-    IdCard,
-    Mail,
-    Pencil,
-    Phone,
-    Power,
-} from 'lucide-react';
+import { IdCard, Mail, Pencil, Phone, Power } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
 import type { ComboboxOption } from '@/components/combobox';
 import { EmployeeOvertimePacts } from '@/components/employee-overtime-pacts';
@@ -119,9 +111,9 @@ function InfoRow({
     value: ReactNode;
 }) {
     return (
-        <div className="flex min-w-0 items-start gap-2.5 text-sm">
+        <div className="flex min-w-0 items-start gap-2 text-sm">
             <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <span className="w-24 shrink-0 text-muted-foreground">
+            <span className="w-16 shrink-0 text-muted-foreground">
                 {label}
             </span>
             <span className="min-w-0 flex-1 font-medium break-words">
@@ -166,12 +158,6 @@ function EmployeeProfileCard({
                   ),
               )
             : 0;
-    const emergencyContact = [
-        employee.emergency_contact_name,
-        employee.emergency_contact_phone,
-    ]
-        .filter(Boolean)
-        .join(' · ');
 
     return (
         <Card className="min-w-0">
@@ -238,8 +224,8 @@ function EmployeeProfileCard({
                 <div className="grid min-w-0 gap-2.5 border-b pb-5">
                     <InfoRow
                         icon={Mail}
-                        label={t('ui.employees.show.contact.personal_email')}
-                        value={employee.personal_email}
+                        label={t('ui.employees.form.email')}
+                        value={employee.email}
                     />
                     <InfoRow
                         icon={Phone}
@@ -250,16 +236,6 @@ function EmployeeProfileCard({
                         icon={IdCard}
                         label={t('ui.employees.show.contact.rut')}
                         value={employee.rut}
-                    />
-                    <InfoRow
-                        icon={Flag}
-                        label={t('ui.employees.show.contact.nationality')}
-                        value={employee.nationality}
-                    />
-                    <InfoRow
-                        icon={AlertTriangle}
-                        label={t('ui.employees.show.contact.emergency')}
-                        value={emergencyContact || null}
                     />
                 </div>
 
@@ -329,7 +305,7 @@ export default function ShowEmployee({
                     </Button>
                 </div>
 
-                <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[340px_1fr]">
+                <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[380px_1fr]">
                     <EmployeeProfileCard
                         employee={employee}
                         shiftCount={shifts?.assignments.length ?? 0}
