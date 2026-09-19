@@ -1,11 +1,11 @@
 ---
 id: KOL-118
 title: Add a central breadcrumb registry driving the sidebar header on all views
-status: In Progress
+status: Done
 assignee:
   - '@jj'
 created_date: '2026-09-18 18:52'
-updated_date: '2026-09-18 19:22'
+updated_date: '2026-09-19 00:10'
 labels: []
 dependencies: []
 ordinal: 105000
@@ -120,22 +120,22 @@ Scenario: DT and SaaS areas are unaffected
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every page rendered under the main app sidebar (Employees, Companies, Cost Centers, Documents, Document Templates, Holidays, the Employee Import wizard, Leaves, Overtime and its sub-views, Payroll Reports, Positions, Premises, Shifts, Workdays, and the my/* self-service pages) shows a populated breadcrumb trail in the sidebar header
-- [ ] #2 Detail and edit pages for the same record share an identical parent-chained trail with a record-derived trailing title (e.g. Employees > <employee name>)
-- [ ] #3 Create pages show a localized static trailing title chained under their index page (e.g. Employees > New employee)
-- [ ] #4 Dashboard, Organization Settings, Roles (index and show), and the three account Settings pages keep their current breadcrumb trails after migrating off the old per-page layout declaration onto the new registry
+- [x] #1 Every page rendered under the main app sidebar (Employees, Companies, Cost Centers, Documents, Document Templates, Holidays, the Employee Import wizard, Leaves, Overtime and its sub-views, Payroll Reports, Positions, Premises, Shifts, Workdays, and the my/* self-service pages) shows a populated breadcrumb trail in the sidebar header
+- [x] #2 Detail and edit pages for the same record share an identical parent-chained trail with a record-derived trailing title (e.g. Employees > <employee name>)
+- [x] #3 Create pages show a localized static trailing title chained under their index page (e.g. Employees > New employee)
+- [x] #4 Dashboard, Organization Settings, Roles (index and show), and the three account Settings pages keep their current breadcrumb trails after migrating off the old per-page layout declaration onto the new registry
 - [x] #5 Settings pages (Profile, Security, Appearance) show a shared Settings parent crumb
-- [ ] #6 All breadcrumb titles are localized via the existing translation catalog and render correctly in both configured locales
-- [ ] #7 Breadcrumb trails render correctly on a fresh full-page load, not only after client-side navigation
-- [ ] #8 The DT and SaaS header bars are unaffected and still have no breadcrumb slot
+- [x] #6 All breadcrumb titles are localized via the existing translation catalog and render correctly in both configured locales
+- [x] #7 Breadcrumb trails render correctly on a fresh full-page load, not only after client-side navigation
+- [x] #8 The DT and SaaS header bars are unaffected and still have no breadcrumb slot
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [x] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
+- [x] #2 sa test --compact passes
 - [x] #3 npm run types:check passes when TypeScript touched
-- [ ] #4 Every PHP change has a Pest test
+- [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -172,4 +172,20 @@ Code review (angle A) flagged AC #4 as incorrectly checked: it says the migrated
 Also applied from the same review: typed the registry's function-title props via Inertia's own Page['props'] type instead of Record<string, unknown>; imported BreadcrumbRegistryEntry in the hook instead of re-deriving it structurally; added a visited-keys guard so a misconfigured parent cycle can't hang the render loop; added a dev-only console.warn when a `parent` key doesn't resolve (a real page being unmigrated is expected and silent, a dangling parent reference is always a typo); switched to useTranslations().t() instead of calling translate() directly, matching the rest of the codebase. Not applied: deduplicating title/href against app-sidebar.tsx's nav declarations (the registry is deliberately a separate concept per the ticket - e.g. Roles show's "Permissions" crumb has no nav equivalent) and adding a JS/TS test (no test runner is configured in this repo; adding one is a dependency change, same category the user already declined for pest-plugin-browser in this slice).
 
 Committed as 4a9563a (slice 1 only). Parent task left In Progress — KOL-118.1 through KOL-118.5 cover the remaining page sections.
+
+Parent-level closeout review (all 5 subtasks KOL-118.1-118.5 Done):
+
+Re-verified registry completeness across the ENTIRE app (not just any single subtask's controllers): grepped every Inertia::render() literal/interpolated page name across all of app/Http/Controllers plus every Route::inertia() call, excluding Dt/*, Saas/*, the auth/* login/password pages, the public no-auth mark-modifications/review page, and the welcome page (all explicitly out of scope per the ticket). Every remaining page - including the imports/{resourceType} wizard, which currently only has one registered resource type ('employees', per ImportResourceRegistry) - has a breadcrumb registry entry. No gaps.
+
+Re-read resources/js/hooks/use-breadcrumbs.ts: parent-chain walker, visited-keys cycle guard, and dev-only dangling-parent warning are all intact and correctly wired to AppSidebarHeader (confirmed via the same browser verification each subtask logged).
+
+AC #4 resolution: user confirmed (2026-09-18) to check AC #4 as intended - "keep their current breadcrumb trails" is read as "keep working," not "byte-identical text." The two intentional deviations (Organization Settings' text now matching the sidebar nav label; Settings pages gaining a two-level "Settings > <page>" trail) are ticket-authorized per the Implementation Decisions and Gherkin scenarios, not regressions.
+
+DoD #2/#4 resolution: ran the full suite now that all slices are complete - sail artisan test --compact passed (1442 passed, 4 skipped, 6520 assertions, exit 0). Across the whole ticket only one PHP file changed in total (EmployeeController.php, +1 line in KOL-118.1, adding `name` to the edit() Inertia props) and it has a matching Pest test (EmployeeManagementTest.php) - so DoD #4 is satisfied ticket-wide, not just per-slice.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced scattered per-page breadcrumb declarations with a single central registry (resources/js/lib/breadcrumbs.ts) resolved by resources/js/hooks/use-breadcrumbs.ts, called once from AppSidebarHeader. Delivered across 6 commits (slice 1 mechanism + migration, then KOL-118.1 through KOL-118.5 covering every remaining app section). Every page rendered under the main sidebar layout (dashboard, roles, settings, employees + import wizard, documents + templates, overtime + payroll reports, the my/* self-service pages, and companies/cost-centers/holidays/leaves/positions/premises/shifts/workdays) now shows a populated, correctly localized, parent-chained breadcrumb trail that renders on first load. DT/SaaS areas were untouched, as scoped. Verified via a full registry-vs-Inertia::render() completeness diff plus extensive Chrome DevTools MCP browser checks in both locales across all subtasks. Full test suite passes (1442 passed, 4 skipped, 6520 assertions); only one PHP file changed ticket-wide, and it has a matching Pest test.
+<!-- SECTION:FINAL_SUMMARY:END -->
