@@ -2,6 +2,8 @@ import { Deferred, Head, Link, router } from '@inertiajs/react';
 import { IdCard, Mail, Pencil, Phone, Power } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
 import type { ComboboxOption } from '@/components/combobox';
+import { EmployeeLeaves } from '@/components/employee-leaves';
+import type { EmployeeLeave } from '@/components/employee-leaves';
 import { EmployeeOvertimePacts } from '@/components/employee-overtime-pacts';
 import type { EmployeeOvertimePact } from '@/components/employee-overtime-pacts';
 import { ShiftAssignments } from '@/components/shift-assignments';
@@ -71,6 +73,7 @@ type Props = {
     overtimePacts?: EmployeeOvertimePact[];
     can: Can;
     vacationBalance: VacationBalance;
+    leaves?: EmployeeLeave[];
 };
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
@@ -274,6 +277,7 @@ export default function ShowEmployee({
     overtimePacts,
     can,
     vacationBalance,
+    leaves,
 }: Props) {
     const { t } = useTranslations();
 
@@ -323,6 +327,9 @@ export default function ShowEmployee({
                             </TabsTrigger>
                             <TabsTrigger value="shifts">
                                 {t('ui.employees.show.tab_shifts')}
+                            </TabsTrigger>
+                            <TabsTrigger value="leaves">
+                                {t('ui.employees.show.tab_leaves')}
                             </TabsTrigger>
                             <TabsTrigger value="documents">
                                 {t('ui.employees.show.tab_documents')}
@@ -557,6 +564,20 @@ export default function ShowEmployee({
                                 pacts={overtimePacts ?? []}
                                 canManage={can.manageOvertimePacts}
                             />
+                        </TabsContent>
+
+                        <TabsContent value="leaves">
+                            <Deferred
+                                data="leaves"
+                                fallback={
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-10 w-full" />
+                                        <Skeleton className="h-10 w-full" />
+                                    </div>
+                                }
+                            >
+                                <EmployeeLeaves leaves={leaves ?? []} />
+                            </Deferred>
                         </TabsContent>
 
                         <TabsContent value="documents">

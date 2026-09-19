@@ -1367,11 +1367,24 @@ return [
             'tab_info' => 'Information',
             'tab_labor' => 'Labor',
             'tab_shifts' => 'Shifts',
+            'tab_leaves' => 'Leaves',
             'tab_documents' => 'Documents',
             'yes' => 'Yes',
             'no' => 'No',
             'shifts_pending' => 'Shift assignments will be available soon.',
             'documents_pending' => 'Documents will be available soon.',
+
+            'leaves' => [
+                'title' => 'Leave history',
+                'empty' => 'This employee has no leave requests.',
+                'columns' => [
+                    'type' => 'Type',
+                    'start_date' => 'From',
+                    'end_date' => 'To',
+                    'days' => 'Days',
+                    'status' => 'Status',
+                ],
+            ],
 
             'actions' => [
                 'deactivate' => 'Deactivate',

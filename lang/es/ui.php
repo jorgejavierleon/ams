@@ -1370,11 +1370,24 @@ return [
             'tab_info' => 'Información',
             'tab_labor' => 'Laboral',
             'tab_shifts' => 'Turnos',
+            'tab_leaves' => 'Permisos',
             'tab_documents' => 'Documentos',
             'yes' => 'Sí',
             'no' => 'No',
             'shifts_pending' => 'Las asignaciones de turno estarán disponibles pronto.',
             'documents_pending' => 'Los documentos estarán disponibles pronto.',
+
+            'leaves' => [
+                'title' => 'Historial de permisos',
+                'empty' => 'Este empleado no tiene solicitudes de permiso.',
+                'columns' => [
+                    'type' => 'Tipo',
+                    'start_date' => 'Desde',
+                    'end_date' => 'Hasta',
+                    'days' => 'Días',
+                    'status' => 'Estado',
+                ],
+            ],
 
             'actions' => [
                 'deactivate' => 'Desactivar',

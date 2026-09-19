@@ -1,10 +1,14 @@
 <?php
 
 use App\Enums\ContractType;
+use App\Enums\LeaveStatus;
+use App\Enums\LeaveType;
 use App\Enums\OvertimePactStatus;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Mail\AuthProfileUpdated;
 use App\Models\Company;
 use App\Models\CostCenter;
+use App\Models\Leave;
 use App\Models\Organization;
 use App\Models\OvertimePact;
 use App\Models\Position;
@@ -40,6 +44,23 @@ beforeEach(function () {
     Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
 });
+
+/**
+ * Request the deferred 'leaves' prop on the employee show page as Inertia
+ * would on a partial reload. Partial requests return raw JSON, so callers
+ * assert on `props.leaves`.
+ */
+function fetchEmployeeLeaves(User $admin, User $employee): TestResponse
+{
+    $version = (string) app(HandleInertiaRequests::class)->version(request());
+
+    return test()->actingAs($admin)->get(route('employees.show', $employee), [
+        'X-Inertia' => 'true',
+        'X-Inertia-Partial-Component' => 'employees/show',
+        'X-Inertia-Partial-Data' => 'leaves',
+        'X-Inertia-Version' => $version,
+    ]);
+}
 
 function employeeAdmin(?Organization $organization = null): User
 {
@@ -898,6 +919,55 @@ test('an admin viewing an employee page is granted manageOvertimePacts', functio
     $this->actingAs($admin)
         ->get(route('employees.show', $employee))
         ->assertInertia(fn ($page) => $page->where('can.manageOvertimePacts', true));
+});
+
+// --- Leave history (Permisos tab, KOL-4.1) ---
+
+test('the Permisos tab lists the employee own leaves, newest first, excluding other employees', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    $otherEmployee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $older = Leave::factory()->approved()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $employee->id,
+        'type' => LeaveType::Vacation,
+        'start_date' => '2025-01-02',
+        'end_date' => '2025-01-09',
+        'business_days_requested' => 6,
+    ]);
+    $newer = Leave::factory()->pending()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $employee->id,
+        'type' => LeaveType::Vacation,
+        'start_date' => '2026-12-20',
+        'end_date' => '2026-12-27',
+        'business_days_requested' => 6,
+    ]);
+    Leave::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'user_id' => $otherEmployee->id,
+    ]);
+
+    $response = fetchEmployeeLeaves($admin, $employee);
+
+    $response->assertOk()
+        ->assertJsonCount(2, 'props.leaves')
+        ->assertJsonPath('props.leaves.0.id', $newer->id)
+        ->assertJsonPath('props.leaves.0.status.value', LeaveStatus::Pending->value)
+        ->assertJsonPath('props.leaves.0.type.label', LeaveType::Vacation->label())
+        ->assertJsonPath('props.leaves.1.id', $older->id)
+        ->assertJsonPath('props.leaves.1.status.value', LeaveStatus::Approved->value)
+        ->assertJsonPath('props.leaves.1.business_days_requested', 6);
+});
+
+test('the Permisos tab shows no leaves for an employee with no leave history', function () {
+    $admin = employeeAdmin();
+    $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    fetchEmployeeLeaves($admin, $employee)
+        ->assertOk()
+        ->assertJsonCount(0, 'props.leaves');
 });
 
 // --- Export (Maestro de Trabajadores, KOL-23) ---

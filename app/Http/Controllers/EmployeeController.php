@@ -214,6 +214,9 @@ class EmployeeController extends Controller
                 'manageOvertimePacts' => $request->user()->can('Manage:OvertimeAuthorization'),
             ],
             'vacationBalance' => $this->vacationBalance($employee),
+            // Deferred like documents: the Permisos tab only needs this data
+            // once selected, not on every Info/Laboral load.
+            'leaves' => Inertia::defer(fn () => $this->employeeLeaves($employee)),
             // Documents are still deferred — wired up by #35.
             'documents' => Inertia::defer(fn () => []),
         ]);
@@ -600,6 +603,36 @@ class EmployeeController extends Controller
                     'value' => $pact->status->value,
                     'label' => $pact->status->label(),
                     'variant' => $pact->status->badgeVariant(),
+                ],
+            ])
+            ->all();
+    }
+
+    /**
+     * The employee's own leave (permiso) history, newest first, feeding the
+     * Permisos tab.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function employeeLeaves(User $employee): array
+    {
+        return Leave::query()
+            ->where('user_id', $employee->id)
+            ->orderByDesc('start_date')
+            ->get()
+            ->map(fn (Leave $leave) => [
+                'id' => $leave->id,
+                'type' => [
+                    'value' => $leave->type->value,
+                    'label' => $leave->type->label(),
+                ],
+                'start_date' => $leave->start_date->format('Y-m-d'),
+                'end_date' => $leave->end_date->format('Y-m-d'),
+                'business_days_requested' => $leave->business_days_requested,
+                'status' => [
+                    'value' => $leave->status->value,
+                    'label' => $leave->status->label(),
+                    'badge' => $leave->status->badge(),
                 ],
             ])
             ->all();
