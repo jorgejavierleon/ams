@@ -1364,7 +1364,7 @@ return [
         ],
 
         'show' => [
-            'tab_info' => 'Info',
+            'tab_info' => 'Information',
             'tab_labor' => 'Labor',
             'tab_shifts' => 'Shifts',
             'tab_documents' => 'Documents',
@@ -1372,6 +1372,34 @@ return [
             'no' => 'No',
             'shifts_pending' => 'Shift assignments will be available soon.',
             'documents_pending' => 'Documents will be available soon.',
+
+            'actions' => [
+                'deactivate' => 'Deactivate',
+                'activate' => 'Activate',
+            ],
+
+            'stats' => [
+                'tenure_years' => 'years with the company',
+                'shift_assignments' => 'shift assignments',
+            ],
+
+            'contact' => [
+                'personal_email' => 'Personal',
+                'phone' => 'Phone',
+                'rut' => 'RUT',
+                'nationality' => 'Nationality',
+                'timezone' => 'Timezone',
+                'emergency' => 'Emergency',
+            ],
+
+            'sections' => [
+                'identity' => 'Identity',
+                'contact' => 'Contact',
+                'emergency_contact' => 'Emergency contact',
+                'employment' => 'Employment',
+                'contract' => 'Contract',
+                'benefits' => 'Days & benefits',
+            ],
         ],
 
         'delete_dialog' => [

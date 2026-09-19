@@ -1367,7 +1367,7 @@ return [
         ],
 
         'show' => [
-            'tab_info' => 'Info',
+            'tab_info' => 'Información',
             'tab_labor' => 'Laboral',
             'tab_shifts' => 'Turnos',
             'tab_documents' => 'Documentos',
@@ -1375,6 +1375,34 @@ return [
             'no' => 'No',
             'shifts_pending' => 'Las asignaciones de turno estarán disponibles pronto.',
             'documents_pending' => 'Los documentos estarán disponibles pronto.',
+
+            'actions' => [
+                'deactivate' => 'Desactivar',
+                'activate' => 'Activar',
+            ],
+
+            'stats' => [
+                'tenure_years' => 'años en la empresa',
+                'shift_assignments' => 'turnos asignados',
+            ],
+
+            'contact' => [
+                'personal_email' => 'Personal',
+                'phone' => 'Teléfono',
+                'rut' => 'RUT',
+                'nationality' => 'Nacionalidad',
+                'timezone' => 'Zona horaria',
+                'emergency' => 'Emergencia',
+            ],
+
+            'sections' => [
+                'identity' => 'Identidad',
+                'contact' => 'Contacto',
+                'emergency_contact' => 'Contacto de emergencia',
+                'employment' => 'Empleo',
+                'contract' => 'Contrato',
+                'benefits' => 'Días y beneficios',
+            ],
         ],
 
         'delete_dialog' => [
