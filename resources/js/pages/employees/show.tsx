@@ -2,7 +2,6 @@ import { Deferred, Head, Link, router } from '@inertiajs/react';
 import {
     AlertTriangle,
     Flag,
-    Globe,
     IdCard,
     Mail,
     Pencil,
@@ -13,7 +12,6 @@ import type { ComponentType, ReactNode } from 'react';
 import type { ComboboxOption } from '@/components/combobox';
 import { EmployeeOvertimePacts } from '@/components/employee-overtime-pacts';
 import type { EmployeeOvertimePact } from '@/components/employee-overtime-pacts';
-import Heading from '@/components/heading';
 import { ShiftAssignments } from '@/components/shift-assignments';
 import type { ShiftAssignment } from '@/components/shift-assignments';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -259,11 +257,6 @@ function EmployeeProfileCard({
                         value={employee.nationality}
                     />
                     <InfoRow
-                        icon={Globe}
-                        label={t('ui.employees.show.contact.timezone')}
-                        value={employee.timezone}
-                    />
-                    <InfoRow
                         icon={AlertTriangle}
                         label={t('ui.employees.show.contact.emergency')}
                         value={emergencyContact || null}
@@ -321,31 +314,22 @@ export default function ShowEmployee({
             <Head title={employee.name} />
 
             <div className="space-y-6 p-6">
-                <div className="flex items-start justify-between gap-4">
-                    <Heading
-                        title={employee.name}
-                        description={employee.email}
-                    />
-                    <div className="flex shrink-0 gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={toggleEmployeeActive}
-                        >
-                            <Power className="size-4" />
-                            {employee.is_active
-                                ? t('ui.employees.show.actions.deactivate')
-                                : t('ui.employees.show.actions.activate')}
-                        </Button>
-                        <Button asChild>
-                            <Link href={edit(employee.id)}>
-                                <Pencil className="size-4" />
-                                {t('ui.employees.actions.edit')}
-                            </Link>
-                        </Button>
-                    </div>
+                <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={toggleEmployeeActive}>
+                        <Power className="size-4" />
+                        {employee.is_active
+                            ? t('ui.employees.show.actions.deactivate')
+                            : t('ui.employees.show.actions.activate')}
+                    </Button>
+                    <Button asChild>
+                        <Link href={edit(employee.id)}>
+                            <Pencil className="size-4" />
+                            {t('ui.employees.actions.edit')}
+                        </Link>
+                    </Button>
                 </div>
 
-                <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[272px_1fr]">
+                <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[340px_1fr]">
                     <EmployeeProfileCard
                         employee={employee}
                         shiftCount={shifts?.assignments.length ?? 0}

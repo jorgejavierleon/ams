@@ -1391,7 +1391,6 @@ return [
                 'phone' => 'Teléfono',
                 'rut' => 'RUT',
                 'nationality' => 'Nacionalidad',
-                'timezone' => 'Zona horaria',
                 'emergency' => 'Emergencia',
             ],
 

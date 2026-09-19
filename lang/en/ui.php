@@ -1388,7 +1388,6 @@ return [
                 'phone' => 'Phone',
                 'rut' => 'RUT',
                 'nationality' => 'Nationality',
-                'timezone' => 'Timezone',
                 'emergency' => 'Emergency',
             ],
 

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jorgejavierleon'
 created_date: '2026-07-30 10:13'
-updated_date: '2026-09-19 10:36'
+updated_date: '2026-09-19 10:39'
 labels: []
 dependencies: []
 references:
@@ -136,6 +136,12 @@ Code review (self-run, mattpocock-skills:code-review) found 3 issues, all fixed:
 2. CONFIRMED: unused lucide-react imports (Briefcase, Calendar, Sun) left over from an earlier draft with section icons. Removed.
 3. Not reproduced but hardened: InfoRow's label column was w-20 (80px); reviewer flagged wrap risk for longer labels. Measured all six Spanish labels in-browser (all render at height:20, i.e. one line, no wrap), but bumped to w-24 as cheap headroom since it's free.
 Re-verified after fixes: pint clean, tsc clean, EmployeeManagementTest (64) + ShiftAssignmentManagementTest (13) pass, manual re-check of the preserveState fix in the browser (dark mode, Turnos tab).
+
+Follow-up tweaks requested after initial review:
+1. Removed Zona horaria from the profile card's quick-facts list (still shown in the Información tab's Contacto section). Removed the now-unused Globe icon import and the contact.timezone translation key.
+2. Widened the profile card column from 272px to 340px.
+3. Removed the redundant name/email header row (Heading component) — the profile card already shows both; header is now just the Desactivar/Activar + Editar buttons, right-aligned.
+Re-verified in the browser (light + dark): card no longer wraps the personal email, header is clean, Información tab still shows Zona horaria under Contacto. pint + EmployeeManagementTest re-run and pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
