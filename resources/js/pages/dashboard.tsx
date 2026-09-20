@@ -1,13 +1,25 @@
-import { Head, router, usePage } from '@inertiajs/react';
-import { Check, Clock, LogIn, LogOut, X } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import {
+    Check,
+    ChevronRight,
+    Clock,
+    ClipboardCheck,
+    FileSignature,
+    LogIn,
+    LogOut,
+    X,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { index as myDocumentsIndex } from '@/routes/my/documents';
 import { store } from '@/routes/my/marks';
+import { index as myWorkdaysIndex } from '@/routes/my/workdays';
 
 type Shift = {
     shift_id: number;
@@ -407,15 +419,130 @@ function SummaryCell({
     );
 }
 
+/** Tinted icon backgrounds for dashboard widget rows, one hue per row type. */
+const iconTones = {
+    violet: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+    blue: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+} as const;
+
+type IconTone = keyof typeof iconTones;
+
+function RowIcon({
+    icon: Icon,
+    tone,
+}: {
+    icon: React.ComponentType<{ className?: string }>;
+    tone: IconTone;
+}) {
+    return (
+        <span
+            className={cn(
+                'flex size-9 shrink-0 items-center justify-center rounded-lg',
+                iconTones[tone],
+            )}
+        >
+            <Icon className="size-4.5" />
+        </span>
+    );
+}
+
+function ActionItemRow({
+    icon,
+    tone,
+    label,
+    count,
+    href,
+}: {
+    icon: React.ComponentType<{ className?: string }>;
+    tone: IconTone;
+    label: string;
+    count: number;
+    href: string;
+}) {
+    return (
+        <Link
+            href={href}
+            className="flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted/50"
+        >
+            <span className="flex items-center gap-3">
+                <RowIcon icon={icon} tone={tone} />
+                {label}
+            </span>
+            <span className="flex items-center gap-1.5">
+                <Badge variant="secondary">{count}</Badge>
+                <ChevronRight className="size-4 text-muted-foreground" />
+            </span>
+        </Link>
+    );
+}
+
+/**
+ * The employee's own pending self-service actions (KOL-119.1). Both counts
+ * are the same shared `auth` props the sidebar badges already use — reads
+ * them directly rather than issuing a new dashboard-specific query.
+ */
+function ActionItemsCard({
+    modifications,
+    signatures,
+}: {
+    modifications: number;
+    signatures: number;
+}) {
+    const { t } = useTranslations();
+
+    return (
+        <Card className="w-full max-w-md gap-3 self-start p-4">
+            <CardHeader className="px-2.5">
+                <CardTitle>{t('ui.dashboard.action_items.title')}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1 px-0">
+                {modifications > 0 && (
+                    <ActionItemRow
+                        icon={ClipboardCheck}
+                        tone="violet"
+                        label={t(
+                            'ui.dashboard.action_items.pending_modifications',
+                        )}
+                        count={modifications}
+                        href={myWorkdaysIndex().url}
+                    />
+                )}
+                {signatures > 0 && (
+                    <ActionItemRow
+                        icon={FileSignature}
+                        tone="blue"
+                        label={t(
+                            'ui.dashboard.action_items.pending_signatures',
+                        )}
+                        count={signatures}
+                        href={myDocumentsIndex().url}
+                    />
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function Dashboard({ clock }: DashboardProps) {
     const { t } = useTranslations();
+    const { auth } = usePage().props;
+    const hasActionItems =
+        auth.pendingModificationsCount > 0 || auth.pendingSignaturesCount > 0;
 
     return (
         <>
             <Head title={t('ui.dashboard.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                {clock ? (
-                    <ClockCard clock={clock} />
+                {clock || hasActionItems ? (
+                    <div className="flex flex-wrap items-start gap-4">
+                        {clock ? <ClockCard clock={clock} /> : null}
+                        {hasActionItems ? (
+                            <ActionItemsCard
+                                modifications={auth.pendingModificationsCount}
+                                signatures={auth.pendingSignaturesCount}
+                            />
+                        ) : null}
+                    </div>
                 ) : (
                     <>
                         <div className="grid auto-rows-min gap-4 md:grid-cols-3">

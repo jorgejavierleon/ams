@@ -80,6 +80,11 @@ return [
 
     'dashboard' => [
         'title' => 'Panel',
+        'action_items' => [
+            'title' => 'Mis pendientes',
+            'pending_modifications' => 'Correcciones de marca por revisar',
+            'pending_signatures' => 'Documentos por firmar',
+        ],
     ],
 
     'marks' => [

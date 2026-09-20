@@ -80,6 +80,11 @@ return [
 
     'dashboard' => [
         'title' => 'Dashboard',
+        'action_items' => [
+            'title' => 'My action items',
+            'pending_modifications' => 'Mark corrections to review',
+            'pending_signatures' => 'Documents to sign',
+        ],
     ],
 
     'marks' => [
