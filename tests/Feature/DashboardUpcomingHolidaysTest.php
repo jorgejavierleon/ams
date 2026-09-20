@@ -27,17 +27,17 @@ test('holidays are listed nearest-first and past ones are excluded', function ()
             ->where('upcomingHolidays.1.id', $later->id));
 });
 
-test('the list is limited to the next 5 holidays', function () {
+test('the list is limited to the next 3 holidays', function () {
     $organization = Organization::factory()->create();
     $user = User::factory()->create(['organization_id' => $organization->id]);
 
-    foreach (range(1, 7) as $daysAhead) {
+    foreach (range(1, 5) as $daysAhead) {
         Holiday::factory()->create(['date' => now()->addDays($daysAhead)->toDateString()]);
     }
 
     $this->actingAs($user)
         ->get(route('dashboard'))
-        ->assertInertia(fn ($page) => $page->has('upcomingHolidays', 5));
+        ->assertInertia(fn ($page) => $page->has('upcomingHolidays', 3));
 });
 
 test('holidays outside the app\'s supported country are excluded', function () {

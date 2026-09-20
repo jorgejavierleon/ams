@@ -26,7 +26,7 @@ class DashboardController extends Controller
      * How many upcoming holidays the dashboard widget shows — a glance, not
      * the full calendar (KOL-119.4).
      */
-    private const UPCOMING_HOLIDAYS_LIMIT = 5;
+    private const UPCOMING_HOLIDAYS_LIMIT = 3;
 
     public function index(Request $request, MarkManager $marks): Response
     {
