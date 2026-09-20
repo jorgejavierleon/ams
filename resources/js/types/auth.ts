@@ -15,6 +15,7 @@ export type Auth = {
     pendingModificationsCount: number;
     pendingSignaturesCount: number;
     pendingOvertimeRequestsCount: number;
+    pendingLeaveRequestsCount: number;
 };
 
 /* @chisel-passkeys */

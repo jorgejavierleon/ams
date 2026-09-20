@@ -5,8 +5,10 @@ import {
     Clock,
     ClipboardCheck,
     FileSignature,
+    ListChecks,
     LogIn,
     LogOut,
+    Sun,
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -17,9 +19,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { index as leavesIndex } from '@/routes/leaves';
 import { index as myDocumentsIndex } from '@/routes/my/documents';
 import { store } from '@/routes/my/marks';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
+import { index as overtimeRequestsIndex } from '@/routes/overtime/requests';
 
 type Shift = {
     shift_id: number;
@@ -423,6 +427,8 @@ function SummaryCell({
 const iconTones = {
     violet: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
     blue: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+    amber: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    rose: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
 } as const;
 
 type IconTone = keyof typeof iconTones;
@@ -523,23 +529,78 @@ function ActionItemsCard({
     );
 }
 
+/**
+ * What a supervisor or admin needs to decide on (KOL-119.2): pending leave
+ * and overtime requests, each already scoped server-side to the viewer's
+ * own team (or the whole organization for admins) exactly like their own
+ * queue. Visible whenever the viewer holds authority over either queue, even
+ * if one of the two counts is currently zero.
+ */
+function PendingApprovalsCard({
+    leaves,
+    overtime,
+}: {
+    leaves: number;
+    overtime: number;
+}) {
+    const { t } = useTranslations();
+
+    return (
+        <Card className="w-full max-w-md gap-3 self-start p-4">
+            <CardHeader className="px-2.5">
+                <CardTitle>
+                    {t('ui.dashboard.pending_approvals.title')}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1 px-0">
+                <ActionItemRow
+                    icon={Sun}
+                    tone="amber"
+                    label={t('ui.dashboard.pending_approvals.leaves')}
+                    count={leaves}
+                    href={leavesIndex().url}
+                />
+                <ActionItemRow
+                    icon={ListChecks}
+                    tone="rose"
+                    label={t('ui.dashboard.pending_approvals.overtime')}
+                    count={overtime}
+                    href={overtimeRequestsIndex().url}
+                />
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function Dashboard({ clock }: DashboardProps) {
     const { t } = useTranslations();
     const { auth } = usePage().props;
     const hasActionItems =
         auth.pendingModificationsCount > 0 || auth.pendingSignaturesCount > 0;
+    // Mirrors the sidebar's own permission checks (app-sidebar.tsx) for the
+    // leaves/overtime approval queues.
+    const canApproveTeam =
+        auth.permissions.includes('ApproveTeam:Leave') ||
+        auth.permissions.includes('ApproveTeam:OvertimeAuthorization') ||
+        auth.permissions.includes('Manage:OvertimeAuthorization');
 
     return (
         <>
             <Head title={t('ui.dashboard.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                {clock || hasActionItems ? (
+                {clock || hasActionItems || canApproveTeam ? (
                     <div className="flex flex-wrap items-start gap-4">
                         {clock ? <ClockCard clock={clock} /> : null}
                         {hasActionItems ? (
                             <ActionItemsCard
                                 modifications={auth.pendingModificationsCount}
                                 signatures={auth.pendingSignaturesCount}
+                            />
+                        ) : null}
+                        {canApproveTeam ? (
+                            <PendingApprovalsCard
+                                leaves={auth.pendingLeaveRequestsCount}
+                                overtime={auth.pendingOvertimeRequestsCount}
                             />
                         ) : null}
                     </div>

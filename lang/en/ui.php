@@ -85,6 +85,11 @@ return [
             'pending_modifications' => 'Mark corrections to review',
             'pending_signatures' => 'Documents to sign',
         ],
+        'pending_approvals' => [
+            'title' => 'Pending approvals',
+            'leaves' => 'Leave requests',
+            'overtime' => 'Overtime requests',
+        ],
     ],
 
     'marks' => [

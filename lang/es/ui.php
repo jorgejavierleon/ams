@@ -85,6 +85,11 @@ return [
             'pending_modifications' => 'Correcciones de marca por revisar',
             'pending_signatures' => 'Documentos por firmar',
         ],
+        'pending_approvals' => [
+            'title' => 'Aprobaciones pendientes',
+            'leaves' => 'Solicitudes de permiso',
+            'overtime' => 'Solicitudes de horas extra',
+        ],
     ],
 
     'marks' => [

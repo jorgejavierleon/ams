@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\DocumentSignatureStatus;
 use App\Enums\MarkModificationStatus;
 use App\Models\DocumentSignature;
+use App\Models\Leave;
 use App\Models\MarkModification;
 use App\Models\OvertimeRequest;
 use App\Services\OrganizationSettings;
@@ -56,6 +57,7 @@ class HandleInertiaRequests extends Middleware
                 'pendingModificationsCount' => fn () => $this->pendingModificationsCount($request),
                 'pendingSignaturesCount' => fn () => $this->pendingSignaturesCount($request),
                 'pendingOvertimeRequestsCount' => fn () => $this->pendingOvertimeRequestsCount($request),
+                'pendingLeaveRequestsCount' => fn () => $this->pendingLeaveRequestsCount($request),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
@@ -137,6 +139,39 @@ class HandleInertiaRequests extends Middleware
         $supervisorId = $isOrgWide ? null : $user->id;
 
         return OvertimeRequest::query()
+            ->pending()
+            ->when($supervisorId, fn ($query) => $query->whereHas(
+                'user',
+                fn ($employee) => $employee->where('supervisor_id', $supervisorId),
+            ))
+            ->count();
+    }
+
+    /**
+     * How many leave requests are awaiting a decision, for the "Pending
+     * Approvals" dashboard widget (KOL-119.2) — scoped exactly like
+     * LeaveController::index: org-wide for admins (Leave has no dedicated
+     * admin permission, so admins reach the index via the super-admin gate
+     * rather than holding ApproveTeam:Leave), the supervisor's own direct
+     * reports for ApproveTeam:Leave, and zero for anyone holding neither.
+     */
+    private function pendingLeaveRequestsCount(Request $request): int
+    {
+        $user = $request->user();
+
+        if ($user === null) {
+            return 0;
+        }
+
+        $isAdmin = $user->hasRole('admin');
+
+        if (! $isAdmin && ! $user->can('ApproveTeam:Leave')) {
+            return 0;
+        }
+
+        $supervisorId = $isAdmin ? null : $user->id;
+
+        return Leave::query()
             ->pending()
             ->when($supervisorId, fn ($query) => $query->whereHas(
                 'user',
