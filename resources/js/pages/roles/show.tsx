@@ -2,6 +2,7 @@ import { Form, Head } from '@inertiajs/react';
 import RoleController from '@/actions/App/Http/Controllers/RoleController';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/hooks/use-translations';
@@ -53,58 +54,71 @@ export default function RolesShow({ role, permissionGroups }: Props) {
                         system to manage them here.
                     </p>
                 ) : (
-                    <Form
-                        {...RoleController.update.form({ id: String(role.id) })}
-                        options={{ preserveScroll: true }}
-                    >
-                        {({ processing }) => (
-                            <div className="space-y-8">
-                                {permissionGroups.map((group) => (
-                                    <div
-                                        key={group.group}
-                                        className="space-y-3"
-                                    >
-                                        <h3 className="text-sm font-semibold text-foreground">
-                                            {group.group}
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                                            {group.permissions.map(
-                                                (permission) => (
-                                                    <div
-                                                        key={permission.id}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <Checkbox
-                                                            id={`permission-${permission.id}`}
-                                                            name="permissions[]"
-                                                            value={
-                                                                permission.id
-                                                            }
-                                                            defaultChecked={initialPermissions.includes(
-                                                                permission.id,
-                                                            )}
-                                                        />
-                                                        <Label
-                                                            htmlFor={`permission-${permission.id}`}
-                                                            className="cursor-pointer text-sm font-normal"
-                                                        >
-                                                            {permission.label}
-                                                        </Label>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                    <Card>
+                        <CardContent>
+                            <Form
+                                {...RoleController.update.form({
+                                    id: String(role.id),
+                                })}
+                                options={{ preserveScroll: true }}
+                            >
+                                {({ processing }) => (
+                                    <div className="space-y-8">
+                                        {permissionGroups.map((group) => (
+                                            <div
+                                                key={group.group}
+                                                className="space-y-3"
+                                            >
+                                                <h3 className="text-sm font-semibold text-foreground">
+                                                    {group.group}
+                                                </h3>
+                                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                                                    {group.permissions.map(
+                                                        (permission) => (
+                                                            <div
+                                                                key={
+                                                                    permission.id
+                                                                }
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <Checkbox
+                                                                    id={`permission-${permission.id}`}
+                                                                    name="permissions[]"
+                                                                    value={
+                                                                        permission.id
+                                                                    }
+                                                                    defaultChecked={initialPermissions.includes(
+                                                                        permission.id,
+                                                                    )}
+                                                                />
+                                                                <Label
+                                                                    htmlFor={`permission-${permission.id}`}
+                                                                    className="cursor-pointer text-sm font-normal"
+                                                                >
+                                                                    {
+                                                                        permission.label
+                                                                    }
+                                                                </Label>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
 
-                                <Button type="submit" disabled={processing}>
-                                    {processing
-                                        ? t('ui.roles.saving')
-                                        : t('ui.roles.save')}
-                                </Button>
-                            </div>
-                        )}
-                    </Form>
+                                        <Button
+                                            type="submit"
+                                            disabled={processing}
+                                        >
+                                            {processing
+                                                ? t('ui.roles.saving')
+                                                : t('ui.roles.save')}
+                                        </Button>
+                                    </div>
+                                )}
+                            </Form>
+                        </CardContent>
+                    </Card>
                 )}
             </div>
         </>
