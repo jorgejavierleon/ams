@@ -522,7 +522,7 @@ function ActionItemsCard({
     const { t } = useTranslations();
 
     return (
-        <Card className="w-full max-w-md gap-3 self-start p-4">
+        <Card className="h-full w-full gap-3 p-4">
             <CardHeader className="px-2.5">
                 <CardTitle>{t('ui.dashboard.action_items.title')}</CardTitle>
             </CardHeader>
@@ -571,7 +571,7 @@ function PendingApprovalsCard({
     const { t } = useTranslations();
 
     return (
-        <Card className="w-full max-w-md gap-3 self-start p-4">
+        <Card className="h-full w-full gap-3 p-4">
             <CardHeader className="px-2.5">
                 <CardTitle>
                     {t('ui.dashboard.pending_approvals.title')}
@@ -643,7 +643,7 @@ function WhosOutCard({ entries }: { entries: WhosOutEntry[] }) {
     const { t } = useTranslations();
 
     return (
-        <Card className="w-full max-w-md gap-3 self-start p-4">
+        <Card className="h-full w-full gap-3 p-4">
             <CardHeader className="flex-row items-center justify-between px-2.5">
                 <CardTitle>{t('ui.dashboard.whos_out.title')}</CardTitle>
                 <Link
@@ -692,7 +692,7 @@ function UpcomingHolidaysCard({ holidays }: { holidays: Holiday[] }) {
     const { t } = useTranslations();
 
     return (
-        <Card className="w-full max-w-md gap-3 self-start p-4">
+        <Card className="h-full w-full gap-3 p-4">
             <CardHeader className="px-2.5">
                 <CardTitle>
                     {t('ui.dashboard.upcoming_holidays.title')}
@@ -733,22 +733,32 @@ export default function Dashboard({
         <>
             <Head title={t('ui.dashboard.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex flex-wrap items-start gap-4">
-                    {clock ? <ClockCard clock={clock} /> : null}
+                {clock ? <ClockCard clock={clock} /> : null}
+                <div className="grid grid-cols-12 gap-4">
                     {hasActionItems ? (
-                        <ActionItemsCard
-                            modifications={auth.pendingModificationsCount}
-                            signatures={auth.pendingSignaturesCount}
-                        />
+                        <div className="col-span-12 md:col-span-6 xl:col-span-3">
+                            <ActionItemsCard
+                                modifications={auth.pendingModificationsCount}
+                                signatures={auth.pendingSignaturesCount}
+                            />
+                        </div>
                     ) : null}
                     {canApproveTeam ? (
-                        <PendingApprovalsCard
-                            leaves={auth.pendingLeaveRequestsCount}
-                            overtime={auth.pendingOvertimeRequestsCount}
-                        />
+                        <div className="col-span-12 md:col-span-6 xl:col-span-3">
+                            <PendingApprovalsCard
+                                leaves={auth.pendingLeaveRequestsCount}
+                                overtime={auth.pendingOvertimeRequestsCount}
+                            />
+                        </div>
                     ) : null}
-                    {whosOut ? <WhosOutCard entries={whosOut} /> : null}
-                    <UpcomingHolidaysCard holidays={upcomingHolidays} />
+                    {whosOut ? (
+                        <div className="col-span-12 md:col-span-6 xl:col-span-3">
+                            <WhosOutCard entries={whosOut} />
+                        </div>
+                    ) : null}
+                    <div className="col-span-12 md:col-span-6 xl:col-span-6">
+                        <UpcomingHolidaysCard holidays={upcomingHolidays} />
+                    </div>
                 </div>
             </div>
         </>
