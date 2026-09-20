@@ -623,7 +623,7 @@ export default function WorkdaysIndex({
                 />
 
                 <div className="flex flex-wrap items-end justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
+                    <div className="flex flex-wrap items-center gap-1">
                         {quickRanges.map((range) => {
                             const isActive =
                                 from === range.from && to === range.to;
@@ -636,8 +636,8 @@ export default function WorkdaysIndex({
                                     className={cn(
                                         'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                                         isActive
-                                            ? 'bg-background text-foreground shadow-xs'
-                                            : 'text-muted-foreground hover:text-foreground',
+                                            ? 'bg-primary text-primary-foreground shadow-sm'
+                                            : 'text-muted-foreground hover:bg-primary/10 hover:text-primary',
                                     )}
                                 >
                                     {range.label}

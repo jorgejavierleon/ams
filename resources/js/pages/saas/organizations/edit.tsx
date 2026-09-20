@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import OrganizationForm from '@/components/organization-form';
 import type { PlanOption } from '@/components/organization-form';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { update } from '@/routes/saas/organizations';
 
@@ -30,17 +31,21 @@ export default function EditOrganization({ organization, plans }: Props) {
                     description={organization.name}
                 />
 
-                <OrganizationForm
-                    plans={plans}
-                    method="patch"
-                    action={update(organization.id).url}
-                    submitLabel={t('ui.organizations.edit.submit')}
-                    initial={{
-                        name: organization.name,
-                        slug: organization.slug,
-                        plan: organization.plan,
-                    }}
-                />
+                <Card>
+                    <CardContent>
+                        <OrganizationForm
+                            plans={plans}
+                            method="patch"
+                            action={update(organization.id).url}
+                            submitLabel={t('ui.organizations.edit.submit')}
+                            initial={{
+                                name: organization.name,
+                                slug: organization.slug,
+                                plan: organization.plan,
+                            }}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

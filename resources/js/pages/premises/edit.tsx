@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import PremiseForm from '@/components/premise-form';
 import type { Option, PremiseFormData } from '@/components/premise-form';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { update } from '@/routes/premises';
 
@@ -59,13 +60,17 @@ export default function EditPremise({ premise, companies }: Props) {
                     description={t('ui.premises.edit.description')}
                 />
 
-                <PremiseForm
-                    companies={companies}
-                    method="patch"
-                    action={update(premise.id).url}
-                    submitLabel={t('ui.premises.edit.submit')}
-                    initial={initial}
-                />
+                <Card>
+                    <CardContent>
+                        <PremiseForm
+                            companies={companies}
+                            method="patch"
+                            action={update(premise.id).url}
+                            submitLabel={t('ui.premises.edit.submit')}
+                            initial={initial}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

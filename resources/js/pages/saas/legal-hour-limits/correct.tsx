@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import LegalHourLimitForm from '@/components/legal-hour-limit-form';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { update } from '@/routes/saas/legal-hour-limits';
 
@@ -39,35 +40,41 @@ export default function CorrectLegalHourLimit({ version }: Props) {
                     )}
                 />
 
-                <LegalHourLimitForm
-                    mode="correct"
-                    action={update(version.id).url}
-                    submitLabel={t('ui.saas_legal_hour_limits.correct.submit')}
-                    calculatedDays={version.calculated_days}
-                    initial={{
-                        effective_from: version.effective_from,
-                        ordinary_weekly_hours: String(
-                            version.ordinary_weekly_hours,
-                        ),
-                        ordinary_daily_hours: String(
-                            version.ordinary_daily_hours,
-                        ),
-                        max_overtime_daily_hours: String(
-                            version.max_overtime_daily_hours,
-                        ),
-                        max_overtime_weekly_hours: String(
-                            version.max_overtime_weekly_hours,
-                        ),
-                        max_total_daily_hours: String(
-                            version.max_total_daily_hours,
-                        ),
-                        max_total_weekly_hours: String(
-                            version.max_total_weekly_hours,
-                        ),
-                        legal_reference: version.legal_reference,
-                        notes: version.notes ?? '',
-                    }}
-                />
+                <Card>
+                    <CardContent>
+                        <LegalHourLimitForm
+                            mode="correct"
+                            action={update(version.id).url}
+                            submitLabel={t(
+                                'ui.saas_legal_hour_limits.correct.submit',
+                            )}
+                            calculatedDays={version.calculated_days}
+                            initial={{
+                                effective_from: version.effective_from,
+                                ordinary_weekly_hours: String(
+                                    version.ordinary_weekly_hours,
+                                ),
+                                ordinary_daily_hours: String(
+                                    version.ordinary_daily_hours,
+                                ),
+                                max_overtime_daily_hours: String(
+                                    version.max_overtime_daily_hours,
+                                ),
+                                max_overtime_weekly_hours: String(
+                                    version.max_overtime_weekly_hours,
+                                ),
+                                max_total_daily_hours: String(
+                                    version.max_total_daily_hours,
+                                ),
+                                max_total_weekly_hours: String(
+                                    version.max_total_weekly_hours,
+                                ),
+                                legal_reference: version.legal_reference,
+                                notes: version.notes ?? '',
+                            }}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

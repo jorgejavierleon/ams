@@ -6,6 +6,7 @@ import type {
     ShiftDayData,
     ShiftFormData,
 } from '@/components/shift-form';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { update } from '@/routes/shifts';
 
@@ -77,15 +78,19 @@ export default function EditShift({
                     description={t('ui.shifts.edit.description')}
                 />
 
-                <ShiftForm
-                    types={types}
-                    method="patch"
-                    action={update(shift.id).url}
-                    submitLabel={t('ui.shifts.edit.submit')}
-                    maxWeeklyHours={maxWeeklyHours}
-                    maxDailyHours={maxDailyHours}
-                    initial={initial}
-                />
+                <Card>
+                    <CardContent>
+                        <ShiftForm
+                            types={types}
+                            method="patch"
+                            action={update(shift.id).url}
+                            submitLabel={t('ui.shifts.edit.submit')}
+                            maxWeeklyHours={maxWeeklyHours}
+                            maxDailyHours={maxDailyHours}
+                            initial={initial}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

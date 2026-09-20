@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import PremiseForm from '@/components/premise-form';
 import type { Option } from '@/components/premise-form';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { store } from '@/routes/premises';
 
@@ -22,12 +23,16 @@ export default function CreatePremise({ companies }: Props) {
                     description={t('ui.premises.create.description')}
                 />
 
-                <PremiseForm
-                    companies={companies}
-                    method="post"
-                    action={store().url}
-                    submitLabel={t('ui.premises.create.submit')}
-                />
+                <Card>
+                    <CardContent>
+                        <PremiseForm
+                            companies={companies}
+                            method="post"
+                            action={store().url}
+                            submitLabel={t('ui.premises.create.submit')}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

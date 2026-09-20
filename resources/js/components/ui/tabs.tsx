@@ -76,7 +76,7 @@ export function TabsList({ className, children }: TabsListProps) {
         <div
             role="tablist"
             className={cn(
-                'inline-flex h-auto w-full flex-wrap items-center justify-start gap-1 rounded-lg bg-muted p-1 text-muted-foreground',
+                'inline-flex h-auto w-full flex-wrap items-center justify-start gap-1',
                 className,
             )}
         >
@@ -108,8 +108,8 @@ export function TabsTrigger({ value, className, children }: TabsTriggerProps) {
                 'inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all',
                 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                 selected
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'hover:text-foreground',
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-primary/10 hover:text-primary',
                 className,
             )}
         >

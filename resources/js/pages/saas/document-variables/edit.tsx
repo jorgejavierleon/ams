@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import DocumentVarForm from '@/components/document-var-form';
 import Heading from '@/components/heading';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { update } from '@/routes/saas/document-variables';
 
@@ -28,16 +29,20 @@ export default function EditDocumentVariable({ variable }: Props) {
                     description={variable.name}
                 />
 
-                <DocumentVarForm
-                    method="patch"
-                    action={update(variable.id).url}
-                    submitLabel={t('ui.document_variables.edit.submit')}
-                    initial={{
-                        name: variable.name,
-                        key: variable.key,
-                        description: variable.description ?? '',
-                    }}
-                />
+                <Card>
+                    <CardContent>
+                        <DocumentVarForm
+                            method="patch"
+                            action={update(variable.id).url}
+                            submitLabel={t('ui.document_variables.edit.submit')}
+                            initial={{
+                                name: variable.name,
+                                key: variable.key,
+                                description: variable.description ?? '',
+                            }}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

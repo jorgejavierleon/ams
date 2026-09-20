@@ -109,7 +109,7 @@ export default function DocumentForm({
     }
 
     return (
-        <form onSubmit={submit} noValidate className="grid max-w-3xl gap-6">
+        <form onSubmit={submit} noValidate className="grid gap-6">
             <FormField
                 label={t('ui.documents.form.title')}
                 htmlFor="title"

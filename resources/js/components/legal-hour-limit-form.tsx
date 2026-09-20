@@ -85,7 +85,7 @@ export default function LegalHourLimitForm({
     }
 
     return (
-        <form onSubmit={submit} noValidate className="grid max-w-3xl gap-6">
+        <form onSubmit={submit} noValidate className="grid gap-6">
             {mode === 'create' ? (
                 <Alert>
                     <Globe />

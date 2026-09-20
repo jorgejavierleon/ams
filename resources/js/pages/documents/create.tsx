@@ -6,6 +6,7 @@ import type {
     DocumentTemplateOption,
 } from '@/components/document-form';
 import Heading from '@/components/heading';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { store } from '@/routes/documents';
 
@@ -36,14 +37,18 @@ export default function CreateDocument({ options, templates }: Props) {
                     description={t('ui.documents.create.description')}
                 />
 
-                <DocumentForm
-                    method="post"
-                    action={store().url}
-                    submitLabel={t('ui.documents.create.submit')}
-                    options={options}
-                    initial={emptyDocument}
-                    templates={templates}
-                />
+                <Card>
+                    <CardContent>
+                        <DocumentForm
+                            method="post"
+                            action={store().url}
+                            submitLabel={t('ui.documents.create.submit')}
+                            options={options}
+                            initial={emptyDocument}
+                            templates={templates}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

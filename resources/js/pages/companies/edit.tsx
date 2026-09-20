@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import CompanyForm from '@/components/company-form';
 import type { CompanyFormData, Option } from '@/components/company-form';
 import Heading from '@/components/heading';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 
 type Company = {
@@ -72,11 +73,15 @@ export default function EditCompany({ company, regions }: Props) {
                     description={t('ui.companies.edit.description')}
                 />
 
-                <CompanyForm
-                    regions={regions}
-                    submitLabel={t('ui.companies.edit.submit')}
-                    initial={initial}
-                />
+                <Card>
+                    <CardContent>
+                        <CompanyForm
+                            regions={regions}
+                            submitLabel={t('ui.companies.edit.submit')}
+                            initial={initial}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

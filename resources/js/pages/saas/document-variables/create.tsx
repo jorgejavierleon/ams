@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import DocumentVarForm from '@/components/document-var-form';
 import Heading from '@/components/heading';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { store } from '@/routes/saas/document-variables';
 
@@ -17,11 +18,17 @@ export default function CreateDocumentVariable() {
                     description={t('ui.document_variables.create.description')}
                 />
 
-                <DocumentVarForm
-                    method="post"
-                    action={store().url}
-                    submitLabel={t('ui.document_variables.create.submit')}
-                />
+                <Card>
+                    <CardContent>
+                        <DocumentVarForm
+                            method="post"
+                            action={store().url}
+                            submitLabel={t(
+                                'ui.document_variables.create.submit',
+                            )}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

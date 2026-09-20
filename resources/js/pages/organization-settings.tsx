@@ -78,7 +78,7 @@ export default function OrganizationSettings({
         <>
             <Head title={t('ui.organization_settings.title')} />
 
-            <form onSubmit={submit} className="max-w-3xl space-y-6 p-6">
+            <form onSubmit={submit} className="space-y-6 p-6">
                 <Heading
                     title={t('ui.organization_settings.title')}
                     description={t('ui.organization_settings.description')}

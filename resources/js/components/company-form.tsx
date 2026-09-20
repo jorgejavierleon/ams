@@ -160,7 +160,7 @@ export default function CompanyForm({ regions, submitLabel, initial }: Props) {
     return (
         // Validation is server-driven; `noValidate` disables native browser
         // validation so Inertia surfaces all errors at once, translated.
-        <form onSubmit={submit} noValidate className="grid max-w-3xl gap-8">
+        <form onSubmit={submit} noValidate className="grid gap-8">
             <section className="grid gap-6">
                 <h2 className="text-sm font-medium text-muted-foreground">
                     {t('ui.companies.form.details')}

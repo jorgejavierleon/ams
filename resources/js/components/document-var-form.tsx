@@ -47,7 +47,7 @@ export default function DocumentVarForm({
     }
 
     return (
-        <form onSubmit={submit} className="grid max-w-xl gap-6">
+        <form onSubmit={submit} className="grid gap-6">
             <div className="grid gap-2">
                 <Label htmlFor="name">
                     {t('ui.document_variables.form.name')}

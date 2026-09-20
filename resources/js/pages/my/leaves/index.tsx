@@ -302,7 +302,7 @@ export default function MyLeavesIndex({
                     </CardContent>
                 </Card>
 
-                <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
+                <div className="flex flex-wrap items-center gap-1">
                     {statusTabs.map((tab) => (
                         <button
                             key={tab.value}
@@ -311,8 +311,8 @@ export default function MyLeavesIndex({
                             className={cn(
                                 'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                                 status === tab.value
-                                    ? 'bg-background text-foreground shadow-xs'
-                                    : 'text-muted-foreground hover:text-foreground',
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:bg-primary/10 hover:text-primary',
                             )}
                         >
                             {tab.label}

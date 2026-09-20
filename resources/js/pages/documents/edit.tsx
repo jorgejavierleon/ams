@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import DocumentForm from '@/components/document-form';
 import type { DocumentFormOptions } from '@/components/document-form';
 import Heading from '@/components/heading';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { update } from '@/routes/documents';
 
@@ -31,20 +32,25 @@ export default function EditDocument({ document, options }: Props) {
                     description={t('ui.documents.edit.description')}
                 />
 
-                <DocumentForm
-                    method="patch"
-                    action={update(document.id).url}
-                    submitLabel={t('ui.documents.edit.submit')}
-                    options={options}
-                    initial={{
-                        title: document.title,
-                        type: document.type,
-                        user_id: document.user_id,
-                        body: document.body,
-                        legal_rep_signatories: document.legal_rep_signatories,
-                        ordered_signing: document.ordered_signing,
-                    }}
-                />
+                <Card>
+                    <CardContent>
+                        <DocumentForm
+                            method="patch"
+                            action={update(document.id).url}
+                            submitLabel={t('ui.documents.edit.submit')}
+                            options={options}
+                            initial={{
+                                title: document.title,
+                                type: document.type,
+                                user_id: document.user_id,
+                                body: document.body,
+                                legal_rep_signatories:
+                                    document.legal_rep_signatories,
+                                ordered_signing: document.ordered_signing,
+                            }}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

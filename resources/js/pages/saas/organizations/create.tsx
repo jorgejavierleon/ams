@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import OrganizationForm from '@/components/organization-form';
 import type { PlanOption } from '@/components/organization-form';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { store } from '@/routes/saas/organizations';
 
@@ -22,12 +23,16 @@ export default function CreateOrganization({ plans }: Props) {
                     description={t('ui.organizations.create.description')}
                 />
 
-                <OrganizationForm
-                    plans={plans}
-                    method="post"
-                    action={store().url}
-                    submitLabel={t('ui.organizations.create.submit')}
-                />
+                <Card>
+                    <CardContent>
+                        <OrganizationForm
+                            plans={plans}
+                            method="post"
+                            action={store().url}
+                            submitLabel={t('ui.organizations.create.submit')}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

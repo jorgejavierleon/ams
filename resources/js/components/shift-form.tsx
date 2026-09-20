@@ -122,7 +122,7 @@ export default function ShiftForm({
     }
 
     return (
-        <form onSubmit={submit} noValidate className="grid max-w-4xl gap-8">
+        <form onSubmit={submit} noValidate className="grid gap-8">
             <section className="grid gap-6">
                 <h2 className="text-sm font-medium text-muted-foreground">
                     {t('ui.shifts.form.details')}

@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import ShiftForm from '@/components/shift-form';
 import type { Option, ShiftDayData } from '@/components/shift-form';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { store } from '@/routes/shifts';
 
@@ -30,25 +31,29 @@ export default function CreateShift({
                     description={t('ui.shifts.create.description')}
                 />
 
-                <ShiftForm
-                    types={types}
-                    method="post"
-                    action={store().url}
-                    submitLabel={t('ui.shifts.create.submit')}
-                    maxWeeklyHours={maxWeeklyHours}
-                    maxDailyHours={maxDailyHours}
-                    initial={{
-                        name: '',
-                        type: 'fixed',
-                        description: '',
-                        tolerance_in: '',
-                        tolerance_out: '',
-                        work_on_holidays: false,
-                        is_archive: false,
-                        is_default: false,
-                        days: defaultDays,
-                    }}
-                />
+                <Card>
+                    <CardContent>
+                        <ShiftForm
+                            types={types}
+                            method="post"
+                            action={store().url}
+                            submitLabel={t('ui.shifts.create.submit')}
+                            maxWeeklyHours={maxWeeklyHours}
+                            maxDailyHours={maxDailyHours}
+                            initial={{
+                                name: '',
+                                type: 'fixed',
+                                description: '',
+                                tolerance_in: '',
+                                tolerance_out: '',
+                                work_on_holidays: false,
+                                is_archive: false,
+                                is_default: false,
+                                days: defaultDays,
+                            }}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );
