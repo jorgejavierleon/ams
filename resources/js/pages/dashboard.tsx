@@ -13,13 +13,17 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { index as leavesIndex } from '@/routes/leaves';
+import {
+    calendar as leavesCalendar,
+    index as leavesIndex,
+} from '@/routes/leaves';
 import { index as myDocumentsIndex } from '@/routes/my/documents';
 import { store } from '@/routes/my/marks';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
@@ -37,8 +41,21 @@ type Clock = {
     out: string | null;
 };
 
+type WhosOutEntry = {
+    id: number;
+    user: {
+        id: number;
+        name: string;
+        avatar: string | null;
+    };
+    type: string;
+    type_label: string;
+    return_date: string;
+};
+
 type DashboardProps = {
     clock: Clock | null;
+    whosOut: WhosOutEntry[] | null;
 };
 
 type MarkType = 'in' | 'out';
@@ -572,7 +589,78 @@ function PendingApprovalsCard({
     );
 }
 
-export default function Dashboard({ clock }: DashboardProps) {
+function WhosOutRow({ entry }: { entry: WhosOutEntry }) {
+    const { t, formatDate } = useTranslations();
+
+    return (
+        <div className="flex items-center gap-3 px-2.5 py-2">
+            <Avatar className="size-8">
+                {entry.user.avatar ? (
+                    <AvatarImage
+                        src={entry.user.avatar}
+                        alt={entry.user.name}
+                    />
+                ) : null}
+                <AvatarFallback className="text-xs">
+                    {entry.user.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">
+                    {entry.user.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    {entry.type_label}
+                </p>
+            </div>
+            <p className="text-xs whitespace-nowrap text-muted-foreground">
+                {t('ui.dashboard.whos_out.returns', {
+                    date: formatDate(entry.return_date, {
+                        day: 'numeric',
+                        month: 'short',
+                    }),
+                })}
+            </p>
+        </div>
+    );
+}
+
+/**
+ * Who's currently on approved leave (KOL-119.3), scoped server-side to the
+ * viewer's team (or the whole organization for admins) — the widget isn't
+ * rendered at all when `entries` is null upstream; an empty array here means
+ * the viewer has visibility but nobody happens to be out.
+ */
+function WhosOutCard({ entries }: { entries: WhosOutEntry[] }) {
+    const { t } = useTranslations();
+
+    return (
+        <Card className="w-full max-w-md gap-3 self-start p-4">
+            <CardHeader className="flex-row items-center justify-between px-2.5">
+                <CardTitle>{t('ui.dashboard.whos_out.title')}</CardTitle>
+                <Link
+                    href={leavesCalendar().url}
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                    {t('ui.dashboard.whos_out.view_calendar')}
+                </Link>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1 px-0">
+                {entries.length === 0 ? (
+                    <p className="px-2.5 py-2 text-sm text-muted-foreground">
+                        {t('ui.dashboard.whos_out.empty')}
+                    </p>
+                ) : (
+                    entries.map((entry) => (
+                        <WhosOutRow key={entry.id} entry={entry} />
+                    ))
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+export default function Dashboard({ clock, whosOut }: DashboardProps) {
     const { t } = useTranslations();
     const { auth } = usePage().props;
     const hasActionItems =
@@ -588,7 +676,7 @@ export default function Dashboard({ clock }: DashboardProps) {
         <>
             <Head title={t('ui.dashboard.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                {clock || hasActionItems || canApproveTeam ? (
+                {clock || hasActionItems || canApproveTeam || whosOut ? (
                     <div className="flex flex-wrap items-start gap-4">
                         {clock ? <ClockCard clock={clock} /> : null}
                         {hasActionItems ? (
@@ -603,6 +691,7 @@ export default function Dashboard({ clock }: DashboardProps) {
                                 overtime={auth.pendingOvertimeRequestsCount}
                             />
                         ) : null}
+                        {whosOut ? <WhosOutCard entries={whosOut} /> : null}
                     </div>
                 ) : (
                     <>

@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\LeaveStatus;
 use App\Enums\MarkType;
 use App\Managers\MarkManager;
+use App\Models\Leave;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,6 +37,55 @@ class DashboardController extends Controller
                     'out' => $marks->getTodayMark(MarkType::Out, $user)?->date_time->format('H:i'),
                 ]
                 : null,
+            'whosOut' => $this->whosOut($user),
         ]);
+    }
+
+    /**
+     * Employees currently on approved leave, for the "Who's out today"
+     * widget (KOL-119.3) — scoped exactly like LeavePolicy::viewTeam: null
+     * (widget hidden) for anyone holding neither ViewTeam:Leave nor the
+     * admin role (Leave has no dedicated admin permission, so admins reach
+     * this the same way they reach the team leaves index — the super-admin
+     * gate — rather than by holding the permission), org-wide for admins,
+     * the supervisor's own direct reports otherwise.
+     *
+     * @return array<int, array{id: int, user: array{id: int, name: string, avatar: string|null}, type: string, type_label: string, return_date: string}>|null
+     */
+    private function whosOut(User $user): ?array
+    {
+        $isAdmin = $user->hasRole('admin');
+
+        if (! $isAdmin && ! $user->can('ViewTeam:Leave')) {
+            return null;
+        }
+
+        $supervisorId = $isAdmin ? null : $user->id;
+        $today = Carbon::today();
+
+        return Leave::query()
+            ->where('status', LeaveStatus::Approved)
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->with('user:id,name')
+            ->when($supervisorId, fn ($query) => $query->whereHas(
+                'user',
+                fn ($employee) => $employee->where('supervisor_id', $supervisorId),
+            ))
+            ->get()
+            ->map(fn (Leave $leave) => [
+                'id' => $leave->id,
+                'user' => [
+                    'id' => $leave->user->id,
+                    'name' => $leave->user->name,
+                    'avatar' => $leave->user->avatar,
+                ],
+                'type' => $leave->type->value,
+                'type_label' => $leave->type->label(),
+                // The day they're back at work, not the last day of leave.
+                'return_date' => $leave->end_date->copy()->addDay()->format('Y-m-d'),
+            ])
+            ->values()
+            ->all();
     }
 }

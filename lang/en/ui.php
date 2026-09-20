@@ -90,6 +90,12 @@ return [
             'leaves' => 'Leave requests',
             'overtime' => 'Overtime requests',
         ],
+        'whos_out' => [
+            'title' => "Who's out today",
+            'view_calendar' => 'View calendar',
+            'empty' => 'Nobody on your team is out today.',
+            'returns' => 'Back :date',
+        ],
     ],
 
     'marks' => [

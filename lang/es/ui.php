@@ -90,6 +90,12 @@ return [
             'leaves' => 'Solicitudes de permiso',
             'overtime' => 'Solicitudes de horas extra',
         ],
+        'whos_out' => [
+            'title' => 'Ausentes hoy',
+            'view_calendar' => 'Ver calendario',
+            'empty' => 'Nadie de tu equipo está ausente hoy.',
+            'returns' => 'Vuelve :date',
+        ],
     ],
 
     'marks' => [
