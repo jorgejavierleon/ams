@@ -139,7 +139,7 @@ export default function MyWorkdaysIndex({
                 />
 
                 {pendingModifications.length > 0 && (
-                    <section className="rounded-xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-900/60 dark:bg-amber-950/20">
+                    <section className="rounded-lg border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-900/60 dark:bg-amber-950/20">
                         <div className="flex items-center gap-3">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400">
                                 <CircleAlert className="size-5" />
@@ -209,7 +209,7 @@ export default function MyWorkdaysIndex({
                         </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-xl border">
+                    <div className="overflow-hidden rounded-lg border">
                         <Table>
                             <TableHeader>
                                 <TableRow>

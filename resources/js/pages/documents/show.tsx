@@ -339,7 +339,7 @@ function Section({
     children: ReactNode;
 }) {
     return (
-        <section className="rounded-xl border bg-card shadow-xs">
+        <section className="rounded-lg border bg-card shadow-xs">
             <div className="flex items-center justify-between gap-3 border-b px-5 py-3.5">
                 <h2 className="flex items-center gap-2 text-[13px] font-semibold">
                     {icon}
@@ -374,7 +374,7 @@ function StatTile({
     tone?: 'ok' | 'plain';
 }) {
     return (
-        <div className="relative overflow-hidden rounded-xl border bg-card p-4 shadow-xs">
+        <div className="relative overflow-hidden rounded-lg border bg-card p-4 shadow-xs">
             {tone === 'ok' && (
                 <span className="absolute inset-y-0 left-0 w-[3px] bg-emerald-500" />
             )}

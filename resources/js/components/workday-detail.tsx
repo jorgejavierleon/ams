@@ -240,7 +240,7 @@ function StatTile({
     tone?: 'ok' | 'plain';
 }) {
     return (
-        <div className="relative overflow-hidden rounded-xl border bg-card p-4 shadow-xs">
+        <div className="relative overflow-hidden rounded-lg border bg-card p-4 shadow-xs">
             {tone === 'ok' && (
                 <span className="absolute inset-y-0 left-0 w-[3px] bg-emerald-500" />
             )}
@@ -313,7 +313,7 @@ function AttendanceStrip({ workday }: { workday: WorkdayDetailData }) {
     }[];
 
     return (
-        <section className="rounded-xl border bg-card shadow-xs">
+        <section className="rounded-lg border bg-card shadow-xs">
             <div className="flex items-center justify-between border-b px-5 py-3.5">
                 <h2 className="text-[13px] font-semibold">
                     {t('ui.workdays.show.attendance_title')}
@@ -478,7 +478,7 @@ function MarkPanel({
     const time = hm(mark.time);
 
     return (
-        <div className="rounded-xl border bg-card p-4 shadow-xs">
+        <div className="rounded-lg border bg-card p-4 shadow-xs">
             <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                     {mark.type === 'in' ? (
@@ -801,7 +801,7 @@ export default function WorkdayDetail({
                 </div>
 
                 {overtime && (
-                    <section className="rounded-xl border bg-card p-4 shadow-xs">
+                    <section className="rounded-lg border bg-card p-4 shadow-xs">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                                 <h2 className="text-[13px] font-semibold">
@@ -861,7 +861,7 @@ export default function WorkdayDetail({
                 )}
 
                 {overtimeRequest && (
-                    <section className="rounded-xl border bg-card p-4 shadow-xs">
+                    <section className="rounded-lg border bg-card p-4 shadow-xs">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                                 <h2 className="text-[13px] font-semibold">
@@ -897,7 +897,7 @@ export default function WorkdayDetail({
                         />
                     </div>
 
-                    <div className="rounded-xl border bg-card shadow-xs">
+                    <div className="rounded-lg border bg-card shadow-xs">
                         <div className="flex items-center justify-between border-b px-5 py-3.5">
                             <h2 className="text-[13px] font-semibold">
                                 {t('ui.workdays.show.history.title')}

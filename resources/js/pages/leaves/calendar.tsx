@@ -122,7 +122,7 @@ export default function LeavesCalendar({ leaveTypes }: Props) {
                     ))}
                 </div>
 
-                <div className="leaves-calendar rounded-xl border bg-card p-4 text-card-foreground">
+                <div className="leaves-calendar rounded-lg border bg-card p-4 text-card-foreground">
                     {isClient ? (
                         <Suspense fallback={<CalendarSkeleton />}>
                             <LeavesCalendarCanvas
