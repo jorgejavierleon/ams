@@ -96,6 +96,10 @@ return [
             'empty' => 'Nadie de tu equipo está ausente hoy.',
             'returns' => 'Vuelve :date',
         ],
+        'upcoming_holidays' => [
+            'title' => 'Próximos feriados',
+            'empty' => 'No hay próximos feriados.',
+        ],
     ],
 
     'marks' => [

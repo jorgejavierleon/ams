@@ -96,6 +96,10 @@ return [
             'empty' => 'Nobody on your team is out today.',
             'returns' => 'Back :date',
         ],
+        'upcoming_holidays' => [
+            'title' => 'Upcoming holidays',
+            'empty' => 'No upcoming holidays.',
+        ],
     ],
 
     'marks' => [

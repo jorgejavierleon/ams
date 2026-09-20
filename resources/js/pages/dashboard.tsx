@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    CalendarDays,
     Check,
     ChevronRight,
     Clock,
@@ -17,7 +18,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import {
@@ -53,9 +53,16 @@ type WhosOutEntry = {
     return_date: string;
 };
 
+type Holiday = {
+    id: number;
+    name: string;
+    date: string;
+};
+
 type DashboardProps = {
     clock: Clock | null;
     whosOut: WhosOutEntry[] | null;
+    upcomingHolidays: Holiday[];
 };
 
 type MarkType = 'in' | 'out';
@@ -446,6 +453,7 @@ const iconTones = {
     blue: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
     amber: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
     rose: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
+    teal: 'bg-teal-500/15 text-teal-600 dark:text-teal-400',
 } as const;
 
 type IconTone = keyof typeof iconTones;
@@ -660,7 +668,56 @@ function WhosOutCard({ entries }: { entries: WhosOutEntry[] }) {
     );
 }
 
-export default function Dashboard({ clock, whosOut }: DashboardProps) {
+function HolidayRow({ holiday }: { holiday: Holiday }) {
+    const { formatDate } = useTranslations();
+
+    return (
+        <div className="flex items-center gap-3 px-2.5 py-2">
+            <RowIcon icon={CalendarDays} tone="teal" />
+            <p className="min-w-0 flex-1 truncate text-sm font-medium">
+                {holiday.name}
+            </p>
+            <p className="text-xs whitespace-nowrap text-muted-foreground">
+                {formatDate(holiday.date, { day: 'numeric', month: 'short' })}
+            </p>
+        </div>
+    );
+}
+
+/**
+ * The next few upcoming holidays (KOL-119.4) — visible to every authenticated
+ * user with no permission gate, unlike the other dashboard widgets.
+ */
+function UpcomingHolidaysCard({ holidays }: { holidays: Holiday[] }) {
+    const { t } = useTranslations();
+
+    return (
+        <Card className="w-full max-w-md gap-3 self-start p-4">
+            <CardHeader className="px-2.5">
+                <CardTitle>
+                    {t('ui.dashboard.upcoming_holidays.title')}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1 px-0">
+                {holidays.length === 0 ? (
+                    <p className="px-2.5 py-2 text-sm text-muted-foreground">
+                        {t('ui.dashboard.upcoming_holidays.empty')}
+                    </p>
+                ) : (
+                    holidays.map((holiday) => (
+                        <HolidayRow key={holiday.id} holiday={holiday} />
+                    ))
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+export default function Dashboard({
+    clock,
+    whosOut,
+    upcomingHolidays,
+}: DashboardProps) {
     const { t } = useTranslations();
     const { auth } = usePage().props;
     const hasActionItems =
@@ -676,41 +733,23 @@ export default function Dashboard({ clock, whosOut }: DashboardProps) {
         <>
             <Head title={t('ui.dashboard.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                {clock || hasActionItems || canApproveTeam || whosOut ? (
-                    <div className="flex flex-wrap items-start gap-4">
-                        {clock ? <ClockCard clock={clock} /> : null}
-                        {hasActionItems ? (
-                            <ActionItemsCard
-                                modifications={auth.pendingModificationsCount}
-                                signatures={auth.pendingSignaturesCount}
-                            />
-                        ) : null}
-                        {canApproveTeam ? (
-                            <PendingApprovalsCard
-                                leaves={auth.pendingLeaveRequestsCount}
-                                overtime={auth.pendingOvertimeRequestsCount}
-                            />
-                        ) : null}
-                        {whosOut ? <WhosOutCard entries={whosOut} /> : null}
-                    </div>
-                ) : (
-                    <>
-                        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                            <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                                <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                            </div>
-                            <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                                <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                            </div>
-                            <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                                <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                            </div>
-                        </div>
-                        <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
-                            <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                        </div>
-                    </>
-                )}
+                <div className="flex flex-wrap items-start gap-4">
+                    {clock ? <ClockCard clock={clock} /> : null}
+                    {hasActionItems ? (
+                        <ActionItemsCard
+                            modifications={auth.pendingModificationsCount}
+                            signatures={auth.pendingSignaturesCount}
+                        />
+                    ) : null}
+                    {canApproveTeam ? (
+                        <PendingApprovalsCard
+                            leaves={auth.pendingLeaveRequestsCount}
+                            overtime={auth.pendingOvertimeRequestsCount}
+                        />
+                    ) : null}
+                    {whosOut ? <WhosOutCard entries={whosOut} /> : null}
+                    <UpcomingHolidaysCard holidays={upcomingHolidays} />
+                </div>
             </div>
         </>
     );

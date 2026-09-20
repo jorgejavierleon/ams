@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SyncOfficialHolidays;
 use App\Enums\LeaveStatus;
 use App\Enums\MarkType;
 use App\Managers\MarkManager;
+use App\Models\Holiday;
 use App\Models\Leave;
+use App\Models\Scopes\HolidayScope;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -19,6 +22,12 @@ use Inertia\Response;
  */
 class DashboardController extends Controller
 {
+    /**
+     * How many upcoming holidays the dashboard widget shows — a glance, not
+     * the full calendar (KOL-119.4).
+     */
+    private const UPCOMING_HOLIDAYS_LIMIT = 5;
+
     public function index(Request $request, MarkManager $marks): Response
     {
         $user = $request->user();
@@ -38,6 +47,7 @@ class DashboardController extends Controller
                 ]
                 : null,
             'whosOut' => $this->whosOut($user),
+            'upcomingHolidays' => $this->upcomingHolidays(),
         ]);
     }
 
@@ -86,6 +96,32 @@ class DashboardController extends Controller
                 'return_date' => $leave->end_date->copy()->addDay()->format('Y-m-d'),
             ])
             ->values()
+            ->all();
+    }
+
+    /**
+     * The next few upcoming holidays for the dashboard widget (KOL-119.4),
+     * visible to every authenticated user with no permission gate.
+     * {@see HolidayScope} already limits reads to the
+     * official list plus the current organization's own holidays; `country`
+     * is filtered explicitly on top since the app is Chile-only today
+     * (mirrors the 'cl' literal in {@see SyncOfficialHolidays}).
+     *
+     * @return array<int, array{id: int, name: string, date: string}>
+     */
+    private function upcomingHolidays(): array
+    {
+        return Holiday::query()
+            ->where('country', 'cl')
+            ->whereDate('date', '>=', Carbon::today())
+            ->orderBy('date')
+            ->limit(self::UPCOMING_HOLIDAYS_LIMIT)
+            ->get()
+            ->map(fn (Holiday $holiday) => [
+                'id' => $holiday->id,
+                'name' => $holiday->name,
+                'date' => $holiday->date->format('Y-m-d'),
+            ])
             ->all();
     }
 }

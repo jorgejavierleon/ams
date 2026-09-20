@@ -1,11 +1,11 @@
 ---
 id: KOL-119
 title: Add role-aware widgets to the dashboard (employees vs managers/admins)
-status: In Progress
+status: Done
 assignee:
   - '@jorgejavierleon'
 created_date: '2026-09-20 11:46'
-updated_date: '2026-09-20 12:11'
+updated_date: '2026-09-20 12:44'
 labels: []
 dependencies: []
 ordinal: 112000
@@ -19,8 +19,14 @@ The dashboard currently only shows something real for employees who hold ClockOw
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
-- [ ] #3 npm run types:check passes when TypeScript touched
-- [ ] #4 Every PHP change has a Pest test
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #2 sa test --compact passes
+- [x] #3 npm run types:check passes when TypeScript touched
+- [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All 4 subtasks delivered: employee action-items card, supervisor/admin pending-approvals card, who's-out-today widget, and an always-visible upcoming-holidays list. The old empty placeholder boxes are gone — every authenticated user now sees at least the holidays widget. Verified with 81 passing Pest tests across the touched suites plus live browser checks of each widget's show/hide/empty states for an employee, a supervisor, and an admin.
+<!-- SECTION:FINAL_SUMMARY:END -->
