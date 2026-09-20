@@ -100,6 +100,13 @@ return [
             'title' => 'Próximos feriados',
             'empty' => 'No hay próximos feriados.',
         ],
+        'attendance_rate' => [
+            'title' => 'Tasa de asistencia',
+            'subtitle' => 'Esta semana',
+            'trend' => ':points pts vs. la semana pasada',
+            'trend_flat' => 'Sin cambios vs. la semana pasada',
+            'empty' => 'Aún no hay jornadas programadas esta semana.',
+        ],
     ],
 
     'marks' => [

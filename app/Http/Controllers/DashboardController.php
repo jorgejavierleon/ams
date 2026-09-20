@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Actions\SyncOfficialHolidays;
 use App\Enums\LeaveStatus;
 use App\Enums\MarkType;
+use App\Enums\WorkdayStatus;
 use App\Managers\MarkManager;
 use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\Scopes\HolidayScope;
 use App\Models\User;
+use App\Models\Workday;
+use App\Services\WorkdayCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -48,6 +51,7 @@ class DashboardController extends Controller
                 : null,
             'whosOut' => $this->whosOut($user),
             'upcomingHolidays' => $this->upcomingHolidays(),
+            'attendanceRate' => $this->attendanceRate($user),
         ]);
     }
 
@@ -97,6 +101,66 @@ class DashboardController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * The team's attendance rate for the current week vs last week (KOL-120),
+     * scoped exactly like {@see whosOut()}: null (card hidden) for anyone
+     * holding neither ViewTeam:Workday nor the admin role, org-wide for
+     * admins, the supervisor's own direct reports otherwise. Attendance is
+     * already computed per employee per day by {@see WorkdayCalculator}
+     * (any {@see WorkdayStatus} other than Absent counts as attended), so this
+     * only aggregates the existing Workday rows rather than computing new
+     * attendance logic.
+     *
+     * @return array{rate: float|null, trend: float|null}|null
+     */
+    private function attendanceRate(User $user): ?array
+    {
+        $isAdmin = $user->hasRole('admin');
+
+        if (! $isAdmin && ! $user->can('ViewTeam:Workday')) {
+            return null;
+        }
+
+        $supervisorId = $isAdmin ? null : $user->id;
+        $today = Carbon::today();
+        $currentWeekStart = $today->copy()->startOfWeek(Carbon::MONDAY);
+        $previousWeekStart = $currentWeekStart->copy()->subWeek();
+        $previousWeekEnd = $currentWeekStart->copy()->subDay();
+
+        $currentRate = $this->weeklyAttendanceRate($supervisorId, $currentWeekStart, $today->copy()->endOfWeek(Carbon::SUNDAY));
+        $previousRate = $this->weeklyAttendanceRate($supervisorId, $previousWeekStart, $previousWeekEnd);
+
+        return [
+            'rate' => $currentRate,
+            'trend' => $currentRate !== null && $previousRate !== null
+                ? round($currentRate - $previousRate, 1)
+                : null,
+        ];
+    }
+
+    /**
+     * The attendance rate (attended / scheduled workdays, as a percentage)
+     * for one week, or null when the visible scope has no computed Workday
+     * rows in the period — the empty state, never a misleading 0%.
+     */
+    private function weeklyAttendanceRate(?int $supervisorId, Carbon $from, Carbon $to): ?float
+    {
+        $counts = Workday::query()
+            ->betweenDates($from, $to)
+            ->when($supervisorId, fn ($query) => $query->whereHas(
+                'user',
+                fn ($employee) => $employee->where('supervisor_id', $supervisorId),
+            ))
+            ->selectRaw('count(*) as total, sum(case when status = ? then 1 else 0 end) as absent', [WorkdayStatus::Absent->value])
+            ->first();
+
+        if ($counts === null || (int) $counts->total === 0) {
+            return null;
+        }
+
+        return round((($counts->total - $counts->absent) / $counts->total) * 100, 1);
     }
 
     /**

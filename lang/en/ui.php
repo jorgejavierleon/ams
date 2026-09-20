@@ -100,6 +100,13 @@ return [
             'title' => 'Upcoming holidays',
             'empty' => 'No upcoming holidays.',
         ],
+        'attendance_rate' => [
+            'title' => 'Attendance rate',
+            'subtitle' => 'This week',
+            'trend' => ':points pts vs last week',
+            'trend_flat' => 'No change vs last week',
+            'empty' => 'No scheduled workdays this week yet.',
+        ],
     ],
 
     'marks' => [
