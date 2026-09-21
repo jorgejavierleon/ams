@@ -117,13 +117,11 @@
     --danger: oklch(0.5063 0.1965 22);
     --danger-bg: oklch(0.9268 0.0287 17);
 
-    /* Pastel trio matching the dashboard's existing icon-badge palette
-       (teal/amber/rose — see iconTones in dashboard.tsx), used as solid
-       chart fills. Same value in light and dark: these read clearly on
-       both surfaces without needing separate tuning per theme. */
-    --attendance-on-time: #5eead4;
-    --attendance-late: #fcd34d;
-    --attendance-absent: #fda4af;
+    /* Pastel trio for the attendance chart's solid fills, same value in
+       light and dark. */
+    --attendance-on-time: #d9f5f2;
+    --attendance-late: #fff0d9;
+    --attendance-absent: #ffdee6;
 
     --chart-1: oklch(0.3424 0.0774 239.1);
     --chart-2: oklch(0.6775 0.2117 20.1);
