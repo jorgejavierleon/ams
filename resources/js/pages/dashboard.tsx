@@ -9,10 +9,7 @@ import {
     ListChecks,
     LogIn,
     LogOut,
-    Minus,
     Sun,
-    TrendingDown,
-    TrendingUp,
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -699,90 +696,8 @@ function WhosOutCard({ entries }: { entries: WhosOutEntry[] }) {
 }
 
 /**
- * The team's attendance rate for the current week vs last week (KOL-120),
- * scoped server-side exactly like {@link WhosOutCard} — the card isn't
- * rendered at all when `attendanceRate` is null upstream. `rate` is null
- * when the visible scope has no scheduled Workday rows yet this week, shown
- * as an explicit empty state rather than a misleading 0%.
- */
-function AttendanceRateCard({
-    attendanceRate,
-}: {
-    attendanceRate: AttendanceRate;
-}) {
-    const { t } = useTranslations();
-    const { rate, trend } = attendanceRate;
-
-    return (
-        <Card className="h-full w-full gap-3 p-4">
-            <CardHeader className="px-2.5">
-                <CardTitle>{t('ui.dashboard.attendance_rate.title')}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-1 px-2.5">
-                {rate === null ? (
-                    <p className="py-2 text-sm text-muted-foreground">
-                        {t('ui.dashboard.attendance_rate.empty')}
-                    </p>
-                ) : (
-                    <>
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-mono text-3xl font-semibold tabular-nums">
-                                {rate}%
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                                {t('ui.dashboard.attendance_rate.subtitle')}
-                            </span>
-                        </div>
-                        <AttendanceRateTrend trend={trend} />
-                    </>
-                )}
-            </CardContent>
-        </Card>
-    );
-}
-
-function AttendanceRateTrend({ trend }: { trend: number | null }) {
-    const { t } = useTranslations();
-
-    if (trend === null) {
-        return null;
-    }
-
-    if (trend === 0) {
-        return (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Minus className="size-3.5" />
-                {t('ui.dashboard.attendance_rate.trend_flat')}
-            </span>
-        );
-    }
-
-    const isUp = trend > 0;
-
-    return (
-        <span
-            className={cn(
-                'flex items-center gap-1 text-xs font-medium',
-                isUp
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-rose-600 dark:text-rose-400',
-            )}
-        >
-            {isUp ? (
-                <TrendingUp className="size-3.5" />
-            ) : (
-                <TrendingDown className="size-3.5" />
-            )}
-            {t('ui.dashboard.attendance_rate.trend', {
-                points: `${isUp ? '+' : ''}${trend}`,
-            })}
-        </span>
-    );
-}
-
-/**
  * The team's on-time/late/absent breakdown for the last 4 weeks (KOL-121),
- * scoped server-side exactly like {@link AttendanceRateCard} — the card
+ * scoped server-side exactly like {@link WhosOutCard} — the card
  * isn't rendered at all when `attendanceOverview` is null upstream. `days`
  * comes back empty (rather than a zero-filled series) when the visible
  * scope has no computed Workday rows anywhere in the period, shown as an
@@ -933,7 +848,6 @@ export default function Dashboard({
     clock,
     whosOut,
     upcomingHolidays,
-    attendanceRate,
     attendanceOverview,
 }: DashboardProps) {
     const { t } = useTranslations();
@@ -972,13 +886,6 @@ export default function Dashboard({
                     {whosOut ? (
                         <div className="col-span-12 md:col-span-6 xl:col-span-3">
                             <WhosOutCard entries={whosOut} />
-                        </div>
-                    ) : null}
-                    {attendanceRate ? (
-                        <div className="col-span-12 md:col-span-6 xl:col-span-3">
-                            <AttendanceRateCard
-                                attendanceRate={attendanceRate}
-                            />
                         </div>
                     ) : null}
                     <div className="col-span-12 md:col-span-6 xl:col-span-6">
