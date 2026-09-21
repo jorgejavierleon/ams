@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jorgejavierleon'
 created_date: '2026-09-21 08:55'
-updated_date: '2026-09-21 09:41'
+updated_date: '2026-09-21 11:38'
 labels: []
 dependencies: []
 ordinal: 118000
@@ -73,6 +73,8 @@ Scenario: No workdays in the period
 Verification: vendor/bin/pint --dirty clean; phpstan level 7 clean on DashboardController.php; npm run types:check has only pre-existing unrelated errors in roles/index.tsx and roles/show.tsx; sail artisan test --compact --filter=DashboardAttendanceOverviewTest -> 7/7 passed; --filter=Dashboard -> 46/46 passed; --filter=Workday -> 138/138 passed (no regression). Full suite not run, per standing convention of running only filtered tests during ticket work. Manually verified in browser against the seeded demo data (admin@example.com) at /dashboard: the stacked bar chart renders under 'Resumen de asistencia · Últimas 4 semanas' with Ausencias/Atrasos/A tiempo legend; cross-checked against a raw DB tally of the same 28-day window (on_time=0, late=116, absent=24), which explains why no green segment is visible — the demo seed genuinely has zero on-time days, confirming the bucketing logic rather than a bug.
 
 Code review (medium) found one real bug: the chart's tick/tooltip date formatters passed the raw YYYY-MM-DD string to formatDate(), which JS parses as UTC midnight, shifting the displayed day back by one in negative-UTC-offset zones (Santiago). Fixed by appending T00:00:00 before formatting, matching the existing convention already used in holidays/index.tsx and legal-hour-limits/index.tsx. Re-verified in browser: last bar now correctly reads '21 sept' (today) instead of '20 sept'. Re-ran eslint/prettier/types:check clean after the fix.
+
+Follow-up per user request: replaced the chart's success/warning/destructive colors with a dedicated brand-inspired 3-color set (new --attendance-on-time/-late/-absent tokens in resources/css/app.css, light+dark). Light mode uses the exact brand 'estado de cumplimiento' hex codes the user supplied (#0E7A54 green / #A66A0A amber / #C41E2E red); dark mode uses brighter, still brand-family tints for contrast on the dark navy background (emerald #34D399, amber #FBBF24, and the brand's own Accent Coral #FF4F5E for absent). Also added 6px (--radius, matching Card's rounded-lg) corner rounding to the outer edges of the stacked bars (bottom of on_time, top of absent). Verified visually in both light and dark mode via browser.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

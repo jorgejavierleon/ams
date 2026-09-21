@@ -799,15 +799,15 @@ function AttendanceOverviewCard({
     const chartConfig: ChartConfig = {
         on_time: {
             label: t('ui.dashboard.attendance_overview.on_time'),
-            color: 'var(--success)',
+            color: 'var(--attendance-on-time)',
         },
         late: {
             label: t('ui.dashboard.attendance_overview.late'),
-            color: 'var(--warning)',
+            color: 'var(--attendance-late)',
         },
         absent: {
             label: t('ui.dashboard.attendance_overview.absent'),
-            color: 'var(--destructive)',
+            color: 'var(--attendance-absent)',
         },
     };
 
@@ -863,6 +863,7 @@ function AttendanceOverviewCard({
                                 dataKey="on_time"
                                 stackId="attendance"
                                 fill="var(--color-on_time)"
+                                radius={[0, 0, 6, 6]}
                             />
                             <Bar
                                 dataKey="late"
@@ -873,6 +874,7 @@ function AttendanceOverviewCard({
                                 dataKey="absent"
                                 stackId="attendance"
                                 fill="var(--color-absent)"
+                                radius={[6, 6, 0, 0]}
                             />
                         </BarChart>
                     </ChartContainer>
