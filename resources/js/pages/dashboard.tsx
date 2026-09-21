@@ -16,11 +16,20 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    ChartContainer,
+    ChartLegend,
+    ChartLegendContent,
+    ChartTooltip,
+    ChartTooltipContent,
+} from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import {
@@ -67,11 +76,23 @@ type AttendanceRate = {
     trend: number | null;
 };
 
+type AttendanceOverviewDay = {
+    date: string;
+    on_time: number;
+    late: number;
+    absent: number;
+};
+
+type AttendanceOverview = {
+    days: AttendanceOverviewDay[];
+};
+
 type DashboardProps = {
     clock: Clock | null;
     whosOut: WhosOutEntry[] | null;
     upcomingHolidays: Holiday[];
     attendanceRate: AttendanceRate | null;
+    attendanceOverview: AttendanceOverview | null;
 };
 
 type MarkType = 'in' | 'out';
@@ -684,7 +705,11 @@ function WhosOutCard({ entries }: { entries: WhosOutEntry[] }) {
  * when the visible scope has no scheduled Workday rows yet this week, shown
  * as an explicit empty state rather than a misleading 0%.
  */
-function AttendanceRateCard({ attendanceRate }: { attendanceRate: AttendanceRate }) {
+function AttendanceRateCard({
+    attendanceRate,
+}: {
+    attendanceRate: AttendanceRate;
+}) {
     const { t } = useTranslations();
     const { rate, trend } = attendanceRate;
 
@@ -755,6 +780,108 @@ function AttendanceRateTrend({ trend }: { trend: number | null }) {
     );
 }
 
+/**
+ * The team's on-time/late/absent breakdown for the last 4 weeks (KOL-121),
+ * scoped server-side exactly like {@link AttendanceRateCard} — the card
+ * isn't rendered at all when `attendanceOverview` is null upstream. `days`
+ * comes back empty (rather than a zero-filled series) when the visible
+ * scope has no computed Workday rows anywhere in the period, shown as an
+ * explicit empty state.
+ */
+function AttendanceOverviewCard({
+    attendanceOverview,
+}: {
+    attendanceOverview: AttendanceOverview;
+}) {
+    const { t, formatDate } = useTranslations();
+    const { days } = attendanceOverview;
+
+    const chartConfig: ChartConfig = {
+        on_time: {
+            label: t('ui.dashboard.attendance_overview.on_time'),
+            color: 'var(--success)',
+        },
+        late: {
+            label: t('ui.dashboard.attendance_overview.late'),
+            color: 'var(--warning)',
+        },
+        absent: {
+            label: t('ui.dashboard.attendance_overview.absent'),
+            color: 'var(--destructive)',
+        },
+    };
+
+    return (
+        <Card className="h-full w-full gap-3 p-4">
+            <CardHeader className="flex-row items-baseline gap-2 px-2.5">
+                <CardTitle>
+                    {t('ui.dashboard.attendance_overview.title')}
+                </CardTitle>
+                <span className="text-xs text-muted-foreground">
+                    {t('ui.dashboard.attendance_overview.subtitle')}
+                </span>
+            </CardHeader>
+            <CardContent className="px-2.5">
+                {days.length === 0 ? (
+                    <p className="py-2 text-sm text-muted-foreground">
+                        {t('ui.dashboard.attendance_overview.empty')}
+                    </p>
+                ) : (
+                    <ChartContainer
+                        config={chartConfig}
+                        className="aspect-auto h-64 w-full"
+                    >
+                        <BarChart data={days}>
+                            <CartesianGrid vertical={false} />
+                            <XAxis
+                                dataKey="date"
+                                tickLine={false}
+                                axisLine={false}
+                                tickMargin={8}
+                                minTickGap={24}
+                                tickFormatter={(value: string) =>
+                                    formatDate(`${value}T00:00:00`, {
+                                        day: 'numeric',
+                                        month: 'short',
+                                    })
+                                }
+                            />
+                            <ChartTooltip
+                                content={
+                                    <ChartTooltipContent
+                                        labelFormatter={(value) =>
+                                            formatDate(`${value}T00:00:00`, {
+                                                day: 'numeric',
+                                                month: 'long',
+                                            })
+                                        }
+                                    />
+                                }
+                            />
+                            <ChartLegend content={<ChartLegendContent />} />
+                            <Bar
+                                dataKey="on_time"
+                                stackId="attendance"
+                                fill="var(--color-on_time)"
+                            />
+                            <Bar
+                                dataKey="late"
+                                stackId="attendance"
+                                fill="var(--color-late)"
+                            />
+                            <Bar
+                                dataKey="absent"
+                                stackId="attendance"
+                                fill="var(--color-absent)"
+                            />
+                        </BarChart>
+                    </ChartContainer>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 function HolidayRow({ holiday }: { holiday: Holiday }) {
     const { formatDate } = useTranslations();
 
@@ -805,6 +932,7 @@ export default function Dashboard({
     whosOut,
     upcomingHolidays,
     attendanceRate,
+    attendanceOverview,
 }: DashboardProps) {
     const { t } = useTranslations();
     const { auth } = usePage().props;
@@ -846,12 +974,21 @@ export default function Dashboard({
                     ) : null}
                     {attendanceRate ? (
                         <div className="col-span-12 md:col-span-6 xl:col-span-3">
-                            <AttendanceRateCard attendanceRate={attendanceRate} />
+                            <AttendanceRateCard
+                                attendanceRate={attendanceRate}
+                            />
                         </div>
                     ) : null}
                     <div className="col-span-12 md:col-span-6 xl:col-span-6">
                         <UpcomingHolidaysCard holidays={upcomingHolidays} />
                     </div>
+                    {attendanceOverview ? (
+                        <div className="col-span-12">
+                            <AttendanceOverviewCard
+                                attendanceOverview={attendanceOverview}
+                            />
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </>

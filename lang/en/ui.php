@@ -107,6 +107,14 @@ return [
             'trend_flat' => 'No change vs last week',
             'empty' => 'No scheduled workdays this week yet.',
         ],
+        'attendance_overview' => [
+            'title' => 'Attendance overview',
+            'subtitle' => 'Last 4 weeks',
+            'on_time' => 'On time',
+            'late' => 'Late',
+            'absent' => 'Absent',
+            'empty' => 'No computed workdays in the last 4 weeks yet.',
+        ],
     ],
 
     'marks' => [

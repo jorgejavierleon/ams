@@ -13,6 +13,7 @@ use App\Models\Scopes\HolidayScope;
 use App\Models\User;
 use App\Models\Workday;
 use App\Services\WorkdayCalculator;
+use App\Support\Duration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -30,6 +31,12 @@ class DashboardController extends Controller
      * the full calendar (KOL-119.4).
      */
     private const UPCOMING_HOLIDAYS_LIMIT = 3;
+
+    /**
+     * The attendance overview chart (KOL-121) trends the last 4 calendar
+     * weeks, inclusive of today.
+     */
+    private const ATTENDANCE_OVERVIEW_DAYS = 28;
 
     public function index(Request $request, MarkManager $marks): Response
     {
@@ -52,6 +59,7 @@ class DashboardController extends Controller
             'whosOut' => $this->whosOut($user),
             'upcomingHolidays' => $this->upcomingHolidays(),
             'attendanceRate' => $this->attendanceRate($user),
+            'attendanceOverview' => $this->attendanceOverview($user),
         ]);
     }
 
@@ -163,6 +171,82 @@ class DashboardController extends Controller
         $absent = (clone $query)->where('status', WorkdayStatus::Absent)->count();
 
         return round((($total - $absent) / $total) * 100, 1);
+    }
+
+    /**
+     * Daily on-time/late/absent counts for the attendance overview chart
+     * (KOL-121), scoped exactly like {@see attendanceRate()}: null (chart
+     * hidden) for anyone holding neither ViewTeam:Workday nor the admin
+     * role, org-wide for admins, the supervisor's own direct reports
+     * otherwise. `days` is empty when the visible scope has no computed
+     * Workday rows anywhere in the period — the empty state — and otherwise
+     * always holds one entry per day of the period, zero-filled for days
+     * with no rows, so the chart's x-axis stays continuous.
+     *
+     * @return array{days: array<int, array{date: string, on_time: int, late: int, absent: int}>}|null
+     */
+    private function attendanceOverview(User $user): ?array
+    {
+        $isAdmin = $user->hasRole('admin');
+
+        if (! $isAdmin && ! $user->can('ViewTeam:Workday')) {
+            return null;
+        }
+
+        $supervisorId = $isAdmin ? null : $user->id;
+        $today = Carbon::today();
+        $periodStart = $today->copy()->subDays(self::ATTENDANCE_OVERVIEW_DAYS - 1);
+
+        $workdays = Workday::query()
+            ->betweenDates($periodStart, $today)
+            ->when($supervisorId, fn ($query) => $query->whereHas(
+                'user',
+                fn ($employee) => $employee->where('supervisor_id', $supervisorId),
+            ))
+            ->get(['date', 'status', 'in_time_difference']);
+
+        if ($workdays->isEmpty()) {
+            return ['days' => []];
+        }
+
+        $workdaysByDate = $workdays->groupBy(fn (Workday $workday) => $workday->date->toDateString());
+
+        $days = [];
+
+        for ($date = $periodStart->copy(); $date->lte($today); $date->addDay()) {
+            $dateKey = $date->toDateString();
+            $counts = ['on_time' => 0, 'late' => 0, 'absent' => 0];
+
+            foreach ($workdaysByDate->get($dateKey, []) as $workday) {
+                $counts[$this->attendanceBucket($workday)]++;
+            }
+
+            $days[] = ['date' => $dateKey, ...$counts];
+        }
+
+        return ['days' => $days];
+    }
+
+    /**
+     * Which of the three attendance overview buckets a Workday row falls
+     * into: absent when its status says so, otherwise late when its
+     * clock-in ran past the shift start ({@see Workday::$in_time_difference}
+     * is positive), otherwise on-time.
+     *
+     * @return 'on_time'|'late'|'absent'
+     */
+    private function attendanceBucket(Workday $workday): string
+    {
+        if ($workday->status === WorkdayStatus::Absent) {
+            return 'absent';
+        }
+
+        $inTimeDifference = $workday->in_time_difference;
+        $isLate = $inTimeDifference !== null
+            && ! str_starts_with($inTimeDifference, '-')
+            && Duration::fromTimeString($inTimeDifference)->seconds > 0;
+
+        return $isLate ? 'late' : 'on_time';
     }
 
     /**

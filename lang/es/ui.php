@@ -107,6 +107,14 @@ return [
             'trend_flat' => 'Sin cambios vs. la semana pasada',
             'empty' => 'Aún no hay jornadas programadas esta semana.',
         ],
+        'attendance_overview' => [
+            'title' => 'Resumen de asistencia',
+            'subtitle' => 'Últimas 4 semanas',
+            'on_time' => 'A tiempo',
+            'late' => 'Atrasos',
+            'absent' => 'Ausencias',
+            'empty' => 'Aún no hay jornadas calculadas en las últimas 4 semanas.',
+        ],
     ],
 
     'marks' => [
