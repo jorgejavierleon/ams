@@ -147,20 +147,22 @@ class DashboardController extends Controller
      */
     private function weeklyAttendanceRate(?int $supervisorId, Carbon $from, Carbon $to): ?float
     {
-        $counts = Workday::query()
+        $query = Workday::query()
             ->betweenDates($from, $to)
             ->when($supervisorId, fn ($query) => $query->whereHas(
                 'user',
                 fn ($employee) => $employee->where('supervisor_id', $supervisorId),
-            ))
-            ->selectRaw('count(*) as total, sum(case when status = ? then 1 else 0 end) as absent', [WorkdayStatus::Absent->value])
-            ->first();
+            ));
 
-        if ($counts === null || (int) $counts->total === 0) {
+        $total = (clone $query)->count();
+
+        if ($total === 0) {
             return null;
         }
 
-        return round((($counts->total - $counts->absent) / $counts->total) * 100, 1);
+        $absent = (clone $query)->where('status', WorkdayStatus::Absent)->count();
+
+        return round((($total - $absent) / $total) * 100, 1);
     }
 
     /**
