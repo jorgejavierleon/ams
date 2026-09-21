@@ -121,7 +121,7 @@
        tones, used as solid chart fills (rather than --success/--warning,
        which are tuned for badge text on a tinted background). */
     --attendance-on-time: #0e7a54;
-    --attendance-late: #96733a;
+    --attendance-late: #8c7a5c;
     --attendance-absent: #c41e2e;
 
     --chart-1: oklch(0.3424 0.0774 239.1);
@@ -183,7 +183,7 @@
     --danger-bg: oklch(0.32 0.095 20);
 
     --attendance-on-time: #34d399;
-    --attendance-late: #c9974c;
+    --attendance-late: #b8a47e;
     --attendance-absent: #ff4f5e;
 
     --chart-1: oklch(0.74 0.062 219);

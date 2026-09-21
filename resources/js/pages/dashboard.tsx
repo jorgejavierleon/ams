@@ -831,7 +831,7 @@ function AttendanceOverviewCard({
                         config={chartConfig}
                         className="aspect-auto h-64 w-full"
                     >
-                        <BarChart data={days} barCategoryGap="45%">
+                        <BarChart data={days} barSize={20}>
                             <CartesianGrid vertical={false} />
                             <XAxis
                                 dataKey="date"
