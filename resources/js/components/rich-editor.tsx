@@ -104,7 +104,7 @@ export function RichEditor({
     }
 
     return (
-        <div className="rounded-md border border-input bg-transparent shadow-xs focus-within:ring-1 focus-within:ring-ring">
+        <div className="rounded-md border border-input bg-card shadow-xs focus-within:ring-1 focus-within:ring-ring">
             <div className="flex flex-wrap items-center gap-1 border-b border-input p-1">
                 <Toggle
                     size="sm"
