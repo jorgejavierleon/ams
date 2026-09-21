@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jorgejavierleon'
 created_date: '2026-09-21 08:55'
-updated_date: '2026-09-21 11:38'
+updated_date: '2026-09-21 23:06'
 labels: []
 dependencies: []
 ordinal: 118000
@@ -75,6 +75,20 @@ Verification: vendor/bin/pint --dirty clean; phpstan level 7 clean on DashboardC
 Code review (medium) found one real bug: the chart's tick/tooltip date formatters passed the raw YYYY-MM-DD string to formatDate(), which JS parses as UTC midnight, shifting the displayed day back by one in negative-UTC-offset zones (Santiago). Fixed by appending T00:00:00 before formatting, matching the existing convention already used in holidays/index.tsx and legal-hour-limits/index.tsx. Re-verified in browser: last bar now correctly reads '21 sept' (today) instead of '20 sept'. Re-ran eslint/prettier/types:check clean after the fix.
 
 Follow-up per user request: replaced the chart's success/warning/destructive colors with a dedicated brand-inspired 3-color set (new --attendance-on-time/-late/-absent tokens in resources/css/app.css, light+dark). Light mode uses the exact brand 'estado de cumplimiento' hex codes the user supplied (#0E7A54 green / #A66A0A amber / #C41E2E red); dark mode uses brighter, still brand-family tints for contrast on the dark navy background (emerald #34D399, amber #FBBF24, and the brand's own Accent Coral #FF4F5E for absent). Also added 6px (--radius, matching Card's rounded-lg) corner rounding to the outer edges of the stacked bars (bottom of on_time, top of absent). Verified visually in both light and dark mode via browser.
+
+Follow-up: dark mode's 'late' color (#FBBF24) read as too bright/neon per user feedback. Replaced with a desaturated ochre/gold (#C9974C) — verified in browser, now reads as a muted warm tone rather than vivid yellow, still clearly distinct from the green/coral.
+
+Follow-up: user pointed out the previous desaturation fix only touched dark mode; light mode still had the original saturated brand amber (#A66A0A), which read as too bright/loud against the white card. Desaturated light mode's --attendance-late to #96733A (muted brown-tan) to match the dark-mode treatment. Also thinned the bars per a reference screenshot (slim bars with visible gaps) by adding barCategoryGap="45%" to the BarChart. Verified both changes in browser in light and dark mode.
+
+Follow-up: barCategoryGap=45% produced ~5px hairline bars (Recharts appears to size stacked-bar groups differently than expected from gap percentages alone), and the light-mode late desaturation was too subtle to register as a real change. Fixed by switching to an explicit barSize={20} on the BarChart (predictable width regardless of category count), and pushing the 'late' color further toward a grey-taupe (light #8C7A5C, dark #B8A47E) instead of the previous goldenrod-leaning tones, per a reference screenshot of a slim rounded-bar chart. Verified pixel widths via computed SVG path (20px bars, clear gaps) and colors via computed style in both themes.
+
+Follow-up: user pointed at the dashboard's existing pastel icon badges (iconTones in dashboard.tsx: amber for 'Solicitudes de permiso', rose for 'Solicitudes de horas extra', teal for 'Próximos feriados') and asked for the chart to use those same pastel tones. Replaced the attendance CSS tokens with Tailwind's teal-300/amber-300/rose-300 (#5EEAD4/#FCD34D/#FDA4AF) — matching the app's own established badge palette instead of the brand compliance colors — and consolidated to a single value shared by light and dark (removed the separate .dark overrides), since these pastels read clearly on both surfaces without per-theme tuning. Verified in browser, both themes.
+
+Follow-up: user supplied exact colors — on_time rgb(217,245,242)/#D9F5F2, late rgb(255,240,217)/#FFF0D9, absent rgb(255,222,230)/#FFDEE6. Set these directly as the --attendance-* tokens (one value for both light/dark). Verified in browser: reads as soft, pale pastel bars against both the dark navy and white card surfaces.
+
+Follow-up: the exact user-supplied pale colors (#D9F5F2/#FFF0D9/#FFDEE6) read as too washed-out/flat once rendered. Reverted to the previous teal-300/amber-300/rose-300 trio (#5EEAD4/#FCD34D/#FDA4AF) per explicit user instruction.
+
+Follow-up: removed the KOL-120 'Tasa de asistencia' (attendance rate) widget from the dashboard UI per user request ('for now' — a temporary removal). Deleted only the frontend AttendanceRateCard/AttendanceRateTrend components, their JSX slot, and the now-unused Minus/TrendingUp/TrendingDown icon imports. Left DashboardController::attendanceRate()/weeklyAttendanceRate() and DashboardAttendanceRateTest.php untouched — the backend still computes and returns attendanceRate (unused by the UI for now), so re-adding the card later is a frontend-only change, and the existing test suite keeps passing without touching tests. Verified: sail artisan test --filter=Dashboard 46/46 passed; eslint/prettier/types clean; confirmed visually in browser the card no longer renders and the grid reflows correctly (3-3-6 row, then the full-width attendance overview chart).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
