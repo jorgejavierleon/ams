@@ -119,9 +119,9 @@
 
     /* Pastel trio for the attendance chart's solid fills, same value in
        light and dark. */
-    --attendance-on-time: #d9f5f2;
-    --attendance-late: #fff0d9;
-    --attendance-absent: #ffdee6;
+    --attendance-on-time: #5eead4;
+    --attendance-late: #fcd34d;
+    --attendance-absent: #fda4af;
 
     --chart-1: oklch(0.3424 0.0774 239.1);
     --chart-2: oklch(0.6775 0.2117 20.1);
