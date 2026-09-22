@@ -1,5 +1,9 @@
 # Manual QA checklist
 
+### KOL-123 — Settings forms in a white card
+
+- [ ] On /settings/notifications, /settings/documents and /settings/overtime, confirm the form sits inside a single white card on the gray page background, matching Empresa/Sucursales/Cargos forms.
+
 ### KOL-123.3 — Settings: Horas extras page + retire /organization-settings
 
 - [ ] As an admin, open /settings/overtime, change the mode select and both numeric fields, toggle the pre-shift-excess switch, save, and confirm all four persist after reload.
