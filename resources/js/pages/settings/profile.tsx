@@ -7,6 +7,7 @@ import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useInitials } from '@/hooks/use-initials';
@@ -52,146 +53,157 @@ export default function Profile({
                     description={t('ui.settings.profile.description')}
                 />
 
-                <Form
-                    {...ProfileController.update.form()}
-                    options={{
-                        preserveScroll: true,
-                    }}
-                    className="space-y-6"
-                >
-                    {({ processing, errors }) => (
-                        <>
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-16 w-16">
-                                    <AvatarImage
-                                        src={
-                                            avatarPreview ??
-                                            auth.user.avatar ??
-                                            undefined
-                                        }
-                                        alt={auth.user.name}
-                                    />
-                                    <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                        {getInitials(auth.user.name ?? '')}
-                                    </AvatarFallback>
-                                </Avatar>
+                <Card>
+                    <CardContent>
+                        <Form
+                            {...ProfileController.update.form()}
+                            options={{
+                                preserveScroll: true,
+                            }}
+                            className="space-y-6"
+                        >
+                            {({ processing, errors }) => (
+                                <>
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="h-16 w-16">
+                                            <AvatarImage
+                                                src={
+                                                    avatarPreview ??
+                                                    auth.user.avatar ??
+                                                    undefined
+                                                }
+                                                alt={auth.user.name}
+                                            />
+                                            <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                                {getInitials(
+                                                    auth.user.name ?? '',
+                                                )}
+                                            </AvatarFallback>
+                                        </Avatar>
 
-                                <div className="space-y-1">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                            fileInputRef.current?.click()
-                                        }
-                                    >
-                                        {t('ui.settings.profile.change_avatar')}
-                                    </Button>
-                                    <p className="text-xs text-muted-foreground">
-                                        {t('ui.settings.profile.avatar_hint')}
-                                    </p>
-                                </div>
-
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    name="avatar"
-                                    accept="image/*"
-                                    className="hidden"
-                                    data-test="avatar-input"
-                                    onChange={handleAvatarChange}
-                                />
-
-                                <InputError message={errors.avatar} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">
-                                    {t('ui.settings.profile.name')}
-                                </Label>
-
-                                <Input
-                                    id="name"
-                                    className="mt-1 block w-full"
-                                    defaultValue={auth.user.name}
-                                    name="name"
-                                    required
-                                    autoComplete="name"
-                                    placeholder={t(
-                                        'ui.settings.profile.name_placeholder',
-                                    )}
-                                />
-
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.name}
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">
-                                    {t('ui.settings.profile.email')}
-                                </Label>
-
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    className="mt-1 block w-full"
-                                    defaultValue={auth.user.email}
-                                    name="email"
-                                    required
-                                    autoComplete="username"
-                                    placeholder={t(
-                                        'ui.settings.profile.email_placeholder',
-                                    )}
-                                />
-
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.email}
-                                />
-                            </div>
-
-                            {mustVerifyEmail &&
-                                auth.user.email_verified_at === null && (
-                                    <div>
-                                        <p className="-mt-4 text-sm text-muted-foreground">
-                                            {t(
-                                                'ui.settings.profile.unverified',
-                                            )}{' '}
-                                            <Link
-                                                href={send()}
-                                                as="button"
-                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                        <div className="space-y-1">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() =>
+                                                    fileInputRef.current?.click()
+                                                }
                                             >
                                                 {t(
-                                                    'ui.settings.profile.resend',
+                                                    'ui.settings.profile.change_avatar',
                                                 )}
-                                            </Link>
-                                        </p>
-
-                                        {status ===
-                                            'verification-link-sent' && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
+                                            </Button>
+                                            <p className="text-xs text-muted-foreground">
                                                 {t(
-                                                    'ui.settings.profile.verification_sent',
+                                                    'ui.settings.profile.avatar_hint',
+                                                )}
+                                            </p>
+                                        </div>
+
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            name="avatar"
+                                            accept="image/*"
+                                            className="hidden"
+                                            data-test="avatar-input"
+                                            onChange={handleAvatarChange}
+                                        />
+
+                                        <InputError message={errors.avatar} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="name">
+                                            {t('ui.settings.profile.name')}
+                                        </Label>
+
+                                        <Input
+                                            id="name"
+                                            className="mt-1 block w-full"
+                                            defaultValue={auth.user.name}
+                                            name="name"
+                                            required
+                                            autoComplete="name"
+                                            placeholder={t(
+                                                'ui.settings.profile.name_placeholder',
+                                            )}
+                                        />
+
+                                        <InputError
+                                            className="mt-2"
+                                            message={errors.name}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="email">
+                                            {t('ui.settings.profile.email')}
+                                        </Label>
+
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            className="mt-1 block w-full"
+                                            defaultValue={auth.user.email}
+                                            name="email"
+                                            required
+                                            autoComplete="username"
+                                            placeholder={t(
+                                                'ui.settings.profile.email_placeholder',
+                                            )}
+                                        />
+
+                                        <InputError
+                                            className="mt-2"
+                                            message={errors.email}
+                                        />
+                                    </div>
+
+                                    {mustVerifyEmail &&
+                                        auth.user.email_verified_at ===
+                                            null && (
+                                            <div>
+                                                <p className="-mt-4 text-sm text-muted-foreground">
+                                                    {t(
+                                                        'ui.settings.profile.unverified',
+                                                    )}{' '}
+                                                    <Link
+                                                        href={send()}
+                                                        as="button"
+                                                        className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                                    >
+                                                        {t(
+                                                            'ui.settings.profile.resend',
+                                                        )}
+                                                    </Link>
+                                                </p>
+
+                                                {status ===
+                                                    'verification-link-sent' && (
+                                                    <div className="mt-2 text-sm font-medium text-green-600">
+                                                        {t(
+                                                            'ui.settings.profile.verification_sent',
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         )}
-                                    </div>
-                                )}
 
-                            <div className="flex items-center gap-4">
-                                <Button
-                                    disabled={processing}
-                                    data-test="update-profile-button"
-                                >
-                                    {t('ui.common.save')}
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+                                    <div className="flex items-center gap-4">
+                                        <Button
+                                            disabled={processing}
+                                            data-test="update-profile-button"
+                                        >
+                                            {t('ui.common.save')}
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
+                        </Form>
+                    </CardContent>
+                </Card>
             </div>
 
             <DeleteUser />

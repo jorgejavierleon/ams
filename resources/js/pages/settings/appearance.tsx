@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import AppearanceTabs from '@/components/appearance-tabs';
 import Heading from '@/components/heading';
+import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 
 export default function Appearance() {
@@ -18,7 +19,11 @@ export default function Appearance() {
                     title={t('ui.settings.appearance.title')}
                     description={t('ui.settings.appearance.description')}
                 />
-                <AppearanceTabs />
+                <Card>
+                    <CardContent>
+                        <AppearanceTabs />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

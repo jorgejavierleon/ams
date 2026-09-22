@@ -2,7 +2,8 @@
 
 ### KOL-123 — Settings forms in a white card
 
-- [ ] On /settings/notifications, /settings/documents and /settings/overtime, confirm the form sits inside a single white card on the gray page background, matching Empresa/Sucursales/Cargos forms.
+- [ ] On /settings/notifications, /settings/documents, /settings/overtime, /settings/profile and /settings/appearance, confirm the content sits inside a single white card on the gray page background, matching Empresa/Sucursales/Cargos forms.
+- [ ] On /settings/profile, confirm avatar upload, name/email fields and Guardar all still work inside the card, and the red "delete account" section below it is unchanged.
 
 ### KOL-123.3 — Settings: Horas extras page + retire /organization-settings
 
