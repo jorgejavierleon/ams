@@ -114,6 +114,6 @@ test('a supervisor cannot reach the tenant overtime policy configuration', funct
     $supervisor = overtimeSectionSupervisor($organization);
 
     $this->actingAs($supervisor)
-        ->get(route('organization-settings.edit'))
+        ->get(route('settings-overtime.edit'))
         ->assertForbidden();
 });

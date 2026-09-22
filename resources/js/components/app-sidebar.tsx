@@ -45,7 +45,6 @@ import {
 import { index as myDocumentsIndex } from '@/routes/my/documents';
 import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
-import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { index as overtimeRequestsIndex } from '@/routes/overtime/requests';
 import {
@@ -58,6 +57,7 @@ import {
 import { index as positionsIndex } from '@/routes/positions';
 import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
+import { edit as settingsNotificationsEdit } from '@/routes/settings-notifications';
 import { index as shiftsIndex } from '@/routes/shifts';
 import { index as workdaysIndex } from '@/routes/workdays';
 import type { NavItem } from '@/types';
@@ -304,7 +304,7 @@ export function AppSidebar() {
                 },
                 {
                     title: t('ui.nav.organization_settings'),
-                    href: organizationSettingsEdit(),
+                    href: settingsNotificationsEdit(),
                     icon: SlidersHorizontal,
                 },
             ],

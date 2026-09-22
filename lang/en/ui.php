@@ -181,6 +181,9 @@ return [
             'profile' => 'Profile',
             'security' => 'Security',
             'appearance' => 'Appearance',
+            'notifications' => 'Notifications',
+            'documents' => 'Documents',
+            'overtime' => 'Overtime',
         ],
 
         'profile' => [
@@ -214,6 +217,88 @@ return [
             'light' => 'Light',
             'dark' => 'Dark',
             'system' => 'System',
+        ],
+
+        'notifications' => [
+            'head' => 'Notification settings',
+            'title' => 'Notifications',
+            'description' => 'Configure which notification emails the system sends',
+            'fields' => [
+                'employee_missing_in_notification' => [
+                    'label' => 'Missing clock-in (employee)',
+                    'hint' => 'Email the employee when their clock-in for the day is missing.',
+                ],
+                'employee_missing_out_notification' => [
+                    'label' => 'Missing clock-out (employee)',
+                    'hint' => 'Email the employee when their clock-out for the day is missing.',
+                ],
+                'employer_missing_in_notification' => [
+                    'label' => 'Missing clock-in (employer)',
+                    'hint' => 'Notify the organization when an employee has no clock-in for the day.',
+                ],
+                'employer_missing_out_notification' => [
+                    'label' => 'Missing clock-out (employer)',
+                    'hint' => 'Notify the organization when an employee has no clock-out for the day.',
+                ],
+                'leave_approval_notification' => [
+                    'label' => 'Leave approval',
+                    'hint' => 'Email the employee when their leave request is approved.',
+                ],
+            ],
+            'flash' => [
+                'updated' => 'Settings saved.',
+            ],
+        ],
+
+        'documents' => [
+            'head' => 'Document settings',
+            'title' => 'Documents',
+            'description' => "Configure your organization's electronic document signing",
+            'fields' => [
+                'documents_signature_enabled' => [
+                    'label' => 'Enable document signing',
+                    'hint' => 'Allow contracts, annexes and pacts to be sent for electronic signature.',
+                ],
+                'documents_require_ordered_signing' => [
+                    'label' => 'Require ordered signing by default',
+                    'hint' => 'New signable documents default to sequential (ordered) signing.',
+                ],
+            ],
+            'flash' => [
+                'updated' => 'Settings saved.',
+            ],
+        ],
+
+        'overtime' => [
+            'head' => 'Overtime settings',
+            'title' => 'Overtime',
+            'description' => "Configure your organization's overtime authorization policy",
+            'fields' => [
+                'overtime_authorization_mode' => [
+                    'label' => 'Authorization mode',
+                    'hint' => 'How overtime is authorized: the employee requests it beforehand, a supervisor reviews the shift excess afterwards, or both.',
+                ],
+                'overtime_weekly_anomaly_threshold_hours' => [
+                    'label' => 'Weekly anomaly threshold (hours)',
+                    'hint' => 'Above this many overtime hours in a week the record is flagged for review. It never blocks the record.',
+                ],
+                'overtime_retroactive_request_days' => [
+                    'label' => 'Retroactive request window (days)',
+                    'hint' => 'How many days back an employee may request overtime for under pre-authorization.',
+                ],
+                'overtime_counts_pre_shift_excess' => [
+                    'label' => 'Count early arrival as overtime',
+                    'hint' => 'Time worked before the shift starts feeds the calculated overtime. Off by default: excess hours need the employer behind them. It is always recorded either way.',
+                ],
+            ],
+            'overtime_authorization_modes' => [
+                'pre_authorization' => 'Pre-authorization',
+                'post_hoc' => 'Post-hoc review',
+                'combined' => 'Combined',
+            ],
+            'flash' => [
+                'updated' => 'Settings saved.',
+            ],
         ],
 
         'delete' => [
@@ -353,70 +438,6 @@ return [
             'created' => 'Document variable created.',
             'updated' => 'Document variable updated.',
             'deleted' => 'Document variable deleted.',
-        ],
-    ],
-
-    'organization_settings' => [
-        'title' => 'General settings',
-        'description' => 'Configure notifications, document defaults and the overtime policy for your organization',
-        'sections' => [
-            'notifications' => 'Notifications',
-            'documents' => 'Documents',
-            'overtime' => 'Overtime',
-        ],
-        'fields' => [
-            'employee_missing_in_notification' => [
-                'label' => 'Missing clock-in (employee)',
-                'hint' => 'Email the employee when their clock-in for the day is missing.',
-            ],
-            'employee_missing_out_notification' => [
-                'label' => 'Missing clock-out (employee)',
-                'hint' => 'Email the employee when their clock-out for the day is missing.',
-            ],
-            'employer_missing_in_notification' => [
-                'label' => 'Missing clock-in (employer)',
-                'hint' => 'Notify the organization when an employee has no clock-in for the day.',
-            ],
-            'employer_missing_out_notification' => [
-                'label' => 'Missing clock-out (employer)',
-                'hint' => 'Notify the organization when an employee has no clock-out for the day.',
-            ],
-            'leave_approval_notification' => [
-                'label' => 'Leave approval',
-                'hint' => 'Email the employee when their leave request is approved.',
-            ],
-            'documents_signature_enabled' => [
-                'label' => 'Enable document signing',
-                'hint' => 'Allow contracts, annexes and pacts to be sent for electronic signature.',
-            ],
-            'documents_require_ordered_signing' => [
-                'label' => 'Require ordered signing by default',
-                'hint' => 'New signable documents default to sequential (ordered) signing.',
-            ],
-            'overtime_authorization_mode' => [
-                'label' => 'Authorization mode',
-                'hint' => 'How overtime is authorized: the employee requests it beforehand, a supervisor reviews the shift excess afterwards, or both.',
-            ],
-            'overtime_weekly_anomaly_threshold_hours' => [
-                'label' => 'Weekly anomaly threshold (hours)',
-                'hint' => 'Above this many overtime hours in a week the record is flagged for review. It never blocks the record.',
-            ],
-            'overtime_retroactive_request_days' => [
-                'label' => 'Retroactive request window (days)',
-                'hint' => 'How many days back an employee may request overtime for under pre-authorization.',
-            ],
-            'overtime_counts_pre_shift_excess' => [
-                'label' => 'Count early arrival as overtime',
-                'hint' => 'Time worked before the shift starts feeds the calculated overtime. Off by default: excess hours need the employer behind them. It is always recorded either way.',
-            ],
-        ],
-        'overtime_authorization_modes' => [
-            'pre_authorization' => 'Pre-authorization',
-            'post_hoc' => 'Post-hoc review',
-            'combined' => 'Combined',
-        ],
-        'flash' => [
-            'updated' => 'Settings saved.',
         ],
     ],
 

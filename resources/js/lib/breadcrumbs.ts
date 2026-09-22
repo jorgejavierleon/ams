@@ -16,7 +16,6 @@ import { index as myDocumentsIndex } from '@/routes/my/documents';
 import { index as myLeavesIndex } from '@/routes/my/leaves';
 import { index as myOvertimeRequestsIndex } from '@/routes/my/overtime-requests';
 import { index as myWorkdaysIndex } from '@/routes/my/workdays';
-import { edit as organizationSettingsEdit } from '@/routes/organization-settings';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { summary as payrollReportsSummary } from '@/routes/payroll-reports';
 import { index as positionsIndex } from '@/routes/positions';
@@ -24,6 +23,9 @@ import { index as premisesIndex } from '@/routes/premises';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as rolesIndex } from '@/routes/roles';
 import { edit as securityEdit } from '@/routes/security';
+import { edit as settingsDocumentsEdit } from '@/routes/settings-documents';
+import { edit as settingsNotificationsEdit } from '@/routes/settings-notifications';
+import { edit as settingsOvertimeEdit } from '@/routes/settings-overtime';
 import { index as shiftsIndex } from '@/routes/shifts';
 import { index as workdaysIndex } from '@/routes/workdays';
 
@@ -67,10 +69,6 @@ export const breadcrumbRegistry: Record<string, BreadcrumbRegistryEntry> = {
     dashboard: {
         title: 'ui.nav.dashboard',
         href: dashboard(),
-    },
-    'organization-settings': {
-        title: 'ui.nav.organization_settings',
-        href: organizationSettingsEdit(),
     },
     'roles/index': {
         title: 'ui.nav.roles',
@@ -318,6 +316,21 @@ export const breadcrumbRegistry: Record<string, BreadcrumbRegistryEntry> = {
     'settings/appearance': {
         title: 'ui.settings.nav.appearance',
         href: appearanceEdit(),
+        parent: 'settings',
+    },
+    'settings/notifications': {
+        title: 'ui.settings.nav.notifications',
+        href: settingsNotificationsEdit(),
+        parent: 'settings',
+    },
+    'settings/documents': {
+        title: 'ui.settings.nav.documents',
+        href: settingsDocumentsEdit(),
+        parent: 'settings',
+    },
+    'settings/overtime': {
+        title: 'ui.settings.nav.overtime',
+        href: settingsOvertimeEdit(),
         parent: 'settings',
     },
 };

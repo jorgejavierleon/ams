@@ -1,5 +1,23 @@
 # Manual QA checklist
 
+### KOL-123.3 — Settings: Horas extras page + retire /organization-settings
+
+- [ ] As an admin, open /settings/overtime, change the mode select and both numeric fields, toggle the pre-shift-excess switch, save, and confirm all four persist after reload.
+- [ ] Confirm the Settings left nav shows "Horas extras" after "Documentos" for an admin and not for an employee.
+- [ ] Confirm /organization-settings now 404s (or redirects, whatever an unknown route does) for everyone, admin included.
+- [ ] Spot-check a page that shows the overtime authorization mode label (e.g. the overtime queue) still renders the Spanish label correctly.
+
+### KOL-123.2 — Settings: Documentos page
+
+- [ ] As an admin, open /settings/documents, toggle both switches, save, and confirm they persist after reload.
+- [ ] Confirm the Settings left nav shows "Documentos" right after "Notificaciones" for an admin and not for an employee.
+
+### KOL-123.1 — Settings: Notificaciones page + shared nav scaffolding
+
+- [ ] As an admin, open /settings/notifications, toggle each of the 5 switches, save, and confirm they persist after reload.
+- [ ] Confirm the Settings left nav shows "Notificaciones" for an admin and not for an employee.
+- [ ] Confirm the top-right user menu "Configuración" entry and the app-sidebar "Configuración general" shortcut both land on /settings/notifications.
+
 ### Employees list — Created at / Updated at columns
 
 - [ ] Open the Employees list and confirm "Created at" and "Updated at" are absent by default.

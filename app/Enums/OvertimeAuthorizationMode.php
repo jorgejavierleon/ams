@@ -27,7 +27,7 @@ enum OvertimeAuthorizationMode: string
      */
     public function label(): string
     {
-        return __('ui.organization_settings.overtime_authorization_modes.'.$this->value);
+        return __('ui.settings.overtime.overtime_authorization_modes.'.$this->value);
     }
 
     /**

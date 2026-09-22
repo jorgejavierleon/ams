@@ -184,6 +184,9 @@ return [
             'profile' => 'Perfil',
             'security' => 'Seguridad',
             'appearance' => 'Apariencia',
+            'notifications' => 'Notificaciones',
+            'documents' => 'Documentos',
+            'overtime' => 'Horas extra',
         ],
 
         'profile' => [
@@ -217,6 +220,88 @@ return [
             'light' => 'Claro',
             'dark' => 'Oscuro',
             'system' => 'Sistema',
+        ],
+
+        'notifications' => [
+            'head' => 'Configuración de notificaciones',
+            'title' => 'Notificaciones',
+            'description' => 'Configure qué correos de notificación envía el sistema',
+            'fields' => [
+                'employee_missing_in_notification' => [
+                    'label' => 'Entrada faltante (trabajador)',
+                    'hint' => 'Enviar un correo al trabajador cuando falte su marca de entrada del día.',
+                ],
+                'employee_missing_out_notification' => [
+                    'label' => 'Salida faltante (trabajador)',
+                    'hint' => 'Enviar un correo al trabajador cuando falte su marca de salida del día.',
+                ],
+                'employer_missing_in_notification' => [
+                    'label' => 'Entrada faltante (empleador)',
+                    'hint' => 'Notificar a la organización cuando un trabajador no tenga marca de entrada del día.',
+                ],
+                'employer_missing_out_notification' => [
+                    'label' => 'Salida faltante (empleador)',
+                    'hint' => 'Notificar a la organización cuando un trabajador no tenga marca de salida del día.',
+                ],
+                'leave_approval_notification' => [
+                    'label' => 'Aprobación de permiso',
+                    'hint' => 'Enviar un correo al trabajador cuando se apruebe su solicitud de permiso.',
+                ],
+            ],
+            'flash' => [
+                'updated' => 'Configuración guardada.',
+            ],
+        ],
+
+        'documents' => [
+            'head' => 'Configuración de documentos',
+            'title' => 'Documentos',
+            'description' => 'Configure la firma electrónica de documentos de su organización',
+            'fields' => [
+                'documents_signature_enabled' => [
+                    'label' => 'Habilitar firma de documentos',
+                    'hint' => 'Permitir enviar contratos, anexos y pactos a firma electrónica.',
+                ],
+                'documents_require_ordered_signing' => [
+                    'label' => 'Exigir firma ordenada por defecto',
+                    'hint' => 'Los nuevos documentos firmables usan firma secuencial (ordenada) por defecto.',
+                ],
+            ],
+            'flash' => [
+                'updated' => 'Configuración guardada.',
+            ],
+        ],
+
+        'overtime' => [
+            'head' => 'Configuración de horas extra',
+            'title' => 'Horas extra',
+            'description' => 'Configure la política de autorización de horas extra de su organización',
+            'fields' => [
+                'overtime_authorization_mode' => [
+                    'label' => 'Modo de autorización',
+                    'hint' => 'Cómo se autorizan las horas extra: solicitud previa del trabajador, revisión posterior del exceso de jornada, o ambas.',
+                ],
+                'overtime_weekly_anomaly_threshold_hours' => [
+                    'label' => 'Umbral semanal de anomalía (horas)',
+                    'hint' => 'Sobre esta cantidad de horas extra en la semana se marca una anomalía para revisión. No bloquea el registro.',
+                ],
+                'overtime_retroactive_request_days' => [
+                    'label' => 'Días hacia atrás para solicitar',
+                    'hint' => 'Cuántos días hacia atrás puede el trabajador solicitar horas extra en el modo de autorización previa.',
+                ],
+                'overtime_counts_pre_shift_excess' => [
+                    'label' => 'Contar la llegada anticipada como hora extra',
+                    'hint' => 'El tiempo trabajado antes del inicio del turno suma a las horas extra calculadas. Desactivado por defecto: las horas de exceso requieren conocimiento del empleador. En ambos casos queda registrado.',
+                ],
+            ],
+            'overtime_authorization_modes' => [
+                'pre_authorization' => 'Autorización previa',
+                'post_hoc' => 'Revisión posterior',
+                'combined' => 'Combinado',
+            ],
+            'flash' => [
+                'updated' => 'Configuración guardada.',
+            ],
         ],
 
         'delete' => [
@@ -356,70 +441,6 @@ return [
             'created' => 'Variable de documento creada.',
             'updated' => 'Variable de documento actualizada.',
             'deleted' => 'Variable de documento eliminada.',
-        ],
-    ],
-
-    'organization_settings' => [
-        'title' => 'Configuración general',
-        'description' => 'Configure las notificaciones, los documentos y la política de horas extra de su organización',
-        'sections' => [
-            'notifications' => 'Notificaciones',
-            'documents' => 'Documentos',
-            'overtime' => 'Horas extra',
-        ],
-        'fields' => [
-            'employee_missing_in_notification' => [
-                'label' => 'Entrada faltante (trabajador)',
-                'hint' => 'Enviar un correo al trabajador cuando falte su marca de entrada del día.',
-            ],
-            'employee_missing_out_notification' => [
-                'label' => 'Salida faltante (trabajador)',
-                'hint' => 'Enviar un correo al trabajador cuando falte su marca de salida del día.',
-            ],
-            'employer_missing_in_notification' => [
-                'label' => 'Entrada faltante (empleador)',
-                'hint' => 'Notificar a la organización cuando un trabajador no tenga marca de entrada del día.',
-            ],
-            'employer_missing_out_notification' => [
-                'label' => 'Salida faltante (empleador)',
-                'hint' => 'Notificar a la organización cuando un trabajador no tenga marca de salida del día.',
-            ],
-            'leave_approval_notification' => [
-                'label' => 'Aprobación de permiso',
-                'hint' => 'Enviar un correo al trabajador cuando se apruebe su solicitud de permiso.',
-            ],
-            'documents_signature_enabled' => [
-                'label' => 'Habilitar firma de documentos',
-                'hint' => 'Permitir enviar contratos, anexos y pactos a firma electrónica.',
-            ],
-            'documents_require_ordered_signing' => [
-                'label' => 'Exigir firma ordenada por defecto',
-                'hint' => 'Los nuevos documentos firmables usan firma secuencial (ordenada) por defecto.',
-            ],
-            'overtime_authorization_mode' => [
-                'label' => 'Modo de autorización',
-                'hint' => 'Cómo se autorizan las horas extra: solicitud previa del trabajador, revisión posterior del exceso de jornada, o ambas.',
-            ],
-            'overtime_weekly_anomaly_threshold_hours' => [
-                'label' => 'Umbral semanal de anomalía (horas)',
-                'hint' => 'Sobre esta cantidad de horas extra en la semana se marca una anomalía para revisión. No bloquea el registro.',
-            ],
-            'overtime_retroactive_request_days' => [
-                'label' => 'Días hacia atrás para solicitar',
-                'hint' => 'Cuántos días hacia atrás puede el trabajador solicitar horas extra en el modo de autorización previa.',
-            ],
-            'overtime_counts_pre_shift_excess' => [
-                'label' => 'Contar la llegada anticipada como hora extra',
-                'hint' => 'El tiempo trabajado antes del inicio del turno suma a las horas extra calculadas. Desactivado por defecto: las horas de exceso requieren conocimiento del empleador. En ambos casos queda registrado.',
-            ],
-        ],
-        'overtime_authorization_modes' => [
-            'pre_authorization' => 'Autorización previa',
-            'post_hoc' => 'Revisión posterior',
-            'combined' => 'Combinado',
-        ],
-        'flash' => [
-            'updated' => 'Configuración guardada.',
         ],
     ],
 

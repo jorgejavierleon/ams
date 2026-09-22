@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -7,18 +7,27 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
-import { edit } from '@/routes/profile';
+import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
+import { edit as editDocuments } from '@/routes/settings-documents';
+import { edit as editNotifications } from '@/routes/settings-notifications';
+import { edit as editOvertime } from '@/routes/settings-overtime';
 import type { NavItem } from '@/types';
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
     const { t } = useTranslations();
+    const { auth } = usePage().props;
+
+    // Same permission check app-sidebar.tsx uses to split employee vs admin
+    // nav groups: the organization-wide sections below are admin-only, same
+    // as the role:admin gate their backend routes carry.
+    const isEmployee = auth.permissions.includes('ViewOwn:Leave');
 
     const sidebarNavItems: NavItem[] = [
         {
             title: t('ui.settings.nav.profile'),
-            href: edit(),
+            href: editProfile(),
             icon: null,
         },
         {
@@ -31,6 +40,25 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
             href: editAppearance(),
             icon: null,
         },
+        ...(!isEmployee
+            ? [
+                  {
+                      title: t('ui.settings.nav.notifications'),
+                      href: editNotifications(),
+                      icon: null,
+                  },
+                  {
+                      title: t('ui.settings.nav.documents'),
+                      href: editDocuments(),
+                      icon: null,
+                  },
+                  {
+                      title: t('ui.settings.nav.overtime'),
+                      href: editOvertime(),
+                      icon: null,
+                  },
+              ]
+            : []),
     ];
 
     return (

@@ -22,7 +22,7 @@ beforeEach(function () {
 /**
  * An admin bound to a real organization so settings scope correctly.
  */
-function settingsAdmin(?Organization $organization = null): User
+function overtimeSettingsAdmin(?Organization $organization = null): User
 {
     $organization ??= Organization::factory()->create();
 
@@ -33,22 +33,15 @@ function settingsAdmin(?Organization $organization = null): User
 }
 
 /**
- * A complete, valid settings payload. The update endpoint saves the form as a
- * whole, so every test that patches has to send every key.
+ * A complete, valid overtime policy payload. The update endpoint saves the
+ * form as a whole, so every test that patches has to send every key.
  *
  * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
  */
-function settingsPayload(array $overrides = []): array
+function overtimeSettingsPayload(array $overrides = []): array
 {
     return [
-        'employee_missing_in_notification' => true,
-        'employee_missing_out_notification' => true,
-        'employer_missing_in_notification' => true,
-        'employer_missing_out_notification' => true,
-        'leave_approval_notification' => true,
-        'documents_signature_enabled' => false,
-        'documents_require_ordered_signing' => false,
         'overtime_authorization_mode' => OvertimeAuthorizationMode::PostHoc->value,
         'overtime_weekly_anomaly_threshold_hours' => 10,
         'overtime_retroactive_request_days' => 7,
@@ -60,7 +53,7 @@ function settingsPayload(array $overrides = []): array
 // --- Access control ---
 
 test('unauthenticated users are redirected to login', function () {
-    $this->get(route('organization-settings.edit'))->assertRedirect(route('login'));
+    $this->get(route('settings-overtime.edit'))->assertRedirect(route('login'));
 });
 
 test('non-admin users are denied access', function () {
@@ -68,130 +61,29 @@ test('non-admin users are denied access', function () {
     $employee->assignRole('employee');
 
     $this->actingAs($employee)
-        ->get(route('organization-settings.edit'))
+        ->get(route('settings-overtime.edit'))
         ->assertForbidden();
 
     $this->actingAs($employee)
-        ->patch(route('organization-settings.update'), [])
+        ->patch(route('settings-overtime.update'), [])
         ->assertForbidden();
 });
 
-// --- Index ---
-
-test('admin can view the settings page, creating the row with defaults', function () {
-    $admin = settingsAdmin();
-
-    $this->actingAs($admin)
-        ->get(route('organization-settings.edit'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('organization-settings')
-            ->where('settings.employee_missing_in_notification', true)
-            ->where('settings.documents_signature_enabled', false)
-            ->where('settings.documents_require_ordered_signing', false)
-        );
-
-    $this->assertDatabaseHas('settings', [
-        'organization_id' => $admin->organization_id,
-        'employee_missing_in_notification' => true,
-        'documents_signature_enabled' => false,
-    ]);
-});
-
-// --- Update ---
-
-test('admin can update all settings atomically and they persist', function () {
-    $admin = settingsAdmin();
-
-    $payload = settingsPayload([
-        'employee_missing_in_notification' => false,
-        'employee_missing_out_notification' => false,
-        'employer_missing_in_notification' => true,
-        'employer_missing_out_notification' => false,
-        'leave_approval_notification' => false,
-        'documents_signature_enabled' => true,
-        'documents_require_ordered_signing' => true,
-    ]);
-
-    $this->actingAs($admin)
-        ->patch(route('organization-settings.update'), $payload)
-        ->assertRedirect();
-
-    $setting = Setting::query()->where('organization_id', $admin->organization_id)->firstOrFail();
-
-    expect($setting->employee_missing_in_notification)->toBeFalse()
-        ->and($setting->employee_missing_out_notification)->toBeFalse()
-        ->and($setting->employer_missing_in_notification)->toBeTrue()
-        ->and($setting->employer_missing_out_notification)->toBeFalse()
-        ->and($setting->leave_approval_notification)->toBeFalse()
-        ->and($setting->documents_signature_enabled)->toBeTrue()
-        ->and($setting->documents_require_ordered_signing)->toBeTrue();
-});
-
-test('saving fires the observer, clearing the cache so reads are never stale', function () {
-    $admin = settingsAdmin();
-    $this->actingAs($admin);
-    $cacheKey = 'org_settings:'.$admin->organization_id;
-    $settings = app(OrganizationSettings::class);
-
-    // Warm the scalar-read cache with the current (default) value.
-    expect($settings->get('documents_signature_enabled'))->toBeFalse();
-    expect(Cache::has($cacheKey))->toBeTrue();
-
-    $this->patch(route('organization-settings.update'), settingsPayload([
-        'documents_signature_enabled' => true,
-    ]));
-
-    // The observer's saved() hook invalidated the cache, so the next read
-    // reflects the new value instead of the stale cached one.
-    expect(Cache::has($cacheKey))->toBeFalse()
-        ->and($settings->get('documents_signature_enabled'))->toBeTrue();
-});
-
-test('updating is scoped to the current organization', function () {
-    $admin = settingsAdmin();
-    $otherOrg = Organization::factory()->create();
-    $otherSetting = Setting::factory()->create([
-        'organization_id' => $otherOrg->id,
-        'documents_signature_enabled' => false,
-    ]);
-
-    $this->actingAs($admin)->patch(route('organization-settings.update'), settingsPayload([
-        'documents_signature_enabled' => true,
-        'documents_require_ordered_signing' => true,
-    ]));
-
-    // The other organization's settings are untouched, and the admin's own row
-    // was created/updated for their organization only.
-    expect($otherSetting->refresh()->documents_signature_enabled)->toBeFalse();
-
-    $adminSetting = Setting::query()->where('organization_id', $admin->organization_id)->firstOrFail();
-    expect($adminSetting->documents_signature_enabled)->toBeTrue();
-});
-
-test('a non-boolean setting value is rejected', function () {
-    $admin = settingsAdmin();
-
-    $this->actingAs($admin)
-        ->patch(route('organization-settings.update'), settingsPayload([
-            'employee_missing_in_notification' => 'maybe',
-        ]))
-        ->assertSessionHasErrors('employee_missing_in_notification');
-});
-
-// --- Overtime policy (KOL-37) ---
+// --- Edit ---
 
 test('a brand-new organization gets the legal overtime defaults', function () {
-    $admin = settingsAdmin();
+    $admin = overtimeSettingsAdmin();
 
     $this->actingAs($admin)
-        ->get(route('organization-settings.edit'))
+        ->get(route('settings-overtime.edit'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
+            ->component('settings/overtime')
             ->where('settings.overtime_authorization_mode', OvertimeAuthorizationMode::Combined->value)
             // JSON has no float/int distinction, so compare numerically.
             ->where('settings.overtime_weekly_anomaly_threshold_hours', fn ($hours) => (float) $hours === 10.0)
             ->where('settings.overtime_retroactive_request_days', 7)
+            ->where('settings.overtime_counts_pre_shift_excess', false)
         );
 
     $setting = Setting::query()->where('organization_id', $admin->organization_id)->firstOrFail();
@@ -202,7 +94,7 @@ test('a brand-new organization gets the legal overtime defaults', function () {
 });
 
 test('the defaults are readable through the settings service without a query per read', function () {
-    $admin = settingsAdmin();
+    $admin = overtimeSettingsAdmin();
     $this->actingAs($admin);
     $settings = app(OrganizationSettings::class);
 
@@ -219,15 +111,17 @@ test('the defaults are readable through the settings service without a query per
     DB::disableQueryLog();
 });
 
+// --- Update ---
+
 test('each authorization mode round-trips through the settings service', function (OvertimeAuthorizationMode $mode) {
-    $admin = settingsAdmin();
+    $admin = overtimeSettingsAdmin();
     $this->actingAs($admin);
     $settings = app(OrganizationSettings::class);
 
     // Warm the cache with the default so the update has something to invalidate.
     expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::Combined);
 
-    $this->patch(route('organization-settings.update'), settingsPayload([
+    $this->patch(route('settings-overtime.update'), overtimeSettingsPayload([
         'overtime_authorization_mode' => $mode->value,
     ]))->assertRedirect();
 
@@ -239,11 +133,11 @@ test('each authorization mode round-trips through the settings service', functio
 ]);
 
 test('the whole overtime policy persists and is read back typed', function () {
-    $admin = settingsAdmin();
+    $admin = overtimeSettingsAdmin();
     $this->actingAs($admin);
     $settings = app(OrganizationSettings::class);
 
-    $this->patch(route('organization-settings.update'), settingsPayload([
+    $this->patch(route('settings-overtime.update'), overtimeSettingsPayload([
         'overtime_authorization_mode' => OvertimeAuthorizationMode::Combined->value,
         'overtime_weekly_anomaly_threshold_hours' => 14.5,
         'overtime_retroactive_request_days' => 30,
@@ -258,10 +152,10 @@ test('the whole overtime policy persists and is read back typed', function () {
 });
 
 test('an unknown authorization mode or out-of-range value is rejected', function () {
-    $admin = settingsAdmin();
+    $admin = overtimeSettingsAdmin();
 
     $this->actingAs($admin)
-        ->patch(route('organization-settings.update'), settingsPayload([
+        ->patch(route('settings-overtime.update'), overtimeSettingsPayload([
             'overtime_authorization_mode' => 'whenever',
             'overtime_weekly_anomaly_threshold_hours' => -1,
             'overtime_retroactive_request_days' => 'soon',
@@ -273,35 +167,30 @@ test('an unknown authorization mode or out-of-range value is rejected', function
         ]);
 });
 
-test('every overtime field and option has a Spanish label', function () {
-    app()->setLocale('es');
+test('saving fires the observer, clearing the cache so reads are never stale', function () {
+    $admin = overtimeSettingsAdmin();
+    $this->actingAs($admin);
+    $cacheKey = 'org_settings:'.$admin->organization_id;
+    $settings = app(OrganizationSettings::class);
 
-    $keys = [
-        'ui.organization_settings.sections.overtime',
-        ...collect([
-            'overtime_authorization_mode',
-            'overtime_weekly_anomaly_threshold_hours',
-            'overtime_retroactive_request_days',
-        ])->flatMap(fn (string $field): array => [
-            "ui.organization_settings.fields.{$field}.label",
-            "ui.organization_settings.fields.{$field}.hint",
-        ]),
-    ];
+    // Warm the scalar-read cache with the current (default) value.
+    expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::Combined);
+    expect(Cache::has($cacheKey))->toBeTrue();
 
-    foreach ($keys as $key) {
-        // A missing key makes Laravel echo the key itself back.
-        expect(__($key, locale: 'es'))->not->toBe($key);
-    }
+    $this->patch(route('settings-overtime.update'), overtimeSettingsPayload([
+        'overtime_authorization_mode' => OvertimeAuthorizationMode::PreAuthorization->value,
+    ]));
 
-    // The enum labels the selects render come from the same catalogue.
-    expect(collect(OvertimeAuthorizationMode::options())->pluck('label')->all())
-        ->toBe(['Autorización previa', 'Revisión posterior', 'Combinado']);
+    // The observer's saved() hook invalidated the cache, so the next read
+    // reflects the new value instead of the stale cached one.
+    expect(Cache::has($cacheKey))->toBeFalse()
+        ->and($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::PreAuthorization);
 });
 
 test('the overtime policy is organization-scoped in both directions', function () {
-    $adminA = settingsAdmin();
+    $adminA = overtimeSettingsAdmin();
     $orgB = Organization::factory()->create();
-    $adminB = settingsAdmin($orgB);
+    $adminB = overtimeSettingsAdmin($orgB);
     $settingB = Setting::factory()->create([
         'organization_id' => $orgB->id,
         'overtime_authorization_mode' => OvertimeAuthorizationMode::PreAuthorization,
@@ -310,7 +199,7 @@ test('the overtime policy is organization-scoped in both directions', function (
 
     $settings = app(OrganizationSettings::class);
 
-    $this->actingAs($adminA)->patch(route('organization-settings.update'), settingsPayload([
+    $this->actingAs($adminA)->patch(route('settings-overtime.update'), overtimeSettingsPayload([
         'overtime_authorization_mode' => OvertimeAuthorizationMode::Combined->value,
         'overtime_retroactive_request_days' => 5,
     ]))->assertRedirect();
@@ -330,9 +219,9 @@ test('the overtime policy is organization-scoped in both directions', function (
 });
 
 test('a write invalidates only the acting organization cache', function () {
-    $adminA = settingsAdmin();
+    $adminA = overtimeSettingsAdmin();
     $orgB = Organization::factory()->create();
-    $adminB = settingsAdmin($orgB);
+    $adminB = overtimeSettingsAdmin($orgB);
     Setting::factory()->create([
         'organization_id' => $orgB->id,
         'overtime_authorization_mode' => OvertimeAuthorizationMode::PreAuthorization,
@@ -346,7 +235,7 @@ test('a write invalidates only the acting organization cache', function () {
     $this->actingAs($adminA);
     expect($settings->overtimeAuthorizationMode())->toBe(OvertimeAuthorizationMode::Combined);
 
-    $this->patch(route('organization-settings.update'), settingsPayload([
+    $this->patch(route('settings-overtime.update'), overtimeSettingsPayload([
         'overtime_authorization_mode' => OvertimeAuthorizationMode::Combined->value,
     ]))->assertRedirect();
 
@@ -354,34 +243,40 @@ test('a write invalidates only the acting organization cache', function () {
         ->and(Cache::has('org_settings:'.$orgB->id))->toBeTrue();
 });
 
-// --- Pre-shift excess policy (KOL-38) ---
+test('every overtime field and option has a Spanish label', function () {
+    app()->setLocale('es');
 
-test('a brand-new organization does not count early arrival as overtime', function () {
-    // Art. 32 wants the employer's knowledge or authorisation behind excess
-    // hours, so the safe default is the one that cannot turn an employee's own
-    // decision to arrive early into overtime.
-    $admin = settingsAdmin();
+    $keys = collect([
+        'overtime_authorization_mode',
+        'overtime_weekly_anomaly_threshold_hours',
+        'overtime_retroactive_request_days',
+        'overtime_counts_pre_shift_excess',
+    ])->flatMap(fn (string $field): array => [
+        "ui.settings.overtime.fields.{$field}.label",
+        "ui.settings.overtime.fields.{$field}.hint",
+    ]);
 
-    $this->actingAs($admin)
-        ->get(route('organization-settings.edit'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('settings.overtime_counts_pre_shift_excess', false)
-        );
+    foreach ($keys as $key) {
+        // A missing key makes Laravel echo the key itself back.
+        expect(__($key, locale: 'es'))->not->toBe($key);
+    }
 
-    expect(app(OrganizationSettings::class)->overtimeCountsPreShiftExcess($admin->organization_id))
-        ->toBeFalse();
+    // The enum labels the select renders come from the same catalogue.
+    expect(collect(OvertimeAuthorizationMode::options())->pluck('label')->all())
+        ->toBe(['Autorización previa', 'Revisión posterior', 'Combinado']);
 });
 
+// --- Pre-shift excess policy (KOL-38) ---
+
 test('an admin can turn on counting early arrival and the calculation engine reads it back', function () {
-    $admin = settingsAdmin();
+    $admin = overtimeSettingsAdmin();
     $this->actingAs($admin);
     $settings = app(OrganizationSettings::class);
 
     // Warm the cache with the default so the update has something to invalidate.
     expect($settings->overtimeCountsPreShiftExcess())->toBeFalse();
 
-    $this->patch(route('organization-settings.update'), settingsPayload([
+    $this->patch(route('settings-overtime.update'), overtimeSettingsPayload([
         'overtime_counts_pre_shift_excess' => true,
     ]))->assertRedirect();
 
@@ -390,29 +285,11 @@ test('an admin can turn on counting early arrival and the calculation engine rea
             ->overtime_counts_pre_shift_excess)->toBeTrue();
 });
 
-test('the pre-shift excess policy is read without a query per workday', function () {
-    $admin = settingsAdmin();
-    $this->actingAs($admin);
-    $settings = app(OrganizationSettings::class);
-
-    // First read creates the row and warms the cache; a day's calculation pass
-    // then asks as often as it likes without touching the database.
-    expect($settings->overtimeCountsPreShiftExcess())->toBeFalse();
-
-    DB::enableQueryLog();
-
-    expect($settings->overtimeCountsPreShiftExcess())->toBeFalse()
-        ->and($settings->overtimeCountsPreShiftExcess())->toBeFalse()
-        ->and(DB::getQueryLog())->toBeEmpty();
-
-    DB::disableQueryLog();
-});
-
 test('one organization enabling early arrival leaves the others on the default', function () {
-    $adminA = settingsAdmin();
+    $adminA = overtimeSettingsAdmin();
     $orgB = Organization::factory()->create();
 
-    $this->actingAs($adminA)->patch(route('organization-settings.update'), settingsPayload([
+    $this->actingAs($adminA)->patch(route('settings-overtime.update'), overtimeSettingsPayload([
         'overtime_counts_pre_shift_excess' => true,
     ]))->assertRedirect();
 
@@ -422,22 +299,11 @@ test('one organization enabling early arrival leaves the others on the default',
         ->and($settings->overtimeCountsPreShiftExcess($orgB->id))->toBeFalse();
 });
 
-test('an employee cannot change the pre-shift excess policy', function () {
-    $employee = User::factory()->create();
-    $employee->assignRole('employee');
-
-    $this->actingAs($employee)
-        ->patch(route('organization-settings.update'), settingsPayload([
-            'overtime_counts_pre_shift_excess' => true,
-        ]))
-        ->assertForbidden();
-});
-
 test('a non-boolean pre-shift excess policy is rejected', function () {
-    $admin = settingsAdmin();
+    $admin = overtimeSettingsAdmin();
 
     $this->actingAs($admin)
-        ->patch(route('organization-settings.update'), settingsPayload([
+        ->patch(route('settings-overtime.update'), overtimeSettingsPayload([
             'overtime_counts_pre_shift_excess' => 'sometimes',
         ]))
         ->assertSessionHasErrors('overtime_counts_pre_shift_excess');
@@ -451,12 +317,12 @@ test('the organization carries no default overtime compensation type', function 
     // are paid. That is not an employer preference, and the pacto is per worker
     // (art. 45.3, art. 41 i), so there is no organization-level answer to store.
     // KOL-47 puts the choice on the agreement, where it belongs.
-    $admin = settingsAdmin();
+    $admin = overtimeSettingsAdmin();
 
     expect(Schema::hasColumn('settings', 'overtime_default_compensation_type'))->toBeFalse();
 
     $this->actingAs($admin)
-        ->get(route('organization-settings.edit'))
+        ->get(route('settings-overtime.edit'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->missing('settings.overtime_default_compensation_type')
@@ -473,12 +339,12 @@ test('the organization carries no pacto requirement switch', function () {
     // switch that made such a record unapprovable would produce an unlawful
     // outcome, so a missing pacto is a flag demanding a written justification
     // (KOL-42), never a bar. See decision-1.
-    $admin = settingsAdmin();
+    $admin = overtimeSettingsAdmin();
 
     expect(Schema::hasColumn('settings', 'overtime_requires_pact'))->toBeFalse();
 
     $this->actingAs($admin)
-        ->get(route('organization-settings.edit'))
+        ->get(route('settings-overtime.edit'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->missing('settings.overtime_requires_pact')

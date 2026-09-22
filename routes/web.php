@@ -45,7 +45,6 @@ use App\Http\Controllers\Saas\HolidayController as SaasHolidayController;
 use App\Http\Controllers\Saas\LegalHourLimitController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use App\Http\Controllers\Saas\OrganizationController;
-use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ShiftAssignmentController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\WeeklyDetailReportController;
@@ -77,9 +76,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
     Route::get('roles/{role}', [RoleController::class, 'show'])->name('roles.show');
     Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-
-    Route::get('organization-settings', [SettingController::class, 'index'])->name('organization-settings.edit');
-    Route::patch('organization-settings', [SettingController::class, 'update'])->name('organization-settings.update');
 
     Route::resource('positions', PositionController::class)
         ->only(['index', 'store', 'show', 'update', 'destroy']);
