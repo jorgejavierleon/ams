@@ -5,6 +5,7 @@ import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/hooks/use-translations';
 
@@ -30,101 +31,120 @@ export default function Security(props: Props) {
                     description={t('ui.settings.security.description')}
                 />
 
-                <Form
-                    {...SecurityController.update.form()}
-                    options={{
-                        preserveScroll: true,
-                    }}
-                    resetOnError={[
-                        'password',
-                        'password_confirmation',
-                        'current_password',
-                    ]}
-                    resetOnSuccess
-                    onError={(errors) => {
-                        if (errors.password) {
-                            passwordInput.current?.focus();
-                        }
+                <Card>
+                    <CardContent>
+                        <Form
+                            {...SecurityController.update.form()}
+                            options={{
+                                preserveScroll: true,
+                            }}
+                            resetOnError={[
+                                'password',
+                                'password_confirmation',
+                                'current_password',
+                            ]}
+                            resetOnSuccess
+                            onError={(errors) => {
+                                if (errors.password) {
+                                    passwordInput.current?.focus();
+                                }
 
-                        if (errors.current_password) {
-                            currentPasswordInput.current?.focus();
-                        }
-                    }}
-                    className="space-y-6"
-                >
-                    {({ errors, processing }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="current_password">
-                                    {t('ui.settings.security.current_password')}
-                                </Label>
+                                if (errors.current_password) {
+                                    currentPasswordInput.current?.focus();
+                                }
+                            }}
+                            className="space-y-6"
+                        >
+                            {({ errors, processing }) => (
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="current_password">
+                                            {t(
+                                                'ui.settings.security.current_password',
+                                            )}
+                                        </Label>
 
-                                <PasswordInput
-                                    id="current_password"
-                                    ref={currentPasswordInput}
-                                    name="current_password"
-                                    className="mt-1 block w-full"
-                                    autoComplete="current-password"
-                                    placeholder={t(
-                                        'ui.settings.security.current_password',
-                                    )}
-                                />
+                                        <PasswordInput
+                                            id="current_password"
+                                            ref={currentPasswordInput}
+                                            name="current_password"
+                                            autoComplete="current-password"
+                                            placeholder={t(
+                                                'ui.settings.security.current_password',
+                                            )}
+                                        />
 
-                                <InputError message={errors.current_password} />
-                            </div>
+                                        <InputError
+                                            message={errors.current_password}
+                                        />
+                                    </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">
-                                    {t('ui.settings.security.new_password')}
-                                </Label>
+                                    <div className="grid gap-6 sm:grid-cols-2">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="password">
+                                                {t(
+                                                    'ui.settings.security.new_password',
+                                                )}
+                                            </Label>
 
-                                <PasswordInput
-                                    id="password"
-                                    ref={passwordInput}
-                                    name="password"
-                                    className="mt-1 block w-full"
-                                    autoComplete="new-password"
-                                    placeholder={t(
-                                        'ui.settings.security.new_password',
-                                    )}
-                                    passwordrules={props.passwordRules}
-                                />
+                                            <PasswordInput
+                                                id="password"
+                                                ref={passwordInput}
+                                                name="password"
+                                                autoComplete="new-password"
+                                                placeholder={t(
+                                                    'ui.settings.security.new_password',
+                                                )}
+                                                passwordrules={
+                                                    props.passwordRules
+                                                }
+                                            />
 
-                                <InputError message={errors.password} />
-                            </div>
+                                            <InputError
+                                                message={errors.password}
+                                            />
+                                        </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    {t('ui.settings.security.confirm_password')}
-                                </Label>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="password_confirmation">
+                                                {t(
+                                                    'ui.settings.security.confirm_password',
+                                                )}
+                                            </Label>
 
-                                <PasswordInput
-                                    id="password_confirmation"
-                                    name="password_confirmation"
-                                    className="mt-1 block w-full"
-                                    autoComplete="new-password"
-                                    placeholder={t(
-                                        'ui.settings.security.confirm_password',
-                                    )}
-                                    passwordrules={props.passwordRules}
-                                />
+                                            <PasswordInput
+                                                id="password_confirmation"
+                                                name="password_confirmation"
+                                                autoComplete="new-password"
+                                                placeholder={t(
+                                                    'ui.settings.security.confirm_password',
+                                                )}
+                                                passwordrules={
+                                                    props.passwordRules
+                                                }
+                                            />
 
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
-                            </div>
+                                            <InputError
+                                                message={
+                                                    errors.password_confirmation
+                                                }
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div className="flex items-center gap-4">
-                                <Button
-                                    disabled={processing}
-                                    data-test="update-password-button"
-                                >
-                                    {t('ui.common.save')}
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+                                    <div className="flex items-center gap-4">
+                                        <Button
+                                            disabled={processing}
+                                            data-test="update-password-button"
+                                        >
+                                            {t('ui.common.save')}
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
+                        </Form>
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

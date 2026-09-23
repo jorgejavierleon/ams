@@ -114,51 +114,47 @@ export default function Profile({
                                         <InputError message={errors.avatar} />
                                     </div>
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="name">
-                                            {t('ui.settings.profile.name')}
-                                        </Label>
+                                    <div className="grid gap-6 sm:grid-cols-2">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="name">
+                                                {t('ui.settings.profile.name')}
+                                            </Label>
 
-                                        <Input
-                                            id="name"
-                                            className="mt-1 block w-full"
-                                            defaultValue={auth.user.name}
-                                            name="name"
-                                            required
-                                            autoComplete="name"
-                                            placeholder={t(
-                                                'ui.settings.profile.name_placeholder',
-                                            )}
-                                        />
+                                            <Input
+                                                id="name"
+                                                defaultValue={auth.user.name}
+                                                name="name"
+                                                required
+                                                autoComplete="name"
+                                                placeholder={t(
+                                                    'ui.settings.profile.name_placeholder',
+                                                )}
+                                            />
 
-                                        <InputError
-                                            className="mt-2"
-                                            message={errors.name}
-                                        />
-                                    </div>
+                                            <InputError message={errors.name} />
+                                        </div>
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="email">
-                                            {t('ui.settings.profile.email')}
-                                        </Label>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="email">
+                                                {t('ui.settings.profile.email')}
+                                            </Label>
 
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            className="mt-1 block w-full"
-                                            defaultValue={auth.user.email}
-                                            name="email"
-                                            required
-                                            autoComplete="username"
-                                            placeholder={t(
-                                                'ui.settings.profile.email_placeholder',
-                                            )}
-                                        />
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                defaultValue={auth.user.email}
+                                                name="email"
+                                                required
+                                                autoComplete="username"
+                                                placeholder={t(
+                                                    'ui.settings.profile.email_placeholder',
+                                                )}
+                                            />
 
-                                        <InputError
-                                            className="mt-2"
-                                            message={errors.email}
-                                        />
+                                            <InputError
+                                                message={errors.email}
+                                            />
+                                        </div>
                                     </div>
 
                                     {mustVerifyEmail &&

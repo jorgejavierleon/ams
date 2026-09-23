@@ -1,11 +1,19 @@
 import { Link, usePage } from '@inertiajs/react';
+import {
+    Bell,
+    FileText,
+    Palette,
+    ShieldCheck,
+    Timer,
+    User,
+} from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useTranslations } from '@/hooks/use-translations';
-import { cn, toUrl } from '@/lib/utils';
+import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
@@ -28,48 +36,48 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         {
             title: t('ui.settings.nav.profile'),
             href: editProfile(),
-            icon: null,
+            icon: User,
         },
         {
             title: t('ui.settings.nav.security'),
             href: editSecurity(),
-            icon: null,
+            icon: ShieldCheck,
         },
         {
             title: t('ui.settings.nav.appearance'),
             href: editAppearance(),
-            icon: null,
+            icon: Palette,
         },
         ...(!isEmployee
             ? [
                   {
                       title: t('ui.settings.nav.notifications'),
                       href: editNotifications(),
-                      icon: null,
+                      icon: Bell,
                   },
                   {
                       title: t('ui.settings.nav.documents'),
                       href: editDocuments(),
-                      icon: null,
+                      icon: FileText,
                   },
                   {
                       title: t('ui.settings.nav.overtime'),
                       href: editOvertime(),
-                      icon: null,
+                      icon: Timer,
                   },
               ]
             : []),
     ];
 
     return (
-        <div className="px-4 py-6">
+        <div className="px-6 py-10">
             <Heading
                 title={t('ui.settings.title')}
                 description={t('ui.settings.description')}
             />
 
             <div className="flex flex-col lg:flex-row lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
+                <aside className="w-full max-w-xl lg:w-80">
                     <nav
                         className="flex flex-col space-y-1 space-x-0"
                         aria-label="Settings"
@@ -78,11 +86,13 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                             <Button
                                 key={`${toUrl(item.href)}-${index}`}
                                 size="sm"
-                                variant="ghost"
+                                variant={
+                                    isCurrentOrParentUrl(item.href)
+                                        ? 'default'
+                                        : 'ghost'
+                                }
                                 asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': isCurrentOrParentUrl(item.href),
-                                })}
+                                className="w-full justify-start"
                             >
                                 <Link href={item.href}>
                                     {item.icon && (
@@ -97,10 +107,8 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
 
                 <Separator className="my-6 lg:hidden" />
 
-                <div className="flex-1 md:max-w-2xl">
-                    <section className="max-w-xl space-y-12">
-                        {children}
-                    </section>
+                <div className="flex-1">
+                    <section className="space-y-12">{children}</section>
                 </div>
             </div>
         </div>

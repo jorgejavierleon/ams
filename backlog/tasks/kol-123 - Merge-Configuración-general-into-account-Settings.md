@@ -5,7 +5,7 @@ status: In Review
 assignee:
   - '@Jorge Leon'
 created_date: '2026-09-22 08:57'
-updated_date: '2026-09-22 09:41'
+updated_date: '2026-09-23 11:24'
 labels: []
 dependencies: []
 ordinal: 120000
@@ -59,6 +59,14 @@ All 3 subtasks (KOL-123.1/.2/.3) implemented and set to 'In Review'. Backend ful
 AC #1 (nav visual pattern) and #3 (nav hidden for non-admins) are implemented identically across the three pages/subtasks but not visually verified in a browser this session — the Claude-in-Chrome extension was unavailable. Four manual checks queued in docs/QA_CHECKLIST.md (one per subtask plus one for the old route's removal).
 
 Follow-up UX polish (post-review, requested by user with a screenshot of the Horas extra page): wrapped all three settings forms (notifications/documents/overtime) in a white Card, matching the Card/CardContent convention already used by companies/edit.tsx, premises/edit.tsx and other admin forms in the app — the page's gray background plus a single white card per form is the established pattern, distinct from the list-page 'no mega-card' preference. Verified: eslint clean, prettier clean, tsc clean (same 2 pre-existing unrelated errors), and the 3 Settings Pest suites re-run (34 tests) to confirm no behavior regression from the markup change.
+
+Further UX polish (post-review, requested by user with a reference screenshot): matched the settings pages closer to the reference's structure — the SettingsLayout nav now highlights the active section with a solid Button variant="default" pill (bg-primary) instead of a subtle bg-muted background; profile.tsx pairs Name/Email into a two-column row (sm:grid-cols-2, matching the pattern overtime.tsx already used); security.tsx was missing its Card wrap entirely (inconsistent with the other 5 settings pages) — added it and paired the new/confirm password fields into the same two-column row, keeping current_password full-width above; and Heading's 'small' variant (used only by these 6 settings pages) went from text-base/font-medium to text-lg/font-semibold with slightly more space above the card, per user's choice between two options shown side-by-side. Verified in-browser (light and dark) via chrome-devtools MCP across profile/security/notifications/overtime (Claude-in-Chrome extension still unavailable). eslint, prettier, and tsc all clean (same 2 pre-existing roles/ errors only). No backend change, so no new Pest coverage needed.
+
+Further UX polish #2 (post-review, requested by user with another reference screenshot): SettingsLayout got more breathing room below the app header (px-4 py-6 -> px-6 py-10) matching the reference's generous top gap, plus a lucide-react icon per nav item — User (Perfil), ShieldCheck (Seguridad), Palette (Apariencia), Bell (Notificaciones), FileText (Documentos, reusing the same icon app-sidebar.tsx already uses for Documentos), Timer (Horas extra, ditto). The icon rendering itself already existed in the Button (`{item.icon && <item.icon .../>}`) from the original scaffolding — items just had `icon: null`. Verified in-browser via chrome-devtools MCP; eslint, prettier, tsc all clean (same 2 pre-existing roles/ errors only). No backend change.
+
+Further UX polish #3 (post-review, requested by user pointing out the previous spacing change 'looked the same'): the actual issue was that the content column was width-capped independent of viewport (`md:max-w-2xl` on the wrapper div, `max-w-xl` on the inner section — ~672px/576px caps), so the card never grew past that regardless of screen size, which read as 'no change' next to the reference's edge-to-edge card. Removed both caps in layouts/settings/layout.tsx; the card now fills the remaining flex-1 width next to the nav, same as the reference screenshot. Verified across profile/notifications/overtime in-browser; on 2-field pages (profile) the inputs now stretch quite wide since there's no per-field max-width, which matches what the reference itself does (2-col grid filling full width) but is worth flagging in case the user wants individual inputs capped narrower even though the card spans full width. eslint, prettier, tsc all clean (same 2 pre-existing roles/ errors only). No backend change.
+
+Further UX polish #4: widened the settings nav aside from lg:w-48 (192px) to lg:w-80 (320px) in layouts/settings/layout.tsx, per user request. Verified in-browser; eslint/prettier clean.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
