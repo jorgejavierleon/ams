@@ -44,7 +44,8 @@ test('the documents list renders scoped to the audit session organization', func
             ->component('dt/documents/index')
             ->has('documents.data', 1)
             ->where('documents.data.0.title', 'Audited contract')
-            ->where('documents.data.0.employee', 'Juan Pérez'),
+            ->where('documents.data.0.employee', 'Juan Pérez')
+            ->has('documents.data.0.employee_avatar'),
         );
 });
 

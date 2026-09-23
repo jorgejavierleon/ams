@@ -41,7 +41,7 @@ class DocumentController extends Controller
         $perPage = $this->resolveTablePerPage($request);
 
         $documents = Document::query()
-            ->with('user:id,name')
+            ->with(['user:id,name', 'user.media'])
             ->orderBy($sort, $direction)
             ->paginate($perPage)
             ->withQueryString();
@@ -52,6 +52,7 @@ class DocumentController extends Controller
                 'title' => $document->title,
                 'type' => $document->type?->label(),
                 'employee' => $document->user->name,
+                'employee_avatar' => $document->user->avatar,
                 'status' => [
                     'value' => $document->status->value,
                     'label' => $document->status->label(),

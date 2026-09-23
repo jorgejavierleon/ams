@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, Eye, MoreVertical, Plus, Trash2, X } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -8,6 +8,7 @@ import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import type { FacetedOption } from '@/components/data-table-faceted-filter';
+import { EmployeeCell } from '@/components/employee-cell';
 import { FormField } from '@/components/form-field';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
@@ -31,12 +32,15 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { show as showEmployee } from '@/routes/employees';
 import { approve, create, destroy, index, reject } from '@/routes/leaves';
 import type { Paginated } from '@/types/ui';
 
 type Leave = {
     id: number;
+    employee_id: number | null;
     employee: string | null;
+    employee_avatar: string | null;
     type: string;
     type_label: string;
     start_date: string;
@@ -100,6 +104,7 @@ export default function LeavesIndex({
     can,
 }: Props) {
     const { t } = useTranslations();
+    const { auth } = usePage().props;
 
     const [status, setStatus] = useState(filters.status ?? 'all');
     const [employees, setEmployees] = useState<string[]>(
@@ -187,9 +192,15 @@ export default function LeavesIndex({
                 meta: { title: t('ui.leaves.columns.employee') },
                 header: () => t('ui.leaves.columns.employee'),
                 cell: ({ row }) => (
-                    <span className="font-medium">
-                        {row.original.employee ?? '—'}
-                    </span>
+                    <EmployeeCell
+                        name={row.original.employee}
+                        avatar={row.original.employee_avatar}
+                        href={
+                            auth.isAdmin && row.original.employee_id
+                                ? showEmployee(row.original.employee_id).url
+                                : undefined
+                        }
+                    />
                 ),
             },
             {
@@ -348,7 +359,7 @@ export default function LeavesIndex({
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [t, can.delete, can.approve],
+        [t, can.delete, can.approve, auth.isAdmin],
     );
 
     return (

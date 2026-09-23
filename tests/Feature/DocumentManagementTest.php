@@ -70,6 +70,7 @@ test('admin can list documents for their organization', function () {
             fn ($page) => $page
                 ->component('documents/index')
                 ->has('documents.data', 2)
+                ->where('documents.data.0.employee_id', $employee->id)
         );
 });
 

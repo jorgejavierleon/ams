@@ -47,7 +47,7 @@ class OvertimeRequestController extends Controller
         $status = $this->statusFilter($request);
 
         $requests = OvertimeRequest::query()
-            ->with(['user:id,name,supervisor_id', 'reviewedBy:id,name'])
+            ->with(['user:id,name,supervisor_id', 'user.media', 'reviewedBy:id,name'])
             ->when($supervisorId, fn ($query) => $query->whereHas(
                 'user',
                 fn ($user) => $user->where('supervisor_id', $supervisorId),
@@ -60,7 +60,9 @@ class OvertimeRequestController extends Controller
         return Inertia::render('overtime/requests/index', [
             'requests' => $requests->through(fn (OvertimeRequest $overtimeRequest): array => [
                 'id' => $overtimeRequest->id,
+                'employee_id' => $overtimeRequest->user_id,
                 'employee' => $overtimeRequest->user?->name,
+                'employee_avatar' => $overtimeRequest->user?->avatar,
                 'date' => $overtimeRequest->date->format('Y-m-d'),
                 'requested_hours' => $overtimeRequest->requested_hours,
                 'reason' => $overtimeRequest->reason,

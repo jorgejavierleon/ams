@@ -1,8 +1,9 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { EmployeeCell } from '@/components/employee-cell';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/hooks/use-translations';
@@ -20,6 +21,7 @@ type DocumentRow = {
     title: string;
     type: string | null;
     employee: string | null;
+    employee_avatar: string | null;
     status: StatusBadge;
     published_at: string | null;
     signed_at: string | null;
@@ -44,12 +46,11 @@ export default function DocumentsIndex({ documents, filters }: Props) {
                 meta: { title: t('ui.dt.documents.columns.employee') },
                 header: () => t('ui.dt.documents.columns.employee'),
                 cell: ({ row }) => (
-                    <Link
-                        href={show(row.original.id)}
-                        className="font-medium hover:cursor-pointer"
-                    >
-                        {row.original.employee ?? '—'}
-                    </Link>
+                    <EmployeeCell
+                        name={row.original.employee}
+                        avatar={row.original.employee_avatar}
+                        href={show(row.original.id).url}
+                    />
                 ),
             },
             {

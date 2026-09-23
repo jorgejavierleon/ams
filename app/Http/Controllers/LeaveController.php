@@ -50,7 +50,7 @@ class LeaveController extends Controller
         $to = $request->date('to');
 
         $leaves = Leave::query()
-            ->with(['user:id,name', 'approver:id,name'])
+            ->with(['user:id,name', 'user.media', 'approver:id,name'])
             ->when($supervisorId, fn ($query) => $query->whereHas(
                 'user',
                 fn ($user) => $user->where('supervisor_id', $supervisorId),
@@ -67,7 +67,9 @@ class LeaveController extends Controller
         return Inertia::render('leaves/index', [
             'leaves' => $leaves->through(fn (Leave $leave) => [
                 'id' => $leave->id,
+                'employee_id' => $leave->user_id,
                 'employee' => $leave->user?->name,
+                'employee_avatar' => $leave->user?->avatar,
                 'type' => $leave->type->value,
                 'type_label' => $leave->type->label(),
                 'start_date' => $leave->start_date->format('Y-m-d'),

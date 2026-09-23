@@ -78,6 +78,7 @@ class WorkdayController extends Controller
         $workdays = Workday::query()
             ->with([
                 'user:id,name,position_id,supervisor_id,overtime_rest_day_eligible',
+                'user.media',
                 'shift:id,name',
                 'leave:id,type',
                 'overtimeAuthorization.user:id,supervisor_id',
@@ -106,7 +107,9 @@ class WorkdayController extends Controller
         return Inertia::render('workdays/index', [
             'workdays' => $workdays->through(fn (Workday $workday) => [
                 'id' => $workday->id,
+                'employee_id' => $workday->user_id,
                 'employee' => $workday->user?->name,
+                'employee_avatar' => $workday->user?->avatar,
                 'date' => $workday->date->format('Y-m-d'),
                 'status' => $workday->status?->value,
                 'status_label' => $workday->status?->label(),

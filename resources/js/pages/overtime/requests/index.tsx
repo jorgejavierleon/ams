@@ -1,8 +1,9 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { DataTable } from '@/components/data-table';
+import { EmployeeCell } from '@/components/employee-cell';
 import { FormField } from '@/components/form-field';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -17,13 +18,16 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { toneChip } from '@/lib/status-tone';
 import { cn } from '@/lib/utils';
+import { show as showEmployee } from '@/routes/employees';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { approve, index, reject } from '@/routes/overtime/requests';
 import type { Paginated } from '@/types/ui';
 
 type OvertimeRequestRow = {
     id: number;
+    employee_id: number | null;
     employee: string | null;
+    employee_avatar: string | null;
     date: string;
     requested_hours: string;
     reason: string | null;
@@ -60,6 +64,7 @@ export default function OvertimeRequestsIndex({
     can,
 }: Props) {
     const { t } = useTranslations();
+    const { auth } = usePage().props;
 
     const [status, setStatus] = useState(filters.status ?? 'pending');
 
@@ -122,7 +127,17 @@ export default function OvertimeRequestsIndex({
                     title: t('ui.overtime.requests.review.columns.employee'),
                 },
                 header: () => t('ui.overtime.requests.review.columns.employee'),
-                cell: ({ row }) => row.original.employee ?? '—',
+                cell: ({ row }) => (
+                    <EmployeeCell
+                        name={row.original.employee}
+                        avatar={row.original.employee_avatar}
+                        href={
+                            auth.isAdmin && row.original.employee_id
+                                ? showEmployee(row.original.employee_id).url
+                                : undefined
+                        }
+                    />
+                ),
             },
             {
                 id: 'date',
@@ -219,7 +234,7 @@ export default function OvertimeRequestsIndex({
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [t, can.decide],
+        [t, can.decide, auth.isAdmin],
     );
 
     return (

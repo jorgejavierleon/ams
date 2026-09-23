@@ -49,7 +49,7 @@ class DocumentController extends Controller
         $perPage = $this->resolveTablePerPage($request);
 
         $documents = Document::query()
-            ->with('user:id,name')
+            ->with(['user:id,name', 'user.media'])
             ->when($search, fn ($query) => $query->where('title', 'like', "%{$search}%"))
             ->when($status, fn ($query) => $query->where('status', $status))
             ->when($type, fn ($query) => $query->where('type', $type))
@@ -65,7 +65,9 @@ class DocumentController extends Controller
                 'id' => $document->id,
                 'title' => $document->title,
                 'type' => $document->type?->label(),
+                'employee_id' => $document->user_id,
                 'employee' => $document->user->name,
+                'employee_avatar' => $document->user->avatar,
                 'status' => [
                     'value' => $document->status->value,
                     'label' => $document->status->label(),

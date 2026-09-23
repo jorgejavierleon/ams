@@ -78,7 +78,8 @@ test('admin sees the workdays list scoped to their organization', function () {
         ->assertInertia(fn ($page) => $page
             ->component('workdays/index')
             ->has('workdays.data', 1)
-            ->where('workdays.data.0.employee', $employee->name));
+            ->where('workdays.data.0.employee', $employee->name)
+            ->where('workdays.data.0.employee_id', $employee->id));
 });
 
 test('the list defaults to today', function () {

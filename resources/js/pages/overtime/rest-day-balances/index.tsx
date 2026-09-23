@@ -1,15 +1,17 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ComboboxOption } from '@/components/combobox';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { EmployeeCell } from '@/components/employee-cell';
 import Heading from '@/components/heading';
 import RestDayBalanceConsumeDialog from '@/components/rest-day-balance-consume-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
+import { show as showEmployee } from '@/routes/employees';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { index } from '@/routes/overtime/rest-day-balances';
 import type { Paginated } from '@/types/ui';
@@ -18,6 +20,7 @@ type RestDayBalanceLine = {
     id: number;
     user_id: number;
     employee: string | null;
+    employee_avatar: string | null;
     accrued_hours: string;
     rest_hours: string;
     consumed_hours: string;
@@ -48,6 +51,7 @@ export default function OvertimeRestDayBalancesIndex({
     employeeOptions,
 }: Props) {
     const { t } = useTranslations();
+    const { auth } = usePage().props;
     const [consumeOpen, setConsumeOpen] = useState(false);
 
     const columns = useMemo<ColumnDef<RestDayBalanceLine>[]>(
@@ -66,7 +70,15 @@ export default function OvertimeRestDayBalancesIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <span className="font-medium">{row.original.employee}</span>
+                    <EmployeeCell
+                        name={row.original.employee}
+                        avatar={row.original.employee_avatar}
+                        href={
+                            auth.isAdmin
+                                ? showEmployee(row.original.user_id).url
+                                : undefined
+                        }
+                    />
                 ),
             },
             {
@@ -159,7 +171,7 @@ export default function OvertimeRestDayBalancesIndex({
                 ),
             },
         ],
-        [t],
+        [t, auth.isAdmin],
     );
 
     return (

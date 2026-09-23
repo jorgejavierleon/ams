@@ -66,6 +66,8 @@ test('a supervisor lists their team\'s pending requests on the standalone screen
             ->component('overtime/requests/index')
             ->has('requests.data', 1)
             ->where('requests.data.0.id', $ownRequest->id)
+            ->where('requests.data.0.employee_id', $employee->id)
+            ->has('requests.data.0.employee_avatar')
             ->where('can.decide', true));
 });
 

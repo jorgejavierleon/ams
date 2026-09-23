@@ -102,6 +102,7 @@ test('the index exposes detail fields for the leave view panel', function () {
             ->where('leaves.data.0.medical_leave_number', '12345')
             ->where('leaves.data.0.medical_leave_doctor', 'Dr. House')
             ->where('leaves.data.0.notes', 'Bed rest for a week.')
+            ->where('leaves.data.0.employee_id', $employee->id)
             ->whereNot('leaves.data.0.created_at', null));
 });
 

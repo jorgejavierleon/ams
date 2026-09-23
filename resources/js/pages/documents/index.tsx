@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { DataTableRowActions } from '@/components/data-table-row-actions';
+import { EmployeeCell } from '@/components/employee-cell';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
 import { create, destroy, edit, index, show } from '@/routes/documents';
+import { show as showEmployee } from '@/routes/employees';
 import type { Paginated } from '@/types/ui';
 
 type StatusBadge = {
@@ -33,7 +35,9 @@ type DocumentRow = {
     id: number;
     title: string;
     type: string | null;
+    employee_id: number | null;
     employee: string | null;
+    employee_avatar: string | null;
     status: StatusBadge;
     published_at: string | null;
     signed_at: string | null;
@@ -66,6 +70,7 @@ export default function DocumentsIndex({
     employeeOptions,
 }: Props) {
     const { t } = useTranslations();
+    const { auth } = usePage().props;
     const [deleteTarget, setDeleteTarget] = useState<DocumentRow | null>(null);
 
     const [status, setStatus] = useState(filters.status ?? 'all');
@@ -143,7 +148,17 @@ export default function DocumentsIndex({
                 enableSorting: false,
                 meta: { title: t('ui.documents.columns.employee') },
                 header: () => t('ui.documents.columns.employee'),
-                cell: ({ row }) => row.original.employee ?? '—',
+                cell: ({ row }) => (
+                    <EmployeeCell
+                        name={row.original.employee}
+                        avatar={row.original.employee_avatar}
+                        href={
+                            auth.isAdmin && row.original.employee_id
+                                ? showEmployee(row.original.employee_id).url
+                                : undefined
+                        }
+                    />
+                ),
             },
             {
                 accessorKey: 'status',
@@ -205,7 +220,7 @@ export default function DocumentsIndex({
                     ) : null,
             },
         ],
-        [t],
+        [t, auth.isAdmin],
     );
 
     return (

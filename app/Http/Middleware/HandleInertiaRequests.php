@@ -54,6 +54,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? collect(),
+                // Employees CRUD (employees.*) is gated by the `admin` role
+                // rather than a permission, so link-to-employee UI elsewhere
+                // (e.g. an avatar cell linking to the employee's show page)
+                // checks this instead of a permission string.
+                'isAdmin' => fn () => $request->user()?->hasRole('admin') ?? false,
                 'pendingModificationsCount' => fn () => $this->pendingModificationsCount($request),
                 'pendingSignaturesCount' => fn () => $this->pendingSignaturesCount($request),
                 'pendingOvertimeRequestsCount' => fn () => $this->pendingOvertimeRequestsCount($request),

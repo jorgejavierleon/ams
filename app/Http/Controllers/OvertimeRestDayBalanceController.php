@@ -38,7 +38,7 @@ class OvertimeRestDayBalanceController extends Controller
         );
 
         $balances = OvertimeRestDayBalance::query()
-            ->with('user:id,name')
+            ->with(['user:id,name', 'user.media'])
             ->when($search, fn ($query) => $query->whereHas(
                 'user',
                 fn ($user) => $user->where('name', 'like', "%{$search}%"),
@@ -52,6 +52,7 @@ class OvertimeRestDayBalanceController extends Controller
                 'id' => $balance->id,
                 'user_id' => $balance->user_id,
                 'employee' => $balance->user?->name,
+                'employee_avatar' => $balance->user?->avatar,
                 'accrued_hours' => $balance->accrued_hours,
                 'rest_hours' => $balance->rest_hours,
                 'consumed_hours' => $balance->consumed_hours,

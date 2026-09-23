@@ -65,6 +65,7 @@ test('admin can list pactos with the employee name', function () {
                 ->component('overtime/pacts/index')
                 ->has('pacts.data', 1)
                 ->where('pacts.data.0.employee', 'Ana Soto')
+                ->has('pacts.data.0.employee_avatar')
                 ->where('pacts.data.0.status.value', 'active'),
         );
 });

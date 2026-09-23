@@ -71,6 +71,7 @@ test('HR sees every employee balance for its organization with the employee name
                 ->component('overtime/rest-day-balances/index')
                 ->has('balances.data', 1)
                 ->where('balances.data.0.employee', 'Ana Soto')
+                ->has('balances.data.0.employee_avatar')
                 ->where('balances.data.0.rest_hours', '03:00:00')
                 ->where('balances.data.0.status.value', 'active'),
         );

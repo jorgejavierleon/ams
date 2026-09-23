@@ -40,7 +40,7 @@ class OvertimePactController extends Controller
         $perPage = $this->resolveTablePerPage($request);
 
         $pacts = OvertimePact::query()
-            ->with('user:id,name')
+            ->with(['user:id,name', 'user.media'])
             ->when($search, fn ($query) => $query->whereHas(
                 'user',
                 fn ($user) => $user->where('name', 'like', "%{$search}%"),
@@ -54,6 +54,7 @@ class OvertimePactController extends Controller
                 'id' => $pact->id,
                 'user_id' => $pact->user_id,
                 'employee' => $pact->user?->name,
+                'employee_avatar' => $pact->user?->avatar,
                 'start_date' => $pact->start_date->format('Y-m-d'),
                 'end_date' => $pact->end_date->format('Y-m-d'),
                 'status' => [

@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     AlertTriangle,
@@ -13,6 +13,7 @@ import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import type { FacetedOption } from '@/components/data-table-faceted-filter';
+import { EmployeeCell } from '@/components/employee-cell';
 import { FormField } from '@/components/form-field';
 import Heading from '@/components/heading';
 import OvertimeApproveDialog from '@/components/overtime-approve-dialog';
@@ -47,6 +48,7 @@ import {
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { show as showEmployee } from '@/routes/employees';
 import { bulkModify, index, modify, show } from '@/routes/workdays';
 import { bulkDecide as bulkDecideOvertime } from '@/routes/workdays/overtime';
 import type { Paginated } from '@/types/ui';
@@ -65,7 +67,9 @@ type WorkdayOvertime = {
 
 type Workday = {
     id: number;
+    employee_id: number | null;
     employee: string | null;
+    employee_avatar: string | null;
     date: string;
     status: string | null;
     status_label: string | null;
@@ -137,6 +141,7 @@ export default function WorkdaysIndex({
     can,
 }: Props) {
     const { t } = useTranslations();
+    const { auth } = usePage().props;
 
     const [from, setFrom] = useState(filters.from);
     const [to, setTo] = useState(filters.to);
@@ -381,9 +386,16 @@ export default function WorkdaysIndex({
                 header: () => t('ui.workdays.columns.employee'),
                 cell: ({ row }) => (
                     <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                            {row.original.employee ?? '—'}
-                        </span>
+                        <EmployeeCell
+                            name={row.original.employee}
+                            avatar={row.original.employee_avatar}
+                            href={
+                                auth.isAdmin && row.original.employee_id
+                                    ? showEmployee(row.original.employee_id)
+                                          .url
+                                    : undefined
+                            }
+                        />
                         {row.original.pending_modifications > 0 && (
                             <Badge
                                 variant="outline"
@@ -609,7 +621,7 @@ export default function WorkdaysIndex({
             },
         ],
 
-        [t, openModify, can.decideOvertime],
+        [t, openModify, can.decideOvertime, auth.isAdmin],
     );
 
     return (

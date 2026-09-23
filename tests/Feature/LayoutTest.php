@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 test('dashboard renders the correct Inertia component for authenticated users', function () {
     $this->actingAs(User::factory()->create())
@@ -23,6 +24,23 @@ test('shared Inertia props include auth user, flash data, and permissions', func
             ->has('flash.error')
             ->has('flash.warning')
         );
+});
+
+test('shared Inertia auth.isAdmin reflects the admin role', function () {
+    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->where('auth.isAdmin', true));
+
+    $employee = User::factory()->create();
+
+    $this->actingAs($employee)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->where('auth.isAdmin', false));
 });
 
 test('flash success message is present in Inertia shared data after redirect', function () {

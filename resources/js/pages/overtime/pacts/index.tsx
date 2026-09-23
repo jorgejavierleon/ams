@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeft, CheckCircle2, Plus, XCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { DataTableRowActions } from '@/components/data-table-row-actions';
+import { EmployeeCell } from '@/components/employee-cell';
 import Heading from '@/components/heading';
 import OvertimePactFormDialog from '@/components/overtime-pact-form-dialog';
 import type { OvertimePactFormTarget } from '@/components/overtime-pact-form-dialog';
@@ -14,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/hooks/use-translations';
+import { show as showEmployee } from '@/routes/employees';
 import { index as overtimeIndex } from '@/routes/overtime';
 import { activate, index, revoke } from '@/routes/overtime/pacts';
 import type { Paginated } from '@/types/ui';
@@ -22,6 +24,7 @@ type OvertimePact = {
     id: number;
     user_id: number;
     employee: string | null;
+    employee_avatar: string | null;
     start_date: string;
     end_date: string;
     status: {
@@ -47,6 +50,7 @@ export default function OvertimePactsIndex({
     employeeOptions,
 }: Props) {
     const { t } = useTranslations();
+    const { auth } = usePage().props;
     const [formOpen, setFormOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<OvertimePactFormTarget>(null);
     const [revokeTarget, setRevokeTarget] = useState<OvertimePact | null>(null);
@@ -63,7 +67,15 @@ export default function OvertimePactsIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <span className="font-medium">{row.original.employee}</span>
+                    <EmployeeCell
+                        name={row.original.employee}
+                        avatar={row.original.employee_avatar}
+                        href={
+                            auth.isAdmin
+                                ? showEmployee(row.original.user_id).url
+                                : undefined
+                        }
+                    />
                 ),
             },
             {
@@ -153,7 +165,7 @@ export default function OvertimePactsIndex({
                 ),
             },
         ],
-        [t],
+        [t, auth.isAdmin],
     );
 
     function openCreate() {

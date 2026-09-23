@@ -8,8 +8,8 @@ import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter';
 import type { FacetedOption } from '@/components/data-table-faceted-filter';
 import { DataTableRowActions } from '@/components/data-table-row-actions';
+import { EmployeeCell } from '@/components/employee-cell';
 import Heading from '@/components/heading';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -182,22 +182,11 @@ export default function EmployeesIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <Link
-                        href={show(row.original.id)}
-                        className="flex items-center gap-3"
-                    >
-                        <Avatar className="size-8">
-                            {row.original.avatar ? (
-                                <AvatarImage src={row.original.avatar} alt="" />
-                            ) : null}
-                            <AvatarFallback>
-                                {row.original.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium hover:cursor-pointer">
-                            {row.original.name}
-                        </span>
-                    </Link>
+                    <EmployeeCell
+                        name={row.original.name}
+                        avatar={row.original.avatar}
+                        href={show(row.original.id).url}
+                    />
                 ),
             },
             {
