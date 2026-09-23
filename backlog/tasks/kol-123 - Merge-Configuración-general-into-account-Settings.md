@@ -5,7 +5,7 @@ status: In Review
 assignee:
   - '@Jorge Leon'
 created_date: '2026-09-22 08:57'
-updated_date: '2026-09-22 09:18'
+updated_date: '2026-09-22 09:41'
 labels: []
 dependencies: []
 ordinal: 120000
@@ -57,6 +57,8 @@ Split into one subtask per section (KOL ticket per vertical slice) so each is in
 <!-- SECTION:NOTES:BEGIN -->
 All 3 subtasks (KOL-123.1/.2/.3) implemented and set to 'In Review'. Backend fully verified: 40+18=58 Pest tests across NotificationSettingsTest, DocumentSettingsTest, OvertimeSettingsTest, OvertimeSectionTest (fixed), OvertimeAuthorizationModeTest, OvertimeQueueBadgeTest, OvertimeRequestReviewTest — all passing. pint clean, tsc clean (2 pre-existing unrelated errors only). Old /organization-settings page, controller, routes, and test fully removed with no dangling references (confirmed by repo-wide grep).
 AC #1 (nav visual pattern) and #3 (nav hidden for non-admins) are implemented identically across the three pages/subtasks but not visually verified in a browser this session — the Claude-in-Chrome extension was unavailable. Four manual checks queued in docs/QA_CHECKLIST.md (one per subtask plus one for the old route's removal).
+
+Follow-up UX polish (post-review, requested by user with a screenshot of the Horas extra page): wrapped all three settings forms (notifications/documents/overtime) in a white Card, matching the Card/CardContent convention already used by companies/edit.tsx, premises/edit.tsx and other admin forms in the app — the page's gray background plus a single white card per form is the established pattern, distinct from the list-page 'no mega-card' preference. Verified: eslint clean, prettier clean, tsc clean (same 2 pre-existing unrelated errors), and the 3 Settings Pest suites re-run (34 tests) to confirm no behavior regression from the markup change.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
