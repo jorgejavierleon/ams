@@ -89,10 +89,11 @@ test('admin can list shifts with weekly hours and assignment count', function ()
         'organization_id' => $admin->organization_id,
         'name' => 'Turno Mañana',
     ]);
+    $employee = User::factory()->create(['organization_id' => $admin->organization_id]);
     ShiftAssignment::factory()->create([
         'organization_id' => $admin->organization_id,
         'shift_id' => $shift->id,
-        'user_id' => User::factory()->create(['organization_id' => $admin->organization_id])->id,
+        'user_id' => $employee->id,
     ]);
 
     $this->actingAs($admin)
@@ -104,7 +105,8 @@ test('admin can list shifts with weekly hours and assignment count', function ()
                 ->has('shifts.data', 1)
                 ->where('shifts.data.0.name', 'Turno Mañana')
                 ->where('shifts.data.0.total_week_hours', 40)
-                ->where('shifts.data.0.assignments_count', 1),
+                ->where('shifts.data.0.assignments_count', 1)
+                ->where('shifts.data.0.avatars.0.id', $employee->id),
         );
 });
 

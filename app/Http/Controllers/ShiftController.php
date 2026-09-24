@@ -7,6 +7,7 @@ use App\Concerns\ResolvesTableSort;
 use App\Enums\ShiftType;
 use App\Models\LegalHourLimit;
 use App\Models\Shift;
+use App\Models\ShiftAssignment;
 use App\Models\ShiftDay;
 use App\Services\LegalHourLimits;
 use App\Services\TimeZoneService;
@@ -24,6 +25,12 @@ class ShiftController extends Controller
 {
     use ResolvesTablePerPage;
     use ResolvesTableSort;
+
+    /**
+     * Number of assigned-employee avatars shown per shift in the index list
+     * before the remainder collapses into a "+N" overflow bubble.
+     */
+    private const AVATAR_LIMIT = 5;
 
     public function __construct(
         private LegalHourLimits $legalHourLimits,
@@ -44,6 +51,10 @@ class ShiftController extends Controller
 
         $shifts = Shift::query()
             ->withCount('activeShiftAssignments')
+            ->with(['activeShiftAssignments' => fn ($query) => $query
+                ->with(['user' => fn ($query) => $query->select('id', 'name')->with('media')])
+                ->orderBy('start_date')
+                ->limit(self::AVATAR_LIMIT)])
             ->when($search, fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy($sort, $direction)
             ->paginate($perPage)
@@ -57,6 +68,11 @@ class ShiftController extends Controller
                 'total_week_hours' => $shift->total_week_hours,
                 'exceeds_max' => $shift->total_week_hours > $limits->ordinary_weekly_hours,
                 'assignments_count' => $shift->active_shift_assignments_count,
+                'avatars' => $shift->activeShiftAssignments->map(fn (ShiftAssignment $assignment): array => [
+                    'id' => (int) $assignment->user->id,
+                    'name' => (string) $assignment->user->name,
+                    'avatar' => $assignment->user->avatar,
+                ])->all(),
                 'is_default' => $shift->is_default,
             ]),
             'filters' => ['search' => $search, 'sort' => $sort, 'direction' => $direction],

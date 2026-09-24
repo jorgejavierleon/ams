@@ -2,6 +2,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Plus, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { AvatarGroup } from '@/components/avatar-group';
+import type { AvatarGroupUser } from '@/components/avatar-group';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
@@ -20,6 +22,7 @@ type Shift = {
     total_week_hours: number | null;
     exceeds_max: boolean;
     assignments_count: number;
+    avatars: AvatarGroupUser[];
     is_default: boolean;
 };
 
@@ -109,9 +112,10 @@ export default function ShiftsIndex({ shifts, filters }: Props) {
                 meta: { title: t('ui.shifts.columns.assignments') },
                 header: () => t('ui.shifts.columns.assignments'),
                 cell: ({ row }) => (
-                    <Badge variant="secondary">
-                        {row.original.assignments_count}
-                    </Badge>
+                    <AvatarGroup
+                        users={row.original.avatars}
+                        total={row.original.assignments_count}
+                    />
                 ),
             },
             {
