@@ -206,11 +206,51 @@ return [
 
         'security' => [
             'head' => 'Configuración de seguridad',
-            'title' => 'Actualizar contraseña',
-            'description' => 'Asegúrese de que su cuenta use una contraseña larga y aleatoria para mantenerse segura',
+            'title' => 'Seguridad',
+            'description' => 'Administre su contraseña y sus tokens de acceso personal',
+
+            'password' => [
+                'title' => 'Actualizar contraseña',
+                'description' => 'Asegúrese de que su cuenta use una contraseña larga y aleatoria para mantenerse segura',
+            ],
+
             'current_password' => 'Contraseña actual',
             'new_password' => 'Nueva contraseña',
             'confirm_password' => 'Confirmar contraseña',
+
+            'tokens' => [
+                'title' => 'Tokens de acceso personal',
+                'description' => 'Cree un token para conectar un agente de IA u otra aplicación a su cuenta',
+                'name' => 'Nombre del token',
+                'name_placeholder' => 'p. ej. Mi notebook, Agente Claude',
+                'name_taken' => 'Ya tiene un token con este nombre.',
+                'create' => 'Crear token',
+                'empty' => 'No tiene tokens de acceso personal activos.',
+                'columns' => [
+                    'name' => 'Nombre',
+                    'created_at' => 'Creado',
+                    'last_used_at' => 'Último uso',
+                ],
+                'never_used' => 'Nunca usado',
+                'actions' => [
+                    'revoke' => 'Revocar',
+                ],
+                'revoke_dialog' => [
+                    'title' => '¿Revocar este token?',
+                    'description' => 'Cualquier aplicación o agente que use este token perderá acceso de inmediato. Esto no se puede deshacer.',
+                    'confirm' => 'Revocar token',
+                ],
+                'created_dialog' => [
+                    'title' => 'Token creado',
+                    'description' => 'Copie este token ahora. Por seguridad, no se volverá a mostrar.',
+                    'copy' => 'Copiar',
+                    'copied' => 'Copiado',
+                    'done' => 'Listo',
+                ],
+                'flash' => [
+                    'revoked' => 'Token revocado.',
+                ],
+            ],
         ],
 
         'appearance' => [

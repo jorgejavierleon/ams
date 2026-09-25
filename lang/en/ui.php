@@ -203,11 +203,51 @@ return [
 
         'security' => [
             'head' => 'Security settings',
-            'title' => 'Update password',
-            'description' => 'Ensure your account is using a long, random password to stay secure',
+            'title' => 'Security',
+            'description' => 'Manage your password and personal access tokens',
+
+            'password' => [
+                'title' => 'Update password',
+                'description' => 'Ensure your account is using a long, random password to stay secure',
+            ],
+
             'current_password' => 'Current password',
             'new_password' => 'New password',
             'confirm_password' => 'Confirm password',
+
+            'tokens' => [
+                'title' => 'Personal access tokens',
+                'description' => 'Create a token to connect an AI agent or other application to your account',
+                'name' => 'Token name',
+                'name_placeholder' => 'e.g. My laptop, Claude agent',
+                'name_taken' => 'You already have a token with this name.',
+                'create' => 'Create token',
+                'empty' => 'You have no active personal access tokens.',
+                'columns' => [
+                    'name' => 'Name',
+                    'created_at' => 'Created',
+                    'last_used_at' => 'Last used',
+                ],
+                'never_used' => 'Never used',
+                'actions' => [
+                    'revoke' => 'Revoke',
+                ],
+                'revoke_dialog' => [
+                    'title' => 'Revoke this token?',
+                    'description' => "Any application or agent using this token will immediately lose access. This can't be undone.",
+                    'confirm' => 'Revoke token',
+                ],
+                'created_dialog' => [
+                    'title' => 'Token created',
+                    'description' => "Copy this token now. For your security, we won't show it again.",
+                    'copy' => 'Copy',
+                    'copied' => 'Copied',
+                    'done' => 'Done',
+                ],
+                'flash' => [
+                    'revoked' => 'Token revoked.',
+                ],
+            ],
         ],
 
         'appearance' => [
