@@ -119,6 +119,8 @@ class LeaveController extends Controller
 
     public function store(Request $request, LeaveApprovers $approvers): RedirectResponse
     {
+        Gate::authorize('create', Leave::class);
+
         $organizationId = Company::currentOrganizationId();
 
         $data = $request->validate([

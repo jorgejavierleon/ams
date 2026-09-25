@@ -49,6 +49,10 @@ class RoleSeeder extends Seeder
      * jump than anything they currently have; a tenant admin can grant it to
      * another role later via the Roles screen.
      *
+     * `Create:Leave` (KOL-127) gates creating a leave request on behalf of
+     * another employee — both the admin web form and its MCP tool
+     * equivalent authorize against this same permission via `LeavePolicy`.
+     *
      * @var array<int, string>
      */
     private const ADMIN_PERMISSIONS = [
@@ -58,6 +62,7 @@ class RoleSeeder extends Seeder
         'View:PayrollReport',
         'Export:PayrollReport',
         'Import:Employee',
+        'Create:Leave',
     ];
 
     /**

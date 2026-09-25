@@ -15,13 +15,24 @@ function mcpJsonRpc(string $method, array $params = []): array
     ];
 }
 
-test('an authenticated agent can reach the mcp server with no tools listed yet', function () {
+test('an authenticated agent can list the registered leave tools', function () {
     Sanctum::actingAs(User::factory()->create());
 
     $response = $this->postJson('/mcp/kolvi', mcpJsonRpc('tools/list'));
 
     $response->assertOk();
-    $response->assertJsonPath('result.tools', []);
+
+    $names = collect($response->json('result.tools'))->pluck('name');
+
+    expect($names)->toContain(
+        'create-leave',
+        'view-own-leaves',
+        'cancel-leave',
+        'view-team-leaves',
+        'approve-leave',
+        'reject-leave',
+        'create-leave-for-employee',
+    );
 });
 
 test('an unauthenticated request to the mcp server is rejected', function () {
