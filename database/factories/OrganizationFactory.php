@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\Plan;
 use App\Models\Organization;
+use App\Models\User;
 use App\Support\Rut;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -32,5 +33,16 @@ class OrganizationFactory extends Factory
             'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 99999),
             'plan' => fake()->randomElement(Plan::cases()),
         ];
+    }
+
+    /**
+     * Set the organization's Owner (KOL-133). Bypasses #[Fillable] the same
+     * way every other factory state does (Factory::create() runs unguarded).
+     */
+    public function ownedBy(User $owner): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'owner_id' => $owner->id,
+        ]);
     }
 }

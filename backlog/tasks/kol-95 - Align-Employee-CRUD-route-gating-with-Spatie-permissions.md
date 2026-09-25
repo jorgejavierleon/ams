@@ -4,6 +4,7 @@ title: Align Employee CRUD route gating with Spatie permissions
 status: To Do
 assignee: []
 created_date: '2026-09-03 19:35'
+updated_date: '2026-09-25 12:42'
 labels: []
 dependencies: []
 references:
@@ -33,3 +34,12 @@ The employees route group (routes/web.php, Route::resource('employees', ...) plu
 - [ ] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-09-25 12:42
+---
+Superseded/absorbed by KOL-133.4, part of the KOL-133 Owner/admin-role initiative. Leaving status as-is until KOL-133.4 ships and closes this decision.
+---
+<!-- COMMENTS:END -->

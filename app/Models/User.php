@@ -94,6 +94,18 @@ class User extends Authenticatable implements HasMedia
     }
 
     /**
+     * Whether this user is the Owner of their own organization (KOL-133):
+     * the one user who unconditionally bypasses every authorization check in
+     * it, independent of any role or permission they hold. Single source of
+     * truth for that bypass — a later change (KOL-133.3) wires
+     * Gate::before to this instead of a role check.
+     */
+    public function isOwner(): bool
+    {
+        return $this->organization_id !== null && $this->organization?->owner_id === $this->id;
+    }
+
+    /**
      * @return BelongsTo<Company, $this>
      */
     public function company(): BelongsTo
