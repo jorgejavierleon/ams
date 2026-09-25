@@ -4,6 +4,8 @@ import SecurityController from '@/actions/App/Http/Controllers/Settings/Security
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import type { PersonalAccessToken } from '@/components/personal-access-tokens';
+import { PersonalAccessTokens } from '@/components/personal-access-tokens';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -11,6 +13,7 @@ import { useTranslations } from '@/hooks/use-translations';
 
 type Props = {
     passwordRules: string;
+    tokens: PersonalAccessToken[];
 };
 
 export default function Security(props: Props) {
@@ -32,7 +35,15 @@ export default function Security(props: Props) {
                 />
 
                 <Card>
-                    <CardContent>
+                    <CardContent className="space-y-6">
+                        <Heading
+                            variant="small"
+                            title={t('ui.settings.security.password.title')}
+                            description={t(
+                                'ui.settings.security.password.description',
+                            )}
+                        />
+
                         <Form
                             {...SecurityController.update.form()}
                             options={{
@@ -143,6 +154,12 @@ export default function Security(props: Props) {
                                 </>
                             )}
                         </Form>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent>
+                        <PersonalAccessTokens tokens={props.tokens} />
                     </CardContent>
                 </Card>
             </div>

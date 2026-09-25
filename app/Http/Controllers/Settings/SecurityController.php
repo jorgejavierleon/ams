@@ -19,6 +19,9 @@ class SecurityController extends Controller
     {
         $props = [
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'tokens' => $request->user()->tokens()
+                ->orderByDesc('created_at')
+                ->get(['id', 'name', 'created_at', 'last_used_at']),
         ];
 
         return Inertia::render('settings/security', $props);
