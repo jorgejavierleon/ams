@@ -268,6 +268,13 @@ class EmployeeController extends Controller
         $this->assertEmployee($employee);
 
         $data = $this->validateEmployee($request, $employee);
+
+        if ($employee->isOwner() && $data['is_active'] === false) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('ui.employees.flash.owner_must_transfer_before_deactivate')]);
+
+            return back();
+        }
+
         $roleIds = $data['roles'];
 
         $employee->update($this->prepareForStorage($data, isCreate: false));
@@ -289,6 +296,12 @@ class EmployeeController extends Controller
     {
         $this->assertEmployee($employee);
 
+        if ($employee->isOwner()) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('ui.employees.flash.owner_must_transfer_before_delete')]);
+
+            return back();
+        }
+
         $employee->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.employees.flash.deleted')]);
@@ -302,6 +315,12 @@ class EmployeeController extends Controller
     public function toggleActive(User $employee): RedirectResponse
     {
         $this->assertEmployee($employee);
+
+        if ($employee->isOwner() && $employee->is_active) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('ui.employees.flash.owner_must_transfer_before_deactivate')]);
+
+            return back();
+        }
 
         $employee->update(['is_active' => ! $employee->is_active]);
 

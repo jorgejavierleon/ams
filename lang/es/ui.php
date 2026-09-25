@@ -187,6 +187,7 @@ return [
             'notifications' => 'Notificaciones',
             'documents' => 'Documentos',
             'overtime' => 'Horas extra',
+            'organization' => 'Organización',
         ],
 
         'profile' => [
@@ -344,6 +345,31 @@ return [
             ],
         ],
 
+        'ownership' => [
+            'head' => 'Propiedad de la organización',
+            'title' => 'Organización',
+            'description' => 'Vea y transfiera la propiedad de su organización',
+            'current_owner' => 'Propietario actual',
+            'no_owner' => 'Esta organización no tiene un propietario asignado.',
+            'transfer_button' => 'Transferir propiedad',
+            'select_placeholder' => 'Seleccione un usuario',
+            'confirm_title' => '¿Transferir la propiedad de la organización?',
+            'confirm_description' => 'El usuario seleccionado se convertirá en el nuevo propietario y usted dejará de serlo de inmediato.',
+            'not_owner_hint' => 'Solo el propietario actual puede transferir la propiedad de la organización.',
+            'no_eligible_users' => 'No hay otros usuarios activos en su organización a quienes transferir la propiedad.',
+            'flash' => [
+                'transferred' => 'Propiedad de la organización transferida.',
+            ],
+            'activity' => [
+                'transferred' => 'Propiedad de la organización transferida',
+            ],
+            'errors' => [
+                'outside_organization' => 'El nuevo propietario debe pertenecer a la misma organización.',
+                'inactive_user' => 'El nuevo propietario debe ser un usuario activo.',
+                'already_owner' => 'Este usuario ya es el propietario de la organización.',
+            ],
+        ],
+
         'delete' => [
             'title' => 'Eliminar cuenta',
             'description' => 'Elimine su cuenta y todos sus recursos',
@@ -353,6 +379,9 @@ return [
             'confirm_title' => '¿Está seguro de que desea eliminar su cuenta?',
             'confirm_description' => 'Una vez eliminada su cuenta, todos sus recursos y datos se eliminarán de forma permanente. Ingrese su contraseña para confirmar que desea eliminar su cuenta de forma permanente.',
             'password' => 'Contraseña',
+            'errors' => [
+                'owner_must_transfer' => 'Usted es el propietario de la organización. Transfiera la propiedad a otro usuario antes de eliminar su cuenta.',
+            ],
         ],
     ],
 
@@ -1520,6 +1549,8 @@ return [
             'created' => 'Empleado creado.',
             'updated' => 'Empleado actualizado.',
             'deleted' => 'Empleado eliminado.',
+            'owner_must_transfer_before_delete' => 'Este usuario es el propietario de la organización. Transfiera la propiedad a otro usuario antes de eliminarlo.',
+            'owner_must_transfer_before_deactivate' => 'Este usuario es el propietario de la organización. Transfiera la propiedad a otro usuario antes de desactivarlo.',
         ],
     ],
 

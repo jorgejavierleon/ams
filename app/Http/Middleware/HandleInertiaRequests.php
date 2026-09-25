@@ -59,6 +59,10 @@ class HandleInertiaRequests extends Middleware
                 // (e.g. an avatar cell linking to the employee's show page)
                 // checks this instead of a permission string.
                 'isAdmin' => fn () => $request->user()?->hasRole('admin') ?? false,
+                // The Owner (KOL-133) must always be able to reach ownership
+                // transfer regardless of role, so nav visibility can't rely on
+                // isAdmin/permissions alone the way other admin-only sections do.
+                'isOwner' => fn () => $request->user()?->isOwner() ?? false,
                 'pendingModificationsCount' => fn () => $this->pendingModificationsCount($request),
                 'pendingSignaturesCount' => fn () => $this->pendingSignaturesCount($request),
                 'pendingOvertimeRequestsCount' => fn () => $this->pendingOvertimeRequestsCount($request),

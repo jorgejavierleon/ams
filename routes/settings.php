@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\DocumentController;
 use App\Http\Controllers\Settings\NotificationController;
+use App\Http\Controllers\Settings\OrganizationController;
 use App\Http\Controllers\Settings\OvertimeController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -51,4 +52,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('settings/overtime', [OvertimeController::class, 'edit'])->name('settings-overtime.edit');
     Route::patch('settings/overtime', [OvertimeController::class, 'update'])->name('settings-overtime.update');
+});
+
+// Ownership settings are reachable by the current Owner even when they hold
+// no admin role (KOL-133.2: the Owner must always be able to transfer away),
+// so this is gated in the controller instead of role:admin middleware.
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('settings/organization', [OrganizationController::class, 'edit'])->name('settings-organization.edit');
+    Route::patch('settings/organization/ownership', [OrganizationController::class, 'transfer'])->name('settings-organization.transfer-ownership');
 });

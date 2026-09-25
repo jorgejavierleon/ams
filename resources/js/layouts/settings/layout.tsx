@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     Bell,
+    Crown,
     FileText,
     Palette,
     ShieldCheck,
@@ -19,6 +20,7 @@ import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { edit as editDocuments } from '@/routes/settings-documents';
 import { edit as editNotifications } from '@/routes/settings-notifications';
+import { edit as editOrganization } from '@/routes/settings-organization';
 import { edit as editOvertime } from '@/routes/settings-overtime';
 import type { NavItem } from '@/types';
 
@@ -64,6 +66,18 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                       title: t('ui.settings.nav.overtime'),
                       href: editOvertime(),
                       icon: Timer,
+                  },
+              ]
+            : []),
+        // The Owner must always be able to reach ownership transfer, even
+        // when they hold no admin role (KOL-133.2), so this doesn't gate on
+        // isEmployee the way the admin-only sections above do.
+        ...(!isEmployee || auth.isOwner
+            ? [
+                  {
+                      title: t('ui.settings.nav.organization'),
+                      href: editOrganization(),
+                      icon: Crown,
                   },
               ]
             : []),

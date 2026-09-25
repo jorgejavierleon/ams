@@ -757,6 +757,27 @@ test('the is_active state can be toggled inline', function () {
     expect($employee->fresh()->is_active)->toBeFalse();
 });
 
+test('admin cannot deactivate the organization Owner through the edit form', function () {
+    $owner = User::factory()->create(['is_active' => true, 'rut' => validRut(87654321)]);
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $owner->assignRole('employee');
+
+    $admin = employeeAdmin($organization);
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $owner), employeePayload($admin, [
+            'email' => $owner->email,
+            'personal_email' => $owner->personal_email,
+            'rut' => $owner->rut,
+            'password' => '',
+            'is_active' => false,
+        ]))
+        ->assertRedirect();
+
+    expect($owner->fresh()->is_active)->toBeTrue();
+});
+
 // --- Show ---
 
 test('admin can view an employee detail page', function () {
@@ -1148,6 +1169,36 @@ test('admin can delete an employee', function () {
         ->assertRedirect(route('employees.index'));
 
     expect(User::find($employee->id))->toBeNull();
+});
+
+test('admin cannot delete the organization Owner without transferring ownership first', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $owner->assignRole('employee');
+
+    $admin = employeeAdmin($organization);
+
+    $this->actingAs($admin)
+        ->delete(route('employees.destroy', $owner))
+        ->assertRedirect();
+
+    expect(User::find($owner->id))->not->toBeNull();
+});
+
+test('admin cannot deactivate the organization Owner without transferring ownership first', function () {
+    $owner = User::factory()->create(['is_active' => true]);
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $owner->assignRole('employee');
+
+    $admin = employeeAdmin($organization);
+
+    $this->actingAs($admin)
+        ->patch(route('employees.toggle-active', $owner))
+        ->assertRedirect();
+
+    expect($owner->fresh()->is_active)->toBeTrue();
 });
 
 // --- Observer ---

@@ -1,10 +1,12 @@
 <?php
 
+use App\Actions\TransferOrganizationOwnership;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -115,4 +117,55 @@ test('the ownedBy factory state sets the organization owner', function () {
 
     expect($organization->owner_id)->toBe($owner->id);
     expect($organization->owner->id)->toBe($owner->id);
+});
+
+test('TransferOrganizationOwnership atomically moves ownership to another active user in the organization', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+
+    $newOwner = User::factory()->create(['organization_id' => $organization->id, 'is_active' => true]);
+
+    app(TransferOrganizationOwnership::class)->handle($organization, $newOwner);
+
+    $organization->refresh();
+    expect($organization->owner_id)->toBe($newOwner->id);
+    expect($owner->fresh()->isOwner())->toBeFalse();
+    expect($newOwner->fresh()->isOwner())->toBeTrue();
+});
+
+test('TransferOrganizationOwnership rejects a target user outside the organization', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+
+    $otherOrganization = Organization::factory()->create();
+    $outsider = User::factory()->create(['organization_id' => $otherOrganization->id, 'is_active' => true]);
+
+    expect(fn () => app(TransferOrganizationOwnership::class)->handle($organization, $outsider))
+        ->toThrow(ValidationException::class);
+
+    expect($organization->fresh()->owner_id)->toBe($owner->id);
+});
+
+test('TransferOrganizationOwnership rejects an inactive target user', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+
+    $inactive = User::factory()->create(['organization_id' => $organization->id, 'is_active' => false]);
+
+    expect(fn () => app(TransferOrganizationOwnership::class)->handle($organization, $inactive))
+        ->toThrow(ValidationException::class);
+
+    expect($organization->fresh()->owner_id)->toBe($owner->id);
+});
+
+test('TransferOrganizationOwnership rejects transferring to the current owner', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+
+    expect(fn () => app(TransferOrganizationOwnership::class)->handle($organization, $owner))
+        ->toThrow(ValidationException::class);
 });

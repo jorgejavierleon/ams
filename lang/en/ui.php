@@ -184,6 +184,7 @@ return [
             'notifications' => 'Notifications',
             'documents' => 'Documents',
             'overtime' => 'Overtime',
+            'organization' => 'Organization',
         ],
 
         'profile' => [
@@ -341,6 +342,31 @@ return [
             ],
         ],
 
+        'ownership' => [
+            'head' => 'Organization ownership',
+            'title' => 'Organization',
+            'description' => 'View and transfer ownership of your organization',
+            'current_owner' => 'Current owner',
+            'no_owner' => 'This organization has no owner assigned.',
+            'transfer_button' => 'Transfer ownership',
+            'select_placeholder' => 'Select a user',
+            'confirm_title' => 'Transfer organization ownership?',
+            'confirm_description' => 'The selected user will become the new owner and you will immediately stop being one.',
+            'not_owner_hint' => 'Only the current owner can transfer ownership of the organization.',
+            'no_eligible_users' => 'There are no other active users in your organization to transfer ownership to.',
+            'flash' => [
+                'transferred' => 'Organization ownership transferred.',
+            ],
+            'activity' => [
+                'transferred' => 'Organization ownership transferred',
+            ],
+            'errors' => [
+                'outside_organization' => 'The new owner must belong to the same organization.',
+                'inactive_user' => 'The new owner must be an active user.',
+                'already_owner' => 'This user is already the organization owner.',
+            ],
+        ],
+
         'delete' => [
             'title' => 'Delete account',
             'description' => 'Delete your account and all of its resources',
@@ -350,6 +376,9 @@ return [
             'confirm_title' => 'Are you sure you want to delete your account?',
             'confirm_description' => 'Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.',
             'password' => 'Password',
+            'errors' => [
+                'owner_must_transfer' => 'You are the organization owner. Transfer ownership to another user before deleting your account.',
+            ],
         ],
     ],
 
@@ -1517,6 +1546,8 @@ return [
             'created' => 'Employee created.',
             'updated' => 'Employee updated.',
             'deleted' => 'Employee deleted.',
+            'owner_must_transfer_before_delete' => 'This user is the organization owner. Transfer ownership to another user before deleting them.',
+            'owner_must_transfer_before_deactivate' => 'This user is the organization owner. Transfer ownership to another user before deactivating them.',
         ],
     ],
 

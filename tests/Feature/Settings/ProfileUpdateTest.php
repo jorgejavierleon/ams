@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Organization;
 use App\Models\User;
 
 test('profile page is displayed', function () {
@@ -82,4 +83,24 @@ test('correct password must be provided to delete account', function () {
         ->assertRedirect(route('profile.edit'));
 
     expect($user->fresh())->not->toBeNull();
+});
+
+test('the organization Owner cannot delete their account without transferring ownership first', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+
+    $response = $this
+        ->actingAs($owner)
+        ->from(route('profile.edit'))
+        ->delete(route('profile.destroy'), [
+            'password' => 'password',
+        ]);
+
+    $response
+        ->assertSessionHasErrors('password')
+        ->assertRedirect(route('profile.edit'));
+
+    $this->assertAuthenticated();
+    expect($owner->fresh())->not->toBeNull();
 });

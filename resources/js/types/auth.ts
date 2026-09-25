@@ -13,6 +13,7 @@ export type Auth = {
     user: User;
     permissions: string[];
     isAdmin: boolean;
+    isOwner: boolean;
     pendingModificationsCount: number;
     pendingSignaturesCount: number;
     pendingOvertimeRequestsCount: number;
