@@ -3,9 +3,10 @@ id: KOL-133
 title: >-
   Replace admin-as-attribute with a per-organization Owner and an editable admin
   role
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-25 12:41'
+updated_date: '2026-09-26 15:06'
 labels: []
 dependencies: []
 priority: high
@@ -29,17 +30,29 @@ See subtasks for the breakdown. KOL-95 (existing, open) is folded in as a depend
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Exactly one Owner exists per organization at all times, including immediately after any transfer
-- [ ] #2 The Owner retains full access within their organization even if the admin role is stripped of all permissions or removed from the Owner entirely
-- [ ] #3 The admin Spatie role can be freely edited (permissions), assigned, and removed via existing UI, including to/from the Owner
-- [ ] #4 The is_admin column and every reference to it are removed from the codebase
-- [ ] #5 Employees CRUD routes are gated by named Spatie permissions instead of role:admin middleware
+- [x] #1 Exactly one Owner exists per organization at all times, including immediately after any transfer
+- [x] #2 The Owner retains full access within their organization even if the admin role is stripped of all permissions or removed from the Owner entirely
+- [x] #3 The admin Spatie role can be freely edited (permissions), assigned, and removed via existing UI, including to/from the Owner
+- [x] #4 The is_admin column and every reference to it are removed from the codebase
+- [x] #5 Employees CRUD routes are gated by named Spatie permissions instead of role:admin middleware
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
-- [ ] #3 npm run types:check passes when TypeScript touched
-- [ ] #4 Every PHP change has a Pest test
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #2 sa test --compact passes
+- [x] #3 npm run types:check passes when TypeScript touched
+- [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Finalized after all 6 subtasks (KOL-133.1..133.6) completed. Verified each parent AC against current code/tests: AC1/AC2 by tests/Feature/OrganizationOwnershipTest.php (single-owner invariant, atomic transfer, Owner bypass surviving admin role/permission stripping); AC3 by AppServiceProvider Gate::before now keyed on isOwner() and RolePresenter::PROTECTED_ROLES no longer including 'admin' (only dt/saas); AC4 by grep confirming is_admin only appears in migration history (add + drop), no live column/usage; AC5 by routes/web.php employees.* routes gated by permission:View:Employee/Manage:Employee, not role:admin. Ran full targeted filter (OrganizationOwnershipTest, EmployeeManagementTest, RoleManagementTest): 113 tests passed. Full suite already run clean at KOL-133.6 finalization (1556 passed / 7 skipped / 0 failed).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced the admin-role authorization bypass with a per-organization Owner (KOL-133.1/.2/.3), made the admin Spatie role freely editable, gated employees CRUD by named permissions instead of role:admin (KOL-133.4), removed the unrelated is_admin column (KOL-133.5), and fixed a drifted UI permission check that still keyed off the admin role (KOL-133.6). All 6 subtasks Done; parent ACs verified against current code and passing tests (OrganizationOwnershipTest, EmployeeManagementTest, RoleManagementTest, plus the full suite run at 133.6: 1556 passed/7 skipped/0 failed).
+<!-- SECTION:FINAL_SUMMARY:END -->
