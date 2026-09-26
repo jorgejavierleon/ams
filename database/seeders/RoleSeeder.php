@@ -53,6 +53,12 @@ class RoleSeeder extends Seeder
      * another employee — both the admin web form and its MCP tool
      * equivalent authorize against this same permission via `LeavePolicy`.
      *
+     * `View:Employee`/`Manage:Employee` (KOL-95/KOL-133.4) gate the employees
+     * CRUD routes, which used to be role:admin-only. Now that the admin role
+     * is editable (KOL-133.3), that middleware would let an organization
+     * silently change who can reach these routes by editing the role, so
+     * they're granted here like every other admin capability instead.
+     *
      * @var array<int, string>
      */
     private const ADMIN_PERMISSIONS = [
@@ -63,6 +69,8 @@ class RoleSeeder extends Seeder
         'Export:PayrollReport',
         'Import:Employee',
         'Create:Leave',
+        'View:Employee',
+        'Manage:Employee',
     ];
 
     /**

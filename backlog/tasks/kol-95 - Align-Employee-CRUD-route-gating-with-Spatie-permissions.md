@@ -1,10 +1,10 @@
 ---
 id: KOL-95
 title: Align Employee CRUD route gating with Spatie permissions
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-03 19:35'
-updated_date: '2026-09-25 12:42'
+updated_date: '2026-09-26 11:25'
 labels: []
 dependencies: []
 references:
@@ -22,8 +22,8 @@ The employees route group (routes/web.php, Route::resource('employees', ...) plu
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Decide whether employees CRUD routes should move from role:admin to a named Spatie permission (e.g. View:Employee/Manage:Employee), following RoleSeeder's Verb:Resource convention
-- [ ] #2 If converted, RoleSeeder grants the new permission(s) to admin by default so existing behavior is unchanged
+- [x] #1 Decide whether employees CRUD routes should move from role:admin to a named Spatie permission (e.g. View:Employee/Manage:Employee), following RoleSeeder's Verb:Resource convention
+- [x] #2 If converted, RoleSeeder grants the new permission(s) to admin by default so existing behavior is unchanged
 - [ ] #3 If not converted, the decision to keep role:admin gating is documented with a reason
 <!-- AC:END -->
 
@@ -41,5 +41,11 @@ The employees route group (routes/web.php, Route::resource('employees', ...) plu
 created: 2026-09-25 12:42
 ---
 Superseded/absorbed by KOL-133.4, part of the KOL-133 Owner/admin-role initiative. Leaving status as-is until KOL-133.4 ships and closes this decision.
+---
+
+author: jorgejavierleon@gmail.com
+created: 2026-09-26 11:25
+---
+Resolved by KOL-133.4: employees CRUD routes now gated by View:Employee/Manage:Employee, RoleSeeder grants both to admin by default.
 ---
 <!-- COMMENTS:END -->

@@ -5,15 +5,16 @@ use App\Models\Organization;
 use App\Models\Shift;
 use App\Models\ShiftAssignment;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // employees.show (KOL-95/KOL-133.4) is gated by View:Employee, granted to
+    // admin by RoleSeeder — seed it so assignmentAdmin() can reach that route.
+    $this->seed(RoleSeeder::class);
 });
 
 function assignmentAdmin(?Organization $organization = null): User

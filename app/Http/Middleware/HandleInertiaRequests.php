@@ -54,10 +54,13 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? collect(),
-                // Employees CRUD (employees.*) is gated by the `admin` role
-                // rather than a permission, so link-to-employee UI elsewhere
-                // (e.g. an avatar cell linking to the employee's show page)
-                // checks this instead of a permission string.
+                // Link-to-employee UI elsewhere (e.g. an avatar cell linking
+                // to the employee's show page) checks this role rather than a
+                // permission string. Since KOL-133.4, employees.* routes
+                // themselves are gated by View:Employee/Manage:Employee, not
+                // role:admin, so this can drift from actual route access once
+                // an org edits the admin role's permissions or grants
+                // View:Employee elsewhere (tracked separately).
                 'isAdmin' => fn () => $request->user()?->hasRole('admin') ?? false,
                 // The Owner (KOL-133) must always be able to reach ownership
                 // transfer regardless of role, so nav visibility can't rely on

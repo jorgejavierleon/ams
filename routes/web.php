@@ -96,12 +96,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('holidays', HolidayController::class)
         ->only(['index', 'store', 'update', 'destroy']);
 
-    Route::patch('employees/{employee}/active', [EmployeeController::class, 'toggleActive'])
-        ->name('employees.toggle-active');
-    Route::get('employees/export/{format}', [EmployeeController::class, 'export'])
-        ->name('employees.export');
-    Route::resource('employees', EmployeeController::class);
-
     Route::post('employees/{employee}/shift-assignments', [ShiftAssignmentController::class, 'store'])
         ->name('employees.shift-assignments.store');
     Route::patch('shift-assignments/{shiftAssignment}/end', [ShiftAssignmentController::class, 'end'])
@@ -136,6 +130,27 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
         ->name('regions.communes');
+});
+
+// Employees CRUD (KOL-95/KOL-133.4): gated by named Spatie permissions
+// instead of role:admin. Now that the admin role is editable (KOL-133.3),
+// role:admin middleware checks the role name only — it would keep granting
+// access even after an organization edits the admin role's permissions in
+// the Roles screen, silently diverging from what the role actually holds.
+// View covers browsing the list/profile; Manage covers every action that
+// changes employee data (including toggle-active and the Maestro de
+// Trabajadores export).
+Route::middleware(['auth', 'permission:View:Employee'])->group(function () {
+    Route::resource('employees', EmployeeController::class)->only(['index', 'show']);
+});
+
+Route::middleware(['auth', 'permission:Manage:Employee'])->group(function () {
+    Route::resource('employees', EmployeeController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
+
+    Route::patch('employees/{employee}/active', [EmployeeController::class, 'toggleActive'])
+        ->name('employees.toggle-active');
+    Route::get('employees/export/{format}', [EmployeeController::class, 'export'])
+        ->name('employees.export');
 });
 
 // Jornadas (KOL-71). Shared by admins and supervisors, same shape as the leave

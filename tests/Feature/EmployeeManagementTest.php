@@ -15,6 +15,7 @@ use App\Models\Position;
 use App\Models\Premise;
 use App\Models\User;
 use App\Support\Rut;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
@@ -41,8 +42,12 @@ function employeeMasterSpreadsheetFromXlsxResponse(Response $response): Spreadsh
 }
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // Employees CRUD (KOL-95/KOL-133.4) is gated by View:Employee/
+    // Manage:Employee, granted to admin by RoleSeeder — seed it here (rather
+    // than firstOrCreate-ing bare roles) so the "admin" role this file builds
+    // via employeeAdmin() actually holds those permissions, not just the
+    // Owner bypass some tests rely on separately.
+    $this->seed(RoleSeeder::class);
 });
 
 /**
@@ -134,6 +139,84 @@ test('non-admin users are denied access', function () {
     $user->assignRole('employee');
 
     $this->actingAs($user)->get(route('employees.index'))->assertForbidden();
+});
+
+// --- Permission-based access (KOL-95/KOL-133.4): routes check
+// View:Employee/Manage:Employee directly, not the `admin` role name, so a
+// role can hold either capability independently of the other. ---
+
+test('a user without the admin role can list and view employees when granted View:Employee', function () {
+    $organization = Organization::factory()->create();
+    $user = User::factory()->create(['organization_id' => $organization->id]);
+    $user->givePermissionTo('View:Employee');
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+
+    $this->actingAs($user)->get(route('employees.index'))->assertOk();
+    $this->actingAs($user)->get(route('employees.show', $employee))->assertOk();
+});
+
+test('a user granted View:Employee but not Manage:Employee cannot create, update, delete, toggle, or export employees', function () {
+    $organization = Organization::factory()->create();
+    $user = User::factory()->create(['organization_id' => $organization->id]);
+    $user->givePermissionTo('View:Employee');
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+
+    $this->actingAs($user)->post(route('employees.store'), employeePayload($user))->assertForbidden();
+    $this->actingAs($user)->patch(route('employees.update', $employee), employeePayload($user))->assertForbidden();
+    $this->actingAs($user)->delete(route('employees.destroy', $employee))->assertForbidden();
+    $this->actingAs($user)->patch(route('employees.toggle-active', $employee))->assertForbidden();
+    $this->actingAs($user)->get(route('employees.export', ['format' => 'excel']))->assertForbidden();
+});
+
+test('a user without the admin role can create, update, toggle, export, and delete employees when granted Manage:Employee', function () {
+    $organization = Organization::factory()->create();
+    $user = User::factory()->create(['organization_id' => $organization->id]);
+    $user->givePermissionTo('Manage:Employee');
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+
+    $this->actingAs($user)
+        ->post(route('employees.store'), employeePayload($user))
+        ->assertRedirect(route('employees.index'))
+        ->assertSessionHasNoErrors();
+    $this->actingAs($user)
+        ->patch(route('employees.update', $employee), employeePayload($user, [
+            'email' => 'updated-by-manage@example.com',
+            'personal_email' => 'updated-by-manage.personal@example.com',
+            'rut' => validRut(87654321),
+            'password' => '',
+        ]))
+        ->assertRedirect(route('employees.index'))
+        ->assertSessionHasNoErrors();
+    $this->actingAs($user)->patch(route('employees.toggle-active', $employee))->assertRedirect();
+    $this->actingAs($user)->get(route('employees.export', ['format' => 'excel']))->assertOk();
+    $this->actingAs($user)->delete(route('employees.destroy', $employee))->assertRedirect(route('employees.index'));
+});
+
+test('the admin role alone, without View:Employee, cannot list employees', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $owner->assignRole('employee');
+
+    $admin = employeeAdmin($organization);
+    Role::findByName('admin')->revokePermissionTo('View:Employee');
+
+    $this->actingAs($admin)->get(route('employees.index'))->assertForbidden();
+});
+
+test('the admin role alone, without Manage:Employee, cannot update an employee', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $owner->assignRole('employee');
+
+    $admin = employeeAdmin($organization);
+    Role::findByName('admin')->revokePermissionTo('Manage:Employee');
+    $employee = User::factory()->employee()->create(['organization_id' => $organization->id]);
+
+    $this->actingAs($admin)
+        ->patch(route('employees.update', $employee), employeePayload($admin))
+        ->assertForbidden();
 });
 
 // --- Index ---
