@@ -59,6 +59,16 @@ class RoleSeeder extends Seeder
      * silently change who can reach these routes by editing the role, so
      * they're granted here like every other admin capability instead.
      *
+     * `ViewAny:DocumentTemplate`/`Create:DocumentTemplate`/
+     * `Update:DocumentTemplate`/`Delete:DocumentTemplate` (KOL-130) gate
+     * `DocumentTemplateController` and its MCP tool equivalents via
+     * `DocumentTemplatePolicy`, replacing the route-level role:admin-only
+     * check those actions relied on before.
+     *
+     * `Create:Document` (KOL-130) gates the generate-document MCP tool via
+     * `DocumentPolicy`, the same ability the web document-creation form would
+     * need once it is retrofitted off role:admin.
+     *
      * @var array<int, string>
      */
     private const ADMIN_PERMISSIONS = [
@@ -71,6 +81,11 @@ class RoleSeeder extends Seeder
         'Create:Leave',
         'View:Employee',
         'Manage:Employee',
+        'ViewAny:DocumentTemplate',
+        'Create:DocumentTemplate',
+        'Update:DocumentTemplate',
+        'Delete:DocumentTemplate',
+        'Create:Document',
     ];
 
     /**

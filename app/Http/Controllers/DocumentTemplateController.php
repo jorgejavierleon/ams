@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -66,6 +67,8 @@ class DocumentTemplateController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        Gate::authorize('create', DocumentTemplate::class);
+
         DocumentTemplate::create($this->validateTemplate($request));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.document_templates.flash.created')]);
@@ -88,6 +91,8 @@ class DocumentTemplateController extends Controller
 
     public function update(Request $request, DocumentTemplate $documentTemplate): RedirectResponse
     {
+        Gate::authorize('update', $documentTemplate);
+
         $documentTemplate->update($this->validateTemplate($request));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.document_templates.flash.updated')]);
@@ -97,6 +102,8 @@ class DocumentTemplateController extends Controller
 
     public function destroy(DocumentTemplate $documentTemplate): RedirectResponse
     {
+        Gate::authorize('delete', $documentTemplate);
+
         $documentTemplate->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.document_templates.flash.deleted')]);
