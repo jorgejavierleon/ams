@@ -5,14 +5,15 @@ use App\Models\DocumentTemplate;
 use App\Models\DocumentVar;
 use App\Models\Organization;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    $this->seed(RoleSeeder::class);
 });
 
 function templateAdmin(?Organization $organization = null): User
@@ -23,6 +24,16 @@ function templateAdmin(?Organization $organization = null): User
     $admin->assignRole('admin');
 
     return $admin;
+}
+
+/**
+ * Revoke a permission from the shared `admin` role, simulating a tenant that
+ * customized it away via the Roles screen.
+ */
+function revokeAdminPermission(string $permission): void
+{
+    Role::findByName('admin')->revokePermissionTo($permission);
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
 }
 
 // --- Access control ---
@@ -93,6 +104,17 @@ test('creating a template requires a title', function () {
         ->assertSessionHasErrors(['title']);
 });
 
+test('an admin without Create:DocumentTemplate is denied', function () {
+    $admin = templateAdmin();
+    revokeAdminPermission('Create:DocumentTemplate');
+
+    $this->actingAs($admin)
+        ->post(route('document-templates.store'), ['title' => 'Vacation notice'])
+        ->assertForbidden();
+
+    $this->assertDatabaseMissing('document_templates', ['title' => 'Vacation notice']);
+});
+
 // --- Update ---
 
 test('admin can update a template', function () {
@@ -113,6 +135,21 @@ test('admin can update a template', function () {
     expect($template->refresh())
         ->title->toBe('New title')
         ->type->toBe(DocumentType::Contracts);
+});
+
+test('an admin without Update:DocumentTemplate is denied', function () {
+    $admin = templateAdmin();
+    $template = DocumentTemplate::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'title' => 'Old title',
+    ]);
+    revokeAdminPermission('Update:DocumentTemplate');
+
+    $this->actingAs($admin)
+        ->patch(route('document-templates.update', $template), ['title' => 'New title'])
+        ->assertForbidden();
+
+    expect($template->refresh()->title)->toBe('Old title');
 });
 
 // --- Load template into a document body ---
@@ -166,6 +203,20 @@ test('admin can soft-delete and restore a template', function () {
         ->assertRedirect(route('document-templates.index'));
 
     expect($template->fresh()->trashed())->toBeFalse();
+});
+
+test('an admin without Delete:DocumentTemplate is denied', function () {
+    $admin = templateAdmin();
+    $template = DocumentTemplate::factory()->create([
+        'organization_id' => $admin->organization_id,
+    ]);
+    revokeAdminPermission('Delete:DocumentTemplate');
+
+    $this->actingAs($admin)
+        ->delete(route('document-templates.destroy', $template))
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('document_templates', ['id' => $template->id, 'deleted_at' => null]);
 });
 
 test('a template cannot be restored from another organization', function () {

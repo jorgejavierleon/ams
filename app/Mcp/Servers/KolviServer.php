@@ -2,6 +2,11 @@
 
 namespace App\Mcp\Servers;
 
+use App\Mcp\Tools\Documents\GenerateDocumentTool;
+use App\Mcp\Tools\DocumentTemplates\CreateDocumentTemplateTool;
+use App\Mcp\Tools\DocumentTemplates\DeleteDocumentTemplateTool;
+use App\Mcp\Tools\DocumentTemplates\ListDocumentTemplatesTool;
+use App\Mcp\Tools\DocumentTemplates\UpdateDocumentTemplateTool;
 use App\Mcp\Tools\Leave\ApproveLeaveTool;
 use App\Mcp\Tools\Leave\CancelLeaveTool;
 use App\Mcp\Tools\Leave\CreateLeaveForEmployeeTool;
@@ -39,6 +44,11 @@ class KolviServer extends Server
         ApproveOvertimeRequestTool::class,
         RejectOvertimeRequestTool::class,
         GetPayrollSummaryReportTool::class,
+        CreateDocumentTemplateTool::class,
+        UpdateDocumentTemplateTool::class,
+        DeleteDocumentTemplateTool::class,
+        ListDocumentTemplatesTool::class,
+        GenerateDocumentTool::class,
     ];
 
     protected array $resources = [
