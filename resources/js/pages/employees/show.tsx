@@ -46,7 +46,6 @@ type Employee = {
     has_additional_sundays: boolean;
     overtime_rest_day_eligible: boolean;
     is_active: boolean;
-    is_admin: boolean;
     timezone: string;
     emergency_contact_name: string | null;
     emergency_contact_phone: string | null;
@@ -183,11 +182,6 @@ function EmployeeProfileCard({
                         </p>
                     </div>
                     <div className="flex flex-wrap justify-center gap-1.5">
-                        {employee.is_admin && (
-                            <Badge variant="secondary">
-                                {t('ui.employees.columns.admin_badge')}
-                            </Badge>
-                        )}
                         <Badge
                             variant={
                                 employee.is_active ? 'default' : 'outline'

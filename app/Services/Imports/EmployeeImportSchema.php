@@ -27,7 +27,7 @@ use InvalidArgumentException;
 /**
  * The Employee bulk-import schema (KOL-94.2): full parity with the manual
  * create/edit form's field set (the 18-column export set plus supervisor,
- * is_admin, timezone, and the day-balance fields), reference fields resolved
+ * timezone, and the day-balance fields), reference fields resolved
  * by case-insensitive exact match, and three match keys — RUT, Email, ID.
  *
  * `company` is deliberately excluded (auto-assigned per organization, per
@@ -68,7 +68,6 @@ final class EmployeeImportSchema implements ImportSchema
             $this->field('emergency_contact_phone', type: ImportFieldType::String),
             $this->field('is_active', type: ImportFieldType::Boolean),
             $this->field('supervisor', type: ImportFieldType::String, isReference: true),
-            $this->field('is_admin', type: ImportFieldType::Boolean),
             $this->field('timezone', type: ImportFieldType::String),
             $this->field('vacation_days', type: ImportFieldType::Decimal),
             $this->field('additional_vacation_days', type: ImportFieldType::Decimal),
@@ -109,7 +108,6 @@ final class EmployeeImportSchema implements ImportSchema
                 Rule::exists('users', 'id')->where('organization_id', $organizationId),
                 Rule::notIn($existingMatch ? [$existingMatch->getKey()] : []),
             ],
-            'is_admin' => ['nullable', 'boolean'],
             'timezone' => [$required, 'timezone'],
             'vacation_days' => ['nullable', 'numeric', 'min:0'],
             'additional_vacation_days' => ['nullable', 'numeric', 'min:0'],

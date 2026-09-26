@@ -85,7 +85,6 @@ test('the payload exposes only the agreed fields and no sensitive columns', func
         ->assertJsonMissingPath('two_factor_recovery_codes')
         ->assertJsonMissingPath('remember_token')
         ->assertJsonMissingPath('organization_id')
-        ->assertJsonMissingPath('is_admin')
         ->assertJsonMissingPath('vacation_days');
 });
 

@@ -57,7 +57,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property bool $is_dt
  * @property bool $is_active
  * @property bool $is_legal_rep
- * @property bool $is_admin
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property Carbon|null $password_changed_at
@@ -70,7 +69,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read string|null $avatar
  * @property-read string|null $formatted_rut
  */
-#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'is_admin', 'password_changed_at', 'organization_id', 'company_id', 'cost_center_id', 'position_id', 'premise_id', 'supervisor_id', 'contract_start_date', 'contract_end_date', 'contract_type', 'vacation_days', 'additional_vacation_days', 'administrative_days', 'has_additional_sundays', 'overtime_rest_day_eligible', 'nationality', 'gender', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'timezone'])]
+#[Fillable(['name', 'first_name', 'last_name', 'second_last_name', 'rut', 'email', 'personal_email', 'password', 'is_dt', 'is_active', 'is_legal_rep', 'password_changed_at', 'organization_id', 'company_id', 'cost_center_id', 'position_id', 'premise_id', 'supervisor_id', 'contract_start_date', 'contract_end_date', 'contract_type', 'vacation_days', 'additional_vacation_days', 'administrative_days', 'has_additional_sundays', 'overtime_rest_day_eligible', 'nationality', 'gender', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'timezone'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 #[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements HasMedia
@@ -237,7 +236,6 @@ class User extends Authenticatable implements HasMedia
             'is_dt' => 'boolean',
             'is_active' => 'boolean',
             'is_legal_rep' => 'boolean',
-            'is_admin' => 'boolean',
         ];
     }
 

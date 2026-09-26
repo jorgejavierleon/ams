@@ -10,7 +10,6 @@ import type { FacetedOption } from '@/components/data-table-faceted-filter';
 import { DataTableRowActions } from '@/components/data-table-row-actions';
 import { EmployeeCell } from '@/components/employee-cell';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -51,7 +50,6 @@ type Employee = {
     cost_center: string | null;
     contract_type_label: string | null;
     is_active: boolean;
-    is_admin: boolean;
     created_at: string | null;
     updated_at: string | null;
 };
@@ -63,7 +61,6 @@ type Props = {
         sort: string | null;
         direction: 'asc' | 'desc' | null;
         is_active: string | null;
-        is_admin: string | null;
         premises: string[];
         positions: string[];
         costCenters: string[];
@@ -90,7 +87,6 @@ export default function EmployeesIndex({
     const [pendingExport, setPendingExport] = useState(false);
 
     const [isActive, setIsActive] = useState(filters.is_active ?? 'all');
-    const [isAdmin, setIsAdmin] = useState(filters.is_admin ?? 'all');
     const [premises, setPremises] = useState<string[]>(filters.premises ?? []);
     const [positions, setPositions] = useState<string[]>(
         filters.positions ?? [],
@@ -105,18 +101,16 @@ export default function EmployeesIndex({
     const extraParams = useMemo(
         () => ({
             is_active: isActive === 'all' ? undefined : isActive,
-            is_admin: isAdmin === 'all' ? undefined : isAdmin,
             premises: premises.length > 0 ? premises : undefined,
             positions: positions.length > 0 ? positions : undefined,
             costCenters: costCenters.length > 0 ? costCenters : undefined,
             contractTypes: contractTypes.length > 0 ? contractTypes : undefined,
         }),
-        [isActive, isAdmin, premises, positions, costCenters, contractTypes],
+        [isActive, premises, positions, costCenters, contractTypes],
     );
 
     const hasFilters =
         isActive !== 'all' ||
-        isAdmin !== 'all' ||
         premises.length > 0 ||
         positions.length > 0 ||
         costCenters.length > 0 ||
@@ -124,7 +118,6 @@ export default function EmployeesIndex({
 
     function clearFilters() {
         setIsActive('all');
-        setIsAdmin('all');
         setPremises([]);
         setPositions([]);
         setCostCenters([]);
@@ -243,18 +236,6 @@ export default function EmployeesIndex({
                 meta: { title: t('ui.employees.columns.contract_type') },
                 header: () => t('ui.employees.columns.contract_type'),
                 cell: ({ row }) => row.original.contract_type_label ?? '—',
-            },
-            {
-                id: 'is_admin',
-                enableSorting: false,
-                meta: { title: t('ui.employees.columns.is_admin') },
-                header: () => t('ui.employees.columns.is_admin'),
-                cell: ({ row }) =>
-                    row.original.is_admin ? (
-                        <Badge variant="secondary">
-                            {t('ui.employees.columns.admin_badge')}
-                        </Badge>
-                    ) : null,
             },
             {
                 id: 'is_active',
@@ -406,23 +387,6 @@ export default function EmployeesIndex({
                                     </SelectItem>
                                     <SelectItem value="0">
                                         {t('ui.employees.filters.active_no')}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            <Select value={isAdmin} onValueChange={setIsAdmin}>
-                                <SelectTrigger className="w-[150px]">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        {t('ui.employees.filters.admin_all')}
-                                    </SelectItem>
-                                    <SelectItem value="1">
-                                        {t('ui.employees.filters.admin_yes')}
-                                    </SelectItem>
-                                    <SelectItem value="0">
-                                        {t('ui.employees.filters.admin_no')}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>

@@ -115,7 +115,6 @@ function employeePayload(User $admin, array $overrides = []): array
         'contract_start_date' => null,
         'contract_end_date' => null,
         'contract_type' => null,
-        'is_admin' => false,
         'vacation_days' => 15,
         'additional_vacation_days' => 0,
         'administrative_days' => 0,
@@ -230,7 +229,6 @@ test('admin can list employees with their details', function () {
         'name' => 'Ana Pérez',
         'email' => 'ana@example.com',
         'position_id' => $position->id,
-        'is_admin' => true,
     ]);
 
     $this->actingAs($admin)
@@ -240,8 +238,7 @@ test('admin can list employees with their details', function () {
             fn ($page) => $page
                 ->component('employees/index')
                 ->has('employees.data', 1)
-                ->where('employees.data.0.name', 'Ana Pérez')
-                ->where('employees.data.0.is_admin', true),
+                ->where('employees.data.0.name', 'Ana Pérez'),
         );
 });
 

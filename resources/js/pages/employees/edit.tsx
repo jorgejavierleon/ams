@@ -28,7 +28,6 @@ type Employee = {
     contract_start_date: string | null;
     contract_end_date: string | null;
     contract_type: string | null;
-    is_admin: boolean;
     vacation_days: number;
     additional_vacation_days: number;
     administrative_days: number;
@@ -71,7 +70,6 @@ export default function EditEmployee({ employee, options }: Props) {
         contract_start_date: employee.contract_start_date ?? '',
         contract_end_date: employee.contract_end_date ?? '',
         contract_type: employee.contract_type ?? '',
-        is_admin: employee.is_admin,
         vacation_days: String(employee.vacation_days),
         additional_vacation_days: String(employee.additional_vacation_days),
         administrative_days: String(employee.administrative_days),

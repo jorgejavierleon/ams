@@ -48,7 +48,6 @@ class EmployeeController extends Controller
 
         $search = $request->string('search')->trim()->value() ?: null;
         $isActive = $this->ternaryFilter($request, 'is_active');
-        $isAdmin = $this->ternaryFilter($request, 'is_admin');
         $premiseIds = $this->idListFilter($request, 'premises');
         $positionIds = $this->idListFilter($request, 'positions');
         $costCenterIds = $this->idListFilter($request, 'costCenters');
@@ -74,7 +73,6 @@ class EmployeeController extends Controller
                 'contract_type' => $employee->contract_type?->value,
                 'contract_type_label' => $employee->contract_type?->label(),
                 'is_active' => $employee->is_active,
-                'is_admin' => $employee->is_admin,
                 'created_at' => $employee->created_at?->format('Y-m-d H:i'),
                 'updated_at' => $employee->updated_at?->format('Y-m-d H:i'),
             ]),
@@ -83,7 +81,6 @@ class EmployeeController extends Controller
                 'sort' => $sort,
                 'direction' => $direction,
                 'is_active' => $isActive === null ? null : ($isActive ? '1' : '0'),
-                'is_admin' => $isAdmin === null ? null : ($isAdmin ? '1' : '0'),
                 'premises' => array_map('strval', $premiseIds),
                 'positions' => array_map('strval', $positionIds),
                 'costCenters' => array_map('strval', $costCenterIds),
@@ -198,7 +195,6 @@ class EmployeeController extends Controller
                 'has_additional_sundays' => $employee->has_additional_sundays,
                 'overtime_rest_day_eligible' => $employee->overtime_rest_day_eligible,
                 'is_active' => $employee->is_active,
-                'is_admin' => $employee->is_admin,
                 'timezone' => $employee->timezone,
                 'emergency_contact_name' => $employee->emergency_contact_name,
                 'emergency_contact_phone' => $employee->emergency_contact_phone,
@@ -247,7 +243,6 @@ class EmployeeController extends Controller
                 'contract_start_date' => $employee->contract_start_date?->format('Y-m-d'),
                 'contract_end_date' => $employee->contract_end_date?->format('Y-m-d'),
                 'contract_type' => $employee->contract_type?->value,
-                'is_admin' => $employee->is_admin,
                 'vacation_days' => $employee->vacation_days,
                 'additional_vacation_days' => $employee->additional_vacation_days,
                 'administrative_days' => $employee->administrative_days,
@@ -343,7 +338,7 @@ class EmployeeController extends Controller
 
     /**
      * The organization-scoped employees query with every list/export filter
-     * applied (search, active/admin state, premise, position, cost centre,
+     * applied (search, active state, premise, position, cost centre,
      * contract type) — shared by {@see self::index()} and {@see self::export()}
      * so the two never drift (AC #7).
      *
@@ -353,7 +348,6 @@ class EmployeeController extends Controller
     {
         $search = $request->string('search')->trim()->value() ?: null;
         $isActive = $this->ternaryFilter($request, 'is_active');
-        $isAdmin = $this->ternaryFilter($request, 'is_admin');
         $premiseIds = $this->idListFilter($request, 'premises');
         $positionIds = $this->idListFilter($request, 'positions');
         $costCenterIds = $this->idListFilter($request, 'costCenters');
@@ -366,7 +360,6 @@ class EmployeeController extends Controller
                 ->where('email', 'like', "%{$search}%")
                 ->orWhere('rut', 'like', "%{$search}%")))
             ->when($isActive !== null, fn ($query) => $query->where('is_active', $isActive))
-            ->when($isAdmin !== null, fn ($query) => $query->where('is_admin', $isAdmin))
             ->when($premiseIds, fn ($query) => $query->whereIn('premise_id', $premiseIds))
             ->when($positionIds, fn ($query) => $query->whereIn('position_id', $positionIds))
             ->when($costCenterIds, fn ($query) => $query->whereIn('cost_center_id', $costCenterIds))
@@ -383,12 +376,10 @@ class EmployeeController extends Controller
     private function employeeMasterFiltersProp(Request $request): array
     {
         $isActive = $this->ternaryFilter($request, 'is_active');
-        $isAdmin = $this->ternaryFilter($request, 'is_admin');
 
         return [
             'search' => $request->string('search')->trim()->value() ?: null,
             'is_active' => $isActive === null ? null : ($isActive ? '1' : '0'),
-            'is_admin' => $isAdmin === null ? null : ($isAdmin ? '1' : '0'),
             'premises' => array_map('strval', $this->idListFilter($request, 'premises')),
             'positions' => array_map('strval', $this->idListFilter($request, 'positions')),
             'costCenters' => array_map('strval', $this->idListFilter($request, 'costCenters')),
@@ -478,7 +469,6 @@ class EmployeeController extends Controller
         // normalise them before validation so the boolean casts store correctly.
         $request->merge([
             'is_active' => $request->boolean('is_active'),
-            'is_admin' => $request->boolean('is_admin'),
             'has_additional_sundays' => $request->boolean('has_additional_sundays'),
             'overtime_rest_day_eligible' => $request->boolean('overtime_rest_day_eligible'),
             // An unchecked checkbox group serializes to no `roles` field at
@@ -523,7 +513,6 @@ class EmployeeController extends Controller
             'contract_start_date' => ['nullable', 'date'],
             'contract_end_date' => ['nullable', 'date', 'after_or_equal:contract_start_date'],
             'contract_type' => ['nullable', Rule::enum(ContractType::class)],
-            'is_admin' => ['boolean'],
             'vacation_days' => ['nullable', 'numeric', 'min:0'],
             'additional_vacation_days' => ['nullable', 'numeric', 'min:0'],
             'administrative_days' => ['nullable', 'numeric', 'min:0'],

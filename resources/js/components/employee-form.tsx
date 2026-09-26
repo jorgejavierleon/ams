@@ -56,7 +56,6 @@ export type EmployeeFormData = {
     contract_start_date: string;
     contract_end_date: string;
     contract_type: string;
-    is_admin: boolean;
     vacation_days: string;
     additional_vacation_days: string;
     administrative_days: string;
@@ -734,19 +733,6 @@ export default function EmployeeForm({
 
                         {/* System */}
                         <TabsContent value="system" className="grid gap-6 pt-2">
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="is_admin"
-                                    checked={data.is_admin}
-                                    onCheckedChange={(checked) =>
-                                        setData('is_admin', checked === true)
-                                    }
-                                />
-                                <Label htmlFor="is_admin">
-                                    {t('ui.employees.form.is_admin')}
-                                </Label>
-                            </div>
-
                             <div className="grid gap-6 sm:grid-cols-2">
                                 <FormField
                                     label={t('ui.employees.form.timezone')}
