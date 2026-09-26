@@ -9,6 +9,11 @@ use App\Mcp\Tools\Leave\CreateLeaveTool;
 use App\Mcp\Tools\Leave\RejectLeaveTool;
 use App\Mcp\Tools\Leave\ViewOwnLeavesTool;
 use App\Mcp\Tools\Leave\ViewTeamLeavesTool;
+use App\Mcp\Tools\Overtime\ApproveOvertimeRequestTool;
+use App\Mcp\Tools\Overtime\CreateOvertimeRequestTool;
+use App\Mcp\Tools\Overtime\RejectOvertimeRequestTool;
+use App\Mcp\Tools\Overtime\ViewOwnOvertimeRequestsTool;
+use App\Mcp\Tools\Overtime\ViewTeamOvertimeRequestsTool;
 use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
@@ -27,6 +32,11 @@ class KolviServer extends Server
         ApproveLeaveTool::class,
         RejectLeaveTool::class,
         CreateLeaveForEmployeeTool::class,
+        CreateOvertimeRequestTool::class,
+        ViewOwnOvertimeRequestsTool::class,
+        ViewTeamOvertimeRequestsTool::class,
+        ApproveOvertimeRequestTool::class,
+        RejectOvertimeRequestTool::class,
     ];
 
     protected array $resources = [

@@ -32,6 +32,11 @@ test('an authenticated agent can list the registered leave tools', function () {
         'approve-leave',
         'reject-leave',
         'create-leave-for-employee',
+        'create-overtime-request',
+        'view-own-overtime-requests',
+        'view-team-overtime-requests',
+        'approve-overtime-request',
+        'reject-overtime-request',
     );
 });
 
