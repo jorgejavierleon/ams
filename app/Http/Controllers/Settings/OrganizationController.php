@@ -55,7 +55,7 @@ class OrganizationController extends Controller
             ],
         ]);
 
-        $transferOwnership->handle($user->organization, User::findOrFail($data['user_id']));
+        $transferOwnership->handle($user->organization, User::findOrFail((int) $data['user_id']));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.settings.ownership.flash.transferred')]);
 
