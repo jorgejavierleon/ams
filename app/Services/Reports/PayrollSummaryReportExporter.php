@@ -57,6 +57,21 @@ class PayrollSummaryReportExporter
     }
 
     /**
+     * Build the report and render it straight to CSV text (same `;` delimiter
+     * and UTF-8 encoding as {@see self::download()}'s `csv` format), for a
+     * caller that wants the report's data rather than an HTTP download —
+     * e.g. the get-payroll-summary-report MCP tool (KOL-129).
+     *
+     * @param  list<int>  $userIds
+     */
+    public function csvText(Carbon $start, Carbon $end, array $userIds, Organization $organization, string $delimiter = ';'): string
+    {
+        ['fragment' => $fragment] = $this->prepare($start, $end, $userIds, $organization);
+
+        return $this->writer->csvBytes($fragment, $delimiter);
+    }
+
+    /**
      * @param  list<int>  $userIds
      * @return array{fragment: string, filename: string}
      */

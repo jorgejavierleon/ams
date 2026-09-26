@@ -93,6 +93,23 @@ class ReportWriter
     }
 
     /**
+     * Render an HTML table fragment into UTF-8 CSV bytes (same BOM and
+     * delimiter handling as {@see self::csv()}), for a caller that needs the
+     * CSV as a string rather than an HTTP download (KOL-129, see
+     * {@see self::excelBytes}).
+     */
+    public function csvBytes(string $html, string $delimiter = ','): string
+    {
+        $spreadsheet = (new HtmlSpreadsheetReader)->loadFromString($html);
+
+        $writer = new CsvWriter($spreadsheet);
+        $writer->setUseBOM(true);
+        $writer->setDelimiter($delimiter);
+
+        return $this->captureOutput(fn () => $writer->save('php://output'));
+    }
+
+    /**
      * Render a full HTML document into a landscape letter PDF.
      */
     public function pdf(string $html, string $filename): Response

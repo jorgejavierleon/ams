@@ -14,6 +14,7 @@ use App\Mcp\Tools\Overtime\CreateOvertimeRequestTool;
 use App\Mcp\Tools\Overtime\RejectOvertimeRequestTool;
 use App\Mcp\Tools\Overtime\ViewOwnOvertimeRequestsTool;
 use App\Mcp\Tools\Overtime\ViewTeamOvertimeRequestsTool;
+use App\Mcp\Tools\Reports\GetPayrollSummaryReportTool;
 use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
@@ -37,6 +38,7 @@ class KolviServer extends Server
         ViewTeamOvertimeRequestsTool::class,
         ApproveOvertimeRequestTool::class,
         RejectOvertimeRequestTool::class,
+        GetPayrollSummaryReportTool::class,
     ];
 
     protected array $resources = [
