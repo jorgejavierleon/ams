@@ -196,7 +196,7 @@ export default function LeavesIndex({
                         name={row.original.employee}
                         avatar={row.original.employee_avatar}
                         href={
-                            auth.isAdmin && row.original.employee_id
+                            auth.canViewEmployee && row.original.employee_id
                                 ? showEmployee(row.original.employee_id).url
                                 : undefined
                         }
@@ -359,7 +359,7 @@ export default function LeavesIndex({
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [t, can.delete, can.approve, auth.isAdmin],
+        [t, can.delete, can.approve, auth.canViewEmployee],
     );
 
     return (

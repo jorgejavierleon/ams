@@ -74,7 +74,7 @@ export default function OvertimeRestDayBalancesIndex({
                         name={row.original.employee}
                         avatar={row.original.employee_avatar}
                         href={
-                            auth.isAdmin
+                            auth.canViewEmployee
                                 ? showEmployee(row.original.user_id).url
                                 : undefined
                         }
@@ -171,7 +171,7 @@ export default function OvertimeRestDayBalancesIndex({
                 ),
             },
         ],
-        [t, auth.isAdmin],
+        [t, auth.canViewEmployee],
     );
 
     return (

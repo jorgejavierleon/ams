@@ -55,16 +55,16 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? collect(),
                 // Link-to-employee UI elsewhere (e.g. an avatar cell linking
-                // to the employee's show page) checks this role rather than a
-                // permission string. Since KOL-133.4, employees.* routes
-                // themselves are gated by View:Employee/Manage:Employee, not
-                // role:admin, so this can drift from actual route access once
-                // an org edits the admin role's permissions or grants
-                // View:Employee elsewhere (tracked separately).
-                'isAdmin' => fn () => $request->user()?->hasRole('admin') ?? false,
+                // to the employee's show page) checks this permission-based
+                // prop (KOL-133.6) rather than the admin role name, matching
+                // the employees.* route gate itself (View:Employee/
+                // Manage:Employee, KOL-133.4) so the link doesn't drift once
+                // an org edits the admin role or grants the permission to a
+                // different role via the Roles screen.
+                'canViewEmployee' => fn () => $request->user()?->hasAnyPermission(['View:Employee', 'Manage:Employee']) ?? false,
                 // The Owner (KOL-133) must always be able to reach ownership
                 // transfer regardless of role, so nav visibility can't rely on
-                // isAdmin/permissions alone the way other admin-only sections do.
+                // permissions alone the way other admin-only sections do.
                 'isOwner' => fn () => $request->user()?->isOwner() ?? false,
                 'pendingModificationsCount' => fn () => $this->pendingModificationsCount($request),
                 'pendingSignaturesCount' => fn () => $this->pendingSignaturesCount($request),

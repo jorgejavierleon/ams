@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 test('dashboard renders the correct Inertia component for authenticated users', function () {
@@ -26,21 +27,37 @@ test('shared Inertia props include auth user, flash data, and permissions', func
         );
 });
 
-test('shared Inertia auth.isAdmin reflects the admin role', function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+test('shared Inertia auth.canViewEmployee reflects View:Employee/Manage:Employee, not the admin role', function () {
+    // KOL-133.6: the employee-link prop tracks the same permissions that
+    // gate employees.* routes (KOL-133.4), independent of role name, so a
+    // role can hold it without being "admin" and admin can lose it.
+    Permission::firstOrCreate(['name' => 'View:Employee', 'guard_name' => 'web']);
+
+    $supervisorRole = Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web']);
+    $supervisorRole->givePermissionTo('View:Employee');
+
+    $supervisor = User::factory()->create();
+    $supervisor->assignRole('supervisor');
+
+    $this->actingAs($supervisor)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->where('auth.canViewEmployee', true));
+
+    $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    $adminRole->givePermissionTo('View:Employee');
 
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
     $this->actingAs($admin)
         ->get(route('dashboard'))
-        ->assertInertia(fn ($page) => $page->where('auth.isAdmin', true));
+        ->assertInertia(fn ($page) => $page->where('auth.canViewEmployee', true));
 
-    $employee = User::factory()->create();
+    $adminRole->revokePermissionTo('View:Employee');
 
-    $this->actingAs($employee)
+    $this->actingAs($admin)
         ->get(route('dashboard'))
-        ->assertInertia(fn ($page) => $page->where('auth.isAdmin', false));
+        ->assertInertia(fn ($page) => $page->where('auth.canViewEmployee', false));
 });
 
 test('flash success message is present in Inertia shared data after redirect', function () {

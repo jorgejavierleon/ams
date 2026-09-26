@@ -153,7 +153,7 @@ export default function DocumentsIndex({
                         name={row.original.employee}
                         avatar={row.original.employee_avatar}
                         href={
-                            auth.isAdmin && row.original.employee_id
+                            auth.canViewEmployee && row.original.employee_id
                                 ? showEmployee(row.original.employee_id).url
                                 : undefined
                         }
@@ -220,7 +220,7 @@ export default function DocumentsIndex({
                     ) : null,
             },
         ],
-        [t, auth.isAdmin],
+        [t, auth.canViewEmployee],
     );
 
     return (

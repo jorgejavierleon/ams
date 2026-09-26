@@ -71,7 +71,7 @@ export default function OvertimePactsIndex({
                         name={row.original.employee}
                         avatar={row.original.employee_avatar}
                         href={
-                            auth.isAdmin
+                            auth.canViewEmployee
                                 ? showEmployee(row.original.user_id).url
                                 : undefined
                         }
@@ -165,7 +165,7 @@ export default function OvertimePactsIndex({
                 ),
             },
         ],
-        [t, auth.isAdmin],
+        [t, auth.canViewEmployee],
     );
 
     function openCreate() {

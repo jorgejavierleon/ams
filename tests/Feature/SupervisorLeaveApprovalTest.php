@@ -179,9 +179,10 @@ test('a supervisor only sees their own team on the leaves index', function () {
             ->where('can.create', false)
             ->where('can.delete', false)
             ->where('can.approve', true)
-            // A supervisor lacks the admin role, so the employee cell on
-            // this row degrades to a plain, unlinked avatar + name.
-            ->where('auth.isAdmin', false));
+            // A supervisor holds neither View:Employee nor Manage:Employee
+            // by default, so the employee cell on this row degrades to a
+            // plain, unlinked avatar + name.
+            ->where('auth.canViewEmployee', false));
 });
 
 test('a supervisor without the approval permission cannot see approve actions', function () {

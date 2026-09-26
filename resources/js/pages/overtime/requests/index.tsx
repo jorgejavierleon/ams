@@ -132,7 +132,7 @@ export default function OvertimeRequestsIndex({
                         name={row.original.employee}
                         avatar={row.original.employee_avatar}
                         href={
-                            auth.isAdmin && row.original.employee_id
+                            auth.canViewEmployee && row.original.employee_id
                                 ? showEmployee(row.original.employee_id).url
                                 : undefined
                         }
@@ -234,7 +234,7 @@ export default function OvertimeRequestsIndex({
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [t, can.decide, auth.isAdmin],
+        [t, can.decide, auth.canViewEmployee],
     );
 
     return (

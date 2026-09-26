@@ -390,7 +390,7 @@ export default function WorkdaysIndex({
                             name={row.original.employee}
                             avatar={row.original.employee_avatar}
                             href={
-                                auth.isAdmin && row.original.employee_id
+                                auth.canViewEmployee && row.original.employee_id
                                     ? showEmployee(row.original.employee_id)
                                           .url
                                     : undefined
@@ -621,7 +621,7 @@ export default function WorkdaysIndex({
             },
         ],
 
-        [t, openModify, can.decideOvertime, auth.isAdmin],
+        [t, openModify, can.decideOvertime, auth.canViewEmployee],
     );
 
     return (
