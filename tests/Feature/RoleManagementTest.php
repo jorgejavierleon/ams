@@ -45,15 +45,6 @@ it('blocks non-admin users from updating role permissions', function () {
 
 // --- Protected roles ---
 
-it('admin cannot view the admin role detail', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $role = Role::where('name', 'admin')->first();
-
-    $this->actingAs($admin)->get(route('roles.show', $role))->assertForbidden();
-});
-
 it('admin cannot view the dt role detail', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
@@ -76,7 +67,7 @@ it('admin cannot update permissions on a protected role', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
-    $role = Role::where('name', 'admin')->first();
+    $role = Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
 
     $this->actingAs($admin)
         ->put(route('roles.update', $role), ['permissions' => []])
@@ -97,10 +88,42 @@ it('roles index does not include protected roles', function () {
         ->assertInertia(function ($page) {
             $names = collect($page->toArray()['props']['roles']['data'])->pluck('name')->all();
             expect($names)->toContain('editor')
-                ->and($names)->not->toContain('admin')
+                ->and($names)->toContain('admin')
                 ->and($names)->not->toContain('dt')
                 ->and($names)->not->toContain('saas');
         });
+});
+
+// --- The admin role is no longer protected (KOL-133.3) ---
+
+it('admin can view the admin role detail', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'admin')->first();
+
+    $this->actingAs($admin)
+        ->get(route('roles.show', $role))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->component('roles/show')
+                ->where('role.name', 'admin')
+        );
+});
+
+it('admin can edit the admin role permission set', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'admin')->first();
+    $permission = Permission::firstOrCreate(['name' => 'view_employee', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->put(route('roles.update', $role), ['permissions' => [$permission->id]])
+        ->assertRedirect(route('roles.show', $role));
+
+    expect($role->fresh()->hasPermissionTo('view_employee'))->toBeTrue();
 });
 
 // --- Roles index ---

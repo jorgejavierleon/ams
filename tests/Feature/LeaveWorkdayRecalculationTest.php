@@ -31,10 +31,13 @@ beforeEach(function () {
  */
 function leaveOnShift(): array
 {
-    $organization = Organization::factory()->create();
-
-    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin = User::factory()->create();
     $admin->assignRole('admin');
+
+    // Owner (KOL-133): admin alone no longer bypasses LeavePolicy's
+    // approve/reject, so this test's "admin" is also the organization's Owner.
+    $organization = Organization::factory()->ownedBy($admin)->create();
+    $admin->update(['organization_id' => $organization->id]);
 
     $employee = User::factory()->employee()->create([
         'organization_id' => $organization->id,

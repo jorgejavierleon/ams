@@ -92,6 +92,30 @@ test('an admin lists every team\'s requests', function () {
         ->assertInertia(fn ($page) => $page->has('requests.data', 1));
 });
 
+test('the organization Owner lists every team\'s requests without the admin role', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    Setting::factory()->create([
+        'organization_id' => $organization->id,
+        'overtime_authorization_mode' => OvertimeAuthorizationMode::Combined,
+    ]);
+    $supervisor = otReqSupervisor($organization);
+    $employee = otReqEmployee($organization, $supervisor);
+
+    OvertimeRequest::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+    ]);
+
+    // Not scoped like a supervisor: the Owner has no direct reports at all,
+    // so a bare ViewTeam:OvertimeAuthorization-style scope would wrongly
+    // return zero here.
+    $this->actingAs($owner)
+        ->get(route('overtime.requests.index'))
+        ->assertInertia(fn ($page) => $page->has('requests.data', 1));
+});
+
 test('the standalone screen 404s under pure post-hoc mode', function () {
     $organization = Organization::factory()->create();
     Setting::factory()->create([

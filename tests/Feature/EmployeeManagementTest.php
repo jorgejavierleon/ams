@@ -64,10 +64,24 @@ function fetchEmployeeLeaves(User $admin, User $employee): TestResponse
 
 function employeeAdmin(?Organization $organization = null): User
 {
-    $organization ??= Organization::factory()->create();
-
-    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin = User::factory()->create();
     $admin->assignRole('admin');
+
+    // Owner (KOL-133): this file never seeds RoleSeeder, so the admin role
+    // carries no permissions here — admin alone no longer bypasses permission
+    // checks like Manage:OvertimeAuthorization (the Pacto routes), so this
+    // test's "admin" is also the organization's Owner, unless the caller
+    // already gave the organization one (e.g. testing admin-vs-Owner
+    // safeguards). owner_id is deliberately not fillable outside
+    // TransferOrganizationOwnership, so an existing organization is
+    // force-filled instead of mass-assigned.
+    if ($organization === null) {
+        $organization = Organization::factory()->ownedBy($admin)->create();
+    } elseif ($organization->owner_id === null) {
+        $organization->forceFill(['owner_id' => $admin->id])->save();
+    }
+
+    $admin->update(['organization_id' => $organization->id]);
 
     return $admin;
 }
@@ -588,15 +602,17 @@ test('assignable roles on the edit form exclude protected roles and the base emp
 
     $admin = employeeAdmin();
     $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
-    $excludedIds = Role::whereIn('name', ['admin', 'dt', 'saas', 'employee'])->pluck('id')->all();
+    $excludedIds = Role::whereIn('name', ['dt', 'saas', 'employee'])->pluck('id')->all();
+    $adminRoleId = Role::where('name', 'admin')->value('id');
 
     $this->actingAs($admin)
         ->get(route('employees.edit', $employee))
         ->assertOk()
-        ->assertInertia(function ($page) use ($excludedIds) {
+        ->assertInertia(function ($page) use ($excludedIds, $adminRoleId) {
             $ids = collect($page->toArray()['props']['options']['roles'])->pluck('id')->all();
 
-            expect(array_intersect($ids, $excludedIds))->toBeEmpty();
+            expect(array_intersect($ids, $excludedIds))->toBeEmpty()
+                ->and($ids)->toContain($adminRoleId);
         });
 });
 
@@ -713,19 +729,19 @@ test('preserves a protected role the employee already holds when updating other 
 });
 
 test('a tampered payload cannot assign a protected role via the update form', function () {
-    $adminRole = Role::where('name', 'admin')->first();
+    $dtRole = Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
 
     $admin = employeeAdmin();
     $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
 
     $this->actingAs($admin)
         ->patch(route('employees.update', $employee), employeePayload($admin, [
-            'roles' => [$adminRole->id],
+            'roles' => [$dtRole->id],
         ]))
         ->assertRedirect(route('employees.index'))
         ->assertSessionHasNoErrors();
 
-    expect($employee->fresh()->hasRole('admin'))->toBeFalse();
+    expect($employee->fresh()->hasRole('dt'))->toBeFalse();
 });
 
 test('non-admin users cannot update an employee', function () {

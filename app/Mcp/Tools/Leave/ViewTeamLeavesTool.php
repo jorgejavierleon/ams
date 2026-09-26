@@ -44,8 +44,8 @@ class ViewTeamLeavesTool extends AuthorizedTool
 
         /** @var User $user */
         $user = $request->user();
-        $isAdmin = $user->hasRole('admin');
-        $supervisorId = $isAdmin ? null : $user->id;
+        $isOrgWide = $user->hasRole('admin') || $user->isOwner();
+        $supervisorId = $isOrgWide ? null : $user->id;
 
         $status = LeaveStatus::tryFrom((string) $request->get('status'));
 

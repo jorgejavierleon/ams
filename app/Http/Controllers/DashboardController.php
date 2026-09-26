@@ -67,22 +67,20 @@ class DashboardController extends Controller
      * Employees currently on approved leave, for the "Who's out today"
      * widget (KOL-119.3) — scoped exactly like LeavePolicy::viewTeam: null
      * (widget hidden) for anyone holding neither ViewTeam:Leave nor the
-     * admin role (Leave has no dedicated admin permission, so admins reach
-     * this the same way they reach the team leaves index — the super-admin
-     * gate — rather than by holding the permission), org-wide for admins,
-     * the supervisor's own direct reports otherwise.
+     * admin role nor the Owner bypass (KOL-133), org-wide for admins and the
+     * Owner, the supervisor's own direct reports otherwise.
      *
      * @return array<int, array{id: int, user: array{id: int, name: string, avatar: string|null}, type: string, type_label: string, return_date: string}>|null
      */
     private function whosOut(User $user): ?array
     {
-        $isAdmin = $user->hasRole('admin');
+        $isOrgWide = $user->hasRole('admin') || $user->isOwner();
 
-        if (! $isAdmin && ! $user->can('ViewTeam:Leave')) {
+        if (! $isOrgWide && ! $user->can('ViewTeam:Leave')) {
             return null;
         }
 
-        $supervisorId = $isAdmin ? null : $user->id;
+        $supervisorId = $isOrgWide ? null : $user->id;
         $today = Carbon::today();
 
         return Leave::query()
@@ -114,24 +112,24 @@ class DashboardController extends Controller
     /**
      * The team's attendance rate for the current week vs last week (KOL-120),
      * scoped exactly like {@see whosOut()}: null (card hidden) for anyone
-     * holding neither ViewTeam:Workday nor the admin role, org-wide for
-     * admins, the supervisor's own direct reports otherwise. Attendance is
-     * already computed per employee per day by {@see WorkdayCalculator}
-     * (any {@see WorkdayStatus} other than Absent counts as attended), so this
-     * only aggregates the existing Workday rows rather than computing new
-     * attendance logic.
+     * holding neither ViewTeam:Workday nor the admin role nor the Owner
+     * bypass (KOL-133), org-wide for admins and the Owner, the supervisor's
+     * own direct reports otherwise. Attendance is already computed per
+     * employee per day by {@see WorkdayCalculator} (any {@see WorkdayStatus}
+     * other than Absent counts as attended), so this only aggregates the
+     * existing Workday rows rather than computing new attendance logic.
      *
      * @return array{rate: float|null, trend: float|null}|null
      */
     private function attendanceRate(User $user): ?array
     {
-        $isAdmin = $user->hasRole('admin');
+        $isOrgWide = $user->hasRole('admin') || $user->isOwner();
 
-        if (! $isAdmin && ! $user->can('ViewTeam:Workday')) {
+        if (! $isOrgWide && ! $user->can('ViewTeam:Workday')) {
             return null;
         }
 
-        $supervisorId = $isAdmin ? null : $user->id;
+        $supervisorId = $isOrgWide ? null : $user->id;
         $today = Carbon::today();
         $currentWeekStart = $today->copy()->startOfWeek(Carbon::MONDAY);
         $previousWeekStart = $currentWeekStart->copy()->subWeek();
@@ -177,23 +175,24 @@ class DashboardController extends Controller
      * Daily on-time/late/absent counts for the attendance overview chart
      * (KOL-121), scoped exactly like {@see attendanceRate()}: null (chart
      * hidden) for anyone holding neither ViewTeam:Workday nor the admin
-     * role, org-wide for admins, the supervisor's own direct reports
-     * otherwise. `days` is empty when the visible scope has no computed
-     * Workday rows anywhere in the period — the empty state — and otherwise
-     * always holds one entry per day of the period, zero-filled for days
-     * with no rows, so the chart's x-axis stays continuous.
+     * role nor the Owner bypass (KOL-133), org-wide for admins and the
+     * Owner, the supervisor's own direct reports otherwise. `days` is empty
+     * when the visible scope has no computed Workday rows anywhere in the
+     * period — the empty state — and otherwise always holds one entry per
+     * day of the period, zero-filled for days with no rows, so the chart's
+     * x-axis stays continuous.
      *
      * @return array{days: array<int, array{date: string, on_time: int, late: int, absent: int}>}|null
      */
     private function attendanceOverview(User $user): ?array
     {
-        $isAdmin = $user->hasRole('admin');
+        $isOrgWide = $user->hasRole('admin') || $user->isOwner();
 
-        if (! $isAdmin && ! $user->can('ViewTeam:Workday')) {
+        if (! $isOrgWide && ! $user->can('ViewTeam:Workday')) {
             return null;
         }
 
-        $supervisorId = $isAdmin ? null : $user->id;
+        $supervisorId = $isOrgWide ? null : $user->id;
         $today = Carbon::today();
         $periodStart = $today->copy()->subDays(self::ATTENDANCE_OVERVIEW_DAYS - 1);
 

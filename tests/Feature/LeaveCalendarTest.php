@@ -19,10 +19,20 @@ beforeEach(function () {
 
 function calendarAdmin(?Organization $organization = null): User
 {
-    $organization ??= Organization::factory()->create();
-
-    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin = User::factory()->create();
     $admin->assignRole('admin');
+
+    // Owner (KOL-133): admin alone no longer bypasses LeavePolicy's viewTeam,
+    // so this test's "admin" is also the organization's Owner. owner_id is
+    // deliberately not fillable outside TransferOrganizationOwnership, so an
+    // existing organization is force-filled instead of mass-assigned.
+    if ($organization === null) {
+        $organization = Organization::factory()->ownedBy($admin)->create();
+    } elseif ($organization->owner_id === null) {
+        $organization->forceFill(['owner_id' => $admin->id])->save();
+    }
+
+    $admin->update(['organization_id' => $organization->id]);
 
     return $admin;
 }
@@ -97,6 +107,29 @@ test('the endpoint returns approved leaves in the range as fullcalendar events',
     $response->assertJsonPath('0.extendedProps.employee', 'Ada Lovelace');
     $response->assertJsonPath('0.extendedProps.type', LeaveType::Vacation->value);
     $response->assertJsonPath('0.extendedProps.approved_by', $admin->name);
+});
+
+test('the organization Owner sees every approved leave without the admin role, not scoped to their own team', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $employee = calendarEmployee($organization);
+
+    Leave::factory()->approved()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'start_date' => '2026-07-10',
+        'end_date' => '2026-07-12',
+        'approved_by' => $owner->id,
+        'created_by' => $owner->id,
+    ]);
+
+    // Not scoped like a supervisor: the Owner has no direct reports at all,
+    // so a bare ViewTeam:Leave-style scope would wrongly return zero here.
+    $this->actingAs($owner)
+        ->getJson(route('leaves.calendar.events', ['start' => '2026-07-01', 'end' => '2026-08-01']))
+        ->assertOk()
+        ->assertJsonCount(1);
 });
 
 test('pending leaves and leaves outside the range are excluded', function () {

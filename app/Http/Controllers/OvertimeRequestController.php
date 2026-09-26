@@ -33,9 +33,9 @@ class OvertimeRequestController extends Controller
 
         $this->assertModeAllowsRequests($settings);
 
-        $isAdmin = $request->user()->hasRole('admin');
-        $supervisorId = $isAdmin ? null : $request->user()->id;
-        $canDecide = $isAdmin || $request->user()->can('ApproveTeam:OvertimeAuthorization');
+        $isOrgWide = $request->user()->hasRole('admin') || $request->user()->isOwner();
+        $supervisorId = $isOrgWide ? null : $request->user()->id;
+        $canDecide = $isOrgWide || $request->user()->can('ApproveTeam:OvertimeAuthorization');
 
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,

@@ -27,10 +27,21 @@ beforeEach(function () {
 
 function workdayOvertimeAdmin(?Organization $organization = null): User
 {
-    $organization ??= Organization::factory()->create();
-
-    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin = User::factory()->create();
     $admin->assignRole('admin');
+
+    // Owner (KOL-133): admin alone no longer bypasses WorkdayPolicy's
+    // viewAny/update/view or OvertimeAuthorizationPolicy's approve/revoke, so
+    // this test's "admin" is also the organization's Owner. owner_id is
+    // deliberately not fillable outside TransferOrganizationOwnership, so an
+    // existing organization is force-filled instead of mass-assigned.
+    if ($organization === null) {
+        $organization = Organization::factory()->ownedBy($admin)->create();
+    } elseif ($organization->owner_id === null) {
+        $organization->forceFill(['owner_id' => $admin->id])->save();
+    }
+
+    $admin->update(['organization_id' => $organization->id]);
 
     return $admin;
 }

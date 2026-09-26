@@ -102,6 +102,24 @@ test('an admin sees who is out across the whole organization', function () {
         ->assertInertia(fn (Assert $page) => $page->has('whosOut', 2));
 });
 
+test('the organization Owner sees who is out across the whole organization without the admin role', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+
+    $first = whosOutEmployee($organization);
+    $second = whosOutEmployee($organization);
+
+    whosOutApprovedLeave($first, now()->toDateString(), now()->toDateString());
+    whosOutApprovedLeave($second, now()->toDateString(), now()->toDateString());
+
+    // Not scoped like a supervisor: the Owner has no direct reports at all,
+    // so a bare ViewTeam:Leave-style scope would wrongly return zero here.
+    $this->actingAs($owner)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page->has('whosOut', 2));
+});
+
 test('a leave that does not overlap today is excluded', function () {
     $organization = Organization::factory()->create();
     $supervisor = whosOutSupervisor($organization);

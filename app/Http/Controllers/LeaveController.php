@@ -33,9 +33,10 @@ class LeaveController extends Controller
     {
         Gate::authorize('viewTeam', Leave::class);
 
-        // Admins manage every request; supervisors are scoped to their own team.
-        $isAdmin = $request->user()->hasRole('admin');
-        $supervisorId = $isAdmin ? null : $request->user()->id;
+        // Admins and the Owner manage every request; supervisors are scoped to
+        // their own team.
+        $isOrgWide = $request->user()->hasRole('admin') || $request->user()->isOwner();
+        $supervisorId = $isOrgWide ? null : $request->user()->id;
 
         ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
             $request,
@@ -101,9 +102,9 @@ class LeaveController extends Controller
             // available to admins and to supervisors holding ApproveTeam:Leave
             // (the list is already scoped to the supervisor's own team).
             'can' => [
-                'create' => $isAdmin,
-                'delete' => $isAdmin,
-                'approve' => $isAdmin || $request->user()->can('ApproveTeam:Leave'),
+                'create' => $isOrgWide,
+                'delete' => $isOrgWide,
+                'approve' => $isOrgWide || $request->user()->can('ApproveTeam:Leave'),
             ],
         ]);
     }

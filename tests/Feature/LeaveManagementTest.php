@@ -22,10 +22,22 @@ beforeEach(function () {
 
 function leaveAdmin(?Organization $organization = null): User
 {
-    $organization ??= Organization::factory()->create();
-
-    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin = User::factory()->create();
     $admin->assignRole('admin');
+
+    // Owner (KOL-133): admin alone no longer bypasses LeavePolicy's
+    // viewTeam/approve/reject, so these tests' "admin" is also the
+    // organization's Owner, exactly like the earliest-created admin the
+    // KOL-133.1 migration would have made Owner in production. owner_id is
+    // deliberately not fillable outside TransferOrganizationOwnership, so an
+    // existing organization is force-filled instead of mass-assigned.
+    if ($organization === null) {
+        $organization = Organization::factory()->ownedBy($admin)->create();
+    } elseif ($organization->owner_id === null) {
+        $organization->forceFill(['owner_id' => $admin->id])->save();
+    }
+
+    $admin->update(['organization_id' => $organization->id]);
 
     return $admin;
 }
@@ -74,6 +86,28 @@ test('admin sees the leaves list scoped to their organization', function () {
     ]);
 
     $this->actingAs($admin)
+        ->get(route('leaves.index'))
+        ->assertInertia(fn ($page) => $page
+            ->component('leaves/index')
+            ->has('leaves.data', 1)
+            ->where('leaves.data.0.employee', $employee->name));
+});
+
+test('the organization Owner sees every leave without the admin role, not scoped to their own team', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $employee = leaveEmployee($organization);
+
+    Leave::factory()->create([
+        'organization_id' => $organization->id,
+        'user_id' => $employee->id,
+        'created_by' => $owner->id,
+    ]);
+
+    // Not scoped like a supervisor: the Owner has no direct reports at all,
+    // so a bare ViewTeam:Leave-style scope would wrongly return zero here.
+    $this->actingAs($owner)
         ->get(route('leaves.index'))
         ->assertInertia(fn ($page) => $page
             ->component('leaves/index')

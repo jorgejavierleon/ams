@@ -28,9 +28,9 @@ class LeaveCalendarController extends Controller
 
     /**
      * Return approved leaves overlapping the requested [start, end] window as
-     * FullCalendar event objects. Admins see every request; supervisors are
-     * scoped to their own team. Organization scoping is enforced globally by
-     * the model's OrganizationScope.
+     * FullCalendar event objects. Admins and the Owner see every request;
+     * supervisors are scoped to their own team. Organization scoping is
+     * enforced globally by the model's OrganizationScope.
      */
     public function events(Request $request): JsonResponse
     {
@@ -41,8 +41,10 @@ class LeaveCalendarController extends Controller
             'end' => ['required', 'date', 'after_or_equal:start'],
         ]);
 
-        // Admins manage every request; supervisors are scoped to their team.
-        $supervisorId = $request->user()->hasRole('admin') ? null : $request->user()->id;
+        // Admins and the Owner manage every request; supervisors are scoped to
+        // their team.
+        $isOrgWide = $request->user()->hasRole('admin') || $request->user()->isOwner();
+        $supervisorId = $isOrgWide ? null : $request->user()->id;
 
         $events = Leave::query()
             ->with(['user:id,name', 'approver:id,name'])

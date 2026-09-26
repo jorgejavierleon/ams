@@ -20,8 +20,13 @@ use Spatie\Permission\Models\Role;
  */
 final class RolePresenter
 {
-    /** Roles reserved for system use — admins cannot manage these. */
-    public const PROTECTED_ROLES = ['admin', 'dt', 'saas'];
+    /**
+     * Roles reserved for system use — unmanageable via the Roles screen. The
+     * admin role used to sit here too, back when it was the unconditional
+     * super-admin bypass; now that the Owner (KOL-133) carries that bypass
+     * instead, admin is a normal, fully editable role.
+     */
+    public const PROTECTED_ROLES = ['dt', 'saas'];
 
     /**
      * The role every employee record must keep. {@see User::scopeEmployees()}

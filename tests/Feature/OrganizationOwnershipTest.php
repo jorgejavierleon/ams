@@ -1,8 +1,10 @@
 <?php
 
 use App\Actions\TransferOrganizationOwnership;
+use App\Models\Leave;
 use App\Models\Organization;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -168,4 +170,40 @@ test('TransferOrganizationOwnership rejects transferring to the current owner', 
 
     expect(fn () => app(TransferOrganizationOwnership::class)->handle($organization, $owner))
         ->toThrow(ValidationException::class);
+});
+
+// --- Gate::before bypass moves from the admin role to the Owner (KOL-133.3) ---
+
+test('the Owner bypasses authorization checks even without the admin role or any permission', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+
+    // LeavePolicy::viewTeam requires the ViewTeam:Leave permission, which
+    // this Owner holds no role — let alone that permission — for.
+    expect($owner->can('viewTeam', Leave::class))->toBeTrue();
+});
+
+test('the Owner retains access even after the admin role is stripped of all its permissions', function () {
+    $this->seed(RoleSeeder::class);
+
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $owner->assignRole('admin');
+
+    Role::where('name', 'admin')->first()->syncPermissions([]);
+
+    expect($owner->fresh()->can('viewTeam', Leave::class))->toBeTrue();
+});
+
+test('a non-owner admin no longer bypasses authorization checks its role holds no permission for', function () {
+    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin->assignRole('admin');
+
+    expect($admin->isOwner())->toBeFalse()
+        ->and($admin->can('viewTeam', Leave::class))->toBeFalse();
 });

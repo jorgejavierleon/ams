@@ -86,6 +86,23 @@ test('an admin sees the organization-wide count', function () {
         ->assertInertia(fn ($page) => $page->where('auth.pendingLeaveRequestsCount', 2));
 });
 
+test('the organization Owner sees the organization-wide count without the admin role', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $firstEmployee = leaveBadgeEmployee($organization);
+    $secondEmployee = leaveBadgeEmployee($organization);
+
+    leaveBadgePendingRequest($firstEmployee);
+    leaveBadgePendingRequest($secondEmployee);
+
+    // Not scoped like a supervisor: the Owner has no direct reports at all,
+    // so a bare ApproveTeam:Leave-style scope would wrongly return zero here.
+    $this->actingAs($owner)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->where('auth.pendingLeaveRequestsCount', 2));
+});
+
 test('approved and rejected leaves never inflate the count, only pending ones do', function () {
     $organization = Organization::factory()->create();
     $supervisor = leaveBadgeSupervisor($organization);

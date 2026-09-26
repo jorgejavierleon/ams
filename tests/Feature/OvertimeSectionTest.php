@@ -16,10 +16,20 @@ beforeEach(function () {
 
 function overtimeSectionAdmin(?Organization $organization = null): User
 {
-    $organization ??= Organization::factory()->create();
-
-    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin = User::factory()->create();
     $admin->assignRole('admin');
+
+    // Owner (KOL-133): admin alone no longer bypasses OvertimeAuthorizationPolicy's
+    // approve/revoke, so this test's "admin" is also the organization's Owner.
+    // owner_id is deliberately not fillable outside TransferOrganizationOwnership,
+    // so an existing organization is force-filled instead of mass-assigned.
+    if ($organization === null) {
+        $organization = Organization::factory()->ownedBy($admin)->create();
+    } elseif ($organization->owner_id === null) {
+        $organization->forceFill(['owner_id' => $admin->id])->save();
+    }
+
+    $admin->update(['organization_id' => $organization->id]);
 
     return $admin;
 }
@@ -86,7 +96,7 @@ test('a supervisor is refused for overtime outside their team', function () {
         ->and($supervisor->can('revoke', $authorization))->toBeFalse();
 });
 
-test('an admin can reach the overtime section and decide any record via the super-admin gate', function () {
+test('an admin who is also the organization Owner can reach the overtime section and decide any record', function () {
     $admin = overtimeSectionAdmin();
     $organization = $admin->organization;
     $employee = overtimeSectionEmployee($organization);

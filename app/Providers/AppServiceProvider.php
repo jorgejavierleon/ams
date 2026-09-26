@@ -49,15 +49,16 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Grant every ability to admins. Running before all policies, this lets the
-     * admin role act as a super admin so individual policies never need to
-     * special-case it.
+     * Grant every ability to the organization Owner (KOL-133), running before
+     * all policies. The admin Spatie role is a normal, fully editable role from
+     * here on — its access comes only from whatever permissions it actually
+     * holds, not from an automatic bypass.
      *
      * @see https://spatie.be/docs/laravel-permission/v8/basic-usage/super-admin
      */
     protected function configureAuthorization(): void
     {
-        Gate::before(fn (User $user): ?bool => $user->hasRole('admin') ? true : null);
+        Gate::before(fn (User $user): ?bool => $user->isOwner() ? true : null);
     }
 
     /**

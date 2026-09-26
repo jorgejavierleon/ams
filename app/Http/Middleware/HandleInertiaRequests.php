@@ -159,10 +159,11 @@ class HandleInertiaRequests extends Middleware
     /**
      * How many leave requests are awaiting a decision, for the "Pending
      * Approvals" dashboard widget (KOL-119.2) — scoped exactly like
-     * LeaveController::index: org-wide for admins (Leave has no dedicated
-     * admin permission, so admins reach the index via the super-admin gate
-     * rather than holding ApproveTeam:Leave), the supervisor's own direct
-     * reports for ApproveTeam:Leave, and zero for anyone holding neither.
+     * LeaveController::index: org-wide for admins and the Owner (KOL-133)
+     * (Leave has no dedicated admin permission, so admins reach the index via
+     * the admin role check directly rather than holding ApproveTeam:Leave),
+     * the supervisor's own direct reports for ApproveTeam:Leave, and zero for
+     * anyone holding neither.
      */
     private function pendingLeaveRequestsCount(Request $request): int
     {
@@ -172,13 +173,13 @@ class HandleInertiaRequests extends Middleware
             return 0;
         }
 
-        $isAdmin = $user->hasRole('admin');
+        $isOrgWide = $user->hasRole('admin') || $user->isOwner();
 
-        if (! $isAdmin && ! $user->can('ApproveTeam:Leave')) {
+        if (! $isOrgWide && ! $user->can('ApproveTeam:Leave')) {
             return 0;
         }
 
-        $supervisorId = $isAdmin ? null : $user->id;
+        $supervisorId = $isOrgWide ? null : $user->id;
 
         return Leave::query()
             ->pending()

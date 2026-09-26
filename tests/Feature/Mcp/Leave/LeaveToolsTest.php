@@ -38,10 +38,20 @@ function mcpLeaveEmployee(?Organization $organization = null, array $attributes 
 
 function mcpLeaveAdmin(?Organization $organization = null): User
 {
-    $organization ??= Organization::factory()->create();
-
-    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin = User::factory()->create();
     $admin->assignRole('admin');
+
+    // Owner (KOL-133): admin alone no longer bypasses LeavePolicy's viewTeam,
+    // so this test's "admin" is also the organization's Owner. owner_id is
+    // deliberately not fillable outside TransferOrganizationOwnership, so an
+    // existing organization is force-filled instead of mass-assigned.
+    if ($organization === null) {
+        $organization = Organization::factory()->ownedBy($admin)->create();
+    } elseif ($organization->owner_id === null) {
+        $organization->forceFill(['owner_id' => $admin->id])->save();
+    }
+
+    $admin->update(['organization_id' => $organization->id]);
 
     return $admin;
 }
@@ -240,6 +250,24 @@ test('an admin sees every leave on the view-team-leaves tool', function () {
     Leave::factory()->create(['organization_id' => $organization->id, 'user_id' => $employeeTwo->id]);
 
     KolviServer::actingAs($admin)
+        ->tool(ViewTeamLeavesTool::class)
+        ->assertOk()
+        ->assertStructuredContent(fn ($json) => $json->has('leaves', 2)->etc());
+});
+
+test('the organization Owner sees every leave on the view-team-leaves tool without the admin role', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+    $employeeOne = mcpLeaveEmployee($organization);
+    $employeeTwo = mcpLeaveEmployee($organization);
+
+    Leave::factory()->create(['organization_id' => $organization->id, 'user_id' => $employeeOne->id]);
+    Leave::factory()->create(['organization_id' => $organization->id, 'user_id' => $employeeTwo->id]);
+
+    // Not scoped like a supervisor: the Owner has no direct reports at all,
+    // so a bare ViewTeam:Leave-style scope would wrongly return zero here.
+    KolviServer::actingAs($owner)
         ->tool(ViewTeamLeavesTool::class)
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json->has('leaves', 2)->etc());
