@@ -78,7 +78,12 @@ class RoleSeeder extends Seeder
      * Public: this is also the built-in admin capability surface the Owner
      * sees on the frontend nav (see HandleInertiaRequests::effectivePermissionNames()),
      * regardless of what an organization has since edited the `admin` role to
-     * hold via the Roles screen.
+     * hold via the Roles screen. That surface deliberately excludes
+     * EMPLOYEE_PERMISSIONS/SUPERVISOR_PERMISSIONS — the frontend's
+     * `isEmployee` nav check keys off holding `ViewOwn:Leave`, so the Owner
+     * must not appear to hold it. The `admin` role itself is still seeded
+     * with the union of all three lists below, since it is a real,
+     * fully-permissioned role rather than this synthetic Owner surface.
      *
      * @var array<int, string>
      */
@@ -145,12 +150,14 @@ class RoleSeeder extends Seeder
             $roles[$role] = Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
 
-        foreach ([...self::EMPLOYEE_PERMISSIONS, ...self::SUPERVISOR_PERMISSIONS, ...self::ADMIN_PERMISSIONS] as $permission) {
+        $allPermissions = [...self::EMPLOYEE_PERMISSIONS, ...self::SUPERVISOR_PERMISSIONS, ...self::ADMIN_PERMISSIONS];
+
+        foreach ($allPermissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
         $roles['employee']->givePermissionTo(self::EMPLOYEE_PERMISSIONS);
         $roles['supervisor']->givePermissionTo(self::SUPERVISOR_PERMISSIONS);
-        $roles['admin']->givePermissionTo(self::ADMIN_PERMISSIONS);
+        $roles['admin']->givePermissionTo($allPermissions);
     }
 }

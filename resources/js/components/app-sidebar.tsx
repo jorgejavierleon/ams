@@ -68,7 +68,13 @@ export function AppSidebar() {
 
     // Feature access is gated by permissions, not roles. Employees see a
     // minimal self-service nav; everyone else keeps the admin navigation.
-    const isEmployee = auth.permissions.includes('ViewOwn:Leave');
+    // ViewOwn:Leave alone can't decide this since KOL-135.1 seeds admin with
+    // every permission the seeder defines, including the self-service ones —
+    // canViewEmployee (View:Employee/Manage:Employee) is admin-only by
+    // default, so it's used here to keep a fully-permissioned admin on the
+    // admin nav even though they also hold ViewOwn:Leave.
+    const isEmployee =
+        auth.permissions.includes('ViewOwn:Leave') && !auth.canViewEmployee;
     // Supervisors are employees who may also review their team's leaves.
     const canReviewTeamLeaves = auth.permissions.includes('ViewTeam:Leave');
     const canViewOwnWorkdays = auth.permissions.includes('ViewOwn:Workday');

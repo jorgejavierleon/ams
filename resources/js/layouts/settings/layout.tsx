@@ -29,10 +29,12 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const { t } = useTranslations();
     const { auth } = usePage().props;
 
-    // Same permission check app-sidebar.tsx uses to split employee vs admin
-    // nav groups: the organization-wide sections below are admin-only, same
-    // as the role:admin gate their backend routes carry.
-    const isEmployee = auth.permissions.includes('ViewOwn:Leave');
+    // Same check app-sidebar.tsx uses to split employee vs admin nav groups:
+    // the organization-wide sections below are admin-only, same as the
+    // role:admin gate their backend routes carry. See app-sidebar.tsx for why
+    // canViewEmployee is factored in alongside ViewOwn:Leave.
+    const isEmployee =
+        auth.permissions.includes('ViewOwn:Leave') && !auth.canViewEmployee;
 
     const sidebarNavItems: NavItem[] = [
         {

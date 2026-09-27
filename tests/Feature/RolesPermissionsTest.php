@@ -3,6 +3,7 @@
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -69,4 +70,18 @@ it('seeds Import:Employee to the admin role only', function () {
 
     expect($admin->hasPermissionTo('Import:Employee'))->toBeTrue()
         ->and($employee->hasPermissionTo('Import:Employee'))->toBeFalse();
+});
+
+it('seeds the admin role with every permission the seeder defines, not just ADMIN_PERMISSIONS', function () {
+    $this->seed(RoleSeeder::class);
+
+    $adminRole = Role::findByName('admin');
+    $allPermissionNames = Permission::pluck('name')->sort()->values()->all();
+
+    expect($adminRole->permissions->pluck('name')->sort()->values()->all())->toBe($allPermissionNames)
+        // Sanity check that this is actually exercising employee/supervisor
+        // permissions admin never used to hold directly.
+        ->and($adminRole->hasPermissionTo('RequestOwn:Leave'))->toBeTrue()
+        ->and($adminRole->hasPermissionTo('ViewTeam:Leave'))->toBeTrue()
+        ->and($adminRole->hasPermissionTo('ApproveTeam:OvertimeAuthorization'))->toBeTrue();
 });
