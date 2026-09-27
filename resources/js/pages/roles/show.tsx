@@ -1,5 +1,7 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { RolePermissionGroups } from '@/components/role-permission-groups';
@@ -7,13 +9,15 @@ import type { RolePermissionGroup } from '@/components/role-permission-groups';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useRolePermissionToggles } from '@/hooks/use-role-permission-toggles';
 import { useTranslations } from '@/hooks/use-translations';
-import { update } from '@/routes/roles';
+import { restoreDefaults, update } from '@/routes/roles';
 
 type Role = {
     id: number;
     name: string;
     label: string;
+    is_system_role: boolean;
 };
 
 type Props = {
@@ -23,6 +27,8 @@ type Props = {
 
 export default function RolesShow({ role, permissionGroups }: Props) {
     const { t } = useTranslations();
+    const [restoreOpen, setRestoreOpen] = useState(false);
+    const [restoring, setRestoring] = useState(false);
 
     const { data, setData, put, processing, errors } = useForm<{
         name: string;
@@ -36,35 +42,29 @@ export default function RolesShow({ role, permissionGroups }: Props) {
     });
 
     const selectedIds = new Set(data.permissions);
-
-    function togglePermission(id: number, checked: boolean) {
-        setData(
-            'permissions',
-            checked
-                ? [...data.permissions, id]
-                : data.permissions.filter(
-                      (permissionId) => permissionId !== id,
-                  ),
-        );
-    }
-
-    function toggleGroup(group: RolePermissionGroup, checked: boolean) {
-        const next = new Set(data.permissions);
-
-        for (const permission of group.permissions) {
-            if (checked) {
-                next.add(permission.id);
-            } else {
-                next.delete(permission.id);
-            }
-        }
-
-        setData('permissions', Array.from(next));
-    }
+    const { togglePermission, toggleGroup } = useRolePermissionToggles(
+        data.permissions,
+        (value) => setData('permissions', value),
+    );
 
     function submit(event: FormEvent) {
         event.preventDefault();
         put(update(role.id).url, { preserveScroll: true });
+    }
+
+    function confirmRestore() {
+        router.post(
+            restoreDefaults(role.id).url,
+            {},
+            {
+                preserveScroll: true,
+                onStart: () => setRestoring(true),
+                onFinish: () => {
+                    setRestoring(false);
+                    setRestoreOpen(false);
+                },
+            },
+        );
     }
 
     return (
@@ -95,8 +95,15 @@ export default function RolesShow({ role, permissionGroups }: Props) {
                                     setData('name', e.target.value)
                                 }
                                 required
+                                disabled={role.is_system_role}
+                                readOnly={role.is_system_role}
                             />
                             <InputError message={errors.name} />
+                            {role.is_system_role && (
+                                <p className="text-sm text-muted-foreground">
+                                    {t('ui.roles.system_role_hint')}
+                                </p>
+                            )}
                         </div>
 
                         <RolePermissionGroups
@@ -106,14 +113,38 @@ export default function RolesShow({ role, permissionGroups }: Props) {
                             onToggleGroup={toggleGroup}
                         />
 
-                        <Button type="submit" disabled={processing}>
-                            {processing
-                                ? t('ui.roles.saving')
-                                : t('ui.roles.save')}
-                        </Button>
+                        <div className="flex items-center gap-3">
+                            <Button type="submit" disabled={processing}>
+                                {processing
+                                    ? t('ui.roles.saving')
+                                    : t('ui.roles.save')}
+                            </Button>
+
+                            {role.is_system_role && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setRestoreOpen(true)}
+                                >
+                                    {t('ui.roles.restore_defaults')}
+                                </Button>
+                            )}
+                        </div>
                     </form>
                 )}
             </div>
+
+            <ConfirmDialog
+                open={restoreOpen}
+                onOpenChange={setRestoreOpen}
+                title={t('ui.roles.restore_defaults_dialog.title')}
+                description={t('ui.roles.restore_defaults_dialog.description', {
+                    name: role.label,
+                })}
+                confirmLabel={t('ui.roles.restore_defaults_dialog.confirm')}
+                onConfirm={confirmRestore}
+                processing={restoring}
+            />
         </>
     );
 }

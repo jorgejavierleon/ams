@@ -6,6 +6,7 @@ use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Support\CurrentOrganization;
 use App\Support\RolePresenter;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,6 +46,10 @@ class RoleController extends Controller
         $roles = Role::withCount([
             'permissions',
             'users' => $scopeToCurrentOrganization,
+            // Unscoped, for the delete-confirmation warning: roles are shared
+            // globally, so deleting one detaches every holder in every
+            // organization, not just the ones this admin can see in `users`.
+            'users as all_users_count',
         ])
             ->with(['users' => fn ($query) => $scopeToCurrentOrganization($query)
                 ->select('users.id', 'users.name')
@@ -64,6 +69,8 @@ class RoleController extends Controller
                 'label' => RolePresenter::roleLabel($role->name),
                 'permissions_count' => $role->permissions_count,
                 'users_count' => $role->users_count,
+                'all_users_count' => $role->all_users_count,
+                'is_system_role' => in_array($role->name, RolePresenter::SYSTEM_ROLES),
                 // Role::users() is typed by Spatie as Collection<int, Model>
                 // (the related model is resolved dynamically per guard), so
                 // avatar fields are read through the generic Model accessor
@@ -87,6 +94,7 @@ class RoleController extends Controller
                 'id' => $role->id,
                 'name' => $role->name,
                 'label' => RolePresenter::roleLabel($role->name),
+                'is_system_role' => in_array($role->name, RolePresenter::SYSTEM_ROLES),
             ],
             'permissionGroups' => $this->permissionGroups($role),
         ]);
@@ -125,7 +133,15 @@ class RoleController extends Controller
         abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->where('guard_name', 'web')->ignore($role)],
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('roles', 'name')->where('guard_name', 'web')->ignore($role),
+                function (string $attribute, mixed $value, \Closure $fail) use ($role): void {
+                    if (! RolePresenter::isRenameable($role->name) && $value !== $role->name) {
+                        $fail(__('ui.roles.system_role_rename_blocked'));
+                    }
+                },
+            ],
             'permissions' => ['present', 'array'],
             'permissions.*' => ['integer', 'exists:permissions,id'],
         ]);
@@ -145,17 +161,36 @@ class RoleController extends Controller
 
     public function destroy(Role $role): RedirectResponse
     {
-        abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
+        abort_unless(RolePresenter::isDeletable($role->name), 403);
 
-        // Roles are shared globally across tenants (see index()), so deleting
-        // one detaches it from every user who holds it in every organization,
-        // not just the current one — the role row itself is gone either way.
-        $role->users()->detach();
+        // No explicit detach() needed: model_has_roles.role_id has
+        // cascadeOnDelete(), so the DB drops every holder's pivot row
+        // (in every organization, since roles are shared globally — see
+        // index()) the moment this delete() runs.
         $role->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.roles.flash.deleted')]);
 
         return to_route('roles.index');
+    }
+
+    /**
+     * Resync a system role's (admin/employee/supervisor) permissions to the
+     * deploy-time default defined in {@see RoleSeeder::defaultPermissionsFor()},
+     * discarding whatever an organization has since edited it to.
+     */
+    public function restoreDefaults(Role $role): RedirectResponse
+    {
+        abort_unless(in_array($role->name, RolePresenter::SYSTEM_ROLES), 403);
+
+        $permissionNames = RoleSeeder::defaultPermissionsFor($role->name);
+        $permissions = Permission::whereIn('name', $permissionNames)->where('guard_name', 'web')->get();
+
+        $role->syncPermissions($permissions);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.roles.flash.restored')]);
+
+        return to_route('roles.show', $role);
     }
 
     /**

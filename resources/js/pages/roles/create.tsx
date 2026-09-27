@@ -7,6 +7,7 @@ import type { RolePermissionGroup } from '@/components/role-permission-groups';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useRolePermissionToggles } from '@/hooks/use-role-permission-toggles';
 import { useTranslations } from '@/hooks/use-translations';
 import { store } from '@/routes/roles';
 
@@ -26,31 +27,10 @@ export default function RolesCreate({ permissionGroups }: Props) {
     });
 
     const selectedIds = new Set(data.permissions);
-
-    function togglePermission(id: number, checked: boolean) {
-        setData(
-            'permissions',
-            checked
-                ? [...data.permissions, id]
-                : data.permissions.filter(
-                      (permissionId) => permissionId !== id,
-                  ),
-        );
-    }
-
-    function toggleGroup(group: RolePermissionGroup, checked: boolean) {
-        const next = new Set(data.permissions);
-
-        for (const permission of group.permissions) {
-            if (checked) {
-                next.add(permission.id);
-            } else {
-                next.delete(permission.id);
-            }
-        }
-
-        setData('permissions', Array.from(next));
-    }
+    const { togglePermission, toggleGroup } = useRolePermissionToggles(
+        data.permissions,
+        (value) => setData('permissions', value),
+    );
 
     function submit(event: FormEvent) {
         event.preventDefault();

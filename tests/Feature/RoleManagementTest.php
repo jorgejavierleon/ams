@@ -274,6 +274,29 @@ it('roles index never counts a user from another organization', function () {
         });
 });
 
+it('all_users_count reflects every organization, unlike the org-scoped users_count', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin->assignRole('admin');
+
+    $ownEmployee = User::factory()->create(['organization_id' => $organization->id]);
+    $ownEmployee->assignRole('employee');
+
+    $foreignEmployee = User::factory()->create(['organization_id' => Organization::factory()->create()->id]);
+    $foreignEmployee->assignRole('employee');
+
+    $this->actingAs($admin)
+        ->get(route('roles.index'))
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $role = collect($page->toArray()['props']['roles']['data'])
+                ->firstWhere('name', 'employee');
+
+            expect($role['users_count'])->toBe(1)
+                ->and($role['all_users_count'])->toBe(2);
+        });
+});
+
 it('roles index can be sorted by users count', function () {
     $organization = Organization::factory()->create();
     $admin = User::factory()->create(['organization_id' => $organization->id]);
@@ -565,4 +588,152 @@ it('deleting a role detaches it from every user who held it without deleting the
         ->and(User::find($holder->id))->not->toBeNull()
         ->and($holder->fresh()->hasRole('editor'))->toBeFalse()
         ->and($holder->fresh()->hasRole('employee'))->toBeTrue();
+});
+
+// --- System role protection (KOL-135.3) ---
+
+it('cannot delete the admin role', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'admin')->first();
+
+    $this->actingAs($admin)
+        ->delete(route('roles.destroy', $role))
+        ->assertForbidden();
+
+    expect(Role::where('name', 'admin')->exists())->toBeTrue();
+});
+
+it('cannot delete the employee role', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'employee')->first();
+
+    $this->actingAs($admin)
+        ->delete(route('roles.destroy', $role))
+        ->assertForbidden();
+
+    expect(Role::where('name', 'employee')->exists())->toBeTrue();
+});
+
+it('cannot delete the supervisor role', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'supervisor')->first();
+
+    $this->actingAs($admin)
+        ->delete(route('roles.destroy', $role))
+        ->assertForbidden();
+
+    expect(Role::where('name', 'supervisor')->exists())->toBeTrue();
+});
+
+it('cannot rename a system role', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'employee')->first();
+
+    $this->actingAs($admin)
+        ->put(route('roles.update', $role), ['name' => 'not-employee', 'permissions' => []])
+        ->assertSessionHasErrors('name');
+
+    expect($role->fresh()->name)->toBe('employee');
+});
+
+it('can still edit a system role permissions as long as the name is unchanged', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'employee')->first();
+    $permission = Permission::firstOrCreate(['name' => 'view_employee', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->put(route('roles.update', $role), ['name' => 'employee', 'permissions' => [$permission->id]])
+        ->assertRedirect(route('roles.show', $role));
+
+    expect($role->fresh()->name)->toBe('employee')
+        ->and($role->fresh()->hasPermissionTo('view_employee'))->toBeTrue();
+});
+
+it('custom roles remain freely renameable and deletable', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->put(route('roles.update', $role), ['name' => 'content-editor', 'permissions' => []])
+        ->assertRedirect(route('roles.show', $role));
+
+    expect($role->fresh()->name)->toBe('content-editor');
+
+    $this->actingAs($admin)
+        ->delete(route('roles.destroy', $role))
+        ->assertRedirect(route('roles.index'));
+
+    expect(Role::where('id', $role->id)->exists())->toBeFalse();
+});
+
+// --- Restore default permissions ---
+
+it('blocks non-admin users from restoring default permissions', function () {
+    $user = User::factory()->create();
+    $user->assignRole('employee');
+
+    $role = Role::where('name', 'employee')->first();
+
+    $this->actingAs($user)
+        ->post(route('roles.restore-defaults', $role))
+        ->assertForbidden();
+});
+
+it('cannot restore defaults on a non-system role', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->post(route('roles.restore-defaults', $role))
+        ->assertForbidden();
+});
+
+it('restores the employee role to its RoleSeeder default permissions', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'employee')->first();
+    $extra = Permission::firstOrCreate(['name' => 'view_employee', 'guard_name' => 'web']);
+    $role->givePermissionTo($extra);
+
+    $this->actingAs($admin)
+        ->post(route('roles.restore-defaults', $role))
+        ->assertRedirect(route('roles.show', $role));
+
+    $defaultPermissionNames = collect(RoleSeeder::defaultPermissionsFor('employee'))->sort()->values();
+    $rolePermissionNames = $role->fresh()->permissions->pluck('name')->sort()->values();
+
+    expect($rolePermissionNames->all())->toBe($defaultPermissionNames->all());
+});
+
+it('restores the admin role to its RoleSeeder default permissions', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'admin')->first();
+    // Revoke a permission other than Manage:Role: the acting user's own
+    // access to this very endpoint is gated by holding Manage:Role through
+    // the admin role, so stripping that one would lock them out before the
+    // restore could run.
+    $role->revokePermissionTo('View:Employee');
+
+    $this->actingAs($admin)
+        ->post(route('roles.restore-defaults', $role))
+        ->assertRedirect(route('roles.show', $role));
+
+    expect($role->fresh()->hasPermissionTo('View:Employee'))->toBeTrue();
 });

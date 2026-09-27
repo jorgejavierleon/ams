@@ -86,8 +86,6 @@ export function RolePermissionGroups({
                                 >
                                     <Checkbox
                                         id={`permission-${permission.id}`}
-                                        name="permissions[]"
-                                        value={permission.id}
                                         checked={selectedIds.has(permission.id)}
                                         onCheckedChange={(checked) =>
                                             onTogglePermission(

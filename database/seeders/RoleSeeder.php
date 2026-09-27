@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\RolePresenter;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -139,6 +140,29 @@ class RoleSeeder extends Seeder
         'ViewTeam:Workday',
         'ApproveTeam:Workday',
     ];
+
+    /**
+     * The permanent, deploy-time source of truth for a system role's default
+     * permission set, used by RoleController::restoreDefaults() to resync a
+     * role after an organization has edited it away from the default.
+     *
+     * The match arms below must name exactly the roles in
+     * {@see RolePresenter::SYSTEM_ROLES} — that constant is what
+     * gates which roles ever reach this method, so adding a role there
+     * without adding a matching arm here turns a routine restore into an
+     * uncaught 500.
+     *
+     * @return array<int, string>
+     */
+    public static function defaultPermissionsFor(string $role): array
+    {
+        return match ($role) {
+            'admin' => self::ADMIN_PERMISSIONS,
+            'employee' => self::EMPLOYEE_PERMISSIONS,
+            'supervisor' => self::SUPERVISOR_PERMISSIONS,
+            default => throw new \InvalidArgumentException("No default permissions defined for role [{$role}]."),
+        };
+    }
 
     public function run(): void
     {

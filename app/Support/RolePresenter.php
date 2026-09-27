@@ -37,6 +37,35 @@ final class RolePresenter
     public const BASE_EMPLOYEE_ROLE = 'employee';
 
     /**
+     * Built-in roles that stay visible and fully permission-editable on the
+     * Roles screen (unlike PROTECTED_ROLES, which are hidden entirely) but
+     * whose name and existence are locked: delete and rename requests
+     * against them are rejected, and they get a restore-to-default-
+     * permissions action instead. See RoleController::destroy()/update()/
+     * restoreDefaults() and RoleSeeder::defaultPermissionsFor().
+     */
+    public const SYSTEM_ROLES = ['admin', 'employee', 'supervisor'];
+
+    /**
+     * Whether a role can be deleted from the Roles screen: neither hidden
+     * (PROTECTED_ROLES) nor locked (SYSTEM_ROLES). See RoleController::destroy().
+     */
+    public static function isDeletable(string $roleName): bool
+    {
+        return ! in_array($roleName, [...self::PROTECTED_ROLES, ...self::SYSTEM_ROLES]);
+    }
+
+    /**
+     * Whether a role's name can be changed from the Roles screen. Its
+     * permissions may still be freely edited either way — see
+     * RoleController::update()'s validation.
+     */
+    public static function isRenameable(string $roleName): bool
+    {
+        return ! in_array($roleName, self::SYSTEM_ROLES);
+    }
+
+    /**
      * Scope a Role query down to roles admins are allowed to view or assign.
      *
      * @param  Builder<Role>  $query

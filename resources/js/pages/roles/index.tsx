@@ -21,6 +21,8 @@ type Role = {
     label: string;
     permissions_count: number;
     users_count: number;
+    all_users_count: number;
+    is_system_role: boolean;
     avatars: AvatarGroupUser[];
 };
 
@@ -98,10 +100,15 @@ export default function RolesIndex({ roles, filters }: Props) {
                             label: t('ui.roles.actions.manage'),
                             href: show(row.original.id).url,
                         }}
-                        delete={{
-                            label: t('ui.roles.actions.delete'),
-                            onClick: () => setDeleteTarget(row.original),
-                        }}
+                        delete={
+                            row.original.is_system_role
+                                ? undefined
+                                : {
+                                      label: t('ui.roles.actions.delete'),
+                                      onClick: () =>
+                                          setDeleteTarget(row.original),
+                                  }
+                        }
                     />
                 ),
             },
@@ -158,10 +165,10 @@ export default function RolesIndex({ roles, filters }: Props) {
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
                 title={t('ui.roles.delete_dialog.title')}
                 description={
-                    deleteTarget && deleteTarget.users_count > 0
+                    deleteTarget && deleteTarget.all_users_count > 0
                         ? t('ui.roles.delete_dialog.description_with_users', {
                               name: deleteTarget.label,
-                              count: deleteTarget.users_count,
+                              count: deleteTarget.all_users_count,
                           })
                         : t('ui.roles.delete_dialog.description', {
                               name: deleteTarget?.label ?? '',
