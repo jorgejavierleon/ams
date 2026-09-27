@@ -528,6 +528,7 @@ return [
 
         'actions' => [
             'manage' => 'Gestionar permisos',
+            'clone' => 'Duplicar',
             'delete' => 'Eliminar',
         ],
 
@@ -568,6 +569,7 @@ return [
             'updated' => 'Rol actualizado.',
             'deleted' => 'Rol eliminado.',
             'restored' => 'Permisos restaurados al valor por defecto.',
+            'cloned' => 'Rol duplicado.',
         ],
 
         'names' => [

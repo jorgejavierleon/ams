@@ -86,6 +86,7 @@ Route::middleware(['auth', 'permission:Manage:Role'])->group(function () {
     Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
     Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::post('roles/{role}/restore-defaults', [RoleController::class, 'restoreDefaults'])->name('roles.restore-defaults');
+    Route::post('roles/{role}/clone', [RoleController::class, 'clone'])->name('roles.clone');
 });
 
 Route::middleware(['auth', 'permission:Manage:Position'])->group(function () {

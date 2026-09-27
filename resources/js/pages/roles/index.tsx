@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
+import { Copy, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AvatarGroup } from '@/components/avatar-group';
 import type { AvatarGroupUser } from '@/components/avatar-group';
@@ -11,8 +11,9 @@ import { DataTableRowActions } from '@/components/data-table-row-actions';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/hooks/use-translations';
-import { create, destroy, index, show } from '@/routes/roles';
+import { clone, create, destroy, index, show } from '@/routes/roles';
 import type { Paginated } from '@/types/ui';
 
 type Role = {
@@ -109,12 +110,23 @@ export default function RolesIndex({ roles, filters }: Props) {
                                           setDeleteTarget(row.original),
                                   }
                         }
-                    />
+                    >
+                        <DropdownMenuItem
+                            onSelect={() => cloneRole(row.original)}
+                        >
+                            <Copy className="size-4" />
+                            {t('ui.roles.actions.clone')}
+                        </DropdownMenuItem>
+                    </DataTableRowActions>
                 ),
             },
         ],
         [t],
     );
+
+    function cloneRole(role: Role) {
+        router.post(clone(role.id).url, {}, { preserveScroll: true });
+    }
 
     function confirmDelete() {
         if (!deleteTarget) {

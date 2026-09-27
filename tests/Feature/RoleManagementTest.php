@@ -720,6 +720,104 @@ it('restores the employee role to its RoleSeeder default permissions', function 
     expect($rolePermissionNames->all())->toBe($defaultPermissionNames->all());
 });
 
+// --- Role cloning (KOL-135.4) ---
+
+it('blocks non-admin users from cloning roles', function () {
+    $user = User::factory()->create();
+    $user->assignRole('employee');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+
+    $this->actingAs($user)
+        ->post(route('roles.clone', $role))
+        ->assertForbidden();
+
+    expect(Role::where('name', 'editor (copy)')->exists())->toBeFalse();
+});
+
+it('admin cannot clone a protected role', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->post(route('roles.clone', $role))
+        ->assertForbidden();
+
+    expect(Role::where('name', 'dt (copy)')->exists())->toBeFalse();
+});
+
+it('admin can clone a custom role with its current permissions', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+    $permission = Permission::firstOrCreate(['name' => 'view_employee', 'guard_name' => 'web']);
+    $role->givePermissionTo($permission);
+
+    $response = $this->actingAs($admin)->post(route('roles.clone', $role));
+
+    $clone = Role::where('name', 'editor (copy)')->first();
+
+    expect($clone)->not->toBeNull();
+    $response->assertRedirect(route('roles.show', $clone));
+    expect($clone->hasPermissionTo('view_employee'))->toBeTrue();
+});
+
+it('dedupes the clone name when it is already taken', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'editor (copy)', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)->post(route('roles.clone', $role));
+
+    expect(Role::where('name', 'editor (copy 2)')->exists())->toBeTrue();
+});
+
+it('truncates a long source name so the cloned name never exceeds the column length', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $longName = str_repeat('a', 255);
+    $role = Role::firstOrCreate(['name' => $longName, 'guard_name' => 'web']);
+
+    $this->actingAs($admin)->post(route('roles.clone', $role))->assertRedirect();
+
+    $clone = Role::where('name', '!=', $longName)->latest('id')->first();
+
+    expect($clone)->not->toBeNull()
+        ->and(mb_strlen($clone->name))->toBeLessThanOrEqual(255)
+        ->and($clone->name)->toEndWith(' (copy)');
+});
+
+it('cloning a system role produces an ordinary role that can be renamed and deleted', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::where('name', 'admin')->first();
+
+    $this->actingAs($admin)->post(route('roles.clone', $role));
+
+    $clone = Role::where('name', 'admin (copy)')->first();
+    expect($clone)->not->toBeNull();
+
+    $this->actingAs($admin)
+        ->put(route('roles.update', $clone), ['name' => 'admin-lite', 'permissions' => []])
+        ->assertRedirect(route('roles.show', $clone));
+
+    $clone->refresh();
+    expect($clone->name)->toBe('admin-lite');
+
+    $this->actingAs($admin)
+        ->delete(route('roles.destroy', $clone))
+        ->assertRedirect(route('roles.index'));
+
+    expect(Role::where('id', $clone->id)->exists())->toBeFalse();
+});
+
 it('restores the admin role to its RoleSeeder default permissions', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');

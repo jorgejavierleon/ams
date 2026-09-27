@@ -175,6 +175,60 @@ class RoleController extends Controller
     }
 
     /**
+     * Clone any visible role (system or custom) into a new, ordinary custom
+     * role that carries the source role's current permissions. The clone
+     * always lands outside SYSTEM_ROLES/PROTECTED_ROLES — its generated name
+     * always carries a "(copy)" suffix — so it stays freely renameable and
+     * deletable even when cloned from admin/employee/supervisor.
+     */
+    public function clone(Role $role): RedirectResponse
+    {
+        abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
+
+        $clone = Role::create([
+            'name' => $this->uniqueCloneName($role->name),
+            'guard_name' => 'web',
+        ]);
+
+        $clone->syncPermissions($role->permissions);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.roles.flash.cloned')]);
+
+        return to_route('roles.show', $clone);
+    }
+
+    /**
+     * Build a "<name> (copy)" name for a clone, deduplicated as
+     * "<name> (copy 2)", "<name> (copy 3)", … against existing role names.
+     * The source name is truncated as needed so the result never exceeds the
+     * roles.name column's 255-character limit (the same limit store()/
+     * update() enforce via 'max:255').
+     */
+    private function uniqueCloneName(string $originalName): string
+    {
+        $candidate = $this->truncatedCloneName($originalName, ' (copy)');
+
+        if (! Role::where('name', $candidate)->where('guard_name', 'web')->exists()) {
+            return $candidate;
+        }
+
+        $suffix = 2;
+        do {
+            $candidate = $this->truncatedCloneName($originalName, " (copy {$suffix})");
+            $suffix++;
+        } while (Role::where('name', $candidate)->where('guard_name', 'web')->exists());
+
+        return $candidate;
+    }
+
+    private function truncatedCloneName(string $originalName, string $suffix): string
+    {
+        $maxNameLength = 255 - mb_strlen($suffix);
+
+        return mb_substr($originalName, 0, $maxNameLength).$suffix;
+    }
+
+    /**
      * Resync a system role's (admin/employee/supervisor) permissions to the
      * deploy-time default defined in {@see RoleSeeder::defaultPermissionsFor()},
      * discarding whatever an organization has since edited it to.

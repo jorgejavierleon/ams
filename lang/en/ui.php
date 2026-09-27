@@ -525,6 +525,7 @@ return [
 
         'actions' => [
             'manage' => 'Manage permissions',
+            'clone' => 'Clone',
             'delete' => 'Delete',
         ],
 
@@ -565,6 +566,7 @@ return [
             'updated' => 'Role updated.',
             'deleted' => 'Role deleted.',
             'restored' => 'Permissions restored to default.',
+            'cloned' => 'Role cloned.',
         ],
 
         'names' => [
