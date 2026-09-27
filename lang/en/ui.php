@@ -527,6 +527,7 @@ return [
         ],
 
         'detail_description' => 'Toggle permissions on or off for this role',
+        'select_all' => 'Select all',
         'save' => 'Save permissions',
         'saving' => 'Saving…',
 

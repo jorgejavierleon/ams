@@ -530,6 +530,7 @@ return [
         ],
 
         'detail_description' => 'Active o desactive los permisos de este rol',
+        'select_all' => 'Seleccionar todo',
         'save' => 'Guardar permisos',
         'saving' => 'Guardando…',
 
