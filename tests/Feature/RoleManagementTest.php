@@ -122,7 +122,7 @@ it('admin can edit the admin role permission set', function () {
     $permission = Permission::firstOrCreate(['name' => 'view_employee', 'guard_name' => 'web']);
 
     $this->actingAs($admin)
-        ->put(route('roles.update', $role), ['permissions' => [$permission->id]])
+        ->put(route('roles.update', $role), ['name' => $role->name, 'permissions' => [$permission->id]])
         ->assertRedirect(route('roles.show', $role));
 
     expect($role->fresh()->hasPermissionTo('view_employee'))->toBeTrue();
@@ -367,7 +367,7 @@ it('admin can sync permissions for a role', function () {
     $p2 = Permission::firstOrCreate(['name' => 'create_employee', 'guard_name' => 'web']);
 
     $this->actingAs($admin)
-        ->put(route('roles.update', $role), ['permissions' => [$p1->id]])
+        ->put(route('roles.update', $role), ['name' => $role->name, 'permissions' => [$p1->id]])
         ->assertRedirect(route('roles.show', $role));
 
     expect($role->fresh()->hasPermissionTo('view_employee'))->toBeTrue()
@@ -387,7 +387,7 @@ it('syncs permissions submitted as string ids from the form', function () {
     // The roles form submits permission ids as strings; syncPermissions() would
     // otherwise treat a string id as a permission name and blow up.
     $this->actingAs($admin)
-        ->put(route('roles.update', $role), ['permissions' => [(string) $p1->id]])
+        ->put(route('roles.update', $role), ['name' => $role->name, 'permissions' => [(string) $p1->id]])
         ->assertRedirect(route('roles.show', $role));
 
     expect($role->fresh()->hasPermissionTo('ViewTeam:Leave'))->toBeTrue()
@@ -403,7 +403,7 @@ it('admin can remove all permissions from a role', function () {
     $role->givePermissionTo($permission);
 
     $this->actingAs($admin)
-        ->put(route('roles.update', $role), ['permissions' => []])
+        ->put(route('roles.update', $role), ['name' => $role->name, 'permissions' => []])
         ->assertRedirect(route('roles.show', $role));
 
     expect($role->fresh()->permissions)->toBeEmpty();
@@ -418,4 +418,151 @@ it('validates that permission ids must exist in the database', function () {
     $this->actingAs($admin)
         ->put(route('roles.update', $role), ['permissions' => [99999]])
         ->assertSessionHasErrors('permissions.0');
+});
+
+// --- Role creation ---
+
+it('blocks non-admin users from creating roles', function () {
+    $user = User::factory()->create();
+    $user->assignRole('employee');
+
+    $this->actingAs($user)
+        ->post(route('roles.store'), ['name' => 'editor', 'permissions' => []])
+        ->assertForbidden();
+});
+
+it('admin can create a custom role with an initial set of permissions', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $permission = Permission::firstOrCreate(['name' => 'view_employee', 'guard_name' => 'web']);
+
+    $response = $this->actingAs($admin)->post(route('roles.store'), [
+        'name' => 'editor',
+        'permissions' => [$permission->id],
+    ]);
+
+    $role = Role::where('name', 'editor')->first();
+
+    expect($role)->not->toBeNull();
+    $response->assertRedirect(route('roles.show', $role));
+    expect($role->hasPermissionTo('view_employee'))->toBeTrue();
+});
+
+it('rejects creating a role with a name that already exists', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('roles.store'), ['name' => 'employee', 'permissions' => []])
+        ->assertSessionHasErrors('name');
+
+    expect(Role::where('name', 'employee')->count())->toBe(1);
+});
+
+it('renders the role create page with permission groups', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get(route('roles.create'))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->component('roles/create')
+                ->has('permissionGroups')
+        );
+});
+
+// --- Role renaming ---
+
+it('admin can rename a role while editing its permissions', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+    $permission = Permission::firstOrCreate(['name' => 'view_employee', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->put(route('roles.update', $role), [
+            'name' => 'content-editor',
+            'permissions' => [$permission->id],
+        ])
+        ->assertRedirect(route('roles.show', $role));
+
+    $role->refresh();
+    expect($role->name)->toBe('content-editor')
+        ->and($role->hasPermissionTo('view_employee'))->toBeTrue();
+});
+
+it('rejects renaming a role to a name that already exists', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'viewer', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->put(route('roles.update', $role), ['name' => 'viewer', 'permissions' => []])
+        ->assertSessionHasErrors('name');
+
+    expect($role->fresh()->name)->toBe('editor');
+});
+
+// --- Role deletion ---
+
+it('blocks non-admin users from deleting roles', function () {
+    $user = User::factory()->create();
+    $user->assignRole('employee');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+
+    $this->actingAs($user)
+        ->delete(route('roles.destroy', $role))
+        ->assertForbidden();
+});
+
+it('admin cannot delete a protected role', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'dt', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->delete(route('roles.destroy', $role))
+        ->assertForbidden();
+
+    expect(Role::where('name', 'dt')->exists())->toBeTrue();
+});
+
+it('admin can delete a role that no one holds', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+
+    $this->actingAs($admin)
+        ->delete(route('roles.destroy', $role))
+        ->assertRedirect(route('roles.index'));
+
+    expect(Role::where('name', 'editor')->exists())->toBeFalse();
+});
+
+it('deleting a role detaches it from every user who held it without deleting them', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->create(['organization_id' => $organization->id]);
+    $admin->assignRole('admin');
+
+    $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+    $holder = User::factory()->create(['organization_id' => $organization->id]);
+    $holder->assignRole(['employee', 'editor']);
+
+    $this->actingAs($admin)
+        ->delete(route('roles.destroy', $role))
+        ->assertRedirect(route('roles.index'));
+
+    expect(Role::where('name', 'editor')->exists())->toBeFalse()
+        ->and(User::find($holder->id))->not->toBeNull()
+        ->and($holder->fresh()->hasRole('editor'))->toBeFalse()
+        ->and($holder->fresh()->hasRole('employee'))->toBeTrue();
 });

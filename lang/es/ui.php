@@ -518,6 +518,7 @@ return [
         'description' => 'Gestione los roles y sus permisos',
         'search_placeholder' => 'Buscar por nombre...',
         'empty' => 'No se encontraron roles.',
+        'new' => 'Nuevo rol',
 
         'columns' => [
             'role' => 'Rol',
@@ -527,12 +528,37 @@ return [
 
         'actions' => [
             'manage' => 'Gestionar permisos',
+            'delete' => 'Eliminar',
         ],
 
         'detail_description' => 'Active o desactive los permisos de este rol',
         'select_all' => 'Seleccionar todo',
         'save' => 'Guardar permisos',
         'saving' => 'Guardando…',
+
+        'form' => [
+            'name' => 'Nombre',
+            'name_placeholder' => 'p. ej. Revisor de remuneraciones',
+        ],
+
+        'create_page' => [
+            'title' => 'Nuevo rol',
+            'description' => 'Nombre el rol y elija sus permisos iniciales',
+            'submit' => 'Crear rol',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar rol',
+            'description' => '¿Está seguro de que desea eliminar :name? Esta acción no se puede deshacer.',
+            'description_with_users' => '¿Está seguro de que desea eliminar :name? :count usuario(s) tienen actualmente este rol y lo perderán. Esta acción no se puede deshacer.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'flash' => [
+            'created' => 'Rol creado.',
+            'updated' => 'Rol actualizado.',
+            'deleted' => 'Rol eliminado.',
+        ],
 
         'names' => [
             'admin' => 'Administrador',

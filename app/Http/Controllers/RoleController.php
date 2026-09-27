@@ -9,6 +9,8 @@ use App\Support\RolePresenter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Permission;
@@ -80,10 +82,95 @@ class RoleController extends Controller
     {
         abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
 
-        $allPermissions = Permission::orderBy('name')->get();
-        $assignedIds = $role->permissions->pluck('id')->all();
+        return Inertia::render('roles/show', [
+            'role' => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'label' => RolePresenter::roleLabel($role->name),
+            ],
+            'permissionGroups' => $this->permissionGroups($role),
+        ]);
+    }
 
-        $grouped = $allPermissions
+    public function create(): Response
+    {
+        return Inertia::render('roles/create', [
+            'permissionGroups' => $this->permissionGroups(null),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->where('guard_name', 'web')],
+            'permissions' => ['present', 'array'],
+            'permissions.*' => ['integer', 'exists:permissions,id'],
+        ]);
+
+        $role = Role::create(['name' => $validated['name'], 'guard_name' => 'web']);
+
+        // Resolve to Permission models by id: the form submits ids as strings,
+        // and syncPermissions() would otherwise treat a string id as a name.
+        $permissions = Permission::whereKey($validated['permissions'])->get();
+
+        $role->syncPermissions($permissions);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.roles.flash.created')]);
+
+        return to_route('roles.show', $role);
+    }
+
+    public function update(Request $request, Role $role): RedirectResponse
+    {
+        abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->where('guard_name', 'web')->ignore($role)],
+            'permissions' => ['present', 'array'],
+            'permissions.*' => ['integer', 'exists:permissions,id'],
+        ]);
+
+        $role->update(['name' => $validated['name']]);
+
+        // Resolve to Permission models by id: the form submits ids as strings,
+        // and syncPermissions() would otherwise treat a string id as a name.
+        $permissions = Permission::whereKey($validated['permissions'])->get();
+
+        $role->syncPermissions($permissions);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.roles.flash.updated')]);
+
+        return to_route('roles.show', $role);
+    }
+
+    public function destroy(Role $role): RedirectResponse
+    {
+        abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
+
+        // Roles are shared globally across tenants (see index()), so deleting
+        // one detaches it from every user who holds it in every organization,
+        // not just the current one — the role row itself is gone either way.
+        $role->users()->detach();
+        $role->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.roles.flash.deleted')]);
+
+        return to_route('roles.index');
+    }
+
+    /**
+     * Build the permission checklist grouped for the role detail/create
+     * screens, marking permissions already on `$role` (or none, for a new
+     * role) as assigned.
+     *
+     * @return Collection<int, array{group: string, permissions: Collection<int, array{id: int, name: string, label: string, assigned: bool}>}>
+     */
+    private function permissionGroups(?Role $role): Collection
+    {
+        $allPermissions = Permission::orderBy('name')->get();
+        $assignedIds = $role?->permissions->pluck('id')->all() ?? [];
+
+        return $allPermissions
             ->groupBy(fn (Permission $permission) => RolePresenter::groupKey($permission->name))
             ->map(fn ($permissions, $groupKey) => [
                 'group' => RolePresenter::groupLabel($groupKey),
@@ -95,34 +182,5 @@ class RoleController extends Controller
                 ])->values(),
             ])
             ->values();
-
-        return Inertia::render('roles/show', [
-            'role' => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'label' => RolePresenter::roleLabel($role->name),
-            ],
-            'permissionGroups' => $grouped,
-        ]);
-    }
-
-    public function update(Request $request, Role $role): RedirectResponse
-    {
-        abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
-
-        $validated = $request->validate([
-            'permissions' => ['present', 'array'],
-            'permissions.*' => ['integer', 'exists:permissions,id'],
-        ]);
-
-        // Resolve to Permission models by id: the form submits ids as strings,
-        // and syncPermissions() would otherwise treat a string id as a name.
-        $permissions = Permission::whereKey($validated['permissions'])->get();
-
-        $role->syncPermissions($permissions);
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Permissions updated.')]);
-
-        return to_route('roles.show', $role);
     }
 }

@@ -1,14 +1,18 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { useMemo } from 'react';
+import { Plus } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { AvatarGroup } from '@/components/avatar-group';
 import type { AvatarGroupUser } from '@/components/avatar-group';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
-import { index, show } from '@/routes/roles';
+import { create, destroy, index, show } from '@/routes/roles';
 import type { Paginated } from '@/types/ui';
 
 type Role = {
@@ -31,6 +35,8 @@ type Props = {
 
 export default function RolesIndex({ roles, filters }: Props) {
     const { t } = useTranslations();
+    const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const columns = useMemo<ColumnDef<Role>[]>(
         () => [
@@ -87,27 +93,54 @@ export default function RolesIndex({ roles, filters }: Props) {
                 },
                 header: () => null,
                 cell: ({ row }) => (
-                    <Link
-                        href={show(String(row.original.id))}
-                        className="text-sm text-primary underline-offset-4 hover:underline"
-                    >
-                        {t('ui.roles.actions.manage')}
-                    </Link>
+                    <DataTableRowActions
+                        view={{
+                            label: t('ui.roles.actions.manage'),
+                            href: show(row.original.id).url,
+                        }}
+                        delete={{
+                            label: t('ui.roles.actions.delete'),
+                            onClick: () => setDeleteTarget(row.original),
+                        }}
+                    />
                 ),
             },
         ],
         [t],
     );
 
+    function confirmDelete() {
+        if (!deleteTarget) {
+            return;
+        }
+
+        router.delete(destroy(deleteTarget.id).url, {
+            preserveScroll: true,
+            onStart: () => setDeleting(true),
+            onFinish: () => {
+                setDeleting(false);
+                setDeleteTarget(null);
+            },
+        });
+    }
+
     return (
         <>
             <Head title={t('ui.roles.title')} />
 
             <div className="space-y-6 p-6">
-                <Heading
-                    title={t('ui.roles.title')}
-                    description={t('ui.roles.description')}
-                />
+                <div className="flex items-center justify-between gap-4">
+                    <Heading
+                        title={t('ui.roles.title')}
+                        description={t('ui.roles.description')}
+                    />
+                    <Button asChild>
+                        <Link href={create()}>
+                            <Plus className="size-4" />
+                            {t('ui.roles.new')}
+                        </Link>
+                    </Button>
+                </div>
 
                 <DataTable
                     data={roles}
@@ -119,6 +152,25 @@ export default function RolesIndex({ roles, filters }: Props) {
                     emptyLabel={t('ui.roles.empty')}
                 />
             </div>
+
+            <ConfirmDialog
+                open={deleteTarget !== null}
+                onOpenChange={(open) => !open && setDeleteTarget(null)}
+                title={t('ui.roles.delete_dialog.title')}
+                description={
+                    deleteTarget && deleteTarget.users_count > 0
+                        ? t('ui.roles.delete_dialog.description_with_users', {
+                              name: deleteTarget.label,
+                              count: deleteTarget.users_count,
+                          })
+                        : t('ui.roles.delete_dialog.description', {
+                              name: deleteTarget?.label ?? '',
+                          })
+                }
+                confirmLabel={t('ui.roles.delete_dialog.confirm')}
+                onConfirm={confirmDelete}
+                processing={deleting}
+            />
         </>
     );
 }

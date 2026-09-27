@@ -1,24 +1,14 @@
-import { Form, Head } from '@inertiajs/react';
-import { useState } from 'react';
-import RoleController from '@/actions/App/Http/Controllers/RoleController';
+import { Head, useForm } from '@inertiajs/react';
+import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
+import { RolePermissionGroups } from '@/components/role-permission-groups';
+import type { RolePermissionGroup } from '@/components/role-permission-groups';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useTranslations } from '@/hooks/use-translations';
-
-type Permission = {
-    id: number;
-    name: string;
-    label: string;
-    assigned: boolean;
-};
-
-type PermissionGroup = {
-    group: string;
-    permissions: Permission[];
-};
+import { update } from '@/routes/roles';
 
 type Role = {
     id: number;
@@ -28,51 +18,54 @@ type Role = {
 
 type Props = {
     role: Role;
-    permissionGroups: PermissionGroup[];
+    permissionGroups: RolePermissionGroup[];
 };
 
 export default function RolesShow({ role, permissionGroups }: Props) {
     const { t } = useTranslations();
 
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(
-        () =>
-            new Set(
-                permissionGroups
-                    .flatMap((g) => g.permissions)
-                    .filter((p) => p.assigned)
-                    .map((p) => p.id),
-            ),
-    );
+    const { data, setData, put, processing, errors } = useForm<{
+        name: string;
+        permissions: number[];
+    }>({
+        name: role.name,
+        permissions: permissionGroups
+            .flatMap((g) => g.permissions)
+            .filter((p) => p.assigned)
+            .map((p) => p.id),
+    });
 
-    const togglePermission = (id: number, checked: boolean) => {
-        setSelectedIds((previous) => {
-            const next = new Set(previous);
+    const selectedIds = new Set(data.permissions);
 
+    function togglePermission(id: number, checked: boolean) {
+        setData(
+            'permissions',
+            checked
+                ? [...data.permissions, id]
+                : data.permissions.filter(
+                      (permissionId) => permissionId !== id,
+                  ),
+        );
+    }
+
+    function toggleGroup(group: RolePermissionGroup, checked: boolean) {
+        const next = new Set(data.permissions);
+
+        for (const permission of group.permissions) {
             if (checked) {
-                next.add(id);
+                next.add(permission.id);
             } else {
-                next.delete(id);
+                next.delete(permission.id);
             }
+        }
 
-            return next;
-        });
-    };
+        setData('permissions', Array.from(next));
+    }
 
-    const toggleGroup = (group: PermissionGroup, checked: boolean) => {
-        setSelectedIds((previous) => {
-            const next = new Set(previous);
-
-            for (const permission of group.permissions) {
-                if (checked) {
-                    next.add(permission.id);
-                } else {
-                    next.delete(permission.id);
-                }
-            }
-
-            return next;
-        });
-    };
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        put(update(role.id).url, { preserveScroll: true });
+    }
 
     return (
         <>
@@ -90,124 +83,35 @@ export default function RolesShow({ role, permissionGroups }: Props) {
                         system to manage them here.
                     </p>
                 ) : (
-                    <Form
-                        {...RoleController.update.form({
-                            id: String(role.id),
-                        })}
-                        options={{ preserveScroll: true }}
-                    >
-                        {({ processing }) => (
-                            <div className="space-y-6">
-                                {permissionGroups.map((group) => {
-                                    const groupIds = group.permissions.map(
-                                        (p) => p.id,
-                                    );
-                                    const selectedCount = groupIds.filter(
-                                        (id) => selectedIds.has(id),
-                                    ).length;
-                                    const allSelected =
-                                        selectedCount === groupIds.length;
-                                    const groupCheckboxState:
-                                        | boolean
-                                        | 'indeterminate' = allSelected
-                                        ? true
-                                        : selectedCount > 0
-                                          ? 'indeterminate'
-                                          : false;
+                    <form onSubmit={submit} className="space-y-6">
+                        <div className="grid gap-2 sm:max-w-sm">
+                            <Label htmlFor="name">
+                                {t('ui.roles.form.name')}
+                            </Label>
+                            <Input
+                                id="name"
+                                value={data.name}
+                                onChange={(e) =>
+                                    setData('name', e.target.value)
+                                }
+                                required
+                            />
+                            <InputError message={errors.name} />
+                        </div>
 
-                                    return (
-                                        <div
-                                            key={group.group}
-                                            className="rounded-lg border bg-card p-4 shadow-sm"
-                                        >
-                                            <div className="flex items-center justify-between gap-4">
-                                                <h3 className="text-sm font-semibold text-foreground">
-                                                    {group.group}
-                                                </h3>
-                                                <div className="flex items-center gap-2">
-                                                    <Checkbox
-                                                        id={`group-${group.group}`}
-                                                        checked={
-                                                            groupCheckboxState
-                                                        }
-                                                        onCheckedChange={(
-                                                            checked,
-                                                        ) =>
-                                                            toggleGroup(
-                                                                group,
-                                                                checked ===
-                                                                    true,
-                                                            )
-                                                        }
-                                                    />
-                                                    <Label
-                                                        htmlFor={`group-${group.group}`}
-                                                        className="cursor-pointer text-xs font-normal text-muted-foreground"
-                                                    >
-                                                        {t(
-                                                            'ui.roles.select_all',
-                                                        )}
-                                                    </Label>
-                                                </div>
-                                            </div>
+                        <RolePermissionGroups
+                            permissionGroups={permissionGroups}
+                            selectedIds={selectedIds}
+                            onTogglePermission={togglePermission}
+                            onToggleGroup={toggleGroup}
+                        />
 
-                                            <Separator className="my-3" />
-
-                                            <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                                                {group.permissions.map(
-                                                    (permission) => (
-                                                        <div
-                                                            key={
-                                                                permission.id
-                                                            }
-                                                            className="flex items-center gap-2"
-                                                        >
-                                                            <Checkbox
-                                                                id={`permission-${permission.id}`}
-                                                                name="permissions[]"
-                                                                value={
-                                                                    permission.id
-                                                                }
-                                                                checked={selectedIds.has(
-                                                                    permission.id,
-                                                                )}
-                                                                onCheckedChange={(
-                                                                    checked,
-                                                                ) =>
-                                                                    togglePermission(
-                                                                        permission.id,
-                                                                        checked ===
-                                                                            true,
-                                                                    )
-                                                                }
-                                                            />
-                                                            <Label
-                                                                htmlFor={`permission-${permission.id}`}
-                                                                className="cursor-pointer text-sm font-normal"
-                                                            >
-                                                                {
-                                                                    permission.label
-                                                                }
-                                                            </Label>
-                                                        </div>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-
-                                <Button
-                                    type="submit"
-                                    disabled={processing}
-                                >
-                                    {processing
-                                        ? t('ui.roles.saving')
-                                        : t('ui.roles.save')}
-                                </Button>
-                            </div>
-                        )}
-                    </Form>
+                        <Button type="submit" disabled={processing}>
+                            {processing
+                                ? t('ui.roles.saving')
+                                : t('ui.roles.save')}
+                        </Button>
+                    </form>
                 )}
             </div>
         </>

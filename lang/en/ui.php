@@ -515,6 +515,7 @@ return [
         'description' => 'Manage roles and their permissions',
         'search_placeholder' => 'Search by name...',
         'empty' => 'No roles found.',
+        'new' => 'New role',
 
         'columns' => [
             'role' => 'Role',
@@ -524,12 +525,37 @@ return [
 
         'actions' => [
             'manage' => 'Manage permissions',
+            'delete' => 'Delete',
         ],
 
         'detail_description' => 'Toggle permissions on or off for this role',
         'select_all' => 'Select all',
         'save' => 'Save permissions',
         'saving' => 'Saving…',
+
+        'form' => [
+            'name' => 'Name',
+            'name_placeholder' => 'e.g. Payroll reviewer',
+        ],
+
+        'create_page' => [
+            'title' => 'New role',
+            'description' => 'Name the role and choose its initial permissions',
+            'submit' => 'Create role',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete role',
+            'description' => 'Are you sure you want to delete :name? This action cannot be undone.',
+            'description_with_users' => 'Are you sure you want to delete :name? :count user(s) currently hold this role and will lose it. This action cannot be undone.',
+            'confirm' => 'Delete',
+        ],
+
+        'flash' => [
+            'created' => 'Role created.',
+            'updated' => 'Role updated.',
+            'deleted' => 'Role deleted.',
+        ],
 
         'names' => [
             'admin' => 'Administrator',
