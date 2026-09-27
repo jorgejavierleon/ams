@@ -9,15 +9,16 @@ use App\Models\DocumentSignature;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\DocumentSignatureRequested;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // documents.show/publish are gated by Manage:Document, granted to admin
+    // by RoleSeeder.
+    $this->seed(RoleSeeder::class);
 });
 
 function signaturesAdmin(?Organization $organization = null): User

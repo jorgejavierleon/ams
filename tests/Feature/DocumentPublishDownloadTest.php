@@ -8,16 +8,17 @@ use App\Models\Document;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\DocumentSignatureRequested;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // documents.publish/download are gated by Manage:Document, granted to
+    // admin by RoleSeeder.
+    $this->seed(RoleSeeder::class);
 });
 
 function publishAdmin(?Organization $organization = null): User

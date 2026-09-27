@@ -77,16 +77,17 @@ class TodayController extends Controller
 
     /**
      * Where the employee is in their day, or null when they do not punch at
-     * all.
-     *
-     * Gated on the permission the user actually holds rather than on `can()`,
-     * which the super-admin gate would answer for — the same reading the web
-     * dashboard's clock widget and the `permission:` middleware on the punch
-     * route use, so all three agree about who has a punch surface.
+     * all. Gated the same way as the web dashboard's clock widget and the
+     * `permission:` middleware on the punch route, so all three agree about
+     * who has a punch surface. Checked against the user's resolved
+     * permissions rather than can()/hasPermissionTo() — this is the app's
+     * tightest query budget, and can() would cost an extra query checking
+     * the Owner bypass through the Gate even for the common employee case,
+     * so the Owner is checked directly as a fallback instead.
      */
     private function punchState(User $user, CarbonInterface $today, MarkManager $marks): ?PunchState
     {
-        if (! $user->getAllPermissions()->pluck('name')->contains('ClockOwn:Mark')) {
+        if (! $user->getAllPermissions()->pluck('name')->contains('ClockOwn:Mark') && ! $user->isOwner()) {
             return null;
         }
 

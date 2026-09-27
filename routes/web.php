@@ -71,30 +71,47 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
-// Admin panel routes (role:admin required)
-Route::middleware(['auth', 'role:admin'])->group(function () {
+// Admin/owner settings screens and reference-data CRUD, each gated by its
+// own named Spatie permission rather than the `admin` role's name — the
+// Owner's unconditional bypass (see Organization::owner()) only short-circuits
+// permission and policy checks, not a bare role check, so a role-name check
+// here would strand an Owner who holds no role. Naming a permission after
+// each screen also means editing what the `admin` role can do from the Roles
+// screen actually changes who reaches these routes.
+Route::middleware(['auth', 'permission:Manage:Role'])->group(function () {
     Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
     Route::get('roles/{role}', [RoleController::class, 'show'])->name('roles.show');
     Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+});
 
+Route::middleware(['auth', 'permission:Manage:Position'])->group(function () {
     Route::resource('positions', PositionController::class)
         ->only(['index', 'store', 'show', 'update', 'destroy']);
+});
 
+Route::middleware(['auth', 'permission:Manage:CostCenter'])->group(function () {
     Route::resource('cost-centers', CostCenterController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+});
 
-    // One employer per organization (KOL-32) — a singleton form, not a resource.
+// The employer is a singleton per organization — a settings form, not a
+// resource with multiple records. The commune lookup lives here too since
+// the company address form is its only caller.
+Route::middleware(['auth', 'permission:Manage:Company'])->group(function () {
     Route::get('company', [CompanyController::class, 'edit'])->name('company.edit');
     Route::put('company', [CompanyController::class, 'update'])->name('company.update');
+    Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
+        ->name('regions.communes');
+});
 
+Route::middleware(['auth', 'permission:Manage:Premise'])->group(function () {
     Route::resource('premises', PremiseController::class)
         ->except(['show']);
+});
 
+Route::middleware(['auth', 'permission:Manage:Shift'])->group(function () {
     Route::resource('shifts', ShiftController::class)
         ->except(['show']);
-
-    Route::resource('holidays', HolidayController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
 
     Route::post('employees/{employee}/shift-assignments', [ShiftAssignmentController::class, 'store'])
         ->name('employees.shift-assignments.store');
@@ -102,7 +119,14 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('shift-assignments.end');
     Route::delete('shift-assignments/{shiftAssignment}', [ShiftAssignmentController::class, 'destroy'])
         ->name('shift-assignments.destroy');
+});
 
+Route::middleware(['auth', 'permission:Manage:Holiday'])->group(function () {
+    Route::resource('holidays', HolidayController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+});
+
+Route::middleware(['auth', 'permission:Manage:Document'])->group(function () {
     Route::post('documents/{document}/publish', [DocumentController::class, 'publish'])
         ->name('documents.publish');
     Route::post('documents/{document}/void', [DocumentController::class, 'void'])
@@ -114,32 +138,31 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('document-signatures/{documentSignature}/resend', [DocumentSignatureController::class, 'resend'])
         ->name('document-signatures.resend');
     Route::resource('documents', DocumentController::class);
+});
 
+// The index/create/edit/body/restore actions below only need viewing rights;
+// store/update/destroy re-check Create/Update/Delete:DocumentTemplate
+// individually inside DocumentTemplateController via DocumentTemplatePolicy.
+Route::middleware(['auth', 'permission:ViewAny:DocumentTemplate'])->group(function () {
     Route::get('document-templates/{documentTemplate}/body', [DocumentTemplateController::class, 'body'])
         ->name('document-templates.body');
     Route::patch('document-templates/{documentTemplate}/restore', [DocumentTemplateController::class, 'restore'])
         ->name('document-templates.restore');
     Route::resource('document-templates', DocumentTemplateController::class)
         ->except(['show']);
+});
 
+Route::middleware(['auth', 'permission:Create:Leave'])->group(function () {
     Route::resource('leaves', LeaveController::class)
         ->only(['create', 'store', 'destroy'])
         ->parameter('leaves', 'leave');
     Route::get('leaves/business-days', [LeaveController::class, 'businessDays'])
         ->name('leaves.business-days');
-
-    Route::get('regions/{region}/communes', [CommuneController::class, 'index'])
-        ->name('regions.communes');
 });
 
-// Employees CRUD (KOL-95/KOL-133.4): gated by named Spatie permissions
-// instead of role:admin. Now that the admin role is editable (KOL-133.3),
-// role:admin middleware checks the role name only — it would keep granting
-// access even after an organization edits the admin role's permissions in
-// the Roles screen, silently diverging from what the role actually holds.
-// View covers browsing the list/profile; Manage covers every action that
-// changes employee data (including toggle-active and the Maestro de
-// Trabajadores export).
+// View covers browsing the employees list/profile; Manage covers every
+// action that changes employee data (including toggle-active and the
+// Maestro de Trabajadores export).
 Route::middleware(['auth', 'permission:View:Employee'])->group(function () {
     Route::resource('employees', EmployeeController::class)->only(['index', 'show']);
 });
@@ -153,13 +176,11 @@ Route::middleware(['auth', 'permission:Manage:Employee'])->group(function () {
         ->name('employees.export');
 });
 
-// Jornadas (KOL-71). Shared by admins and supervisors, same shape as the leave
+// Jornadas. Shared by admins and supervisors, same shape as the leave
 // review routes below: authorization is enforced per request in
 // WorkdayController/WorkdayPolicy (ViewAny/Update:Workday org-wide,
 // ViewTeam/ApproveTeam:Workday scoped to a supervisor's own direct reports),
-// not by a route-level permission gate — admins reach every action through
-// the super-admin Gate::before bypass without needing either permission
-// granted explicitly.
+// not by a route-level permission gate.
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('workdays', [WorkdayController::class, 'index'])->name('workdays.index');
     Route::get('workdays/{workday}', [WorkdayController::class, 'show'])->name('workdays.show');
@@ -174,8 +195,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->scopeBindings()
         ->name('workdays.modifications.decline');
 
-    // KOL-71: overtime approval lives on Jornadas, next to mark-modification
-    // review, rather than on the separate overtime queue.
+    // Overtime approval lives on Jornadas, next to mark-modification review,
+    // rather than on the separate overtime queue below.
     Route::post('workdays/overtime/bulk-decide', [WorkdayController::class, 'bulkDecideOvertime'])
         ->name('workdays.overtime.bulk-decide');
     Route::post('workdays/{workday}/overtime/approve', [WorkdayController::class, 'approveOvertime'])
@@ -200,17 +221,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('leaves.reject');
 });
 
-// Overtime section (KOL-43). Shared by every role that holds one of its
-// permissions — the queue (KOL-44) and request flow (KOL-45) add their own
-// routes under this same gate as they land.
+// Overtime section. Shared by every role that holds one of its permissions.
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('overtime', [OvertimeController::class, 'index'])
         ->middleware('permission:RequestOwn:OvertimeAuthorization|ViewOwn:OvertimeAuthorization|ViewTeam:OvertimeAuthorization|ApproveTeam:OvertimeAuthorization|Manage:OvertimeAuthorization')
         ->name('overtime.index');
 
-    // Pactos de horas extraordinarias (KOL-42): managed only by whoever holds
-    // Manage:OvertimeAuthorization (KOL-43), the same permission that gates
-    // the section's admin-only actions.
+    // Pactos de horas extraordinarias: managed only by whoever holds
+    // Manage:OvertimeAuthorization, the same permission that gates the
+    // section's admin-only actions.
     Route::middleware('permission:Manage:OvertimeAuthorization')
         ->prefix('overtime/pacts')
         ->name('overtime.pacts.')
@@ -222,11 +241,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/{overtimePact}/activate', [OvertimePactController::class, 'activate'])->name('activate');
         });
 
-    // Mode A overtime requests (KOL-72), extracted from the queue's
-    // Solicitudes tab into their own screen — a request isn't tied to a
-    // computed Workday, so it doesn't belong on Jornadas (KOL-71) either.
-    // Reachable by whoever can see a team's requests; deciding one further
-    // requires ApproveTeam, enforced in OvertimeRequestController/Policy.
+    // Mode A overtime requests: their own screen, separate from the queue's
+    // Solicitudes tab, since a request isn't tied to a computed Workday and
+    // so doesn't belong on Jornadas either. Reachable by whoever can see a
+    // team's requests; deciding one further requires ApproveTeam, enforced
+    // in OvertimeRequestController/Policy.
     Route::middleware('permission:ViewTeam:OvertimeAuthorization|Manage:OvertimeAuthorization')
         ->prefix('overtime/requests')
         ->name('overtime.requests.')
@@ -236,9 +255,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/{overtimeRequest}/reject', [OvertimeRequestController::class, 'reject'])->name('reject');
         });
 
-    // Rest-day compensation balances (KOL-47): HR/admin view and consumption,
-    // gated by the same permission as pactos since the two are managed by the
-    // same people.
+    // Rest-day compensation balances: HR/admin view and consumption, gated by
+    // the same permission as pactos since the two are managed by the same
+    // people.
     Route::middleware('permission:Manage:OvertimeAuthorization')
         ->prefix('overtime/rest-day-balances')
         ->name('overtime.rest-day-balances.')
@@ -248,13 +267,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 });
 
-// Payroll reports section (KOL-18): the container for the five RF-1 reports
-// (KOL-20..24). Gated on its own permissions rather than role:admin — tenant
-// users (RRHH/admin), separate from the DT inspector's `dt.reports.*`. The
-// landing page (a report-type picker) is gone for now (KOL-20 UI redesign)
-// since only one report existed — now that KOL-21/22/24 land more, all are
-// reachable from the nav (app-sidebar.tsx) instead. Revisit once a picker
-// (or sub-nav) is actually needed again.
+// Payroll reports section: the container for the RF-1 reports, for tenant
+// users (RRHH/admin), separate from the DT inspector's `dt.reports.*`. Each
+// report is reachable directly from the nav (app-sidebar.tsx) rather than
+// through a report-type picker landing page.
 Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])
     ->prefix('payroll-reports')
     ->name('payroll-reports.')
@@ -263,8 +279,8 @@ Route::middleware(['auth', 'verified', 'permission:View:PayrollReport'])
         Route::get('weekly-detail', [WeeklyDetailReportController::class, 'index'])->name('weekly-detail');
         Route::get('period-movements', [PeriodMovementsReportController::class, 'index'])->name('period-movements');
         Route::get('overtime-excess', [OvertimeExcessReportController::class, 'index'])->name('overtime-excess');
-        // Export audit trail (RF-6, KOL-17): read-only history of every payroll
-        // report export, gated by the same permission as viewing the reports
+        // Export audit trail (RF-6): read-only history of every payroll report
+        // export, gated by the same permission as viewing the reports
         // themselves — visible to the tenant admin, not only superadmin.
         Route::get('history', [PayrollExportHistoryController::class, 'index'])->name('history');
     });
@@ -282,13 +298,11 @@ Route::middleware(['auth', 'verified', 'permission:Export:PayrollReport'])
         Route::get('overtime-excess/export/{format}', [OvertimeExcessReportController::class, 'export'])->name('overtime-excess.export');
     });
 
-// A run's own resource_type must match the `{resourceType}` URL segment
-// it's being accessed under (KOL-107) — centralized here, once, rather than
-// re-checked at the top of every wizard action, so a future action can't
-// forget the guard the way 6+ near-identical manual calls could. Runs
-// through ImportRun::query() (not ::findOrFail() on the model directly) so
-// its BelongsToOrganization/BelongsToUser global scopes (KOL-105) still
-// apply — a cross-org/cross-user id 404s here exactly as it did before.
+// A run's own resource_type must match the `{resourceType}` URL segment it's
+// being accessed under — centralized here, once, rather than re-checked at
+// the top of every wizard action. Runs through ImportRun::query() (not
+// ::findOrFail() on the model directly) so its BelongsToOrganization/
+// BelongsToUser global scopes still apply — a cross-org/cross-user id 404s.
 Route::bind('importRun', function (string $value, RouteMatch $route): ImportRun {
     $importRun = ImportRun::query()->findOrFail($value);
 
@@ -297,14 +311,12 @@ Route::bind('importRun', function (string $value, RouteMatch $route): ImportRun 
     return $importRun;
 });
 
-// The bulk-import wizard (KOL-94), gated per resource type by
-// EnsureImportPermission (KOL-107) rather than role:admin — a tenant admin
-// can grant a resource's import permission to another role later via the
-// Roles screen. {resourceType} resolves through ImportResourceRegistry, so
-// an unregistered resource type 404s before any wizard step runs. One route
-// per wizard step (KOL-94.5); upload (KOL-98), mapping review (KOL-99),
-// strategy/match-key (KOL-100), preview (KOL-101), commit (KOL-102), and the
-// error-report download (KOL-103) exist so far.
+// The bulk-import wizard, gated per resource type by EnsureImportPermission
+// so a tenant admin can grant a resource's import permission to another role
+// via the Roles screen. {resourceType} resolves through
+// ImportResourceRegistry, so an unregistered resource type 404s before any
+// wizard step runs. One route per wizard step: upload, mapping review,
+// strategy/match-key, preview, commit, and the error-report download.
 Route::middleware(['auth', 'verified', 'import.permission'])
     ->prefix('imports/{resourceType}')
     ->name('imports.')
@@ -447,14 +459,14 @@ Route::prefix('dt')->name('dt.')->group(function () {
                     // Excel / PDF / Word download for any report (Resolución 38,
                     // Art. 28 b), streamed directly rather than via Inertia. A
                     // selection above the configured threshold is queued instead
-                    // (KOL-16) and delivered through the route below.
+                    // and delivered through the route below.
                     Route::get('{type}/export', [DtReportController::class, 'export'])->name('export');
 
                     // The signed, expiring link mailed once a queued export
-                    // finishes rendering (KOL-16 AC #4): a real HTML landing
-                    // page (not a raw file response — see
-                    // ReportExportDownloadController) with a button to the
-                    // actual file, served just like documents.download below.
+                    // finishes rendering: a real HTML landing page (not a raw
+                    // file response — see ReportExportDownloadController) with
+                    // a button to the actual file, served just like
+                    // documents.download below.
                     Route::get('exports/{reportExport}', [ReportExportDownloadController::class, 'show'])
                         ->name('exports.show')
                         ->middleware('signed');

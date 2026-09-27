@@ -10,8 +10,10 @@ use Spatie\Permission\Models\Role;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // roles.index/show/update are gated by Manage:Role, granted to admin by
+    // RoleSeeder — seed it so the "admin" role this file builds actually
+    // holds that permission.
+    $this->seed(RoleSeeder::class);
 });
 
 // --- Access control ---

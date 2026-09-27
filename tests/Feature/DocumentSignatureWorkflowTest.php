@@ -11,26 +11,21 @@ use App\Models\DocumentSignature;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\DocumentSignatureRequested;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('public');
 
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-
-    $employeeRole = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
-    foreach (['ViewOwn:Document', 'SignOwn:Document'] as $permission) {
-        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
-    }
-    $employeeRole->givePermissionTo(['ViewOwn:Document', 'SignOwn:Document']);
+    // documents.publish is gated by Manage:Document and my.documents.* by
+    // ViewOwn:Document/SignOwn:Document, all granted by RoleSeeder.
+    $this->seed(RoleSeeder::class);
 });
 
 /**

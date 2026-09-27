@@ -8,8 +8,11 @@ use App\Models\DocumentSignature;
 use App\Models\Leave;
 use App\Models\MarkModification;
 use App\Models\OvertimeRequest;
+use App\Models\User;
 use App\Services\OrganizationSettings;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -53,18 +56,20 @@ class HandleInertiaRequests extends Middleware
             'translations' => $this->translations(),
             'auth' => [
                 'user' => $request->user(),
-                'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? collect(),
+                // The Owner holds every permission through the super-admin
+                // gate rather than a granted one, so the frontend's nav and
+                // page gating — which reads this list directly — is given
+                // every permission name for them rather than the (possibly
+                // empty) set Spatie actually granted their roles.
+                'permissions' => fn () => $this->effectivePermissionNames($request->user()),
                 // Link-to-employee UI elsewhere (e.g. an avatar cell linking
                 // to the employee's show page) checks this permission-based
-                // prop (KOL-133.6) rather than the admin role name, matching
-                // the employees.* route gate itself (View:Employee/
-                // Manage:Employee, KOL-133.4) so the link doesn't drift once
-                // an org edits the admin role or grants the permission to a
+                // prop rather than the admin role name, matching the
+                // employees.* route gate itself (View:Employee/
+                // Manage:Employee) so the link doesn't drift once an org
+                // edits the admin role or grants the permission to a
                 // different role via the Roles screen.
-                'canViewEmployee' => fn () => $request->user()?->hasAnyPermission(['View:Employee', 'Manage:Employee']) ?? false,
-                // The Owner (KOL-133) must always be able to reach ownership
-                // transfer regardless of role, so nav visibility can't rely on
-                // permissions alone the way other admin-only sections do.
+                'canViewEmployee' => fn () => $request->user()?->canAny(['View:Employee', 'Manage:Employee']) ?? false,
                 'isOwner' => fn () => $request->user()?->isOwner() ?? false,
                 'pendingModificationsCount' => fn () => $this->pendingModificationsCount($request),
                 'pendingSignaturesCount' => fn () => $this->pendingSignaturesCount($request),
@@ -85,6 +90,27 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
+     * The Owner is never assigned the `admin` role (or any role at all), but
+     * the frontend's nav and page gating reads this list as if they were a
+     * fully-permissioned admin — including which of the two nav trees to
+     * show (`isEmployee` in app-sidebar.tsx checks for `ViewOwn:Leave`, which
+     * only self-service employees hold), not literally every permission that
+     * exists.
+     *
+     * @return Collection<int, string>
+     */
+    private function effectivePermissionNames(?User $user): Collection
+    {
+        if ($user === null) {
+            return collect();
+        }
+
+        return $user->isOwner()
+            ? collect(RoleSeeder::ADMIN_PERMISSIONS)
+            : $user->getAllPermissions()->pluck('name');
+    }
+
+    /**
      * How many mark-correction requests are awaiting the authenticated
      * employee's review, for the self-service nav badge. Zero for anyone who
      * cannot review their own corrections, so the query stays employee-only.
@@ -93,7 +119,7 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        if ($user === null || ! $user->getAllPermissions()->pluck('name')->contains('ReviewOwn:MarkModification')) {
+        if ($user === null || ! $user->can('ReviewOwn:MarkModification')) {
             return 0;
         }
 
@@ -112,7 +138,7 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        if ($user === null || ! $user->getAllPermissions()->pluck('name')->contains('SignOwn:Document')) {
+        if ($user === null || ! $user->can('SignOwn:Document')) {
             return 0;
         }
 
@@ -139,10 +165,9 @@ class HandleInertiaRequests extends Middleware
             return 0;
         }
 
-        $permissions = $user->getAllPermissions()->pluck('name');
-        $isOrgWide = $permissions->contains('Manage:OvertimeAuthorization');
-        $isTeamScoped = $permissions->contains('ViewTeam:OvertimeAuthorization')
-            || $permissions->contains('ApproveTeam:OvertimeAuthorization');
+        $isOrgWide = $user->can('Manage:OvertimeAuthorization');
+        $isTeamScoped = $user->can('ViewTeam:OvertimeAuthorization')
+            || $user->can('ApproveTeam:OvertimeAuthorization');
 
         if (! $isOrgWide && ! $isTeamScoped) {
             return 0;

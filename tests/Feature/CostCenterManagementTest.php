@@ -3,14 +3,15 @@
 use App\Models\CostCenter;
 use App\Models\Organization;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // cost-centers.* is gated by Manage:CostCenter, granted to admin by
+    // RoleSeeder — seed it so costCenterAdmin() actually holds it.
+    $this->seed(RoleSeeder::class);
 });
 
 function costCenterAdmin(?Organization $organization = null): User

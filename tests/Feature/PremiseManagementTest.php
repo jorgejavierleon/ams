@@ -4,14 +4,15 @@ use App\Models\Company;
 use App\Models\Organization;
 use App\Models\Premise;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // premises.* is gated by Manage:Premise, granted to admin by RoleSeeder —
+    // seed it so premiseAdmin() actually holds it.
+    $this->seed(RoleSeeder::class);
 });
 
 function premiseAdmin(?Organization $organization = null): User

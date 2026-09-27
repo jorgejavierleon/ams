@@ -65,13 +65,24 @@ class RoleSeeder extends Seeder
      * `DocumentTemplatePolicy`, replacing the route-level role:admin-only
      * check those actions relied on before.
      *
-     * `Create:Document` (KOL-130) gates the generate-document MCP tool via
-     * `DocumentPolicy`, the same ability the web document-creation form would
-     * need once it is retrofitted off role:admin.
+     * `Create:Document` gates the generate-document MCP tool via
+     * `DocumentPolicy`, the same ability the web document-creation form uses.
+     *
+     * `Manage:Role`, `Manage:Position`, `Manage:CostCenter`, `Manage:Company`,
+     * `Manage:Premise`, `Manage:Shift`, `Manage:Holiday`, and
+     * `Manage:Document` each gate one settings screen's routes in
+     * `routes/web.php`. Granting them here rather than checking the `admin`
+     * role by name means an organization that edits what its admin role can
+     * do actually changes who reaches these screens.
+     *
+     * Public: this is also the built-in admin capability surface the Owner
+     * sees on the frontend nav (see HandleInertiaRequests::effectivePermissionNames()),
+     * regardless of what an organization has since edited the `admin` role to
+     * hold via the Roles screen.
      *
      * @var array<int, string>
      */
-    private const ADMIN_PERMISSIONS = [
+    public const ADMIN_PERMISSIONS = [
         'ClockOwn:Mark',
         'ViewOwn:Mark',
         'Manage:OvertimeAuthorization',
@@ -86,6 +97,14 @@ class RoleSeeder extends Seeder
         'Update:DocumentTemplate',
         'Delete:DocumentTemplate',
         'Create:Document',
+        'Manage:Role',
+        'Manage:Position',
+        'Manage:CostCenter',
+        'Manage:Company',
+        'Manage:Premise',
+        'Manage:Shift',
+        'Manage:Holiday',
+        'Manage:Document',
     ];
 
     /**

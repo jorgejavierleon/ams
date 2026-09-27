@@ -4,15 +4,16 @@ use App\Models\Organization;
 use App\Models\Shift;
 use App\Models\ShiftAssignment;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // shifts.* is gated by Manage:Shift, granted to admin by RoleSeeder —
+    // seed it so shiftAdmin() actually holds it.
+    $this->seed(RoleSeeder::class);
 });
 
 function shiftAdmin(?Organization $organization = null): User

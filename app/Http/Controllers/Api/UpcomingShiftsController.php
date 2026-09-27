@@ -68,7 +68,7 @@ class UpcomingShiftsController extends Controller
      */
     private function punchState(User $user, CarbonInterface $today, MarkManager $marks): ?PunchState
     {
-        if (! $user->getAllPermissions()->pluck('name')->contains('ClockOwn:Mark')) {
+        if (! $user->getAllPermissions()->pluck('name')->contains('ClockOwn:Mark') && ! $user->isOwner()) {
             return null;
         }
 

@@ -42,11 +42,12 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // Gate on the permission the user actually holds — not the super-admin
-        // gate — so the widget matches the `permission:` middleware guarding the
-        // store route (which the admin gate does not bypass). Admins hold the
-        // permission directly via the seeder, so they get the widget too.
-        $canClock = $user->getAllPermissions()->pluck('name')->contains('ClockOwn:Mark');
+        // can() rather than hasPermissionTo(): the latter throws if the
+        // named permission doesn't exist for the guard, while can() routes
+        // through the Gate — which the Owner bypasses unconditionally, and
+        // which Spatie's own Gate::before already guards against that
+        // exception for everyone else.
+        $canClock = $user->can('ClockOwn:Mark');
 
         return Inertia::render('dashboard', [
             'clock' => $canClock

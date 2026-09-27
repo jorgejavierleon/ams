@@ -6,15 +6,16 @@ use App\Models\Organization;
 use App\Models\Region;
 use App\Models\User;
 use App\Support\Rut;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // company.* and regions.communes are gated by Manage:Company, granted to
+    // admin by RoleSeeder — seed it so companyAdmin() actually holds it.
+    $this->seed(RoleSeeder::class);
 });
 
 function companyAdmin(?Organization $organization = null): User

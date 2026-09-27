@@ -6,17 +6,18 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Document;
 use App\Models\Organization;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Spatie\Activitylog\Models\Activity;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    // documents.show/publish are gated by Manage:Document, granted to admin
+    // by RoleSeeder.
+    $this->seed(RoleSeeder::class);
 });
 
 function activityAdmin(?Organization $organization = null): User
