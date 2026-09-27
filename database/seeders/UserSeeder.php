@@ -21,12 +21,18 @@ class UserSeeder extends Seeder
             'slug' => 'demo-organization',
         ]);
 
-        User::factory()->create([
+        $admin = User::factory()->create([
             'name' => 'Admin',
             'email' => 'admin@example.com',
             'password' => 'admin',
             'organization_id' => $organization->id,
-        ])->assignRole('admin');
+        ]);
+
+        // owner_id is deliberately excluded from mass assignment (see
+        // Organization::owner()), so it must be set directly rather than via
+        // the migration's admin-role backfill, which only reaches
+        // organizations that already had users when it ran.
+        $organization->forceFill(['owner_id' => $admin->id])->save();
 
         // The employer. Exactly one per organization (KOL-32).
         $company = Company::factory()->create([
