@@ -553,7 +553,6 @@ return [
         ],
 
         'system_role_rename_blocked' => 'System roles cannot be renamed.',
-        'system_role_hint' => 'This is a system role — its name is locked, but you can still edit its permissions or restore them to the default set below.',
         'restore_defaults' => 'Restore default permissions',
         'restore_defaults_dialog' => [
             'title' => 'Restore default permissions',

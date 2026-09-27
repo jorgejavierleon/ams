@@ -556,7 +556,6 @@ return [
         ],
 
         'system_role_rename_blocked' => 'Los roles del sistema no se pueden renombrar.',
-        'system_role_hint' => 'Este es un rol del sistema: su nombre está bloqueado, pero puede editar sus permisos o restaurarlos al conjunto por defecto más abajo.',
         'restore_defaults' => 'Restaurar permisos por defecto',
         'restore_defaults_dialog' => [
             'title' => 'Restaurar permisos por defecto',

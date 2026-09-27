@@ -84,27 +84,22 @@ export default function RolesShow({ role, permissionGroups }: Props) {
                     </p>
                 ) : (
                     <form onSubmit={submit} className="space-y-6">
-                        <div className="grid gap-2 sm:max-w-sm">
-                            <Label htmlFor="name">
-                                {t('ui.roles.form.name')}
-                            </Label>
-                            <Input
-                                id="name"
-                                value={data.name}
-                                onChange={(e) =>
-                                    setData('name', e.target.value)
-                                }
-                                required
-                                disabled={role.is_system_role}
-                                readOnly={role.is_system_role}
-                            />
-                            <InputError message={errors.name} />
-                            {role.is_system_role && (
-                                <p className="text-sm text-muted-foreground">
-                                    {t('ui.roles.system_role_hint')}
-                                </p>
-                            )}
-                        </div>
+                        {!role.is_system_role && (
+                            <div className="grid gap-2 sm:max-w-sm">
+                                <Label htmlFor="name">
+                                    {t('ui.roles.form.name')}
+                                </Label>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(e) =>
+                                        setData('name', e.target.value)
+                                    }
+                                    required
+                                />
+                                <InputError message={errors.name} />
+                            </div>
+                        )}
 
                         <RolePermissionGroups
                             permissionGroups={permissionGroups}
