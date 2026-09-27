@@ -69,7 +69,11 @@ class RoleController extends Controller
                 'label' => RolePresenter::roleLabel($role->name),
                 'permissions_count' => $role->permissions_count,
                 'users_count' => $role->users_count,
-                'all_users_count' => $role->all_users_count,
+                // Unlike the plain 'permissions'/'users' withCount() entries
+                // above, this is an aliased count ('users as all_users_count'),
+                // which Larastan's withCount() property inference doesn't
+                // recognize — read through the generic accessor instead.
+                'all_users_count' => $role->getAttribute('all_users_count'),
                 'is_system_role' => in_array($role->name, RolePresenter::SYSTEM_ROLES),
                 // Role::users() is typed by Spatie as Collection<int, Model>
                 // (the related model is resolved dynamically per guard), so
@@ -261,10 +265,10 @@ class RoleController extends Controller
 
         return $allPermissions
             ->groupBy(fn (Permission $permission) => RolePresenter::groupKey($permission->name))
-            ->map(fn ($permissions, $groupKey) => [
+            ->map(fn (Collection $permissions, $groupKey) => [
                 'group' => RolePresenter::groupLabel($groupKey),
                 'permissions' => $permissions->map(fn (Permission $permission) => [
-                    'id' => $permission->id,
+                    'id' => (int) $permission->id,
                     'name' => $permission->name,
                     'label' => RolePresenter::permissionLabel($permission->name),
                     'assigned' => in_array($permission->id, $assignedIds),
