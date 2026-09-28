@@ -190,7 +190,7 @@ class RoleController extends Controller
         abort_if(in_array($role->name, RolePresenter::PROTECTED_ROLES), 403);
 
         $clone = Role::create([
-            'name' => $this->uniqueCloneName($role->name),
+            'name' => $this->uniqueCloneName(RolePresenter::cloneBaseName($role->name)),
             'guard_name' => 'web',
         ]);
 
@@ -202,7 +202,7 @@ class RoleController extends Controller
     }
 
     /**
-     * Build a "<name> (copy)" name for a clone, deduplicated as
+     * Build a localized "<name> (copy)" name for a clone, deduplicated as
      * "<name> (copy 2)", "<name> (copy 3)", … against existing role names.
      * The source name is truncated as needed so the result never exceeds the
      * roles.name column's 255-character limit (the same limit store()/
@@ -210,7 +210,7 @@ class RoleController extends Controller
      */
     private function uniqueCloneName(string $originalName): string
     {
-        $candidate = $this->truncatedCloneName($originalName, ' (copy)');
+        $candidate = $this->truncatedCloneName($originalName, __('ui.roles.clone_suffix'));
 
         if (! Role::where('name', $candidate)->where('guard_name', 'web')->exists()) {
             return $candidate;
@@ -218,7 +218,7 @@ class RoleController extends Controller
 
         $suffix = 2;
         do {
-            $candidate = $this->truncatedCloneName($originalName, " (copy {$suffix})");
+            $candidate = $this->truncatedCloneName($originalName, __('ui.roles.clone_suffix_numbered', ['n' => $suffix]));
             $suffix++;
         } while (Role::where('name', $candidate)->where('guard_name', 'web')->exists());
 

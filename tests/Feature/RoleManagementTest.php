@@ -732,7 +732,7 @@ it('blocks non-admin users from cloning roles', function () {
         ->post(route('roles.clone', $role))
         ->assertForbidden();
 
-    expect(Role::where('name', 'editor (copy)')->exists())->toBeFalse();
+    expect(Role::where('name', 'editor (copia)')->exists())->toBeFalse();
 });
 
 it('admin cannot clone a protected role', function () {
@@ -745,7 +745,7 @@ it('admin cannot clone a protected role', function () {
         ->post(route('roles.clone', $role))
         ->assertForbidden();
 
-    expect(Role::where('name', 'dt (copy)')->exists())->toBeFalse();
+    expect(Role::where('name', 'Dirección del Trabajo (copia)')->exists())->toBeFalse();
 });
 
 it('admin can clone a custom role with its current permissions', function () {
@@ -758,7 +758,7 @@ it('admin can clone a custom role with its current permissions', function () {
 
     $response = $this->actingAs($admin)->post(route('roles.clone', $role));
 
-    $clone = Role::where('name', 'editor (copy)')->first();
+    $clone = Role::where('name', 'editor (copia)')->first();
 
     expect($clone)->not->toBeNull();
     $response->assertRedirect(route('roles.show', $clone));
@@ -770,11 +770,11 @@ it('dedupes the clone name when it is already taken', function () {
     $admin->assignRole('admin');
 
     $role = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'editor (copy)', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'editor (copia)', 'guard_name' => 'web']);
 
     $this->actingAs($admin)->post(route('roles.clone', $role));
 
-    expect(Role::where('name', 'editor (copy 2)')->exists())->toBeTrue();
+    expect(Role::where('name', 'editor (copia 2)')->exists())->toBeTrue();
 });
 
 it('truncates a long source name so the cloned name never exceeds the column length', function () {
@@ -790,7 +790,7 @@ it('truncates a long source name so the cloned name never exceeds the column len
 
     expect($clone)->not->toBeNull()
         ->and(mb_strlen($clone->name))->toBeLessThanOrEqual(255)
-        ->and($clone->name)->toEndWith(' (copy)');
+        ->and($clone->name)->toEndWith(' (copia)');
 });
 
 it('cloning a system role produces an ordinary role that can be renamed and deleted', function () {
@@ -801,7 +801,7 @@ it('cloning a system role produces an ordinary role that can be renamed and dele
 
     $this->actingAs($admin)->post(route('roles.clone', $role));
 
-    $clone = Role::where('name', 'admin (copy)')->first();
+    $clone = Role::where('name', 'Administrador (copia)')->first();
     expect($clone)->not->toBeNull();
 
     $this->actingAs($admin)

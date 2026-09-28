@@ -107,6 +107,22 @@ final class RolePresenter
     }
 
     /**
+     * The name to start a clone from: the localized label when `$role` is a
+     * known system role (e.g. `employee` → "Empleado"), or the role's own
+     * name unchanged when it's a custom, admin-named role. Unlike
+     * {@see roleLabel()}, this never falls back to a title-cased version of
+     * the raw name — that fallback is fine for display, but here it would
+     * corrupt an admin's exact custom role name when it becomes the new
+     * clone's stored name. See RoleController::clone().
+     */
+    public static function cloneBaseName(string $role): string
+    {
+        $key = "ui.roles.names.{$role}";
+
+        return Lang::has($key) ? (string) __($key) : $role;
+    }
+
+    /**
      * Localized label for a permission (e.g. `ViewOwn:Mark` → "Ver marcas propias").
      */
     public static function permissionLabel(string $permission): string
