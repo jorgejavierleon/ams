@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\DocumentType;
-use App\Mcp\Servers\KolviServer;
 use App\Mcp\Tools\DocumentTemplates\CreateDocumentTemplateTool;
 use App\Mcp\Tools\DocumentTemplates\DeleteDocumentTemplateTool;
 use App\Mcp\Tools\DocumentTemplates\ListDocumentTemplatesTool;
@@ -45,12 +44,11 @@ function revokeTemplateAdminPermission(string $permission): void
 test('an admin can create a document template via the create-document-template tool', function () {
     $admin = mcpTemplateAdmin();
 
-    KolviServer::actingAs($admin)
-        ->tool(CreateDocumentTemplateTool::class, [
-            'title' => 'Vacation notice',
-            'type' => DocumentType::Notifications->value,
-            'body' => '<p>Estimado {{employee_name}}</p>',
-        ])
+    mcpTool($admin, CreateDocumentTemplateTool::class, [
+        'title' => 'Vacation notice',
+        'type' => DocumentType::Notifications->value,
+        'body' => '<p>Estimado {{employee_name}}</p>',
+    ])
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json->where('title', 'Vacation notice')->etc());
 
@@ -64,8 +62,7 @@ test('an admin without Create:DocumentTemplate is denied by the create-document-
     $admin = mcpTemplateAdmin();
     revokeTemplateAdminPermission('Create:DocumentTemplate');
 
-    KolviServer::actingAs($admin)
-        ->tool(CreateDocumentTemplateTool::class, ['title' => 'Vacation notice'])
+    mcpTool($admin, CreateDocumentTemplateTool::class, ['title' => 'Vacation notice'])
         ->assertHasErrors();
 
     $this->assertDatabaseMissing('document_templates', ['title' => 'Vacation notice']);
@@ -74,8 +71,7 @@ test('an admin without Create:DocumentTemplate is denied by the create-document-
 test('a non-admin is denied by the create-document-template tool', function () {
     $employee = User::factory()->employee()->create();
 
-    KolviServer::actingAs($employee)
-        ->tool(CreateDocumentTemplateTool::class, ['title' => 'Vacation notice'])
+    mcpTool($employee, CreateDocumentTemplateTool::class, ['title' => 'Vacation notice'])
         ->assertHasErrors();
 
     $this->assertDatabaseMissing('document_templates', ['title' => 'Vacation notice']);
@@ -90,12 +86,11 @@ test('an admin can update a document template via the update-document-template t
         'title' => 'Old title',
     ]);
 
-    KolviServer::actingAs($admin)
-        ->tool(UpdateDocumentTemplateTool::class, [
-            'document_template_id' => $template->id,
-            'title' => 'New title',
-            'type' => DocumentType::Contracts->value,
-        ])
+    mcpTool($admin, UpdateDocumentTemplateTool::class, [
+        'document_template_id' => $template->id,
+        'title' => 'New title',
+        'type' => DocumentType::Contracts->value,
+    ])
         ->assertOk();
 
     expect($template->refresh())
@@ -111,11 +106,10 @@ test('an admin without Update:DocumentTemplate is denied by the update-document-
     ]);
     revokeTemplateAdminPermission('Update:DocumentTemplate');
 
-    KolviServer::actingAs($admin)
-        ->tool(UpdateDocumentTemplateTool::class, [
-            'document_template_id' => $template->id,
-            'title' => 'New title',
-        ])
+    mcpTool($admin, UpdateDocumentTemplateTool::class, [
+        'document_template_id' => $template->id,
+        'title' => 'New title',
+    ])
         ->assertHasErrors();
 
     expect($template->refresh()->title)->toBe('Old title');
@@ -126,11 +120,10 @@ test('a template from another organization is not found by the update-document-t
     $otherAdmin = mcpTemplateAdmin();
     $template = DocumentTemplate::factory()->create(['organization_id' => $otherAdmin->organization_id]);
 
-    KolviServer::actingAs($admin)
-        ->tool(UpdateDocumentTemplateTool::class, [
-            'document_template_id' => $template->id,
-            'title' => 'New title',
-        ])
+    mcpTool($admin, UpdateDocumentTemplateTool::class, [
+        'document_template_id' => $template->id,
+        'title' => 'New title',
+    ])
         ->assertHasErrors();
 });
 
@@ -140,8 +133,7 @@ test('an admin can delete a document template via the delete-document-template t
     $admin = mcpTemplateAdmin();
     $template = DocumentTemplate::factory()->create(['organization_id' => $admin->organization_id]);
 
-    KolviServer::actingAs($admin)
-        ->tool(DeleteDocumentTemplateTool::class, ['document_template_id' => $template->id])
+    mcpTool($admin, DeleteDocumentTemplateTool::class, ['document_template_id' => $template->id])
         ->assertOk();
 
     $this->assertSoftDeleted('document_templates', ['id' => $template->id]);
@@ -152,8 +144,7 @@ test('an admin without Delete:DocumentTemplate is denied by the delete-document-
     $template = DocumentTemplate::factory()->create(['organization_id' => $admin->organization_id]);
     revokeTemplateAdminPermission('Delete:DocumentTemplate');
 
-    KolviServer::actingAs($admin)
-        ->tool(DeleteDocumentTemplateTool::class, ['document_template_id' => $template->id])
+    mcpTool($admin, DeleteDocumentTemplateTool::class, ['document_template_id' => $template->id])
         ->assertHasErrors();
 
     $this->assertDatabaseHas('document_templates', ['id' => $template->id, 'deleted_at' => null]);
@@ -169,8 +160,7 @@ test('an admin lists only their organization\'s document templates', function ()
     $otherAdmin = mcpTemplateAdmin();
     DocumentTemplate::factory()->create(['organization_id' => $otherAdmin->organization_id]);
 
-    KolviServer::actingAs($admin)
-        ->tool(ListDocumentTemplatesTool::class)
+    mcpTool($admin, ListDocumentTemplatesTool::class)
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json->has('templates', 2)->etc());
 });
@@ -179,7 +169,6 @@ test('an admin without ViewAny:DocumentTemplate is denied by the list-document-t
     $admin = mcpTemplateAdmin();
     revokeTemplateAdminPermission('ViewAny:DocumentTemplate');
 
-    KolviServer::actingAs($admin)
-        ->tool(ListDocumentTemplatesTool::class)
+    mcpTool($admin, ListDocumentTemplatesTool::class)
         ->assertHasErrors();
 });

@@ -2,7 +2,6 @@
 
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
-use App\Mcp\Servers\KolviServer;
 use App\Mcp\Tools\Documents\GenerateDocumentTool;
 use App\Models\Document;
 use App\Models\DocumentTemplate;
@@ -43,11 +42,10 @@ test('an admin generates a draft document from a template for an employee', func
         'body' => '<p>Estimado {{employee_name}}</p>',
     ]);
 
-    KolviServer::actingAs($admin)
-        ->tool(GenerateDocumentTool::class, [
-            'document_template_id' => $template->id,
-            'user_id' => $employee->id,
-        ])
+    mcpTool($admin, GenerateDocumentTool::class, [
+        'document_template_id' => $template->id,
+        'user_id' => $employee->id,
+    ])
         ->assertOk()
         ->assertStructuredContent(
             fn ($json) => $json
@@ -80,11 +78,10 @@ test('the generate-document tool response includes the resolved preview without 
         'body' => '<p>Estimado {{employee_first_name}}</p>',
     ]);
 
-    KolviServer::actingAs($admin)
-        ->tool(GenerateDocumentTool::class, [
-            'document_template_id' => $template->id,
-            'user_id' => $employee->id,
-        ])
+    mcpTool($admin, GenerateDocumentTool::class, [
+        'document_template_id' => $template->id,
+        'user_id' => $employee->id,
+    ])
         ->assertOk()
         ->assertStructuredContent(
             fn ($json) => $json
@@ -101,11 +98,10 @@ test('an admin without Create:Document is denied by the generate-document tool',
     $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
     $template = DocumentTemplate::factory()->create(['organization_id' => $admin->organization_id]);
 
-    KolviServer::actingAs($admin)
-        ->tool(GenerateDocumentTool::class, [
-            'document_template_id' => $template->id,
-            'user_id' => $employee->id,
-        ])
+    mcpTool($admin, GenerateDocumentTool::class, [
+        'document_template_id' => $template->id,
+        'user_id' => $employee->id,
+    ])
         ->assertHasErrors();
 
     expect(Document::count())->toBe(0);
@@ -114,11 +110,10 @@ test('an admin without Create:Document is denied by the generate-document tool',
 test('a non-admin is denied by the generate-document tool', function () {
     $employee = User::factory()->employee()->create();
 
-    KolviServer::actingAs($employee)
-        ->tool(GenerateDocumentTool::class, [
-            'document_template_id' => 1,
-            'user_id' => $employee->id,
-        ])
+    mcpTool($employee, GenerateDocumentTool::class, [
+        'document_template_id' => 1,
+        'user_id' => $employee->id,
+    ])
         ->assertHasErrors();
 
     expect(Document::count())->toBe(0);
@@ -129,11 +124,10 @@ test('generating a document never publishes it', function () {
     $employee = User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
     $template = DocumentTemplate::factory()->create(['organization_id' => $admin->organization_id]);
 
-    KolviServer::actingAs($admin)
-        ->tool(GenerateDocumentTool::class, [
-            'document_template_id' => $template->id,
-            'user_id' => $employee->id,
-        ])
+    mcpTool($admin, GenerateDocumentTool::class, [
+        'document_template_id' => $template->id,
+        'user_id' => $employee->id,
+    ])
         ->assertOk();
 
     $document = Document::first();
@@ -150,11 +144,10 @@ test('a template from another organization is not found by the generate-document
     $otherAdmin = mcpDocumentAdmin();
     $template = DocumentTemplate::factory()->create(['organization_id' => $otherAdmin->organization_id]);
 
-    KolviServer::actingAs($admin)
-        ->tool(GenerateDocumentTool::class, [
-            'document_template_id' => $template->id,
-            'user_id' => $employee->id,
-        ])
+    mcpTool($admin, GenerateDocumentTool::class, [
+        'document_template_id' => $template->id,
+        'user_id' => $employee->id,
+    ])
         ->assertHasErrors();
 
     expect(Document::count())->toBe(0);
@@ -167,11 +160,10 @@ test('an employee from another organization is refused by the generate-document 
     $otherAdmin = mcpDocumentAdmin();
     $otherEmployee = User::factory()->employee()->create(['organization_id' => $otherAdmin->organization_id]);
 
-    KolviServer::actingAs($admin)
-        ->tool(GenerateDocumentTool::class, [
-            'document_template_id' => $template->id,
-            'user_id' => $otherEmployee->id,
-        ])
+    mcpTool($admin, GenerateDocumentTool::class, [
+        'document_template_id' => $template->id,
+        'user_id' => $otherEmployee->id,
+    ])
         ->assertHasErrors();
 
     expect(Document::count())->toBe(0);

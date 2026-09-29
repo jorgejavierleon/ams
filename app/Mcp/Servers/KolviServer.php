@@ -24,6 +24,7 @@ use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Attributes\Version;
+use Laravel\Mcp\Server\Tools\ToolSearch;
 
 #[Name('Kolvi')]
 #[Version('0.0.1')]
@@ -31,24 +32,26 @@ use Laravel\Mcp\Server\Attributes\Version;
 class KolviServer extends Server
 {
     protected array $tools = [
-        CreateLeaveTool::class,
-        ViewOwnLeavesTool::class,
-        CancelLeaveTool::class,
-        ViewTeamLeavesTool::class,
-        ApproveLeaveTool::class,
-        RejectLeaveTool::class,
-        CreateLeaveForEmployeeTool::class,
-        CreateOvertimeRequestTool::class,
-        ViewOwnOvertimeRequestsTool::class,
-        ViewTeamOvertimeRequestsTool::class,
-        ApproveOvertimeRequestTool::class,
-        RejectOvertimeRequestTool::class,
-        GetPayrollSummaryReportTool::class,
-        CreateDocumentTemplateTool::class,
-        UpdateDocumentTemplateTool::class,
-        DeleteDocumentTemplateTool::class,
-        ListDocumentTemplatesTool::class,
-        GenerateDocumentTool::class,
+        ToolSearch::class => [
+            CreateLeaveTool::class,
+            ViewOwnLeavesTool::class,
+            CancelLeaveTool::class,
+            ViewTeamLeavesTool::class,
+            ApproveLeaveTool::class,
+            RejectLeaveTool::class,
+            CreateLeaveForEmployeeTool::class,
+            CreateOvertimeRequestTool::class,
+            ViewOwnOvertimeRequestsTool::class,
+            ViewTeamOvertimeRequestsTool::class,
+            ApproveOvertimeRequestTool::class,
+            RejectOvertimeRequestTool::class,
+            GetPayrollSummaryReportTool::class,
+            CreateDocumentTemplateTool::class,
+            UpdateDocumentTemplateTool::class,
+            DeleteDocumentTemplateTool::class,
+            ListDocumentTemplatesTool::class,
+            GenerateDocumentTool::class,
+        ],
     ];
 
     protected array $resources = [

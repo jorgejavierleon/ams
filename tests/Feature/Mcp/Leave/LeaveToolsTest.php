@@ -2,7 +2,6 @@
 
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
-use App\Mcp\Servers\KolviServer;
 use App\Mcp\Tools\Leave\ApproveLeaveTool;
 use App\Mcp\Tools\Leave\CancelLeaveTool;
 use App\Mcp\Tools\Leave\CreateLeaveForEmployeeTool;
@@ -85,14 +84,13 @@ test('the Create:Leave permission is seeded and granted to admin', function () {
 test('an employee can create a leave for themselves via the create-leave tool', function () {
     $employee = mcpLeaveEmployee();
 
-    KolviServer::actingAs($employee)
-        ->tool(CreateLeaveTool::class, [
-            'type' => LeaveType::Vacation->value,
-            'start_date' => now()->addDay()->toDateString(),
-            'end_date' => now()->addDays(3)->toDateString(),
-            'half_day' => false,
-            'business_days_requested' => 3,
-        ])
+    mcpTool($employee, CreateLeaveTool::class, [
+        'type' => LeaveType::Vacation->value,
+        'start_date' => now()->addDay()->toDateString(),
+        'end_date' => now()->addDays(3)->toDateString(),
+        'half_day' => false,
+        'business_days_requested' => 3,
+    ])
         ->assertOk();
 
     $leave = Leave::first();
@@ -105,13 +103,12 @@ test('an employee can create a leave for themselves via the create-leave tool', 
 test('an employee without RequestOwn:Leave is denied by the create-leave tool', function () {
     $employee = User::factory()->create(); // no roles, so no permissions
 
-    KolviServer::actingAs($employee)
-        ->tool(CreateLeaveTool::class, [
-            'type' => LeaveType::Vacation->value,
-            'start_date' => now()->addDay()->toDateString(),
-            'end_date' => now()->addDays(2)->toDateString(),
-            'business_days_requested' => 2,
-        ])
+    mcpTool($employee, CreateLeaveTool::class, [
+        'type' => LeaveType::Vacation->value,
+        'start_date' => now()->addDay()->toDateString(),
+        'end_date' => now()->addDays(2)->toDateString(),
+        'business_days_requested' => 2,
+    ])
         ->assertHasErrors();
 
     expect(Leave::count())->toBe(0);
@@ -120,13 +117,12 @@ test('an employee without RequestOwn:Leave is denied by the create-leave tool', 
 test('the create-leave tool refuses a medical leave', function () {
     $employee = mcpLeaveEmployee();
 
-    KolviServer::actingAs($employee)
-        ->tool(CreateLeaveTool::class, [
-            'type' => LeaveType::Medical->value,
-            'start_date' => now()->addDay()->toDateString(),
-            'end_date' => now()->addDays(2)->toDateString(),
-            'business_days_requested' => 2,
-        ])
+    mcpTool($employee, CreateLeaveTool::class, [
+        'type' => LeaveType::Medical->value,
+        'start_date' => now()->addDay()->toDateString(),
+        'end_date' => now()->addDays(2)->toDateString(),
+        'business_days_requested' => 2,
+    ])
         ->assertHasErrors();
 
     expect(Leave::count())->toBe(0);
@@ -150,21 +146,19 @@ test('an employee sees only their own leaves and vacation balance', function () 
         'user_id' => $other->id,
     ]);
 
-    KolviServer::actingAs($employee)
-        ->tool(ViewOwnLeavesTool::class)
+    mcpTool($employee, ViewOwnLeavesTool::class)
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json
             ->has('leaves', 1)
-            ->where('vacation_balance.used', 2.0)
-            ->where('vacation_balance.available', 10.0)
+            ->where('vacation_balance.used', 2)
+            ->where('vacation_balance.available', 10)
             ->etc());
 });
 
 test('a user without ViewOwn:Leave is denied by the view-own-leaves tool', function () {
     $employee = User::factory()->create();
 
-    KolviServer::actingAs($employee)
-        ->tool(ViewOwnLeavesTool::class)
+    mcpTool($employee, ViewOwnLeavesTool::class)
         ->assertHasErrors();
 });
 
@@ -177,8 +171,7 @@ test('an employee can cancel their own pending leave', function () {
         'user_id' => $employee->id,
     ]);
 
-    KolviServer::actingAs($employee)
-        ->tool(CancelLeaveTool::class, ['leave_id' => $leave->id])
+    mcpTool($employee, CancelLeaveTool::class, ['leave_id' => $leave->id])
         ->assertOk();
 
     expect(Leave::find($leave->id))->toBeNull();
@@ -193,8 +186,7 @@ test('an employee cannot cancel another employees leave', function () {
         'user_id' => $other->id,
     ]);
 
-    KolviServer::actingAs($employee)
-        ->tool(CancelLeaveTool::class, ['leave_id' => $leave->id])
+    mcpTool($employee, CancelLeaveTool::class, ['leave_id' => $leave->id])
         ->assertHasErrors();
 
     expect(Leave::find($leave->id))->not->toBeNull();
@@ -208,8 +200,7 @@ test('an employee cannot cancel a request that is no longer pending', function (
         'type' => LeaveType::Paid,
     ]);
 
-    KolviServer::actingAs($employee)
-        ->tool(CancelLeaveTool::class, ['leave_id' => $leave->id])
+    mcpTool($employee, CancelLeaveTool::class, ['leave_id' => $leave->id])
         ->assertHasErrors();
 
     expect(Leave::find($leave->id))->not->toBeNull();
@@ -218,8 +209,7 @@ test('an employee cannot cancel a request that is no longer pending', function (
 test('a user without CancelOwn:Leave is denied by the cancel-leave tool', function () {
     $employee = User::factory()->create();
 
-    KolviServer::actingAs($employee)
-        ->tool(CancelLeaveTool::class, ['leave_id' => 1])
+    mcpTool($employee, CancelLeaveTool::class, ['leave_id' => 1])
         ->assertHasErrors();
 });
 
@@ -234,8 +224,7 @@ test('a supervisor sees only their own team on the view-team-leaves tool', funct
     Leave::factory()->create(['organization_id' => $organization->id, 'user_id' => $teamMember->id]);
     Leave::factory()->create(['organization_id' => $organization->id, 'user_id' => $otherEmployee->id]);
 
-    KolviServer::actingAs($supervisor)
-        ->tool(ViewTeamLeavesTool::class)
+    mcpTool($supervisor, ViewTeamLeavesTool::class)
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json->has('leaves', 1)->etc());
 });
@@ -249,8 +238,7 @@ test('an admin sees every leave on the view-team-leaves tool', function () {
     Leave::factory()->create(['organization_id' => $organization->id, 'user_id' => $employeeOne->id]);
     Leave::factory()->create(['organization_id' => $organization->id, 'user_id' => $employeeTwo->id]);
 
-    KolviServer::actingAs($admin)
-        ->tool(ViewTeamLeavesTool::class)
+    mcpTool($admin, ViewTeamLeavesTool::class)
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json->has('leaves', 2)->etc());
 });
@@ -267,8 +255,7 @@ test('the organization Owner sees every leave on the view-team-leaves tool witho
 
     // Not scoped like a supervisor: the Owner has no direct reports at all,
     // so a bare ViewTeam:Leave-style scope would wrongly return zero here.
-    KolviServer::actingAs($owner)
-        ->tool(ViewTeamLeavesTool::class)
+    mcpTool($owner, ViewTeamLeavesTool::class)
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json->has('leaves', 2)->etc());
 });
@@ -276,8 +263,7 @@ test('the organization Owner sees every leave on the view-team-leaves tool witho
 test('a user without ViewTeam:Leave is denied by the view-team-leaves tool', function () {
     $employee = mcpLeaveEmployee();
 
-    KolviServer::actingAs($employee)
-        ->tool(ViewTeamLeavesTool::class)
+    mcpTool($employee, ViewTeamLeavesTool::class)
         ->assertHasErrors();
 });
 
@@ -293,8 +279,7 @@ test('a supervisor can approve their own team members leave', function () {
         'type' => LeaveType::Paid,
     ]);
 
-    KolviServer::actingAs($supervisor)
-        ->tool(ApproveLeaveTool::class, ['leave_id' => $leave->id])
+    mcpTool($supervisor, ApproveLeaveTool::class, ['leave_id' => $leave->id])
         ->assertOk();
 
     expect($leave->refresh()->status)->toBe(LeaveStatus::Approved)
@@ -311,8 +296,7 @@ test('a supervisor cannot approve a leave outside their team', function () {
         'type' => LeaveType::Paid,
     ]);
 
-    KolviServer::actingAs($supervisor)
-        ->tool(ApproveLeaveTool::class, ['leave_id' => $leave->id])
+    mcpTool($supervisor, ApproveLeaveTool::class, ['leave_id' => $leave->id])
         ->assertHasErrors();
 
     expect($leave->refresh()->status)->toBe(LeaveStatus::Pending);
@@ -328,8 +312,7 @@ test('a supervisor cannot approve when the team-approval permission is revoked',
         'type' => LeaveType::Paid,
     ]);
 
-    KolviServer::actingAs($supervisor)
-        ->tool(ApproveLeaveTool::class, ['leave_id' => $leave->id])
+    mcpTool($supervisor, ApproveLeaveTool::class, ['leave_id' => $leave->id])
         ->assertHasErrors();
 
     expect($leave->refresh()->status)->toBe(LeaveStatus::Pending);
@@ -345,8 +328,7 @@ test('approving an already-approved leave is rejected by the approve-leave tool'
         'type' => LeaveType::Paid,
     ]);
 
-    KolviServer::actingAs($supervisor)
-        ->tool(ApproveLeaveTool::class, ['leave_id' => $leave->id])
+    mcpTool($supervisor, ApproveLeaveTool::class, ['leave_id' => $leave->id])
         ->assertHasErrors();
 });
 
@@ -362,8 +344,7 @@ test('a supervisor can reject their own team members leave with a reason', funct
         'type' => LeaveType::Paid,
     ]);
 
-    KolviServer::actingAs($supervisor)
-        ->tool(RejectLeaveTool::class, ['leave_id' => $leave->id, 'reason' => 'Cupo mensual excedido.'])
+    mcpTool($supervisor, RejectLeaveTool::class, ['leave_id' => $leave->id, 'reason' => 'Cupo mensual excedido.'])
         ->assertOk();
 
     expect($leave->refresh()->status)->toBe(LeaveStatus::Rejected)
@@ -380,8 +361,7 @@ test('the reject-leave tool requires a reason', function () {
         'type' => LeaveType::Paid,
     ]);
 
-    KolviServer::actingAs($supervisor)
-        ->tool(RejectLeaveTool::class, ['leave_id' => $leave->id])
+    mcpTool($supervisor, RejectLeaveTool::class, ['leave_id' => $leave->id])
         ->assertHasErrors();
 
     expect($leave->refresh()->status)->toBe(LeaveStatus::Pending);
@@ -397,8 +377,7 @@ test('medical leaves cannot be rejected by the reject-leave tool', function () {
         'type' => LeaveType::Medical,
     ]);
 
-    KolviServer::actingAs($supervisor)
-        ->tool(RejectLeaveTool::class, ['leave_id' => $leave->id, 'reason' => 'No procede.'])
+    mcpTool($supervisor, RejectLeaveTool::class, ['leave_id' => $leave->id, 'reason' => 'No procede.'])
         ->assertHasErrors();
 
     expect($leave->refresh()->status)->toBe(LeaveStatus::Approved);
@@ -411,15 +390,14 @@ test('an admin can create a leave on behalf of an employee', function () {
     $organization = $admin->organization;
     $employee = mcpLeaveEmployee($organization);
 
-    KolviServer::actingAs($admin)
-        ->tool(CreateLeaveForEmployeeTool::class, [
-            'user_id' => $employee->id,
-            'type' => LeaveType::Vacation->value,
-            'start_date' => now()->addDay()->toDateString(),
-            'end_date' => now()->addDays(3)->toDateString(),
-            'half_day' => false,
-            'business_days_requested' => 3,
-        ])
+    mcpTool($admin, CreateLeaveForEmployeeTool::class, [
+        'user_id' => $employee->id,
+        'type' => LeaveType::Vacation->value,
+        'start_date' => now()->addDay()->toDateString(),
+        'end_date' => now()->addDays(3)->toDateString(),
+        'half_day' => false,
+        'business_days_requested' => 3,
+    ])
         ->assertOk();
 
     $leave = Leave::first();
@@ -435,16 +413,15 @@ test('creating a medical leave on behalf of an employee auto-approves it', funct
     $organization = $admin->organization;
     $employee = mcpLeaveEmployee($organization);
 
-    KolviServer::actingAs($admin)
-        ->tool(CreateLeaveForEmployeeTool::class, [
-            'user_id' => $employee->id,
-            'type' => LeaveType::Medical->value,
-            'start_date' => now()->addDay()->toDateString(),
-            'end_date' => now()->addDays(2)->toDateString(),
-            'business_days_requested' => 2,
-            'medical_leave_number' => '12345',
-            'medical_leave_doctor' => 'Dr. House',
-        ])
+    mcpTool($admin, CreateLeaveForEmployeeTool::class, [
+        'user_id' => $employee->id,
+        'type' => LeaveType::Medical->value,
+        'start_date' => now()->addDay()->toDateString(),
+        'end_date' => now()->addDays(2)->toDateString(),
+        'business_days_requested' => 2,
+        'medical_leave_number' => '12345',
+        'medical_leave_doctor' => 'Dr. House',
+    ])
         ->assertOk();
 
     expect(Leave::first()->status)->toBe(LeaveStatus::Approved);
@@ -455,14 +432,13 @@ test('a non-admin without Create:Leave is denied by the create-leave-for-employe
     $supervisor = mcpLeaveSupervisor($organization);
     $employee = mcpLeaveEmployee($organization, ['supervisor_id' => $supervisor->id]);
 
-    KolviServer::actingAs($supervisor)
-        ->tool(CreateLeaveForEmployeeTool::class, [
-            'user_id' => $employee->id,
-            'type' => LeaveType::Vacation->value,
-            'start_date' => now()->addDay()->toDateString(),
-            'end_date' => now()->addDays(2)->toDateString(),
-            'business_days_requested' => 2,
-        ])
+    mcpTool($supervisor, CreateLeaveForEmployeeTool::class, [
+        'user_id' => $employee->id,
+        'type' => LeaveType::Vacation->value,
+        'start_date' => now()->addDay()->toDateString(),
+        'end_date' => now()->addDays(2)->toDateString(),
+        'business_days_requested' => 2,
+    ])
         ->assertHasErrors();
 
     expect(Leave::count())->toBe(0);
@@ -472,14 +448,13 @@ test('the create-leave-for-employee tool rejects an employee from another organi
     $admin = mcpLeaveAdmin();
     $outsider = mcpLeaveEmployee(); // different organization
 
-    KolviServer::actingAs($admin)
-        ->tool(CreateLeaveForEmployeeTool::class, [
-            'user_id' => $outsider->id,
-            'type' => LeaveType::Vacation->value,
-            'start_date' => now()->addDay()->toDateString(),
-            'end_date' => now()->addDays(2)->toDateString(),
-            'business_days_requested' => 2,
-        ])
+    mcpTool($admin, CreateLeaveForEmployeeTool::class, [
+        'user_id' => $outsider->id,
+        'type' => LeaveType::Vacation->value,
+        'start_date' => now()->addDay()->toDateString(),
+        'end_date' => now()->addDays(2)->toDateString(),
+        'business_days_requested' => 2,
+    ])
         ->assertHasErrors();
 
     expect(Leave::count())->toBe(0);

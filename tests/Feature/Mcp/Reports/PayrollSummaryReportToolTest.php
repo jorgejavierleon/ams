@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\WorkdayStatus;
-use App\Mcp\Servers\KolviServer;
 use App\Mcp\Tools\Reports\GetPayrollSummaryReportTool;
 use App\Models\Mark;
 use App\Models\MarkModification;
@@ -50,12 +49,11 @@ test('an admin fetches a clean period\'s payroll summary as csv with no warning'
 
     payrollToolWorkedDay($organization, $employee, '2026-08-03', '07:15:00');
 
-    KolviServer::actingAs($admin)
-        ->tool(GetPayrollSummaryReportTool::class, [
-            'period_year' => 2026,
-            'period_month' => 8,
-            'period_type' => 'first_fortnight',
-        ])
+    mcpTool($admin, GetPayrollSummaryReportTool::class, [
+        'period_year' => 2026,
+        'period_month' => 8,
+        'period_type' => 'first_fortnight',
+    ])
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json
             ->where('csv', fn (string $csv) => str_contains($csv, $employee->name) && str_contains($csv, '07:15:00'))
@@ -75,12 +73,11 @@ test('an admin fetching a period with unresolved findings still gets the csv, pl
         'user_id' => $employee->id,
     ]);
 
-    KolviServer::actingAs($admin)
-        ->tool(GetPayrollSummaryReportTool::class, [
-            'period_year' => 2026,
-            'period_month' => 8,
-            'period_type' => 'first_fortnight',
-        ])
+    mcpTool($admin, GetPayrollSummaryReportTool::class, [
+        'period_year' => 2026,
+        'period_month' => 8,
+        'period_type' => 'first_fortnight',
+    ])
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json
             ->where('csv', fn (string $csv) => str_contains($csv, $employee->name))
@@ -100,13 +97,12 @@ test('the get-payroll-summary-report tool limits the report to the given employe
     payrollToolWorkedDay($organization, $included, '2026-08-03');
     payrollToolWorkedDay($organization, $excluded, '2026-08-03');
 
-    KolviServer::actingAs($admin)
-        ->tool(GetPayrollSummaryReportTool::class, [
-            'period_year' => 2026,
-            'period_month' => 8,
-            'period_type' => 'first_fortnight',
-            'employee_ids' => [$included->id],
-        ])
+    mcpTool($admin, GetPayrollSummaryReportTool::class, [
+        'period_year' => 2026,
+        'period_month' => 8,
+        'period_type' => 'first_fortnight',
+        'employee_ids' => [$included->id],
+    ])
         ->assertOk()
         ->assertStructuredContent(fn ($json) => $json
             ->where('csv', fn (string $csv) => str_contains($csv, $included->name) && ! str_contains($csv, $excluded->name))
@@ -121,12 +117,11 @@ test('a call to the get-payroll-summary-report tool is recorded in the payroll e
 
     payrollToolWorkedDay($organization, $employee, '2026-08-03');
 
-    KolviServer::actingAs($admin)
-        ->tool(GetPayrollSummaryReportTool::class, [
-            'period_year' => 2026,
-            'period_month' => 8,
-            'period_type' => 'first_fortnight',
-        ])
+    mcpTool($admin, GetPayrollSummaryReportTool::class, [
+        'period_year' => 2026,
+        'period_month' => 8,
+        'period_type' => 'first_fortnight',
+    ])
         ->assertOk();
 
     $activity = Activity::query()
@@ -145,10 +140,9 @@ test('a user without Export:PayrollReport is denied by the get-payroll-summary-r
     $organization = Organization::factory()->create();
     $user = User::factory()->create(['organization_id' => $organization->id]);
 
-    KolviServer::actingAs($user)
-        ->tool(GetPayrollSummaryReportTool::class, [
-            'period_year' => 2026,
-            'period_month' => 8,
-        ])
+    mcpTool($user, GetPayrollSummaryReportTool::class, [
+        'period_year' => 2026,
+        'period_month' => 8,
+    ])
         ->assertHasErrors();
 });
