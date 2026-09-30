@@ -1,10 +1,10 @@
 ---
 id: KOL-136
 title: Move KolviServer tools behind a searchable ToolSearch catalog
-status: In Review
+status: Done
 assignee: []
 created_date: '2026-09-29 09:33'
-updated_date: '2026-09-29 09:33'
+updated_date: '2026-09-29 09:59'
 labels: []
 dependencies: []
 ordinal: 146000
@@ -36,6 +36,8 @@ The Kolvi MCP server advertised all 18 tools directly, bloating the initial tool
 
 <!-- SECTION:NOTES:BEGIN -->
 laravel/mcp v0.8.1 (pulled in transitively via laravel/boost) did not have ToolSearch; required bumping laravel/boost 2.4.10->2.10.0 and laravel/mcp 0.8.1->1.0.1 via composer update (no composer.json constraint changes needed, already allowed by ^2.2). This cascaded into laravel/framework 13.16.1->13.33.0 (still within ^13.7). Catalog-wrapped tools are no longer reachable via a direct tools/call; they're only invokable through execute_tools, which wraps the response as a JSON string and, since it can emit notifications, answers over an SSE stream instead of a plain JSON body. Added tests/Feature/Mcp/Concerns/CatalogToolResponse.php + a mcpTool() Pest helper (tests/Pest.php) to call tools through execute_tools and decode both the SSE and plain-JSON response shapes, replacing the old KolviServer::actingAs()->tool() direct-call pattern across all 5 MCP test files. Also fixed one pre-existing float-vs-int JSON round-trip assertion in LeaveToolsTest.php (2.0 -> 2, 10.0 -> 10) surfaced by the laravel/mcp upgrade: whole-number floats now correctly collapse to ints on the real wire, matching actual client behavior.
+
+Full sequential suite (sail artisan test --compact, matching project convention) verified clean after the dependency bump: 1633/1637 passed, 4 skipped, 0 failed (882.96s). An earlier ad hoc run with --parallel showed 55 failures, all 'Call to undefined function validRut()' in ImportWizardTest.php; confirmed as a pre-existing test-isolation issue unrelated to this change (validRut() is declared globally in CompanyManagementTest.php, and Paratest splits files across workers that don't all load it) -- reproduced and fixed nothing, just avoided --parallel for the real check.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
