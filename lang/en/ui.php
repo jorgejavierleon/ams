@@ -1282,7 +1282,7 @@ return [
         'title' => 'Employees',
         'description' => 'Manage the people in your organization',
         'new' => 'New employee',
-        'search_placeholder' => 'Search by email or RUT...',
+        'search_placeholder' => 'Search by name, email or RUT...',
         'empty' => 'No employees found.',
 
         'vacation_balance' => [

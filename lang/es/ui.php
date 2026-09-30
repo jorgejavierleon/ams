@@ -1285,7 +1285,7 @@ return [
         'title' => 'Empleados',
         'description' => 'Gestiona las personas de tu organización',
         'new' => 'Nuevo empleado',
-        'search_placeholder' => 'Buscar por email o RUT...',
+        'search_placeholder' => 'Buscar por nombre, email o RUT...',
         'empty' => 'No se encontraron empleados.',
 
         'vacation_balance' => [
