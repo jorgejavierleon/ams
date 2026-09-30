@@ -369,6 +369,57 @@ test('employees can be searched by email and rut', function () {
             ->where('employees.data.0.email', 'findme@example.com'));
 });
 
+test('employees can be searched by first name', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'first_name' => 'Ana',
+        'name' => 'Ana Pérez',
+    ]);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.index', ['search' => 'Ana']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('employees.data', 1)
+            ->where('employees.data.0.name', 'Ana Pérez'));
+});
+
+test('employees can be searched by last name', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'last_name' => 'Pérez',
+        'name' => 'Ana Pérez',
+    ]);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.index', ['search' => 'Perez']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('employees.data', 1)
+            ->where('employees.data.0.name', 'Ana Pérez'));
+});
+
+test('employees can be searched by second last name', function () {
+    $admin = employeeAdmin();
+    User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'second_last_name' => 'Soto',
+        'name' => 'Ana Pérez Soto',
+    ]);
+    User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+
+    $this->actingAs($admin)
+        ->get(route('employees.index', ['search' => 'Soto']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('employees.data', 1)
+            ->where('employees.data.0.name', 'Ana Pérez Soto'));
+});
+
 // --- Create ---
 
 test('admin can create an employee', function () {

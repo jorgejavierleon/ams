@@ -358,7 +358,10 @@ class EmployeeController extends Controller
             ->where('organization_id', Company::currentOrganizationId())
             ->when($search, fn ($query) => $query->where(fn ($q) => $q
                 ->where('email', 'like', "%{$search}%")
-                ->orWhere('rut', 'like', "%{$search}%")))
+                ->orWhere('rut', 'like', "%{$search}%")
+                ->orWhere('first_name', 'like', "%{$search}%")
+                ->orWhere('last_name', 'like', "%{$search}%")
+                ->orWhere('second_last_name', 'like', "%{$search}%")))
             ->when($isActive !== null, fn ($query) => $query->where('is_active', $isActive))
             ->when($premiseIds, fn ($query) => $query->whereIn('premise_id', $premiseIds))
             ->when($positionIds, fn ($query) => $query->whereIn('position_id', $positionIds))

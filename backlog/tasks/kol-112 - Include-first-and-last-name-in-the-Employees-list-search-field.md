@@ -1,9 +1,10 @@
 ---
 id: KOL-112
 title: Include first and last name in the Employees list search field
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-06 18:33'
+updated_date: '2026-09-30 23:08'
 labels:
   - employees
 dependencies: []
@@ -40,17 +41,38 @@ Scenario: Existing email/rut search still works
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Searching the Employees list matches first_name, last_name, or second_last_name (case-insensitive partial match), in addition to the existing email and rut match
-- [ ] #2 Existing email and rut search behavior is unchanged (a search term matching only an email or only a rut still returns that employee)
-- [ ] #3 The Employees export (employees.export), which reuses the same filteredEmployeesQuery(), also picks up name matching automatically since both share one query builder
-- [ ] #4 The search placeholder copy (lang/es/ui.php employees.search_placeholder) is updated to mention name, e.g. "Buscar por nombre, email o RUT..."
-- [ ] #5 Feature tests cover: search by first_name alone, by last_name alone, by second_last_name alone, and confirm existing email/rut search tests still pass
+- [x] #1 Searching the Employees list matches first_name, last_name, or second_last_name (case-insensitive partial match), in addition to the existing email and rut match
+- [x] #2 Existing email and rut search behavior is unchanged (a search term matching only an email or only a rut still returns that employee)
+- [x] #3 The Employees export (employees.export), which reuses the same filteredEmployeesQuery(), also picks up name matching automatically since both share one query builder
+- [x] #4 The search placeholder copy (lang/es/ui.php employees.search_placeholder) is updated to mention name, e.g. "Buscar por nombre, email o RUT..."
+- [x] #5 Feature tests cover: search by first_name alone, by last_name alone, by second_last_name alone, and confirm existing email/rut search tests still pass
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #2 sa test --compact passes
 - [ ] #3 npm run types:check passes when TypeScript touched
-- [ ] #4 Every PHP change has a Pest test
+- [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Extend filteredEmployeesQuery() in EmployeeController to also match first_name/last_name/second_last_name (like email/rut).
+2. Update lang/es/ui.php employees.search_placeholder to mention name.
+3. Add Pest feature tests for search by first_name, last_name, second_last_name; confirm existing email/rut tests still pass.
+4. Run pint + tests.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Added orWhere on first_name/last_name/second_last_name to filteredEmployeesQuery() (shared by index() and export()). Updated es and en search_placeholder copy. Added 3 feature tests (first/last/second_last_name). DoD #3 (types:check) skipped, no TS touched.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Extended the Employees list search to match first_name, last_name, and second_last_name (in addition to email and rut), and updated the search placeholder copy in es/en. Export filter picks up name matching automatically since it shares the same query builder.
+<!-- SECTION:FINAL_SUMMARY:END -->
