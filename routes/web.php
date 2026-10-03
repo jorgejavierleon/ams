@@ -4,6 +4,7 @@ use App\Http\Controllers\CommuneController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CostCenterController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DemoRequestController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentSignatureController;
 use App\Http\Controllers\DocumentTemplateController;
@@ -54,7 +55,12 @@ use App\Models\ImportRun;
 use Illuminate\Routing\Route as RouteMatch;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::inertia('/', 'landing')->name('home');
+
+// Public lead capture from the landing page's demo-request form (KOL-139).
+Route::post('demo-requests', [DemoRequestController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('demo-requests.store');
 
 // Switch the active UI locale (persisted in the session, applied by SetLocale)
 Route::put('locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
