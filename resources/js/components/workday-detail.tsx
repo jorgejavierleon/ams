@@ -303,14 +303,37 @@ function AttendanceStrip({ workday }: { workday: WorkdayDetailData }) {
         ticks.push(minute);
     }
 
-    const marks = [
-        { at: inAt, scheduled: shiftStart, late: (inAt ?? 0) > shiftStart },
-        { at: outAt, scheduled: shiftEnd, late: (outAt ?? 0) < shiftEnd },
-    ].filter((mark) => mark.at !== null) as {
-        at: number;
-        scheduled: number;
-        late: boolean;
-    }[];
+    const formatMinutes = (minutes: number) =>
+        `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
+    const entryMark =
+        inAt !== null
+            ? { at: inAt, scheduled: shiftStart, late: inAt > shiftStart }
+            : null;
+    const exitMark =
+        outAt !== null
+            ? { at: outAt, scheduled: shiftEnd, late: outAt < shiftEnd }
+            : null;
+
+    const marks = [entryMark, exitMark].filter(
+        (mark): mark is { at: number; scheduled: number; late: boolean } =>
+            mark !== null,
+    );
+
+    const anchors = [
+        {
+            key: 'entry',
+            scheduledAt: shiftStart,
+            label: t('ui.workdays.show.strip.entry'),
+            mark: entryMark,
+        },
+        {
+            key: 'exit',
+            scheduledAt: shiftEnd,
+            label: t('ui.workdays.show.strip.exit'),
+            mark: exitMark,
+        },
+    ];
 
     return (
         <section className="rounded-lg border bg-card shadow-xs">
@@ -327,77 +350,76 @@ function AttendanceStrip({ workday }: { workday: WorkdayDetailData }) {
                 )}
             </div>
             <div className="px-6 pt-7 pb-5">
-                <div className="relative h-24">
+                <div className="relative h-32">
                     {/* base rail */}
-                    <div className="absolute inset-x-0 top-[46px] h-1 rounded-full bg-muted" />
+                    <div className="absolute inset-x-0 top-[74px] h-1 rounded-full bg-muted" />
                     {/* shift window */}
                     <div
-                        className="absolute top-[42px] h-3 rounded-full bg-zinc-300 dark:bg-zinc-600"
+                        className="absolute top-[70px] h-3 rounded-full bg-zinc-300 dark:bg-zinc-600"
                         style={{
                             left: `${pct(shiftStart)}%`,
                             width: `${pct(shiftEnd) - pct(shiftStart)}%`,
                         }}
                     />
-                    <span
-                        className="absolute top-2 -translate-x-1/2 text-[11px] font-semibold whitespace-nowrap text-muted-foreground"
-                        style={{ left: `${pct(shiftStart)}%` }}
-                    >
-                        {t('ui.workdays.show.strip.entry')}
-                    </span>
-                    <span
-                        className="absolute top-2 -translate-x-1/2 text-[11px] font-semibold whitespace-nowrap text-muted-foreground"
-                        style={{ left: `${pct(shiftEnd)}%` }}
-                    >
-                        {t('ui.workdays.show.strip.exit')}
-                    </span>
-
-                    {ticks.map((tick) => (
-                        <span
-                            key={tick}
-                            className="absolute top-[62px] -translate-x-1/2 text-[11px] text-muted-foreground/70 tabular-nums"
-                            style={{ left: `${pct(tick)}%` }}
-                        >
-                            {`${String(Math.floor(tick / 60)).padStart(2, '0')}:${String(tick % 60).padStart(2, '0')}`}
-                        </span>
-                    ))}
-
-                    {marks.map((mark) => {
-                        const delta = mark.at - mark.scheduled;
-                        const isAmber = mark.late;
+                    {anchors.map((anchor) => {
+                        const delta = anchor.mark
+                            ? anchor.mark.at - anchor.mark.scheduled
+                            : 0;
+                        const isAmber = anchor.mark?.late ?? false;
 
                         return (
                             <div
-                                key={mark.at}
-                                className="absolute top-[34px] -translate-x-1/2 text-center"
-                                style={{ left: `${pct(mark.at)}%` }}
+                                key={anchor.key}
+                                className="absolute top-0 -translate-x-1/2 text-center"
+                                style={{ left: `${pct(anchor.scheduledAt)}%` }}
                             >
-                                <div
-                                    className={cn(
-                                        'mx-auto size-3.5 rounded-full ring-4 ring-card',
-                                        isAmber
-                                            ? 'bg-amber-500'
-                                            : 'bg-emerald-500',
-                                    )}
-                                />
-                                <div className="mt-2 text-[15px] font-semibold tracking-tight tabular-nums">
-                                    {`${String(Math.floor(mark.at / 60)).padStart(2, '0')}:${String(mark.at % 60).padStart(2, '0')}`}
+                                <div className="text-[11px] font-semibold whitespace-nowrap text-muted-foreground">
+                                    {anchor.label}
                                 </div>
-                                {delta !== 0 && (
-                                    <div
-                                        className={cn(
-                                            'text-[11px] font-semibold',
-                                            isAmber
-                                                ? 'text-amber-600 dark:text-amber-400'
-                                                : 'text-emerald-600 dark:text-emerald-400',
+                                {anchor.mark && (
+                                    <>
+                                        <div className="mt-1 text-[13px] font-semibold tracking-tight whitespace-nowrap tabular-nums">
+                                            {formatMinutes(anchor.mark.at)}
+                                        </div>
+                                        {delta !== 0 && (
+                                            <div
+                                                className={cn(
+                                                    'text-[11px] font-semibold whitespace-nowrap',
+                                                    isAmber
+                                                        ? 'text-amber-600 dark:text-amber-400'
+                                                        : 'text-emerald-600 dark:text-emerald-400',
+                                                )}
+                                            >
+                                                {delta > 0 ? '+' : '−'}
+                                                {durationLabel(delta)}
+                                            </div>
                                         )}
-                                    >
-                                        {delta > 0 ? '+' : '−'}
-                                        {durationLabel(delta)}
-                                    </div>
+                                    </>
                                 )}
                             </div>
                         );
                     })}
+
+                    {ticks.map((tick) => (
+                        <span
+                            key={tick}
+                            className="absolute top-[90px] -translate-x-1/2 text-[11px] text-muted-foreground/70 tabular-nums"
+                            style={{ left: `${pct(tick)}%` }}
+                        >
+                            {formatMinutes(tick)}
+                        </span>
+                    ))}
+
+                    {marks.map((mark) => (
+                        <div
+                            key={mark.at}
+                            className={cn(
+                                'absolute top-[62px] size-3.5 -translate-x-1/2 rounded-full ring-4 ring-card',
+                                mark.late ? 'bg-amber-500' : 'bg-emerald-500',
+                            )}
+                            style={{ left: `${pct(mark.at)}%` }}
+                        />
+                    ))}
                 </div>
 
                 <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-1.5 text-[11.5px] text-muted-foreground">
