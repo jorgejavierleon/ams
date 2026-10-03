@@ -444,6 +444,20 @@ return [
             'previous_month' => 'Mes anterior',
         ],
 
+        'email_limits' => [
+            'title' => 'Límites de correo',
+            'default_hint' => 'Por defecto: :count usuarios activos × :baseline base = :limit correos/mes',
+            'fields' => [
+                'soft_limit_override' => 'Límite blando (anulación)',
+                'hard_limit_override' => 'Límite estricto (anulación)',
+            ],
+            'override_hint' => 'Déjelo en blanco para usar el valor calculado por defecto.',
+            'submit' => 'Guardar límites',
+            'flash' => [
+                'updated' => 'Límites de correo actualizados.',
+            ],
+        ],
+
         'delete_dialog' => [
             'title' => 'Eliminar organización',
             'description' => '¿Está seguro de que desea eliminar :name? Esta acción no se puede deshacer.',
@@ -831,6 +845,20 @@ return [
         'flash' => [
             'created' => 'Versión registrada, con vigencia desde el :date.',
             'corrected' => 'Corrección aplicada. Días recalculados: :count.',
+        ],
+    ],
+
+    'saas_email_limit_settings' => [
+        'nav' => 'Límites de correo',
+        'title' => 'Base de límites de correo',
+        'description' => 'Correos esperados por usuario al mes, usado por defecto para calcular los límites mensuales de correo de cada organización',
+        'fields' => [
+            'expected_emails_per_user_per_month' => 'Correos esperados por usuario al mes',
+        ],
+        'hint' => 'El límite blando y el estricto de una organización equivalen a sus usuarios activos × esta base, salvo que se anulen en su propia página.',
+        'submit' => 'Guardar base',
+        'flash' => [
+            'updated' => 'Base actualizada.',
         ],
     ],
 

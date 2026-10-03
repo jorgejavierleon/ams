@@ -441,6 +441,20 @@ return [
             'previous_month' => 'Last month',
         ],
 
+        'email_limits' => [
+            'title' => 'Email limits',
+            'default_hint' => 'Default: :count active users × :baseline baseline = :limit emails/month',
+            'fields' => [
+                'soft_limit_override' => 'Soft limit override',
+                'hard_limit_override' => 'Hard limit override',
+            ],
+            'override_hint' => 'Leave blank to use the calculated default.',
+            'submit' => 'Save limits',
+            'flash' => [
+                'updated' => 'Email limits updated.',
+            ],
+        ],
+
         'delete_dialog' => [
             'title' => 'Delete organization',
             'description' => 'Are you sure you want to delete :name? This action cannot be undone.',
@@ -828,6 +842,20 @@ return [
         'flash' => [
             'created' => 'Version recorded, in force from :date.',
             'corrected' => 'Correction applied. Days recalculated: :count.',
+        ],
+    ],
+
+    'saas_email_limit_settings' => [
+        'nav' => 'Email limits',
+        'title' => 'Email limit baseline',
+        'description' => 'Expected emails per user per month, used to default every organization\'s monthly email limits',
+        'fields' => [
+            'expected_emails_per_user_per_month' => 'Expected emails per user per month',
+        ],
+        'hint' => 'An organization\'s soft and hard limit default to active users × this baseline, unless overridden on its own page.',
+        'submit' => 'Save baseline',
+        'flash' => [
+            'updated' => 'Baseline updated.',
         ],
     ],
 

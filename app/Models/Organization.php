@@ -22,6 +22,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $address
  * @property string $slug
  * @property Plan $plan
+ * @property int|null $soft_email_limit_override
+ * @property int|null $hard_email_limit_override
  * @property int|null $owner_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -54,11 +56,46 @@ class Organization extends Model
     }
 
     /**
+     * @return HasMany<User, $this>
+     */
+    public function activeUsers(): HasMany
+    {
+        return $this->users()->where('is_active', true);
+    }
+
+    /**
      * @return HasMany<EmailSend, $this>
      */
     public function emailSends(): HasMany
     {
         return $this->hasMany(EmailSend::class);
+    }
+
+    /**
+     * The effective monthly soft email limit (KOL-137.2): the admin's saved
+     * override when there is one, otherwise {@see defaultEmailLimit()}.
+     */
+    public function softEmailLimit(): int
+    {
+        return $this->soft_email_limit_override ?? $this->defaultEmailLimit();
+    }
+
+    /**
+     * The effective monthly hard email limit (KOL-137.2). See {@see softEmailLimit()}.
+     */
+    public function hardEmailLimit(): int
+    {
+        return $this->hard_email_limit_override ?? $this->defaultEmailLimit();
+    }
+
+    /**
+     * active_users_count × the platform-wide baseline (KOL-137.2), computed
+     * live so a baseline change immediately reaches every organization that
+     * has never had this figure overridden.
+     */
+    public function defaultEmailLimit(): int
+    {
+        return $this->activeUsers()->count() * (PlatformSetting::current()->expected_emails_per_user_per_month ?? 0);
     }
 
     /**

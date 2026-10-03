@@ -14,6 +14,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { useTranslations } from '@/hooks/use-translations';
 import * as auditLog from '@/routes/saas/audit-log';
 import * as documentVariables from '@/routes/saas/document-variables';
+import * as emailLimitSettings from '@/routes/saas/email-limit-settings';
 import * as holidays from '@/routes/saas/holidays';
 import * as legalHourLimits from '@/routes/saas/legal-hour-limits';
 import * as organizations from '@/routes/saas/organizations';
@@ -67,6 +68,12 @@ export default function SaasLayout({ children }: AppLayoutProps) {
                             className="text-sm font-medium text-muted-foreground hover:text-foreground"
                         >
                             {t('ui.saas_audit_log.nav')}
+                        </Link>
+                        <Link
+                            href={emailLimitSettings.edit()}
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                        >
+                            {t('ui.saas_email_limit_settings.nav')}
                         </Link>
                     </div>
                     {auth.user && (
