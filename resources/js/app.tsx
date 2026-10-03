@@ -5,6 +5,7 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import AdminLayout from '@/layouts/AdminLayout';
 import DtLayout from '@/layouts/DtLayout';
 import GuestLayout from '@/layouts/GuestLayout';
+import LoginLayout from '@/layouts/auth/login-layout';
 import SaasLayout from '@/layouts/SaasLayout';
 import SettingsLayout from '@/layouts/settings/layout';
 
@@ -16,6 +17,8 @@ createInertiaApp({
         switch (true) {
             case name === 'welcome':
                 return null;
+            case name === 'auth/login':
+                return LoginLayout;
             case name.startsWith('auth/'):
             case name.startsWith('mark-modifications/'):
                 return GuestLayout;
