@@ -33,10 +33,7 @@ class LeaveSeeder extends Seeder
             return;
         }
 
-        $admin = User::query()
-            ->where('organization_id', $organization->id)
-            ->role('admin')
-            ->first();
+        $admin = $organization->owner;
 
         $employees = User::query()
             ->employees()
