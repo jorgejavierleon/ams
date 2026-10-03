@@ -79,54 +79,65 @@ export default function OrganizationForm({
 
     return (
         <form onSubmit={submit} className="grid gap-6">
-            <div className="grid gap-2">
-                <Label htmlFor="name">{t('ui.organizations.form.name')}</Label>
-                <Input
-                    id="name"
-                    value={data.name}
-                    onChange={(e) => handleNameChange(e.target.value)}
-                    required
-                    autoFocus
-                />
-                <InputError message={errors.name} />
-            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-2">
+                    <Label htmlFor="name">
+                        {t('ui.organizations.form.name')}
+                    </Label>
+                    <Input
+                        id="name"
+                        value={data.name}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                        required
+                        autoFocus
+                    />
+                    <InputError message={errors.name} />
+                </div>
 
-            <div className="grid gap-2">
-                <Label htmlFor="slug">{t('ui.organizations.form.slug')}</Label>
-                <Input
-                    id="slug"
-                    value={data.slug}
-                    onChange={(e) => {
-                        setSlugEdited(true);
-                        setData('slug', e.target.value);
-                    }}
-                    required
-                />
-                <InputError message={errors.slug} />
-            </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="slug">
+                        {t('ui.organizations.form.slug')}
+                    </Label>
+                    <Input
+                        id="slug"
+                        value={data.slug}
+                        onChange={(e) => {
+                            setSlugEdited(true);
+                            setData('slug', e.target.value);
+                        }}
+                        required
+                    />
+                    <InputError message={errors.slug} />
+                </div>
 
-            <div className="grid gap-2">
-                <Label htmlFor="plan">{t('ui.organizations.form.plan')}</Label>
-                <Select
-                    value={data.plan}
-                    onValueChange={(value) => setData('plan', value)}
-                >
-                    <SelectTrigger id="plan">
-                        <SelectValue
-                            placeholder={t(
-                                'ui.organizations.form.plan_placeholder',
-                            )}
-                        />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {plans.map((plan) => (
-                            <SelectItem key={plan.value} value={plan.value}>
-                                {plan.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <InputError message={errors.plan} />
+                <div className="grid gap-2">
+                    <Label htmlFor="plan">
+                        {t('ui.organizations.form.plan')}
+                    </Label>
+                    <Select
+                        value={data.plan}
+                        onValueChange={(value) => setData('plan', value)}
+                    >
+                        <SelectTrigger id="plan" className="w-full">
+                            <SelectValue
+                                placeholder={t(
+                                    'ui.organizations.form.plan_placeholder',
+                                )}
+                            />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {plans.map((plan) => (
+                                <SelectItem
+                                    key={plan.value}
+                                    value={plan.value}
+                                >
+                                    {plan.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <InputError message={errors.plan} />
+                </div>
             </div>
 
             <div className="flex items-center gap-3">

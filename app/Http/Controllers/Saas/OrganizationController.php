@@ -7,6 +7,7 @@ use App\Concerns\ResolvesTableSort;
 use App\Enums\Plan;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use App\Models\PlatformSetting;
 use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -82,7 +83,35 @@ class OrganizationController extends Controller
                 'currentMonth' => $this->emailCountForMonth($organization, $currentMonth),
                 'previousMonth' => $this->emailCountForMonth($organization, $previousMonth),
             ],
+            'emailLimits' => [
+                'baseline' => PlatformSetting::current()->expected_emails_per_user_per_month,
+                'activeUsersCount' => $organization->activeUsers()->count(),
+                'defaultLimit' => $organization->defaultEmailLimit(),
+                'softLimit' => $organization->softEmailLimit(),
+                'hardLimit' => $organization->hardEmailLimit(),
+                'softOverride' => $organization->soft_email_limit_override,
+                'hardOverride' => $organization->hard_email_limit_override,
+            ],
         ]);
+    }
+
+    public function updateEmailLimits(Request $request, Organization $organization): RedirectResponse
+    {
+        $data = $request->validate([
+            'soft_limit_override' => ['nullable', 'integer', 'min:1'],
+            'hard_limit_override' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $organization->soft_email_limit_override = $data['soft_limit_override'] ?? null;
+        $organization->hard_email_limit_override = $data['hard_limit_override'] ?? null;
+        $organization->save();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.organizations.email_limits.flash.updated'),
+        ]);
+
+        return to_route('saas.organizations.edit', $organization);
     }
 
     private function emailCountForMonth(Organization $organization, CarbonInterface $month): int

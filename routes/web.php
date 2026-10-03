@@ -41,6 +41,7 @@ use App\Http\Controllers\PremiseController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Saas\AuditLogController;
 use App\Http\Controllers\Saas\DocumentVarController;
+use App\Http\Controllers\Saas\EmailLimitSettingsController;
 use App\Http\Controllers\Saas\HolidayController as SaasHolidayController;
 use App\Http\Controllers\Saas\LegalHourLimitController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
@@ -500,6 +501,10 @@ Route::prefix('saas')->name('saas.')->group(function () {
         // Super-admin management (saas role required)
         Route::middleware('role:saas,saas')->group(function () {
             Route::resource('organizations', OrganizationController::class)->except('show');
+            Route::patch('organizations/{organization}/email-limits', [OrganizationController::class, 'updateEmailLimits'])->name('organizations.email-limits.update');
+
+            Route::get('email-limit-settings', [EmailLimitSettingsController::class, 'edit'])->name('email-limit-settings.edit');
+            Route::patch('email-limit-settings', [EmailLimitSettingsController::class, 'update'])->name('email-limit-settings.update');
 
             Route::resource('document-variables', DocumentVarController::class)->except('show');
 
