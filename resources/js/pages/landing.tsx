@@ -51,7 +51,7 @@ function NavAnchor({ href, children }: { href: string; children: ReactNode }) {
     return (
         <a
             href={href}
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="text-sm font-medium text-white/70 transition-colors hover:text-white"
         >
             {children}
         </a>
@@ -231,7 +231,84 @@ function ReportsCard() {
     );
 }
 
-/** Feature row 4's visual (the MCP/AI differentiator): a short chat exchange. */
+/** Feature row 4's visual: pending and approved leave requests, same vocabulary as the leaves calendar. */
+function LeaveRequestsCard() {
+    const requests: { name: string; type: string; range: string; status: string; tone: Tone }[] = [
+        { name: 'Camila Rojas', type: 'Vacaciones', range: '28 jul – 1 ago', status: 'Aprobada', tone: 'success' },
+        { name: 'Diego Fuentes', type: 'Licencia médica', range: '22 jul', status: 'Pendiente', tone: 'warning' },
+        { name: 'Valentina Soto', type: 'Permiso sin goce', range: '30 jul', status: 'Pendiente', tone: 'warning' },
+    ];
+
+    return (
+        <Card className="w-full gap-3 p-5 shadow-lg sm:w-[26rem]">
+            <div className="flex items-center justify-between border-b pb-2 text-xs font-semibold text-muted-foreground">
+                <span>Solicitud</span>
+                <span>Estado</span>
+            </div>
+            {requests.map((request) => (
+                <div
+                    key={request.name}
+                    className="flex items-center justify-between border-b py-2 text-sm last:border-b-0"
+                >
+                    <div>
+                        <p className="font-medium">{request.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                            {request.type} · {request.range}
+                        </p>
+                    </div>
+                    <TonePill tone={request.tone}>{request.status}</TonePill>
+                </div>
+            ))}
+            <Button variant="default" className="mt-1 w-full">
+                Ver calendario de licencias
+            </Button>
+        </Card>
+    );
+}
+
+/** Feature row 5's visual: document templates with {{variable}} placeholders, generated and sent to e-signature. */
+function DocumentTemplatesCard() {
+    const templates = [
+        { name: 'Contrato de trabajo', type: 'Contratos' },
+        { name: 'Anexo de cambio de turno', type: 'Anexos' },
+        { name: 'Pacto de horas extra', type: 'Pactos' },
+    ];
+
+    return (
+        <Card className="w-full gap-4 p-5 shadow-lg sm:w-[26rem]">
+            <div className="flex items-center justify-between border-b pb-3">
+                <p className="text-sm font-semibold">Plantillas de documentos</p>
+                <Badge variant="outline">{templates.length} disponibles</Badge>
+            </div>
+            <div className="flex flex-col gap-2">
+                {templates.map((template) => (
+                    <div
+                        key={template.name}
+                        className="flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2 text-sm"
+                    >
+                        <span className="font-medium">{template.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                            {template.type}
+                        </span>
+                    </div>
+                ))}
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                    <p className="text-sm font-medium">
+                        Contrato de Camila Rojas
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        Generado desde «Contrato de trabajo»
+                    </p>
+                </div>
+                <TonePill tone="warning">Pendiente de firma</TonePill>
+            </div>
+        </Card>
+    );
+}
+
+/** Feature row 6's visual (the MCP/AI differentiator): a short chat exchange. */
 function AssistantChatCard() {
     return (
         <Card className="w-full gap-3 p-5 shadow-lg sm:w-[26rem]">
@@ -422,10 +499,10 @@ export default function Landing() {
             <Head title="Kolvi — Control de asistencia y cumplimiento laboral" />
 
             <div className="min-h-screen bg-background text-foreground">
-                <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
+                <header className="sticky top-0 z-40 bg-brand-navy-deep">
                     <div className="mx-auto flex max-w-6xl items-center gap-8 px-6 py-4">
                         <Link href={home()} className="flex items-center">
-                            <AppLogo />
+                            <AppLogo variant="light" />
                         </Link>
                         <nav className="hidden flex-1 items-center gap-7 md:flex">
                             <NavAnchor href="#funciones">Funciones</NavAnchor>
@@ -438,46 +515,57 @@ export default function Landing() {
                         <div className="ml-auto flex items-center gap-4">
                             <Link
                                 href={auth.user ? dashboard() : login()}
-                                className="text-sm font-semibold"
+                                className="text-sm font-semibold text-white"
                             >
                                 {auth.user ? 'Ir al panel' : 'Ingresar'}
                             </Link>
-                            <Button asChild size="sm">
+                            <Button
+                                asChild
+                                size="sm"
+                                className="bg-brand-coral text-white hover:bg-brand-coral/90"
+                            >
                                 <a href="#demo">Agendar demo</a>
                             </Button>
                         </div>
                     </div>
                 </header>
 
-                <section className="mx-auto flex max-w-6xl flex-col items-center gap-14 px-6 pt-16 pb-10 md:flex-row md:items-end md:pt-24">
-                    <div className="flex max-w-xl flex-col gap-6">
-                        <SectionEyebrow>
-                            Control de asistencia · Ley de 40 horas
-                        </SectionEyebrow>
-                        <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
-                            Marca el tiempo. Cumple la ley. Sin planillas.
-                        </h1>
-                        <p className="text-lg leading-relaxed text-muted-foreground text-pretty">
-                            Kolvi registra la jornada de tu equipo, controla
-                            las horas extra bajo la Ley de 40 horas y entrega
-                            reportes listos para la Dirección del Trabajo —
-                            desde la web, el celular o un asistente de IA.
-                        </p>
-                        <div className="flex flex-wrap gap-3">
-                            <Button
-                                asChild
-                                size="lg"
-                                className="bg-brand-coral text-brand-coral-foreground hover:bg-brand-coral/90"
-                            >
-                                <a href="#demo">Agendar demo</a>
-                            </Button>
-                            <Button asChild size="lg" variant="outline">
-                                <a href="#como-funciona">Ver cómo funciona →</a>
-                            </Button>
+                <section className="bg-brand-navy-deep">
+                    <div className="mx-auto flex max-w-6xl flex-col items-center gap-14 px-6 pt-16 pb-10 md:flex-row md:items-end md:pt-24">
+                        <div className="flex max-w-xl flex-col gap-6">
+                            <SectionEyebrow>
+                                Control de asistencia · Ley de 40 horas
+                            </SectionEyebrow>
+                            <h1 className="text-4xl font-bold tracking-tight text-balance text-white sm:text-5xl">
+                                Marca el tiempo. Cumple la ley. Sin planillas.
+                            </h1>
+                            <p className="text-lg leading-relaxed text-white/70 text-pretty">
+                                Kolvi registra la jornada de tu equipo, controla
+                                las horas extra bajo la Ley de 40 horas y entrega
+                                reportes listos para la Dirección del Trabajo —
+                                desde la web, el celular o un asistente de IA.
+                            </p>
+                            <div className="flex flex-wrap gap-3">
+                                <Button
+                                    asChild
+                                    size="lg"
+                                    className="bg-brand-coral text-brand-coral-foreground hover:bg-brand-coral/90"
+                                >
+                                    <a href="#demo">Agendar demo</a>
+                                </Button>
+                                <Button
+                                    asChild
+                                    size="lg"
+                                    variant="outline"
+                                    className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                                >
+                                    <a href="#como-funciona">Ver cómo funciona →</a>
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                    <div className="w-full max-w-md flex-1">
-                        <ComplianceCard />
+                        <div className="w-full max-w-md flex-1">
+                            <ComplianceCard />
+                        </div>
                     </div>
                 </section>
 
@@ -538,6 +626,19 @@ export default function Landing() {
                     />
                     <FeatureRow
                         number="04"
+                        title="Licencias y vacaciones sin cruce de planillas"
+                        body="Vacaciones, licencias médicas, permisos con y sin goce de sueldo, con un flujo de aprobación del supervisor y un calendario compartido por sucursal para ver quién está disponible cada día."
+                        visual={<LeaveRequestsCard />}
+                        reverse
+                    />
+                    <FeatureRow
+                        number="05"
+                        title="Documentos con plantillas y firma electrónica simple"
+                        body="Contratos, anexos, pactos y certificados desde una plantilla reutilizable con variables como nombre, cargo o sueldo. Se generan por trabajador y se envían a firma electrónica simple (Ley 19.799), con su estado de firma al día."
+                        visual={<DocumentTemplatesCard />}
+                    />
+                    <FeatureRow
+                        number="06"
                         title="Gestiona todo con un asistente de IA"
                         body="El servidor MCP de Kolvi conecta tu organización a un asistente de inteligencia artificial: aprueba licencias, autoriza horas extra, genera reportes de nómina o envía documentos a firma, todo con instrucciones en lenguaje natural — sin abrir el panel."
                         visual={<AssistantChatCard />}

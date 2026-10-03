@@ -1,6 +1,9 @@
 import type { SVGAttributes } from 'react';
 
-export default function AppLogoMark(props: SVGAttributes<SVGElement>) {
+export default function AppLogoMark({
+    variant = 'default',
+    ...props
+}: SVGAttributes<SVGElement> & { variant?: 'default' | 'light' }) {
     return (
         <svg
             viewBox="0 0 288 288"
@@ -14,7 +17,7 @@ export default function AppLogoMark(props: SVGAttributes<SVGElement>) {
                 width="46"
                 height="210"
                 rx="23"
-                fill="var(--brand-navy-deep)"
+                fill={variant === 'light' ? 'white' : 'var(--brand-navy-deep)'}
             />
             <path
                 d="M202 39 L112 144 L202 249 L202 185 L151 144 L202 103 Z"
