@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Enums\Plan;
 use App\Models\Concerns\FormatedRut;
+use App\Observers\OrganizationObserver;
 use Carbon\CarbonInterface;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,6 +36,7 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $owner
  */
 #[Fillable(['name', 'rut', 'email', 'phone', 'address', 'slug', 'plan'])]
+#[ObservedBy(OrganizationObserver::class)]
 class Organization extends Model
 {
     /** @use HasFactory<OrganizationFactory> */
@@ -96,27 +99,27 @@ class Organization extends Model
     /**
      * Whether $type ({@see EmailLimitCrossing::TYPE_SOFT} or
      * {@see EmailLimitCrossing::TYPE_HARD}) has already been crossed by this
-     * organization in the current calendar month.
+     * organization in the calendar month containing $month (KOL-137.5: a
+     * parameter like {@see emailSendsCountForMonth()}'s, rather than the
+     * hardcoded Carbon::now() this originally shipped with).
      */
-    public function hasCrossedEmailLimitThisMonth(string $type): bool
+    public function hasCrossedEmailLimitThisMonth(string $type, CarbonInterface $month): bool
     {
-        return $this->emailLimitCrossings()
-            ->where('type', $type)
-            ->where('month', Carbon::now()->startOfMonth()->toDateString())
-            ->exists();
+        return EmailLimitCrossing::recordedFor($this->id, $type, $month);
     }
 
     /**
-     * Records that $type was crossed this calendar month (KOL-137.3),
-     * exactly once per organization/type/month: a second call in the same
-     * month is a no-op thanks to the unique index backing this row.
+     * Records that $type was crossed in the calendar month containing $month
+     * (KOL-137.3), exactly once per organization/type/month: a second call
+     * for the same month is a no-op thanks to the unique index backing this
+     * row.
      */
-    public function recordEmailLimitCrossing(string $type): void
+    public function recordEmailLimitCrossing(string $type, CarbonInterface $month): void
     {
         EmailLimitCrossing::firstOrCreate([
             'organization_id' => $this->id,
             'type' => $type,
-            'month' => Carbon::now()->startOfMonth()->toDateString(),
+            'month' => $month->clone()->startOfMonth()->toDateString(),
         ]);
     }
 

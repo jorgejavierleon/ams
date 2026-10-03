@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Database\Factories\EmailLimitCrossingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -50,5 +51,20 @@ class EmailLimitCrossing extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * Whether $type has already been recorded for $organizationId in the
+     * calendar month containing $month (KOL-137.5). A plain query rather than
+     * a relation call, so callers can short-circuit on this cheap indexed
+     * check without first loading the Organization model at all.
+     */
+    public static function recordedFor(int $organizationId, string $type, CarbonInterface $month): bool
+    {
+        return static::query()
+            ->where('organization_id', $organizationId)
+            ->where('type', $type)
+            ->where('month', $month->clone()->startOfMonth()->toDateString())
+            ->exists();
     }
 }

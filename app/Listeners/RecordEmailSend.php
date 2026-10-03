@@ -41,8 +41,22 @@ class RecordEmailSend
         $this->raiseSoftLimitAlertIfCrossed($organizationId);
     }
 
+    /**
+     * Once this month's soft-limit crossing is recorded it stays recorded
+     * forever that month - recordEmailLimitCrossing()'s firstOrCreate() never
+     * un-fires it, and nothing re-checks the limit downward - so every send
+     * after the first one to cross it can skip straight past the Organization
+     * lookup and the monthly COUNT below (KOL-137.5) without changing the
+     * outcome.
+     */
     private function raiseSoftLimitAlertIfCrossed(int $organizationId): void
     {
+        $month = Carbon::now();
+
+        if (EmailLimitCrossing::recordedFor($organizationId, EmailLimitCrossing::TYPE_SOFT, $month)) {
+            return;
+        }
+
         $organization = Organization::find($organizationId);
 
         if ($organization === null) {
@@ -55,10 +69,10 @@ class RecordEmailSend
             return;
         }
 
-        if ($organization->emailSendsCountForMonth(Carbon::now()) < $softLimit) {
+        if ($organization->emailSendsCountForMonth($month) < $softLimit) {
             return;
         }
 
-        $organization->recordEmailLimitCrossing(EmailLimitCrossing::TYPE_SOFT);
+        $organization->recordEmailLimitCrossing(EmailLimitCrossing::TYPE_SOFT, $month);
     }
 }

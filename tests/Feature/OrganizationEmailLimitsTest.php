@@ -194,7 +194,7 @@ test('non-saas users cannot toggle an organization email sending', function () {
 
 test('a manual override is still flagged as overridden even while the hard limit is crossed', function () {
     $organization = Organization::factory()->create(['hard_email_limit_override' => 1, 'email_sending_override' => true]);
-    $organization->recordEmailLimitCrossing(EmailLimitCrossing::TYPE_HARD);
+    $organization->recordEmailLimitCrossing(EmailLimitCrossing::TYPE_HARD, now());
 
     $this->actingAs(saasEmailLimitsAdmin(), 'saas')
         ->get(route('saas.organizations.edit', $organization))

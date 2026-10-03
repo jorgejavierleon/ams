@@ -92,8 +92,8 @@ class OrganizationController extends Controller
                 'hardLimit' => $organization->hardEmailLimit(),
                 'softOverride' => $organization->soft_email_limit_override,
                 'hardOverride' => $organization->hard_email_limit_override,
-                'softLimitCrossedThisMonth' => $organization->hasCrossedEmailLimitThisMonth(EmailLimitCrossing::TYPE_SOFT),
-                'hardLimitCrossedThisMonth' => $organization->hasCrossedEmailLimitThisMonth(EmailLimitCrossing::TYPE_HARD),
+                'softLimitCrossedThisMonth' => $organization->hasCrossedEmailLimitThisMonth(EmailLimitCrossing::TYPE_SOFT, $currentMonth),
+                'hardLimitCrossedThisMonth' => $organization->hasCrossedEmailLimitThisMonth(EmailLimitCrossing::TYPE_HARD, $currentMonth),
             ],
             'emailSending' => [
                 'enabled' => ! $organization->emailSendingManuallyDisabled(),
