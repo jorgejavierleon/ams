@@ -31,6 +31,7 @@ class OvertimeRequestRejected extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject(__('mail.overtime_request_rejected.subject'))
+            ->metadata('organization_id', (string) $this->overtimeRequest->organization_id)
             ->markdown('mail.overtime-requests.rejected', [
                 'overtimeRequest' => $this->overtimeRequest,
                 'url' => route('my.overtime-requests.index'),

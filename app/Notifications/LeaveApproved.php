@@ -29,6 +29,7 @@ class LeaveApproved extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject(__('mail.leave_approved.subject'))
+            ->metadata('organization_id', (string) $this->leave->organization_id)
             ->markdown('mail.leaves.approved', [
                 'leave' => $this->leave,
                 'url' => route('my.leaves.index'),

@@ -2,7 +2,7 @@ import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import OrganizationForm from '@/components/organization-form';
 import type { PlanOption } from '@/components/organization-form';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { update } from '@/routes/saas/organizations';
 
@@ -13,12 +13,18 @@ type Organization = {
     plan: string;
 };
 
+type EmailVolume = {
+    currentMonth: number;
+    previousMonth: number;
+};
+
 type Props = {
     organization: Organization;
     plans: PlanOption[];
+    emailVolume: EmailVolume;
 };
 
-export default function EditOrganization({ organization, plans }: Props) {
+export default function EditOrganization({ organization, plans, emailVolume }: Props) {
     const { t } = useTranslations();
 
     return (
@@ -44,6 +50,32 @@ export default function EditOrganization({ organization, plans }: Props) {
                                 plan: organization.plan,
                             }}
                         />
+                    </CardContent>
+                </Card>
+
+                <Card className="max-w-sm">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            {t('ui.organizations.email_volume.title')}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex gap-8">
+                        <div>
+                            <p className="text-2xl font-semibold tabular-nums">
+                                {emailVolume.currentMonth}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {t('ui.organizations.email_volume.current_month')}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-2xl font-semibold tabular-nums">
+                                {emailVolume.previousMonth}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {t('ui.organizations.email_volume.previous_month')}
+                            </p>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

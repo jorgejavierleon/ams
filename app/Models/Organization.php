@@ -54,6 +54,14 @@ class Organization extends Model
     }
 
     /**
+     * @return HasMany<EmailSend, $this>
+     */
+    public function emailSends(): HasMany
+    {
+        return $this->hasMany(EmailSend::class);
+    }
+
+    /**
      * The one user who unconditionally bypasses every authorization check in
      * this organization (KOL-133), regardless of role or permission changes.
      * Deliberately not in #[Fillable]: ownership must only change through a

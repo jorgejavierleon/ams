@@ -30,6 +30,7 @@ class DocumentSignatureRequested extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject(__('mail.document_signature_requested.subject'))
+            ->metadata('organization_id', (string) $this->document->organization_id)
             ->markdown('mail.documents.signature-requested', [
                 'document' => $this->document,
             ]);

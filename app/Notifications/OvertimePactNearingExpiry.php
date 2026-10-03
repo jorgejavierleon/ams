@@ -31,6 +31,7 @@ class OvertimePactNearingExpiry extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject(__('mail.overtime_pact_nearing_expiry.subject'))
+            ->metadata('organization_id', (string) $this->pact->organization_id)
             ->markdown('mail.overtime.pact-nearing-expiry', [
                 'pact' => $this->pact,
                 'url' => route('overtime.pacts.index'),

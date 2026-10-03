@@ -31,6 +31,7 @@ class ReportExportFailed extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject(__('mail.report_export_failed.subject'))
+            ->metadata('organization_id', (string) $this->reportExport->organization_id)
             ->markdown('mail.reports.export-failed');
     }
 }
