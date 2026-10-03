@@ -502,6 +502,7 @@ Route::prefix('saas')->name('saas.')->group(function () {
         Route::middleware('role:saas,saas')->group(function () {
             Route::resource('organizations', OrganizationController::class)->except('show');
             Route::patch('organizations/{organization}/email-limits', [OrganizationController::class, 'updateEmailLimits'])->name('organizations.email-limits.update');
+            Route::patch('organizations/{organization}/email-sending', [OrganizationController::class, 'toggleEmailSending'])->name('organizations.email-sending.toggle');
 
             Route::get('email-limit-settings', [EmailLimitSettingsController::class, 'edit'])->name('email-limit-settings.edit');
             Route::patch('email-limit-settings', [EmailLimitSettingsController::class, 'update'])->name('email-limit-settings.update');

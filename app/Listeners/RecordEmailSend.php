@@ -2,8 +2,11 @@
 
 namespace App\Listeners;
 
+use App\Models\EmailLimitCrossing;
 use App\Models\EmailSend;
+use App\Models\Organization;
 use Illuminate\Mail\Events\MessageSent;
+use Illuminate\Support\Carbon;
 
 /**
  * Central hook for KOL-137.1: Illuminate\Mail\Events\MessageSent fires for
@@ -16,6 +19,10 @@ use Illuminate\Mail\Events\MessageSent;
  * which differs from their account email (KOL-62). A message with no such
  * metadata is not tracked; this is what excludes DT mail (DtAuditNotification,
  * SendDtPassword) without the listener needing to know about those classes.
+ *
+ * Also raises the KOL-137.3 soft-limit alert here, since this event only
+ * fires for sends that actually went out (a send suppressed by
+ * {@see SuppressEmailOverHardLimit} never reaches MessageSent).
  */
 class RecordEmailSend
 {
@@ -27,6 +34,31 @@ class RecordEmailSend
             return;
         }
 
-        EmailSend::create(['organization_id' => (int) $header->getBody()]);
+        $organizationId = (int) $header->getBody();
+
+        EmailSend::create(['organization_id' => $organizationId]);
+
+        $this->raiseSoftLimitAlertIfCrossed($organizationId);
+    }
+
+    private function raiseSoftLimitAlertIfCrossed(int $organizationId): void
+    {
+        $organization = Organization::find($organizationId);
+
+        if ($organization === null) {
+            return;
+        }
+
+        $softLimit = $organization->softEmailLimit();
+
+        if ($softLimit <= 0) {
+            return;
+        }
+
+        if ($organization->emailSendsCountForMonth(Carbon::now()) < $softLimit) {
+            return;
+        }
+
+        $organization->recordEmailLimitCrossing(EmailLimitCrossing::TYPE_SOFT);
     }
 }

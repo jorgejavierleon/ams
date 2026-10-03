@@ -441,6 +441,17 @@ return [
             'previous_month' => 'Last month',
         ],
 
+        'email_sending' => [
+            'title' => 'Email sending',
+            'enabled' => 'Enabled',
+            'disabled' => 'Disabled',
+            'hint' => 'Manual override: immediately blocks or resumes all outgoing email for this organization, regardless of its soft or hard limit.',
+            'flash' => [
+                'enabled' => 'Email sending enabled for this organization.',
+                'disabled' => 'Email sending disabled for this organization.',
+            ],
+        ],
+
         'email_limits' => [
             'title' => 'Email limits',
             'default_hint' => 'Default: :count active users × :baseline baseline = :limit emails/month',
@@ -450,6 +461,10 @@ return [
             ],
             'override_hint' => 'Leave blank to use the calculated default.',
             'submit' => 'Save limits',
+            'alerts' => [
+                'soft_crossed' => 'This organization reached its soft email limit this month. Emails are still being sent normally.',
+                'hard_crossed' => 'This organization reached its hard email limit. Further emails are suppressed until next month, or until the hard limit is raised.',
+            ],
             'flash' => [
                 'updated' => 'Email limits updated.',
             ],

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\EmailLimitCrossing;
 use App\Models\Organization;
 use App\Models\PlatformSetting;
 use App\Models\User;
@@ -138,4 +139,66 @@ test('non-saas users cannot override an organization email limit', function () {
             'soft_limit_override' => 50,
         ])
         ->assertForbidden();
+});
+
+// --- Manual enable/disable override (KOL-137.4) ---
+
+test('the edit page exposes email sending as enabled and not overridden by default', function () {
+    $organization = Organization::factory()->create();
+
+    $this->actingAs(saasEmailLimitsAdmin(), 'saas')
+        ->get(route('saas.organizations.edit', $organization))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('emailSending.enabled', true)
+            ->where('emailSending.overridden', false));
+});
+
+test('a saas admin can disable and re-enable an organization email sending', function () {
+    $organization = Organization::factory()->create();
+    $admin = saasEmailLimitsAdmin();
+
+    $this->actingAs($admin, 'saas')
+        ->patch(route('saas.organizations.email-sending.toggle', $organization))
+        ->assertRedirect();
+
+    expect($organization->fresh()->email_sending_override)->toBeFalse();
+
+    $this->actingAs($admin, 'saas')
+        ->get(route('saas.organizations.edit', $organization))
+        ->assertInertia(fn ($page) => $page
+            ->where('emailSending.enabled', false)
+            ->where('emailSending.overridden', true));
+
+    $this->actingAs($admin, 'saas')
+        ->patch(route('saas.organizations.email-sending.toggle', $organization))
+        ->assertRedirect();
+
+    expect($organization->fresh()->email_sending_override)->toBeTrue();
+
+    $this->actingAs($admin, 'saas')
+        ->get(route('saas.organizations.edit', $organization))
+        ->assertInertia(fn ($page) => $page
+            ->where('emailSending.enabled', true)
+            ->where('emailSending.overridden', true));
+});
+
+test('non-saas users cannot toggle an organization email sending', function () {
+    $organization = Organization::factory()->create();
+    $user = User::factory()->create();
+
+    $this->actingAs($user, 'saas')
+        ->patch(route('saas.organizations.email-sending.toggle', $organization))
+        ->assertForbidden();
+});
+
+test('a manual override is still flagged as overridden even while the hard limit is crossed', function () {
+    $organization = Organization::factory()->create(['hard_email_limit_override' => 1, 'email_sending_override' => true]);
+    $organization->recordEmailLimitCrossing(EmailLimitCrossing::TYPE_HARD);
+
+    $this->actingAs(saasEmailLimitsAdmin(), 'saas')
+        ->get(route('saas.organizations.edit', $organization))
+        ->assertInertia(fn ($page) => $page
+            ->where('emailLimits.hardLimitCrossedThisMonth', true)
+            ->where('emailSending.overridden', true));
 });

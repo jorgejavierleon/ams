@@ -444,6 +444,17 @@ return [
             'previous_month' => 'Mes anterior',
         ],
 
+        'email_sending' => [
+            'title' => 'Envío de correos',
+            'enabled' => 'Habilitado',
+            'disabled' => 'Deshabilitado',
+            'hint' => 'Anulación manual: bloquea o reanuda de inmediato todos los correos salientes de esta organización, sin importar su límite blando o estricto.',
+            'flash' => [
+                'enabled' => 'Envío de correos habilitado para esta organización.',
+                'disabled' => 'Envío de correos deshabilitado para esta organización.',
+            ],
+        ],
+
         'email_limits' => [
             'title' => 'Límites de correo',
             'default_hint' => 'Por defecto: :count usuarios activos × :baseline base = :limit correos/mes',
@@ -453,6 +464,10 @@ return [
             ],
             'override_hint' => 'Déjelo en blanco para usar el valor calculado por defecto.',
             'submit' => 'Guardar límites',
+            'alerts' => [
+                'soft_crossed' => 'Esta organización alcanzó su límite blando de correos este mes. Los correos se siguen enviando normalmente.',
+                'hard_crossed' => 'Esta organización alcanzó su límite estricto de correos. Los correos adicionales se suprimen hasta el próximo mes, o hasta que se aumente el límite estricto.',
+            ],
             'flash' => [
                 'updated' => 'Límites de correo actualizados.',
             ],
