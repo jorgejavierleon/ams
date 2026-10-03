@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\EmailSend;
 use App\Models\Organization;
 use App\Models\User;
 
@@ -183,6 +184,39 @@ test('saas admin can view the edit page', function () {
                 ->component('saas/organizations/edit')
                 ->where('organization.id', $organization->id)
                 ->has('plans')
+                ->has('emailVolume')
+        );
+});
+
+test('the edit page shows the current and previous calendar month email counts, scoped to the organization', function () {
+    $acme = Organization::factory()->create();
+    $beta = Organization::factory()->create();
+
+    EmailSend::factory()->for($acme)->count(2)->create(['created_at' => now()]);
+    EmailSend::factory()->for($acme)->count(3)->create(['created_at' => now()->subMonthNoOverflow()]);
+    EmailSend::factory()->for($acme)->create(['created_at' => now()->subMonths(2)]);
+    EmailSend::factory()->for($beta)->count(5)->create(['created_at' => now()]);
+
+    $this->actingAs(saasAdmin(), 'saas')
+        ->get(route('saas.organizations.edit', $acme))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('emailVolume.currentMonth', 2)
+                ->where('emailVolume.previousMonth', 3)
+        );
+});
+
+test('an organization with no email activity shows zero on the edit page', function () {
+    $organization = Organization::factory()->create();
+
+    $this->actingAs(saasAdmin(), 'saas')
+        ->get(route('saas.organizations.edit', $organization))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('emailVolume.currentMonth', 0)
+                ->where('emailVolume.previousMonth', 0)
         );
 });
 

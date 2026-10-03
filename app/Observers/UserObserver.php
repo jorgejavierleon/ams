@@ -27,6 +27,6 @@ class UserObserver
             return;
         }
 
-        Mail::to($recipient)->send(new AuthProfileUpdated);
+        Mail::to($recipient)->send(new AuthProfileUpdated($user));
     }
 }

@@ -434,6 +434,13 @@ return [
             'submit' => 'Save changes',
         ],
 
+        'email_volume' => [
+            'title' => 'Email volume',
+            'description' => 'Outgoing emails sent on behalf of this organization',
+            'current_month' => 'This month',
+            'previous_month' => 'Last month',
+        ],
+
         'delete_dialog' => [
             'title' => 'Delete organization',
             'description' => 'Are you sure you want to delete :name? This action cannot be undone.',

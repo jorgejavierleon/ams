@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -14,14 +15,24 @@ class AuthProfileUpdated extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    public function __construct(public User $user) {}
+
     /**
      * Get the message envelope.
      */
     public function envelope(): Envelope
     {
-        return new Envelope(
+        $envelope = new Envelope(
             subject: __('mail.auth_profile_updated.subject'),
         );
+
+        // organization_id is nullable (DT/SaaS-only users carry none);
+        // skip metadata rather than send a non-numeric X-Metadata header.
+        if ($this->user->organization_id !== null) {
+            $envelope->metadata('organization_id', (string) $this->user->organization_id);
+        }
+
+        return $envelope;
     }
 
     /**

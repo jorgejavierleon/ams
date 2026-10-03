@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\OvertimeRestDayBalance;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -31,13 +32,21 @@ class RestDayBalanceAccrued extends Notification implements ShouldQueue
         return ['mail'];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(User $notifiable): MailMessage
     {
-        return (new MailMessage)
+        $mailMessage = (new MailMessage)
             ->subject(__('mail.rest_day_balance_accrued.subject'))
             ->markdown('mail.overtime.rest-day-balance-accrued', [
                 'balances' => $this->balances,
                 'url' => route('my.overtime-rest-day-balance.index'),
             ]);
+
+        // organization_id is nullable on User; skip metadata rather than
+        // send a non-numeric X-Metadata header (KOL-137.1).
+        if ($notifiable->organization_id !== null) {
+            $mailMessage->metadata('organization_id', (string) $notifiable->organization_id);
+        }
+
+        return $mailMessage;
     }
 }

@@ -29,6 +29,7 @@ class LeaveRejected extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject(__('mail.leave_rejected.subject'))
+            ->metadata('organization_id', (string) $this->leave->organization_id)
             ->markdown('mail.leaves.rejected', [
                 'leave' => $this->leave,
                 'url' => route('my.leaves.index'),

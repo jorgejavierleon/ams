@@ -26,9 +26,17 @@ class MarkCreated extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(
+        $envelope = new Envelope(
             subject: __('mail.mark_created.subject'),
         );
+
+        // organization_id is nullable on offline-captured marks (KOL-137.1):
+        // skip metadata rather than send a non-numeric X-Metadata header.
+        if ($this->mark->organization_id !== null) {
+            $envelope->metadata('organization_id', (string) $this->mark->organization_id);
+        }
+
+        return $envelope;
     }
 
     public function content(): Content

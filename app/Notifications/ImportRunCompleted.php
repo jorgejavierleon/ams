@@ -32,6 +32,7 @@ class ImportRunCompleted extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject(__('mail.import_run_completed.subject'))
+            ->metadata('organization_id', (string) $this->importRun->organization_id)
             ->markdown('mail.imports.run-completed', [
                 'url' => route('imports.show', [$this->importRun->resource_type, $this->importRun]),
                 'createdCount' => $this->importRun->created_count,

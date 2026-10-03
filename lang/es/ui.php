@@ -437,6 +437,13 @@ return [
             'submit' => 'Guardar cambios',
         ],
 
+        'email_volume' => [
+            'title' => 'Volumen de correos',
+            'description' => 'Correos salientes enviados a nombre de esta organización',
+            'current_month' => 'Este mes',
+            'previous_month' => 'Mes anterior',
+        ],
+
         'delete_dialog' => [
             'title' => 'Eliminar organización',
             'description' => '¿Está seguro de que desea eliminar :name? Esta acción no se puede deshacer.',

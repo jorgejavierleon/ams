@@ -7,6 +7,7 @@ use App\Concerns\ResolvesTableSort;
 use App\Enums\Plan;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -66,6 +67,9 @@ class OrganizationController extends Controller
 
     public function edit(Organization $organization): Response
     {
+        $currentMonth = now();
+        $previousMonth = $currentMonth->clone()->subMonthNoOverflow();
+
         return Inertia::render('saas/organizations/edit', [
             'organization' => [
                 'id' => $organization->id,
@@ -74,7 +78,18 @@ class OrganizationController extends Controller
                 'plan' => $organization->plan->value,
             ],
             'plans' => Plan::options(),
+            'emailVolume' => [
+                'currentMonth' => $this->emailCountForMonth($organization, $currentMonth),
+                'previousMonth' => $this->emailCountForMonth($organization, $previousMonth),
+            ],
         ]);
+    }
+
+    private function emailCountForMonth(Organization $organization, CarbonInterface $month): int
+    {
+        return $organization->emailSends()
+            ->whereBetween('created_at', [$month->clone()->startOfMonth(), $month->clone()->endOfMonth()])
+            ->count();
     }
 
     public function update(Request $request, Organization $organization): RedirectResponse

@@ -32,6 +32,7 @@ class MarkModificationRequested extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject(__('mail.mark_modification_requested.subject'))
+            ->metadata('organization_id', (string) $this->markModification->organization_id)
             ->markdown('mail.mark-modifications.requested', [
                 'markModification' => $this->markModification,
                 'reviewUrl' => url("/mark-modifications/{$this->markModification->ulid}"),

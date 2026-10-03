@@ -31,6 +31,7 @@ class ImportRunFailed extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject(__('mail.import_run_failed.subject'))
+            ->metadata('organization_id', (string) $this->importRun->organization_id)
             ->markdown('mail.imports.run-failed', [
                 'url' => route('imports.show', [$this->importRun->resource_type, $this->importRun]),
             ]);

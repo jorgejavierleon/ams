@@ -25,6 +25,7 @@ class DocumentFullySigned extends Mailable implements ShouldQueue
     {
         return new Envelope(
             subject: __('mail.document_fully_signed.subject'),
+            metadata: ['organization_id' => (string) $this->document->organization_id],
         );
     }
 
