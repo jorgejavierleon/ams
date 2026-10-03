@@ -6,6 +6,7 @@ use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\Plan;
 use App\Http\Controllers\Controller;
+use App\Models\EmailLimitCrossing;
 use App\Models\Organization;
 use App\Models\PlatformSetting;
 use Carbon\CarbonInterface;
@@ -91,8 +92,35 @@ class OrganizationController extends Controller
                 'hardLimit' => $organization->hardEmailLimit(),
                 'softOverride' => $organization->soft_email_limit_override,
                 'hardOverride' => $organization->hard_email_limit_override,
+                'softLimitCrossedThisMonth' => $organization->hasCrossedEmailLimitThisMonth(EmailLimitCrossing::TYPE_SOFT),
+                'hardLimitCrossedThisMonth' => $organization->hasCrossedEmailLimitThisMonth(EmailLimitCrossing::TYPE_HARD),
+            ],
+            'emailSending' => [
+                'enabled' => ! $organization->emailSendingManuallyDisabled(),
+                'overridden' => $organization->email_sending_override !== null,
             ],
         ]);
+    }
+
+    /**
+     * Manual kill-switch (KOL-137.4): flips the override to the opposite of
+     * its current "disabled" reading, so a currently force-disabled
+     * organization becomes explicitly force-enabled, and a never-set or
+     * already force-enabled organization becomes explicitly force-disabled.
+     */
+    public function toggleEmailSending(Organization $organization): RedirectResponse
+    {
+        $organization->email_sending_override = $organization->emailSendingManuallyDisabled();
+        $organization->save();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $organization->emailSendingManuallyDisabled()
+                ? __('ui.organizations.email_sending.flash.disabled')
+                : __('ui.organizations.email_sending.flash.enabled'),
+        ]);
+
+        return back();
     }
 
     public function updateEmailLimits(Request $request, Organization $organization): RedirectResponse
@@ -116,9 +144,7 @@ class OrganizationController extends Controller
 
     private function emailCountForMonth(Organization $organization, CarbonInterface $month): int
     {
-        return $organization->emailSends()
-            ->whereBetween('created_at', [$month->clone()->startOfMonth(), $month->clone()->endOfMonth()])
-            ->count();
+        return $organization->emailSendsCountForMonth($month);
     }
 
     public function update(Request $request, Organization $organization): RedirectResponse

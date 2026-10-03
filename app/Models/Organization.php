@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Plan;
 use App\Models\Concerns\FormatedRut;
+use Carbon\CarbonInterface;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property Plan $plan
  * @property int|null $soft_email_limit_override
  * @property int|null $hard_email_limit_override
+ * @property bool|null $email_sending_override
  * @property int|null $owner_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -44,6 +46,7 @@ class Organization extends Model
     {
         return [
             'plan' => Plan::class,
+            'email_sending_override' => 'boolean',
         ];
     }
 
@@ -72,6 +75,52 @@ class Organization extends Model
     }
 
     /**
+     * @return HasMany<EmailLimitCrossing, $this>
+     */
+    public function emailLimitCrossings(): HasMany
+    {
+        return $this->hasMany(EmailLimitCrossing::class);
+    }
+
+    /**
+     * Emails recorded for this organization within the calendar month
+     * containing $month (KOL-137.1 volume, reused by KOL-137.3 enforcement).
+     */
+    public function emailSendsCountForMonth(CarbonInterface $month): int
+    {
+        return $this->emailSends()
+            ->whereBetween('created_at', [$month->clone()->startOfMonth(), $month->clone()->endOfMonth()])
+            ->count();
+    }
+
+    /**
+     * Whether $type ({@see EmailLimitCrossing::TYPE_SOFT} or
+     * {@see EmailLimitCrossing::TYPE_HARD}) has already been crossed by this
+     * organization in the current calendar month.
+     */
+    public function hasCrossedEmailLimitThisMonth(string $type): bool
+    {
+        return $this->emailLimitCrossings()
+            ->where('type', $type)
+            ->where('month', Carbon::now()->startOfMonth()->toDateString())
+            ->exists();
+    }
+
+    /**
+     * Records that $type was crossed this calendar month (KOL-137.3),
+     * exactly once per organization/type/month: a second call in the same
+     * month is a no-op thanks to the unique index backing this row.
+     */
+    public function recordEmailLimitCrossing(string $type): void
+    {
+        EmailLimitCrossing::firstOrCreate([
+            'organization_id' => $this->id,
+            'type' => $type,
+            'month' => Carbon::now()->startOfMonth()->toDateString(),
+        ]);
+    }
+
+    /**
      * The effective monthly soft email limit (KOL-137.2): the admin's saved
      * override when there is one, otherwise {@see defaultEmailLimit()}.
      */
@@ -96,6 +145,29 @@ class Organization extends Model
     public function defaultEmailLimit(): int
     {
         return $this->activeUsers()->count() * (PlatformSetting::current()->expected_emails_per_user_per_month ?? 0);
+    }
+
+    /**
+     * Manual kill-switch (KOL-137.4): true when a platform admin has
+     * explicitly forced sending on, which unconditionally wins over the
+     * KOL-137.3 automatic hard-limit suppression. Null (never touched) is
+     * not "enabled" in this sense - it leaves the decision to automatic
+     * enforcement.
+     */
+    public function emailSendingManuallyEnabled(): bool
+    {
+        return $this->email_sending_override === true;
+    }
+
+    /**
+     * Manual kill-switch (KOL-137.4): true when a platform admin has
+     * explicitly forced sending off, which unconditionally wins over
+     * automatic enforcement even while the organization is well under both
+     * its soft and hard limit.
+     */
+    public function emailSendingManuallyDisabled(): bool
+    {
+        return $this->email_sending_override === false;
     }
 
     /**
