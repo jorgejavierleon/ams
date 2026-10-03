@@ -47,7 +47,10 @@ class RecordEmailSend
      * un-fires it, and nothing re-checks the limit downward - so every send
      * after the first one to cross it can skip straight past the Organization
      * lookup and the monthly COUNT below (KOL-137.5) without changing the
-     * outcome.
+     * outcome. The one trade-off: an organization that never crosses its
+     * soft limit now pays for this cheap indexed exists() check on every
+     * send, forever, in exchange for the much larger saving on organizations
+     * that do cross it.
      */
     private function raiseSoftLimitAlertIfCrossed(int $organizationId): void
     {

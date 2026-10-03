@@ -64,7 +64,18 @@ class EmailLimitCrossing extends Model
         return static::query()
             ->where('organization_id', $organizationId)
             ->where('type', $type)
-            ->where('month', $month->clone()->startOfMonth()->toDateString())
+            ->where('month', static::monthKey($month))
             ->exists();
+    }
+
+    /**
+     * The `month` column value for the calendar month containing $month -
+     * the one place this key is computed, after KOL-137.5 review found it
+     * independently duplicated (and already drifting) across three call
+     * sites.
+     */
+    public static function monthKey(CarbonInterface $month): string
+    {
+        return $month->clone()->startOfMonth()->toDateString();
     }
 }

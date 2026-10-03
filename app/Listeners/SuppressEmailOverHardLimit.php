@@ -33,20 +33,31 @@ use Illuminate\Support\Facades\Cache;
  * not a deliberate zero-email cap, so it is treated as "not configured yet"
  * and never suppresses.
  *
- * Once this month's hard-limit crossing is recorded, every later send for
- * this organization short-circuits straight to "suppress" without paying for
- * the monthly COUNT (KOL-137.5) - safe because {@see OrganizationObserver}
- * clears that record the moment hard_email_limit_override changes, so a
- * raised limit always falls back through to a fresh count. Before that
- * crossing exists, the count-then-decide-then-record step runs inside a
- * per-organization lock: without it, a burst of concurrent queued sends can
- * all read the same stale "under the limit" count and all proceed, since the
- * EmailSend row each one implies is only written later, after the real
- * transport call, by {@see RecordEmailSend}. The lock cannot close that gap
- * entirely - sends already past this check when the limit is reached are
- * already "in flight" and cannot be recalled - but it does serialize the
- * decision itself, bounding the overshoot to those in-flight sends instead
- * of leaving it unbounded.
+ * Once an admin-configured hard_email_limit_override has already been
+ * recorded as crossed this month, every later send short-circuits straight
+ * to "suppress" without paying for the monthly COUNT (KOL-137.5). This is
+ * deliberately scoped to the override case only: {@see OrganizationObserver}
+ * clears that record the instant hard_email_limit_override changes, which is
+ * a single column with a single point of change - but hardEmailLimit()'s
+ * other source, defaultEmailLimit(), is a live computation over active user
+ * count and the platform-wide baseline with no equivalent single point to
+ * observe. An organization with no override always pays for a fresh COUNT,
+ * exactly as it did before KOL-137.5, so it can never go stale.
+ *
+ * The decide-and-record step only runs once an organization is already at
+ * or over its limit (the COUNT just above is unlocked and cheap for every
+ * send comfortably under it), and runs inside a per-organization lock so a
+ * burst of concurrent queued sends right at the boundary doesn't all read
+ * the same stale count and all proceed at once. That lock is attempted
+ * without blocking: if it is already held, this send decides unlocked
+ * rather than waiting on it and risking a LockTimeoutException deep inside
+ * Mailer::shouldSendMessage(), which would fail the send outright instead of
+ * cleanly allowing or suppressing it. Either way, the lock is a mitigation,
+ * not a guarantee: the EmailSend row each passing send implies is only
+ * written later, after the real transport call, by {@see RecordEmailSend},
+ * so sends that pass concurrently before any of them lands can still push
+ * the total past the limit by roughly as many as are genuinely in flight at
+ * once - it bounds the thundering-herd case, not every possible interleaving.
  */
 class SuppressEmailOverHardLimit
 {
@@ -80,19 +91,45 @@ class SuppressEmailOverHardLimit
 
         $month = Carbon::now();
 
-        if ($organization->hasCrossedEmailLimitThisMonth(EmailLimitCrossing::TYPE_HARD, $month)) {
+        if ($organization->hard_email_limit_override !== null
+            && $organization->hasCrossedEmailLimitThisMonth(EmailLimitCrossing::TYPE_HARD, $month)) {
             return false;
         }
 
-        return Cache::lock("organization:{$organization->id}:hard-email-limit-check", 10)
-            ->block(5, function () use ($organization, $hardLimit, $month): bool {
-                if ($organization->emailSendsCountForMonth($month) < $hardLimit) {
-                    return true;
-                }
+        if ($organization->emailSendsCountForMonth($month) < $hardLimit) {
+            return true;
+        }
 
-                $organization->recordEmailLimitCrossing(EmailLimitCrossing::TYPE_HARD, $month);
+        $decide = function () use ($organization, $hardLimit, $month): bool {
+            if ($organization->emailSendsCountForMonth($month) < $hardLimit) {
+                return true;
+            }
 
-                return false;
-            });
+            $organization->recordEmailLimitCrossing(EmailLimitCrossing::TYPE_HARD, $month);
+
+            return false;
+        };
+
+        $lock = Cache::lock(self::lockKeyFor($organization->id), 10);
+
+        if (! $lock->get()) {
+            return $decide();
+        }
+
+        try {
+            return $decide();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * The per-organization lock name serializing the decide-and-record step
+     * above, exposed so tests can exercise contention against the exact key
+     * production uses rather than a copy that could silently drift from it.
+     */
+    public static function lockKeyFor(int $organizationId): string
+    {
+        return "organization:{$organizationId}:hard-email-limit-check";
     }
 }

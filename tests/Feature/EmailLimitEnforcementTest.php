@@ -1,10 +1,13 @@
 <?php
 
+use App\Listeners\SuppressEmailOverHardLimit;
 use App\Mail\DocumentFullySigned;
 use App\Models\Document;
 use App\Models\EmailLimitCrossing;
 use App\Models\EmailSend;
 use App\Models\Organization;
+use App\Models\PlatformSetting;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -206,18 +209,69 @@ test('once the soft limit is crossed, a further send skips the Organization look
 
 test('the hard-limit check serializes under a per-organization lock, so a held lock blocks a concurrent evaluation', function () {
     $organization = Organization::factory()->create(['hard_email_limit_override' => 1]);
+    $lockKey = SuppressEmailOverHardLimit::lockKeyFor($organization->id);
 
-    $heldLock = Cache::lock("organization:{$organization->id}:hard-email-limit-check", 10);
+    $heldLock = Cache::lock($lockKey, 10);
     expect($heldLock->get())->toBeTrue();
 
     // A second evaluation for the same organization cannot acquire the lock
     // while the first is still "in flight" deciding whether to allow a send.
-    $contendingLock = Cache::lock("organization:{$organization->id}:hard-email-limit-check", 10);
+    $contendingLock = Cache::lock($lockKey, 10);
     expect($contendingLock->get())->toBeFalse();
 
     $heldLock->release();
 
-    expect(Cache::lock("organization:{$organization->id}:hard-email-limit-check", 10)->get())->toBeTrue();
+    expect(Cache::lock($lockKey, 10)->get())->toBeTrue();
+});
+
+test('a held lock does not block the send or throw - it decides unlocked instead', function () {
+    $organization = Organization::factory()->create(['hard_email_limit_override' => 1]);
+
+    sendTrackedEmail($organization);
+
+    $lock = Cache::lock(SuppressEmailOverHardLimit::lockKeyFor($organization->id), 10);
+    expect($lock->get())->toBeTrue();
+
+    // Simulates another concurrent evaluation already holding the lock: this
+    // send must still decide - unlocked - rather than blocking on it (and
+    // risking a LockTimeoutException deep inside Mailer::shouldSendMessage).
+    sendTrackedEmail($organization);
+
+    $lock->release();
+
+    expect(EmailSend::query()->where('organization_id', $organization->id)->count())->toBe(1)
+        ->and(EmailLimitCrossing::query()
+            ->where('organization_id', $organization->id)
+            ->where('type', EmailLimitCrossing::TYPE_HARD)
+            ->exists())->toBeTrue();
+});
+
+test('an organization without a hard limit override never short-circuits on a recorded crossing, so a higher default limit resumes sending immediately', function () {
+    PlatformSetting::current()->update(['expected_emails_per_user_per_month' => 1]);
+    $organization = Organization::factory()->create();
+    // An explicit user_id, since Document::factory()'s default creates a
+    // fresh active employee per call - which would inflate this
+    // organization's default limit on every send and defeat the test.
+    $employee = User::factory()->create(['organization_id' => $organization->id, 'is_active' => true]);
+    $document = Document::factory()->create(['organization_id' => $organization->id, 'user_id' => $employee->id]);
+
+    Mail::to('someone@example.com')->send(new DocumentFullySigned($document));
+    Mail::to('someone@example.com')->send(new DocumentFullySigned($document));
+
+    expect(EmailSend::query()->where('organization_id', $organization->id)->count())->toBe(1)
+        ->and(EmailLimitCrossing::query()
+            ->where('organization_id', $organization->id)
+            ->where('type', EmailLimitCrossing::TYPE_HARD)
+            ->exists())->toBeTrue();
+
+    // Raises the default (computed) limit without touching
+    // hard_email_limit_override, so OrganizationObserver never fires - this
+    // only works because the short-circuit itself never applies here.
+    User::factory()->create(['organization_id' => $organization->id, 'is_active' => true]);
+
+    Mail::to('someone@example.com')->send(new DocumentFullySigned($document));
+
+    expect(EmailSend::query()->where('organization_id', $organization->id)->count())->toBe(2);
 });
 
 test('hasCrossedEmailLimitThisMonth and recordEmailLimitCrossing operate on the given month, not the wall-clock month', function () {

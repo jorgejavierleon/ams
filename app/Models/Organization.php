@@ -119,7 +119,7 @@ class Organization extends Model
         EmailLimitCrossing::firstOrCreate([
             'organization_id' => $this->id,
             'type' => $type,
-            'month' => $month->clone()->startOfMonth()->toDateString(),
+            'month' => EmailLimitCrossing::monthKey($month),
         ]);
     }
 
