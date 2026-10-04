@@ -416,8 +416,28 @@ const FEATURES: Feature[] = [
     },
 ];
 
+/** Placeholder stock photo shared by every feature for now (bundled locally under `public/images` so it always renders, no external network call) — swap for per-feature photography later by pointing this at a different file per feature. */
+const FEATURE_PHOTO_SRC = '/images/feature-placeholder.webp';
+
+/** A fixed-size photo frame, shared by every feature, with the mockup card anchored to its bottom-right corner and nudged further out past that corner — so the photo's top-left stays clearly visible instead of being covered by the card. The frame's own size never depends on `children`, so it stays put (no resize/refade) while whatever's inside it changes. Purely decorative — the photo carries no information the text and mockup don't already give. */
+function FeatureVisualFrame({ children }: { children: ReactNode }) {
+    return (
+        <div className="relative mb-16 h-80 w-72 sm:mb-20 sm:h-[26rem] sm:w-96 md:mt-[158px] md:mb-32">
+            <img
+                src={FEATURE_PHOTO_SRC}
+                alt=""
+                loading="lazy"
+                className="absolute inset-0 h-full w-full rounded-2xl object-cover shadow-lg"
+            />
+            <div className="absolute -right-6 -bottom-4 z-10 md:-right-[200px] md:-bottom-[105px]">
+                {children}
+            </div>
+        </div>
+    );
+}
+
 /** A single feature's text block for the static (below-md) stacked layout. */
-function FeatureRow({ number, title, body, visual, highlight }: Feature) {
+function FeatureRow({ title, body, visual, highlight }: Feature) {
     return (
         <div
             className={cn(
@@ -426,23 +446,18 @@ function FeatureRow({ number, title, body, visual, highlight }: Feature) {
             )}
         >
             <div className="flex max-w-md flex-1 flex-col gap-3">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-muted-foreground">
-                        {number}
-                    </span>
-                    {highlight && (
-                        <Badge className="bg-brand-coral text-brand-coral-foreground">
-                            Exclusivo de Kolvi
-                        </Badge>
-                    )}
-                </div>
-                <h3 className="text-2xl font-bold tracking-tight">{title}</h3>
-                <p className="text-base leading-relaxed text-muted-foreground">
+                {highlight && (
+                    <Badge className="w-fit bg-brand-coral text-brand-coral-foreground">
+                        Exclusivo de Kolvi
+                    </Badge>
+                )}
+                <h3 className="text-3xl font-bold tracking-tight">{title}</h3>
+                <p className="text-lg leading-relaxed text-muted-foreground">
                     {body}
                 </p>
             </div>
             <div className="flex flex-1 items-center justify-center">
-                {visual}
+                <FeatureVisualFrame>{visual}</FeatureVisualFrame>
             </div>
         </div>
     );
@@ -477,27 +492,22 @@ function FeatureTextBlock({
                 isActive ? 'opacity-100' : 'opacity-40',
             )}
         >
-            <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-muted-foreground">
-                    {feature.number}
-                </span>
-                {feature.highlight && (
-                    <Badge className="bg-brand-coral text-brand-coral-foreground">
-                        Exclusivo de Kolvi
-                    </Badge>
-                )}
-            </div>
-            <h3 className="text-2xl font-bold tracking-tight">
+            {feature.highlight && (
+                <Badge className="w-fit bg-brand-coral text-brand-coral-foreground">
+                    Exclusivo de Kolvi
+                </Badge>
+            )}
+            <h3 className="text-3xl font-bold tracking-tight">
                 {feature.title}
             </h3>
-            <p className="text-base leading-relaxed text-muted-foreground">
+            <p className="text-lg leading-relaxed text-muted-foreground">
                 {feature.body}
             </p>
         </div>
     );
 }
 
-/** The pinned visual panel: crossfades between features as the active one changes. Purely decorative — the text column already carries every feature's content. */
+/** The pinned visual panel: the photo frame stays mounted and stays put while only the active feature's mockup card crossfades inside it. Purely decorative — the text column already carries every feature's content. */
 function FeatureVisualPanel({ feature }: { feature: Feature }) {
     const reduceMotion = useReducedMotion();
 
@@ -505,19 +515,21 @@ function FeatureVisualPanel({ feature }: { feature: Feature }) {
         <div
             aria-hidden="true"
             inert
-            className="sticky top-28 hidden self-start md:flex md:h-[28rem] md:w-full md:items-center md:justify-center"
+            className="sticky top-28 hidden self-start md:flex md:w-full md:items-center md:justify-start"
         >
-            <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                    key={feature.number}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: reduceMotion ? 0 : 0.35 }}
-                >
-                    {feature.visual}
-                </motion.div>
-            </AnimatePresence>
+            <FeatureVisualFrame>
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                        key={feature.number}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: reduceMotion ? 0 : 0.35 }}
+                    >
+                        {feature.visual}
+                    </motion.div>
+                </AnimatePresence>
+            </FeatureVisualFrame>
         </div>
     );
 }
@@ -895,8 +907,7 @@ export default function Landing() {
                 </section>
 
                 <section id="funciones" className="py-20">
-                    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 pb-6">
-                        <SectionEyebrow>Funciones</SectionEyebrow>
+                    <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-6 pb-6 text-center">
                         <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-balance sm:text-4xl">
                             Todo lo que pide la ley, en un solo lugar.
                         </h2>
@@ -927,7 +938,6 @@ export default function Landing() {
                 <section id="como-funciona" className="border-y bg-card py-20">
                     <div className="mx-auto flex max-w-7xl flex-col gap-10 px-6">
                         <div className="flex flex-col gap-4">
-                            <SectionEyebrow>Cómo funciona</SectionEyebrow>
                             <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-balance sm:text-4xl">
                                 En marcha en una tarde.
                             </h2>
@@ -954,7 +964,6 @@ export default function Landing() {
 
                 <section id="planes" className="py-20">
                     <div className="mx-auto flex max-w-2xl flex-col items-center gap-5 px-6 text-center">
-                        <SectionEyebrow>Planes</SectionEyebrow>
                         <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
                             Un plan a la medida de tu organización.
                         </h2>
@@ -973,9 +982,6 @@ export default function Landing() {
                 <section id="faq" className="border-t bg-card py-20">
                     <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 sm:grid-cols-2">
                         <div className="flex flex-col gap-4">
-                            <SectionEyebrow>
-                                Preguntas frecuentes
-                            </SectionEyebrow>
                             <h2 className="max-w-md text-3xl font-bold tracking-tight text-balance sm:text-4xl">
                                 Lo que suelen preguntarnos.
                             </h2>
