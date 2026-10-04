@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Bot, ChevronDown, Mail, MapPin, Phone } from 'lucide-react';
+import { Bot, ChevronDown, Mail, MapPin, Menu, Phone } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { useState } from 'react';
 import LeadController from '@/actions/App/Http/Controllers/LeadController';
@@ -14,6 +14,14 @@ import {
 } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -53,6 +61,26 @@ function NavAnchor({ href, children }: { href: string; children: ReactNode }) {
         <a
             href={href}
             className="text-sm font-medium text-white/70 transition-colors hover:text-white"
+        >
+            {children}
+        </a>
+    );
+}
+
+function MobileNavAnchor({
+    href,
+    children,
+    onNavigate,
+}: {
+    href: string;
+    children: ReactNode;
+    onNavigate: () => void;
+}) {
+    return (
+        <a
+            href={href}
+            onClick={onNavigate}
+            className="text-base font-medium text-foreground transition-colors hover:text-brand-coral"
         >
             {children}
         </a>
@@ -554,6 +582,7 @@ function LeadContactForm() {
 
 export default function Landing() {
     const { auth } = usePage().props;
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
     return (
         <>
@@ -587,6 +616,66 @@ export default function Landing() {
                             >
                                 <a href="#contacto">Contáctanos</a>
                             </Button>
+                            <Sheet
+                                open={mobileNavOpen}
+                                onOpenChange={setMobileNavOpen}
+                            >
+                                <SheetTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label="Abrir menú de navegación"
+                                        className="text-white hover:bg-white/10 hover:text-white md:hidden"
+                                    >
+                                        <Menu className="size-5" />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="left">
+                                    <SheetHeader className="sr-only">
+                                        <SheetTitle>
+                                            Menú de navegación
+                                        </SheetTitle>
+                                        <SheetDescription>
+                                            Enlaces a las secciones de la
+                                            página
+                                        </SheetDescription>
+                                    </SheetHeader>
+                                    <nav className="flex flex-col gap-6 p-6">
+                                        <MobileNavAnchor
+                                            href="#funciones"
+                                            onNavigate={() =>
+                                                setMobileNavOpen(false)
+                                            }
+                                        >
+                                            Funciones
+                                        </MobileNavAnchor>
+                                        <MobileNavAnchor
+                                            href="#como-funciona"
+                                            onNavigate={() =>
+                                                setMobileNavOpen(false)
+                                            }
+                                        >
+                                            Cómo funciona
+                                        </MobileNavAnchor>
+                                        <MobileNavAnchor
+                                            href="#planes"
+                                            onNavigate={() =>
+                                                setMobileNavOpen(false)
+                                            }
+                                        >
+                                            Planes
+                                        </MobileNavAnchor>
+                                        <MobileNavAnchor
+                                            href="#faq"
+                                            onNavigate={() =>
+                                                setMobileNavOpen(false)
+                                            }
+                                        >
+                                            Preguntas
+                                        </MobileNavAnchor>
+                                    </nav>
+                                </SheetContent>
+                            </Sheet>
                         </div>
                     </div>
                 </header>
