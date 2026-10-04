@@ -577,8 +577,8 @@ export default function Landing() {
                                 t: 'reducción legal de la jornada semanal, aplicada sin configurar nada',
                             },
                             {
-                                n: '6 reportes',
-                                t: 'exportables para la Dirección del Trabajo en un clic',
+                                n: '100%',
+                                t: 'de las marcas con comprobante firmado y folio, listas para una fiscalización',
                             },
                             {
                                 n: '0 planillas',
