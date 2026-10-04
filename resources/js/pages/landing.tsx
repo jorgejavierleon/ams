@@ -714,16 +714,15 @@ export default function Landing() {
                             ¿List@ para dejar las planillas?
                         </h2>
                         <p className="text-base leading-relaxed text-muted-foreground">
-                            Agenda una demo de 20 minutos y te mostramos Kolvi
-                            funcionando con datos parecidos a los de tu
-                            empresa.
+                            Cuéntanos tu caso y te contactamos en menos de 24
+                            horas.
                         </p>
                         <Button
                             asChild
                             size="lg"
                             className="bg-brand-coral text-brand-coral-foreground hover:bg-brand-coral/90"
                         >
-                            <a href="#demo">Agendar demo</a>
+                            <a href="#contacto">Contáctanos</a>
                         </Button>
                     </div>
                 </section>
