@@ -711,7 +711,7 @@ export default function Landing() {
                 <section className="border-y bg-muted/30 py-14">
                     <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-6 text-center">
                         <h2 className="text-2xl font-bold tracking-tight text-balance sm:text-3xl">
-                            ¿List@ para dejar las planillas?
+                            ¿Listo para dejar las planillas?
                         </h2>
                         <p className="text-base leading-relaxed text-muted-foreground">
                             Cuéntanos tu caso y te contactamos en menos de 24
