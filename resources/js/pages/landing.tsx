@@ -1,8 +1,8 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Bot, ChevronDown, MapPin } from 'lucide-react';
+import { Bot, ChevronDown, Mail, MapPin, Phone } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { useState } from 'react';
-import DemoRequestController from '@/actions/App/Http/Controllers/DemoRequestController';
+import LeadController from '@/actions/App/Http/Controllers/LeadController';
 import AppLogo from '@/components/app-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { dashboard, home, login } from '@/routes';
 
@@ -352,7 +353,7 @@ function FeatureRow({ number, title, body, visual, reverse, highlight }: Feature
     return (
         <div
             className={cn(
-                'mx-auto flex max-w-6xl flex-col items-center gap-10 px-6 py-10 md:flex-row md:gap-14',
+                'mx-auto flex max-w-7xl flex-col items-center gap-10 px-6 py-10 md:flex-row md:gap-14',
                 reverse && 'md:flex-row-reverse',
                 highlight && 'rounded-2xl border border-primary/20 bg-primary/5',
             )}
@@ -437,14 +438,19 @@ const FAQS = [
     },
 ];
 
-function DemoRequestForm() {
-    const { data, setData, post, processing, errors } = useForm({ email: '' });
+function LeadContactForm() {
+    const { data, setData, post, processing, errors } = useForm({
+        name: '',
+        company: '',
+        email: '',
+        message: '',
+    });
     const [submitted, setSubmitted] = useState(false);
 
     function submit(event: FormEvent) {
         event.preventDefault();
 
-        post(DemoRequestController.store().url, {
+        post(LeadController.store().url, {
             preserveScroll: true,
             onSuccess: () => setSubmitted(true),
         });
@@ -453,29 +459,84 @@ function DemoRequestForm() {
     if (submitted) {
         return (
             <div className="rounded-lg bg-success-bg px-5 py-4 text-sm font-medium text-success">
-                Listo. Te escribiremos a {data.email} para coordinar la demo.
+                Listo. Te escribiremos a {data.email} en menos de 24 horas.
             </div>
         );
     }
 
     return (
-        <form onSubmit={submit} className="flex flex-col gap-2 sm:flex-row sm:items-start">
-            <div className="flex-1">
-                <Label htmlFor="demo-email" className="sr-only">
-                    Correo electrónico
-                </Label>
+        <form onSubmit={submit} className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                    <Label htmlFor="demo-name">Nombre completo</Label>
+                    <Input
+                        id="demo-name"
+                        required
+                        value={data.name}
+                        onChange={(event) =>
+                            setData('name', event.target.value)
+                        }
+                        placeholder="Juan Pérez"
+                        className="mt-1.5"
+                    />
+                    {errors.name && (
+                        <p className="mt-1 text-xs text-destructive">
+                            {errors.name}
+                        </p>
+                    )}
+                </div>
+                <div>
+                    <Label htmlFor="demo-email">Correo electrónico</Label>
+                    <Input
+                        id="demo-email"
+                        type="email"
+                        required
+                        value={data.email}
+                        onChange={(event) =>
+                            setData('email', event.target.value)
+                        }
+                        placeholder="correo@empresa.cl"
+                        className="mt-1.5"
+                    />
+                    {errors.email && (
+                        <p className="mt-1 text-xs text-destructive">
+                            {errors.email}
+                        </p>
+                    )}
+                </div>
+            </div>
+            <div>
+                <Label htmlFor="demo-company">Empresa (opcional)</Label>
                 <Input
-                    id="demo-email"
-                    type="email"
-                    required
-                    value={data.email}
-                    onChange={(event) => setData('email', event.target.value)}
-                    placeholder="correo@empresa.cl"
-                    className="bg-background text-foreground"
+                    id="demo-company"
+                    value={data.company}
+                    onChange={(event) =>
+                        setData('company', event.target.value)
+                    }
+                    placeholder="Nombre de tu empresa"
+                    className="mt-1.5"
                 />
-                {errors.email && (
+                {errors.company && (
                     <p className="mt-1 text-xs text-destructive">
-                        {errors.email}
+                        {errors.company}
+                    </p>
+                )}
+            </div>
+            <div>
+                <Label htmlFor="demo-message">Mensaje (opcional)</Label>
+                <Textarea
+                    id="demo-message"
+                    value={data.message}
+                    onChange={(event) =>
+                        setData('message', event.target.value)
+                    }
+                    placeholder="Cuéntanos sobre tu empresa o qué te gustaría ver en la demo."
+                    className="mt-1.5"
+                    rows={3}
+                />
+                {errors.message && (
+                    <p className="mt-1 text-xs text-destructive">
+                        {errors.message}
                     </p>
                 )}
             </div>
@@ -485,7 +546,7 @@ function DemoRequestForm() {
                 className="bg-brand-coral text-brand-coral-foreground hover:bg-brand-coral/90"
             >
                 {processing && <Spinner />}
-                Agendar demo
+                Contáctanos
             </Button>
         </form>
     );
@@ -500,7 +561,7 @@ export default function Landing() {
 
             <div className="min-h-screen bg-background text-foreground">
                 <header className="sticky top-0 z-40 bg-brand-navy-deep">
-                    <div className="mx-auto flex max-w-6xl items-center gap-8 px-6 py-4">
+                    <div className="mx-auto flex max-w-7xl items-center gap-8 px-6 py-4">
                         <Link href={home()} className="flex items-center">
                             <AppLogo variant="light" />
                         </Link>
@@ -524,14 +585,14 @@ export default function Landing() {
                                 size="sm"
                                 className="bg-brand-coral text-white hover:bg-brand-coral/90"
                             >
-                                <a href="#demo">Agendar demo</a>
+                                <a href="#contacto">Contáctanos</a>
                             </Button>
                         </div>
                     </div>
                 </header>
 
                 <section className="bg-brand-navy-deep">
-                    <div className="mx-auto flex max-w-6xl flex-col items-center gap-14 px-6 pt-16 pb-10 md:flex-row md:items-end md:pt-24">
+                    <div className="mx-auto flex max-w-7xl flex-col items-center gap-14 px-6 pt-16 pb-10 md:flex-row md:items-end md:pt-24">
                         <div className="flex max-w-xl flex-col gap-6">
                             <SectionEyebrow>
                                 Control de asistencia · Ley de 40 horas
@@ -551,7 +612,7 @@ export default function Landing() {
                                     size="lg"
                                     className="bg-brand-coral text-brand-coral-foreground hover:bg-brand-coral/90"
                                 >
-                                    <a href="#demo">Agendar demo</a>
+                                    <a href="#contacto">Contáctanos</a>
                                 </Button>
                                 <Button
                                     asChild
@@ -563,14 +624,14 @@ export default function Landing() {
                                 </Button>
                             </div>
                         </div>
-                        <div className="w-full max-w-md flex-1">
+                        <div className="w-full max-w-xl flex-1">
                             <ComplianceCard />
                         </div>
                     </div>
                 </section>
 
                 <section className="border-y bg-card">
-                    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-6 py-8 sm:grid-cols-3">
+                    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-8 sm:grid-cols-3">
                         {[
                             {
                                 n: '44h → 40h',
@@ -598,7 +659,7 @@ export default function Landing() {
                 </section>
 
                 <section id="funciones" className="py-20">
-                    <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 pb-6">
+                    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 pb-6">
                         <SectionEyebrow>Funciones</SectionEyebrow>
                         <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-balance sm:text-4xl">
                             Todo lo que pide la ley, en un solo lugar.
@@ -648,7 +709,7 @@ export default function Landing() {
                 </section>
 
                 <section id="como-funciona" className="border-y bg-card py-20">
-                    <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6">
+                    <div className="mx-auto flex max-w-7xl flex-col gap-10 px-6">
                         <div className="flex flex-col gap-4">
                             <SectionEyebrow>Cómo funciona</SectionEyebrow>
                             <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-balance sm:text-4xl">
@@ -688,13 +749,13 @@ export default function Landing() {
                             armamos una propuesta a medida.
                         </p>
                         <Button asChild size="lg">
-                            <a href="#demo">Hablar con ventas</a>
+                            <a href="#contacto">Hablar con ventas</a>
                         </Button>
                     </div>
                 </section>
 
                 <section id="faq" className="border-t bg-card py-20">
-                    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 sm:grid-cols-2">
+                    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 sm:grid-cols-2">
                         <div className="flex flex-col gap-4">
                             <SectionEyebrow>
                                 Preguntas frecuentes
@@ -711,30 +772,67 @@ export default function Landing() {
                     </div>
                 </section>
 
-                <section id="demo" className="bg-primary py-20 text-primary-foreground">
-                    <div className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-6 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex max-w-md flex-col gap-3">
-                            <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
-                                Prepárate para tu próxima fiscalización.
-                            </h2>
-                            <p className="text-base leading-relaxed text-primary-foreground/80">
-                                Te mostramos Kolvi con datos parecidos a los
-                                de tu empresa en 20 minutos.
-                            </p>
+                <section id="contacto" className="bg-primary py-20 text-primary-foreground">
+                    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 lg:grid-cols-[1fr_1.4fr] lg:items-stretch">
+                        <div className="relative flex flex-col justify-between gap-8 overflow-hidden rounded-2xl bg-primary-foreground/5 p-8 ring-1 ring-primary-foreground/15">
+                            <div
+                                aria-hidden
+                                className="absolute -top-10 -right-10 size-40 rounded-full bg-brand-coral/20 blur-2xl"
+                            />
+                            <div className="relative flex flex-col gap-3">
+                                <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+                                    Prepárate para tu próxima fiscalización.
+                                </h2>
+                                <p className="text-base leading-relaxed text-primary-foreground/80">
+                                    Escríbenos con tus dudas, pide una demo o
+                                    conversemos de precios. Te contactamos en
+                                    menos de 24 horas.
+                                </p>
+                            </div>
+                            <div className="relative flex flex-col gap-3">
+                                <a
+                                    href="mailto:contacto@kolvi.cl"
+                                    className="flex items-center gap-3 text-sm font-medium text-primary-foreground/90 hover:text-primary-foreground"
+                                >
+                                    <span className="flex size-9 items-center justify-center rounded-full bg-primary-foreground/10">
+                                        <Mail className="size-4" />
+                                    </span>
+                                    contacto@kolvi.cl
+                                </a>
+                                <a
+                                    href="tel:+56976833067"
+                                    className="flex items-center gap-3 text-sm font-medium text-primary-foreground/90 hover:text-primary-foreground"
+                                >
+                                    <span className="flex size-9 items-center justify-center rounded-full bg-primary-foreground/10">
+                                        <Phone className="size-4" />
+                                    </span>
+                                    +56 9 7683 3067
+                                </a>
+                            </div>
                         </div>
-                        <div className="w-full sm:max-w-sm">
-                            <DemoRequestForm />
-                        </div>
+                        <Card className="gap-4 p-8">
+                            <div className="flex flex-col gap-1.5">
+                                <h3 className="text-xl font-bold tracking-tight text-foreground">
+                                    Envíanos un mensaje
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Cuéntanos sobre tu empresa o tus preguntas
+                                    de precio y te contactamos en menos de 24
+                                    horas.
+                                </p>
+                            </div>
+                            <LeadContactForm />
+                        </Card>
                     </div>
                 </section>
 
                 <footer className="border-t py-8">
-                    <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
+                    <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
                         <Link href={home()} className="flex items-center">
                             <AppLogo />
                         </Link>
                         <a
-                            href="#demo"
+                            href="#contacto"
                             className="text-sm font-medium text-muted-foreground hover:text-foreground"
                         >
                             Contacto
