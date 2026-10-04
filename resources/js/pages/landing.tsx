@@ -647,6 +647,26 @@ export default function Landing() {
                     />
                 </section>
 
+                <section className="border-y bg-muted/30 py-14">
+                    <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-6 text-center">
+                        <h2 className="text-2xl font-bold tracking-tight text-balance sm:text-3xl">
+                            ¿List@ para dejar las planillas?
+                        </h2>
+                        <p className="text-base leading-relaxed text-muted-foreground">
+                            Agenda una demo de 20 minutos y te mostramos Kolvi
+                            funcionando con datos parecidos a los de tu
+                            empresa.
+                        </p>
+                        <Button
+                            asChild
+                            size="lg"
+                            className="bg-brand-coral text-brand-coral-foreground hover:bg-brand-coral/90"
+                        >
+                            <a href="#demo">Agendar demo</a>
+                        </Button>
+                    </div>
+                </section>
+
                 <section id="como-funciona" className="border-y bg-card py-20">
                     <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6">
                         <div className="flex flex-col gap-4">
