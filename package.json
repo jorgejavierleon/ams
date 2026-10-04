@@ -62,6 +62,7 @@
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "concurrently": "^9.0.1",
+        "framer-motion": "^14.0.0",
         "globals": "^15.14.0",
         "laravel-vite-plugin": "^3.0.0",
         "leaflet": "^1.9.4",

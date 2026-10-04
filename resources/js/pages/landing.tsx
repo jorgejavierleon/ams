@@ -1,7 +1,8 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion';
 import { Bot, ChevronDown, Mail, MapPin, Menu, Phone } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import LeadController from '@/actions/App/Http/Controllers/LeadController';
 import AppLogo from '@/components/app-logo';
 import { Badge } from '@/components/ui/badge';
@@ -367,21 +368,60 @@ function AssistantChatCard() {
     );
 }
 
-type FeatureRow = {
+type Feature = {
     number: string;
     title: string;
     body: string;
     visual: ReactNode;
-    reverse?: boolean;
     highlight?: boolean;
 };
 
-function FeatureRow({ number, title, body, visual, reverse, highlight }: FeatureRow) {
+const FEATURES: Feature[] = [
+    {
+        number: '01',
+        title: 'Marcación con geocerca',
+        body: 'Entrada, salida y descansos desde el celular o el computador, dentro del radio de cada sucursal. Un máximo de una marca por día y un comprobante firmado con folio respaldan cada registro (Resolución 38, Art. 13).',
+        visual: <ClockPreviewCard />,
+    },
+    {
+        number: '02',
+        title: 'Horas extra bajo control',
+        body: 'Pactos de horas extra, el límite legal en su fase de reducción de 44 a 40 horas, y un flujo de autorización antes de que la hora se trabaje. La compensación se paga o se descansa, como la ley exige.',
+        visual: <OvertimeAlertsCard />,
+    },
+    {
+        number: '03',
+        title: 'Reportes listos para la Dirección del Trabajo',
+        body: 'Maestro de Trabajadores, Resumen de Remuneraciones, Movimientos del Período, Detalle Semanal y Excesos de Jornada y HHEE. Exporte el formato que pide la fiscalización sin armar una sola planilla.',
+        visual: <ReportsCard />,
+    },
+    {
+        number: '04',
+        title: 'Licencias y vacaciones sin cruce de planillas',
+        body: 'Vacaciones, licencias médicas, permisos con y sin goce de sueldo, con un flujo de aprobación del supervisor y un calendario compartido por sucursal para ver quién está disponible cada día.',
+        visual: <LeaveRequestsCard />,
+    },
+    {
+        number: '05',
+        title: 'Documentos con plantillas y firma electrónica simple',
+        body: 'Contratos, anexos, pactos y certificados desde una plantilla reutilizable con variables como nombre, cargo o sueldo. Se generan por trabajador y se envían a firma electrónica simple (Ley 19.799), con su estado de firma al día.',
+        visual: <DocumentTemplatesCard />,
+    },
+    {
+        number: '06',
+        title: 'Gestiona todo con un asistente de IA',
+        body: 'El servidor MCP de Kolvi conecta tu organización a un asistente de inteligencia artificial: aprueba licencias, autoriza horas extra, genera reportes de nómina o envía documentos a firma, todo con instrucciones en lenguaje natural — sin abrir el panel.',
+        visual: <AssistantChatCard />,
+        highlight: true,
+    },
+];
+
+/** A single feature's text block for the static (below-md) stacked layout. */
+function FeatureRow({ number, title, body, visual, highlight }: Feature) {
     return (
         <div
             className={cn(
-                'mx-auto flex max-w-7xl flex-col items-center gap-10 px-6 py-10 md:flex-row md:gap-14',
-                reverse && 'md:flex-row-reverse',
+                'mx-auto flex max-w-7xl flex-col items-center gap-10 px-6 py-10',
                 highlight && 'rounded-2xl border border-primary/20 bg-primary/5',
             )}
         >
@@ -405,6 +445,110 @@ function FeatureRow({ number, title, body, visual, reverse, highlight }: Feature
                 {visual}
             </div>
         </div>
+    );
+}
+
+/** A single feature's text block for the pinned-visual (md+) scrollytelling layout. */
+function FeatureTextBlock({
+    feature,
+    index,
+    isActive,
+    onActivate,
+}: {
+    feature: Feature;
+    index: number;
+    isActive: boolean;
+    onActivate: (index: number) => void;
+}) {
+    const ref = useRef<HTMLDivElement>(null);
+    const inView = useInView(ref, { margin: '-45% 0px -45% 0px' });
+
+    useEffect(() => {
+        if (inView) {
+            onActivate(index);
+        }
+    }, [inView, index, onActivate]);
+
+    return (
+        <div
+            ref={ref}
+            className={cn(
+                'flex min-h-[70vh] max-w-md flex-col justify-center gap-3 py-10 transition-opacity duration-300 motion-reduce:transition-none',
+                isActive ? 'opacity-100' : 'opacity-40',
+            )}
+        >
+            <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-muted-foreground">
+                    {feature.number}
+                </span>
+                {feature.highlight && (
+                    <Badge className="bg-brand-coral text-brand-coral-foreground">
+                        Exclusivo de Kolvi
+                    </Badge>
+                )}
+            </div>
+            <h3 className="text-2xl font-bold tracking-tight">
+                {feature.title}
+            </h3>
+            <p className="text-base leading-relaxed text-muted-foreground">
+                {feature.body}
+            </p>
+        </div>
+    );
+}
+
+/** The pinned visual panel: crossfades between features as the active one changes. Purely decorative — the text column already carries every feature's content. */
+function FeatureVisualPanel({ feature }: { feature: Feature }) {
+    const reduceMotion = useReducedMotion();
+
+    return (
+        <div
+            aria-hidden="true"
+            inert
+            className="sticky top-28 hidden self-start md:flex md:h-[28rem] md:w-full md:items-center md:justify-center"
+        >
+            <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                    key={feature.number}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.35 }}
+                >
+                    {feature.visual}
+                </motion.div>
+            </AnimatePresence>
+        </div>
+    );
+}
+
+/** Scrollytelling layout for the Funciones section: a pinned visual crossfades while the matching description scrolls past. Falls back to a static stacked layout below md. */
+function FeatureShowcase() {
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    return (
+        <>
+            <div className="mx-auto hidden max-w-7xl gap-14 px-6 md:grid md:grid-cols-2">
+                <div className="flex flex-col">
+                    {FEATURES.map((feature, index) => (
+                        <FeatureTextBlock
+                            key={feature.number}
+                            feature={feature}
+                            index={index}
+                            isActive={index === activeIndex}
+                            onActivate={setActiveIndex}
+                        />
+                    ))}
+                </div>
+                <FeatureVisualPanel feature={FEATURES[activeIndex]} />
+            </div>
+
+            <div className="flex flex-col md:hidden">
+                {FEATURES.map((feature) => (
+                    <FeatureRow key={feature.number} {...feature} />
+                ))}
+            </div>
+        </>
     );
 }
 
@@ -758,46 +902,7 @@ export default function Landing() {
                         </h2>
                     </div>
 
-                    <FeatureRow
-                        number="01"
-                        title="Marcación con geocerca"
-                        body="Entrada, salida y descansos desde el celular o el computador, dentro del radio de cada sucursal. Un máximo de una marca por día y un comprobante firmado con folio respaldan cada registro (Resolución 38, Art. 13)."
-                        visual={<ClockPreviewCard />}
-                    />
-                    <FeatureRow
-                        number="02"
-                        title="Horas extra bajo control"
-                        body="Pactos de horas extra, el límite legal en su fase de reducción de 44 a 40 horas, y un flujo de autorización antes de que la hora se trabaje. La compensación se paga o se descansa, como la ley exige."
-                        visual={<OvertimeAlertsCard />}
-                        reverse
-                    />
-                    <FeatureRow
-                        number="03"
-                        title="Reportes listos para la Dirección del Trabajo"
-                        body="Maestro de Trabajadores, Resumen de Remuneraciones, Movimientos del Período, Detalle Semanal y Excesos de Jornada y HHEE. Exporte el formato que pide la fiscalización sin armar una sola planilla."
-                        visual={<ReportsCard />}
-                    />
-                    <FeatureRow
-                        number="04"
-                        title="Licencias y vacaciones sin cruce de planillas"
-                        body="Vacaciones, licencias médicas, permisos con y sin goce de sueldo, con un flujo de aprobación del supervisor y un calendario compartido por sucursal para ver quién está disponible cada día."
-                        visual={<LeaveRequestsCard />}
-                        reverse
-                    />
-                    <FeatureRow
-                        number="05"
-                        title="Documentos con plantillas y firma electrónica simple"
-                        body="Contratos, anexos, pactos y certificados desde una plantilla reutilizable con variables como nombre, cargo o sueldo. Se generan por trabajador y se envían a firma electrónica simple (Ley 19.799), con su estado de firma al día."
-                        visual={<DocumentTemplatesCard />}
-                    />
-                    <FeatureRow
-                        number="06"
-                        title="Gestiona todo con un asistente de IA"
-                        body="El servidor MCP de Kolvi conecta tu organización a un asistente de inteligencia artificial: aprueba licencias, autoriza horas extra, genera reportes de nómina o envía documentos a firma, todo con instrucciones en lenguaje natural — sin abrir el panel."
-                        visual={<AssistantChatCard />}
-                        reverse
-                        highlight
-                    />
+                    <FeatureShowcase />
                 </section>
 
                 <section className="border-y bg-muted/30 py-14">
