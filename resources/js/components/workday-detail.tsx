@@ -414,7 +414,7 @@ function AttendanceStrip({ workday }: { workday: WorkdayDetailData }) {
                         <div
                             key={mark.at}
                             className={cn(
-                                'absolute top-[62px] size-3.5 -translate-x-1/2 rounded-full ring-4 ring-card',
+                                'absolute top-[69px] size-3.5 -translate-x-1/2 rounded-full ring-4 ring-card',
                                 mark.late ? 'bg-amber-500' : 'bg-emerald-500',
                             )}
                             style={{ left: `${pct(mark.at)}%` }}
