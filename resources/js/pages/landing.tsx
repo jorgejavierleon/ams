@@ -56,31 +56,30 @@ function TonePill({ tone, children }: { tone: Tone; children: ReactNode }) {
     );
 }
 
-function NavAnchor({ href, children }: { href: string; children: ReactNode }) {
-    return (
-        <a
-            href={href}
-            className="text-sm font-medium text-white/70 transition-colors hover:text-white"
-        >
-            {children}
-        </a>
-    );
-}
+const navAnchorVariantClasses = {
+    header: 'text-sm font-medium text-white/70 hover:text-white',
+    mobile: 'text-base font-medium text-foreground hover:text-brand-coral',
+};
 
-function MobileNavAnchor({
+function NavAnchor({
     href,
     children,
+    variant = 'header',
     onNavigate,
 }: {
     href: string;
     children: ReactNode;
-    onNavigate: () => void;
+    variant?: keyof typeof navAnchorVariantClasses;
+    onNavigate?: () => void;
 }) {
     return (
         <a
             href={href}
             onClick={onNavigate}
-            className="text-base font-medium text-foreground transition-colors hover:text-brand-coral"
+            className={cn(
+                'transition-colors',
+                navAnchorVariantClasses[variant],
+            )}
         >
             {children}
         </a>
@@ -630,7 +629,7 @@ export default function Landing() {
                                         <Menu className="size-5" />
                                     </Button>
                                 </SheetTrigger>
-                                <SheetContent side="left">
+                                <SheetContent side="left" closeLabel="Cerrar">
                                     <SheetHeader className="sr-only">
                                         <SheetTitle>
                                             Menú de navegación
@@ -641,38 +640,42 @@ export default function Landing() {
                                         </SheetDescription>
                                     </SheetHeader>
                                     <nav className="flex flex-col gap-6 p-6">
-                                        <MobileNavAnchor
+                                        <NavAnchor
+                                            variant="mobile"
                                             href="#funciones"
                                             onNavigate={() =>
                                                 setMobileNavOpen(false)
                                             }
                                         >
                                             Funciones
-                                        </MobileNavAnchor>
-                                        <MobileNavAnchor
+                                        </NavAnchor>
+                                        <NavAnchor
+                                            variant="mobile"
                                             href="#como-funciona"
                                             onNavigate={() =>
                                                 setMobileNavOpen(false)
                                             }
                                         >
                                             Cómo funciona
-                                        </MobileNavAnchor>
-                                        <MobileNavAnchor
+                                        </NavAnchor>
+                                        <NavAnchor
+                                            variant="mobile"
                                             href="#planes"
                                             onNavigate={() =>
                                                 setMobileNavOpen(false)
                                             }
                                         >
                                             Planes
-                                        </MobileNavAnchor>
-                                        <MobileNavAnchor
+                                        </NavAnchor>
+                                        <NavAnchor
+                                            variant="mobile"
                                             href="#faq"
                                             onNavigate={() =>
                                                 setMobileNavOpen(false)
                                             }
                                         >
                                             Preguntas
-                                        </MobileNavAnchor>
+                                        </NavAnchor>
                                     </nav>
                                 </SheetContent>
                             </Sheet>
