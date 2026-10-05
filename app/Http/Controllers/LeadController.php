@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Lead;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class LeadController extends Controller
 {
@@ -21,9 +22,18 @@ class LeadController extends Controller
             'company' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'message' => ['nullable', 'string', 'max:2000'],
+            // Honeypot (KOL-144): a field real users never see or fill.
+            // Bots that fill every input trip it; the submission is then
+            // silently dropped, responding exactly like a success so the
+            // bot has no signal to adapt to.
+            'website' => ['nullable', 'string'],
         ]);
 
-        Lead::create($data);
+        if (filled($data['website'] ?? null)) {
+            return back();
+        }
+
+        Lead::create(Arr::except($data, 'website'));
 
         return back();
     }

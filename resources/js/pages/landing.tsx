@@ -1,6 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion';
-import { Bot, ChevronDown, Mail, MapPin, Menu, Phone } from 'lucide-react';
+import { Bot, ChevronDown, Mail, MapPin, Menu } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import LeadController from '@/actions/App/Http/Controllers/LeadController';
@@ -627,6 +627,7 @@ function LeadContactForm() {
         company: '',
         email: '',
         message: '',
+        website: '',
     });
     const [submitted, setSubmitted] = useState(false);
 
@@ -648,90 +649,118 @@ function LeadContactForm() {
     }
 
     return (
-        <form onSubmit={submit} className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                    <Label htmlFor="demo-name">Nombre completo</Label>
+        <>
+            <div className="flex flex-col gap-1.5">
+                <h3 className="text-xl font-bold tracking-tight text-foreground">
+                    Envíanos un mensaje
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                    Cuéntanos sobre tu empresa o tus preguntas de precio y te
+                    contactamos en menos de 24 horas.
+                </p>
+            </div>
+            <form onSubmit={submit} className="flex flex-col gap-4">
+                {/* Honeypot (KOL-144): off-screen, never visible or tabbable
+                for a real user. Bots that fill every input trip it, and the
+                submission is silently dropped server-side. */}
+                <div className="absolute left-[-9999px]" aria-hidden="true">
+                    <Label htmlFor="demo-website">Sitio web</Label>
                     <Input
-                        id="demo-name"
-                        required
-                        value={data.name}
+                        id="demo-website"
+                        name="website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={data.website}
                         onChange={(event) =>
-                            setData('name', event.target.value)
+                            setData('website', event.target.value)
                         }
-                        placeholder="Juan Pérez"
+                    />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <Label htmlFor="demo-name">Nombre completo</Label>
+                        <Input
+                            id="demo-name"
+                            required
+                            value={data.name}
+                            onChange={(event) =>
+                                setData('name', event.target.value)
+                            }
+                            placeholder="Juan Pérez"
+                            className="mt-1.5"
+                        />
+                        {errors.name && (
+                            <p className="mt-1 text-xs text-destructive">
+                                {errors.name}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <Label htmlFor="demo-email">Correo electrónico</Label>
+                        <Input
+                            id="demo-email"
+                            type="email"
+                            required
+                            value={data.email}
+                            onChange={(event) =>
+                                setData('email', event.target.value)
+                            }
+                            placeholder="correo@empresa.cl"
+                            className="mt-1.5"
+                        />
+                        {errors.email && (
+                            <p className="mt-1 text-xs text-destructive">
+                                {errors.email}
+                            </p>
+                        )}
+                    </div>
+                </div>
+                <div>
+                    <Label htmlFor="demo-company">Empresa (opcional)</Label>
+                    <Input
+                        id="demo-company"
+                        value={data.company}
+                        onChange={(event) =>
+                            setData('company', event.target.value)
+                        }
+                        placeholder="Nombre de tu empresa"
                         className="mt-1.5"
                     />
-                    {errors.name && (
+                    {errors.company && (
                         <p className="mt-1 text-xs text-destructive">
-                            {errors.name}
+                            {errors.company}
                         </p>
                     )}
                 </div>
                 <div>
-                    <Label htmlFor="demo-email">Correo electrónico</Label>
-                    <Input
-                        id="demo-email"
-                        type="email"
-                        required
-                        value={data.email}
+                    <Label htmlFor="demo-message">Mensaje (opcional)</Label>
+                    <Textarea
+                        id="demo-message"
+                        value={data.message}
                         onChange={(event) =>
-                            setData('email', event.target.value)
+                            setData('message', event.target.value)
                         }
-                        placeholder="correo@empresa.cl"
+                        placeholder="Cuéntanos sobre tu empresa o qué te gustaría ver en la demo."
                         className="mt-1.5"
+                        rows={3}
                     />
-                    {errors.email && (
+                    {errors.message && (
                         <p className="mt-1 text-xs text-destructive">
-                            {errors.email}
+                            {errors.message}
                         </p>
                     )}
                 </div>
-            </div>
-            <div>
-                <Label htmlFor="demo-company">Empresa (opcional)</Label>
-                <Input
-                    id="demo-company"
-                    value={data.company}
-                    onChange={(event) =>
-                        setData('company', event.target.value)
-                    }
-                    placeholder="Nombre de tu empresa"
-                    className="mt-1.5"
-                />
-                {errors.company && (
-                    <p className="mt-1 text-xs text-destructive">
-                        {errors.company}
-                    </p>
-                )}
-            </div>
-            <div>
-                <Label htmlFor="demo-message">Mensaje (opcional)</Label>
-                <Textarea
-                    id="demo-message"
-                    value={data.message}
-                    onChange={(event) =>
-                        setData('message', event.target.value)
-                    }
-                    placeholder="Cuéntanos sobre tu empresa o qué te gustaría ver en la demo."
-                    className="mt-1.5"
-                    rows={3}
-                />
-                {errors.message && (
-                    <p className="mt-1 text-xs text-destructive">
-                        {errors.message}
-                    </p>
-                )}
-            </div>
-            <Button
-                type="submit"
-                disabled={processing}
-                className="bg-brand-coral text-brand-coral-foreground hover:bg-brand-coral/90"
-            >
-                {processing && <Spinner />}
-                Contáctanos
-            </Button>
-        </form>
+                <Button
+                    type="submit"
+                    disabled={processing}
+                    className="bg-brand-coral text-brand-coral-foreground hover:bg-brand-coral/90"
+                >
+                    {processing && <Spinner />}
+                    Contáctanos
+                </Button>
+            </form>
+        </>
     );
 }
 
@@ -1021,28 +1050,9 @@ export default function Landing() {
                                     </span>
                                     contacto@kolvi.cl
                                 </a>
-                                <a
-                                    href="tel:+56976833067"
-                                    className="flex items-center gap-3 text-sm font-medium text-primary-foreground/90 hover:text-primary-foreground"
-                                >
-                                    <span className="flex size-9 items-center justify-center rounded-full bg-primary-foreground/10">
-                                        <Phone className="size-4" />
-                                    </span>
-                                    +56 9 7683 3067
-                                </a>
                             </div>
                         </div>
                         <Card className="gap-4 p-8">
-                            <div className="flex flex-col gap-1.5">
-                                <h3 className="text-xl font-bold tracking-tight text-foreground">
-                                    Envíanos un mensaje
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                    Cuéntanos sobre tu empresa o tus preguntas
-                                    de precio y te contactamos en menos de 24
-                                    horas.
-                                </p>
-                            </div>
                             <LeadContactForm />
                         </Card>
                     </div>
@@ -1053,12 +1063,6 @@ export default function Landing() {
                         <Link href={home()} className="flex items-center">
                             <AppLogo />
                         </Link>
-                        <a
-                            href="#contacto"
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground"
-                        >
-                            Contacto
-                        </a>
                         <p className="text-sm text-muted-foreground">
                             © 2026 Kolvi · Santiago, Chile
                         </p>

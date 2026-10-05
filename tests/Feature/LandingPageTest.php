@@ -54,3 +54,13 @@ test('a lead requires a valid email', function () {
 
     expect(Lead::query()->count())->toBe(0);
 });
+
+test('a filled honeypot silently drops the submission', function () {
+    $this->post('/leads', [
+        'name' => 'Bot Prueba',
+        'email' => 'bot@spam.cl',
+        'website' => 'https://spam.example.com',
+    ])->assertRedirect();
+
+    expect(Lead::query()->count())->toBe(0);
+});
