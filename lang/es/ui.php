@@ -917,6 +917,36 @@ return [
         ],
     ],
 
+    'leads' => [
+        'nav' => 'Prospectos',
+        'title' => 'Prospectos',
+        'description' => 'Solicitudes de contacto enviadas desde la landing page pública',
+        'search_placeholder' => 'Buscar por nombre, empresa o email...',
+        'empty' => 'Aún no hay prospectos.',
+
+        'columns' => [
+            'name' => 'Nombre',
+            'company' => 'Empresa',
+            'email' => 'Email',
+            'message' => 'Mensaje',
+            'created' => 'Recibido',
+        ],
+
+        'actions' => [
+            'delete' => 'Eliminar',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Eliminar prospecto',
+            'description' => '¿Estás seguro de que deseas eliminar el prospecto de :name? Esta acción no se puede deshacer.',
+            'confirm' => 'Eliminar',
+        ],
+
+        'flash' => [
+            'deleted' => 'Prospecto eliminado.',
+        ],
+    ],
+
     'positions' => [
         'title' => 'Cargos',
         'description' => 'Cargos utilizados para agrupar a los empleados',

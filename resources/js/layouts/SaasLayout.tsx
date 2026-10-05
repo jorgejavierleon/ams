@@ -16,6 +16,7 @@ import * as auditLog from '@/routes/saas/audit-log';
 import * as documentVariables from '@/routes/saas/document-variables';
 import * as emailLimitSettings from '@/routes/saas/email-limit-settings';
 import * as holidays from '@/routes/saas/holidays';
+import * as leads from '@/routes/saas/leads';
 import * as legalHourLimits from '@/routes/saas/legal-hour-limits';
 import * as organizations from '@/routes/saas/organizations';
 import type { AppLayoutProps } from '@/types';
@@ -68,6 +69,12 @@ export default function SaasLayout({ children }: AppLayoutProps) {
                             className="text-sm font-medium text-muted-foreground hover:text-foreground"
                         >
                             {t('ui.saas_audit_log.nav')}
+                        </Link>
+                        <Link
+                            href={leads.index()}
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                        >
+                            {t('ui.leads.nav')}
                         </Link>
                         <Link
                             href={emailLimitSettings.edit()}

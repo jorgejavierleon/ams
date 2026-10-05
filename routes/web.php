@@ -44,6 +44,7 @@ use App\Http\Controllers\Saas\AuditLogController;
 use App\Http\Controllers\Saas\DocumentVarController;
 use App\Http\Controllers\Saas\EmailLimitSettingsController;
 use App\Http\Controllers\Saas\HolidayController as SaasHolidayController;
+use App\Http\Controllers\Saas\LeadController as SaasLeadController;
 use App\Http\Controllers\Saas\LegalHourLimitController;
 use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use App\Http\Controllers\Saas\OrganizationController;
@@ -529,6 +530,9 @@ Route::prefix('saas')->name('saas.')->group(function () {
             Route::put('legal-hour-limits/{legalHourLimit}', [LegalHourLimitController::class, 'update'])->name('legal-hour-limits.update');
 
             Route::get('audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
+
+            Route::get('leads', [SaasLeadController::class, 'index'])->name('leads.index');
+            Route::delete('leads/{lead}', [SaasLeadController::class, 'destroy'])->name('leads.destroy');
         });
     });
 });

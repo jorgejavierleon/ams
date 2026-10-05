@@ -914,6 +914,36 @@ return [
         ],
     ],
 
+    'leads' => [
+        'nav' => 'Leads',
+        'title' => 'Leads',
+        'description' => 'Contact requests submitted from the public landing page',
+        'search_placeholder' => 'Search by name, company or email...',
+        'empty' => 'No leads yet.',
+
+        'columns' => [
+            'name' => 'Name',
+            'company' => 'Company',
+            'email' => 'Email',
+            'message' => 'Message',
+            'created' => 'Received',
+        ],
+
+        'actions' => [
+            'delete' => 'Delete',
+        ],
+
+        'delete_dialog' => [
+            'title' => 'Delete lead',
+            'description' => 'Are you sure you want to delete the lead from :name? This action cannot be undone.',
+            'confirm' => 'Delete',
+        ],
+
+        'flash' => [
+            'deleted' => 'Lead deleted.',
+        ],
+    ],
+
     'positions' => [
         'title' => 'Positions',
         'description' => 'Job titles used to group employees',
