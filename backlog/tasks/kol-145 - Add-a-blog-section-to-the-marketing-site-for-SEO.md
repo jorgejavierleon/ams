@@ -1,11 +1,11 @@
 ---
 id: KOL-145
 title: Add a blog section to the marketing site for SEO
-status: In Review
+status: Done
 assignee:
   - '@jorgejavierleon'
 created_date: '2026-10-05 09:36'
-updated_date: '2026-10-05 10:18'
+updated_date: '2026-10-05 10:23'
 labels: []
 dependencies: []
 ordinal: 167000
