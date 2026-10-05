@@ -1,10 +1,16 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion';
+import {
+    AnimatePresence,
+    motion,
+    useInView,
+    useReducedMotion,
+} from 'framer-motion';
 import { Bot, ChevronDown, Mail, MapPin, Menu } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import LeadController from '@/actions/App/Http/Controllers/LeadController';
 import AppLogo from '@/components/app-logo';
+import SiteFooter from '@/components/site-footer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -27,6 +33,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { dashboard, home, login } from '@/routes';
+import blog from '@/routes/blog';
 
 type Tone = 'success' | 'warning' | 'danger';
 
@@ -97,16 +104,56 @@ function SectionEyebrow({ children }: { children: ReactNode }) {
 
 /** The hero's live-looking compliance dashboard card (style reference only — every value below is illustrative, not fetched). */
 function ComplianceCard() {
-    const stats: { label: string; value: string; sublabel: string; tone: Tone }[] = [
-        { label: 'Promedio semanal', value: '39.2h', sublabel: 'límite 44h', tone: 'success' },
-        { label: 'Horas extra', value: '06:40', sublabel: 'esta semana', tone: 'warning' },
-        { label: 'Marcas pendientes', value: '1', sublabel: 'por revisar', tone: 'danger' },
+    const stats: {
+        label: string;
+        value: string;
+        sublabel: string;
+        tone: Tone;
+    }[] = [
+        {
+            label: 'Promedio semanal',
+            value: '39.2h',
+            sublabel: 'límite 44h',
+            tone: 'success',
+        },
+        {
+            label: 'Horas extra',
+            value: '06:40',
+            sublabel: 'esta semana',
+            tone: 'warning',
+        },
+        {
+            label: 'Marcas pendientes',
+            value: '1',
+            sublabel: 'por revisar',
+            tone: 'danger',
+        },
     ];
 
-    const employees: { name: string; status: string; percent: number; tone: Tone }[] = [
-        { name: 'Camila Rojas', status: '38.5h · Cumple', percent: 87, tone: 'success' },
-        { name: 'Jorge Muñoz', status: '43.1h · Alerta', percent: 98, tone: 'warning' },
-        { name: 'Valentina Soto', status: '45.8h · No cumple', percent: 100, tone: 'danger' },
+    const employees: {
+        name: string;
+        status: string;
+        percent: number;
+        tone: Tone;
+    }[] = [
+        {
+            name: 'Camila Rojas',
+            status: '38.5h · Cumple',
+            percent: 87,
+            tone: 'success',
+        },
+        {
+            name: 'Jorge Muñoz',
+            status: '43.1h · Alerta',
+            percent: 98,
+            tone: 'warning',
+        },
+        {
+            name: 'Valentina Soto',
+            status: '45.8h · No cumple',
+            percent: 100,
+            tone: 'danger',
+        },
     ];
 
     return (
@@ -194,26 +241,27 @@ function ClockPreviewCard() {
 
 /** Feature row 2's visual: overtime/compliance alerts, same tone system as the hero card. */
 function OvertimeAlertsCard() {
-    const alerts: { tone: Tone; label: string; title: string; sub: string }[] = [
-        {
-            tone: 'danger',
-            label: 'No cumple',
-            title: 'Jorge Muñoz supera las 45h semanales',
-            sub: 'Semana del 15 al 21 de julio',
-        },
-        {
-            tone: 'warning',
-            label: 'Alerta',
-            title: 'Horas extra de hoy sin autorización',
-            sub: 'Pendiente de aprobación del supervisor',
-        },
-        {
-            tone: 'success',
-            label: 'Cumple',
-            title: 'Equipo Ventas dentro del límite legal',
-            sub: 'Promedio 38.6h esta semana',
-        },
-    ];
+    const alerts: { tone: Tone; label: string; title: string; sub: string }[] =
+        [
+            {
+                tone: 'danger',
+                label: 'No cumple',
+                title: 'Jorge Muñoz supera las 45h semanales',
+                sub: 'Semana del 15 al 21 de julio',
+            },
+            {
+                tone: 'warning',
+                label: 'Alerta',
+                title: 'Horas extra de hoy sin autorización',
+                sub: 'Pendiente de aprobación del supervisor',
+            },
+            {
+                tone: 'success',
+                label: 'Cumple',
+                title: 'Equipo Ventas dentro del límite legal',
+                sub: 'Promedio 38.6h esta semana',
+            },
+        ];
 
     return (
         <div className="flex w-full flex-col gap-3 sm:w-96">
@@ -262,10 +310,34 @@ function ReportsCard() {
 
 /** Feature row 4's visual: pending and approved leave requests, same vocabulary as the leaves calendar. */
 function LeaveRequestsCard() {
-    const requests: { name: string; type: string; range: string; status: string; tone: Tone }[] = [
-        { name: 'Camila Rojas', type: 'Vacaciones', range: '28 jul – 1 ago', status: 'Aprobada', tone: 'success' },
-        { name: 'Diego Fuentes', type: 'Licencia médica', range: '22 jul', status: 'Pendiente', tone: 'warning' },
-        { name: 'Valentina Soto', type: 'Permiso sin goce', range: '30 jul', status: 'Pendiente', tone: 'warning' },
+    const requests: {
+        name: string;
+        type: string;
+        range: string;
+        status: string;
+        tone: Tone;
+    }[] = [
+        {
+            name: 'Camila Rojas',
+            type: 'Vacaciones',
+            range: '28 jul – 1 ago',
+            status: 'Aprobada',
+            tone: 'success',
+        },
+        {
+            name: 'Diego Fuentes',
+            type: 'Licencia médica',
+            range: '22 jul',
+            status: 'Pendiente',
+            tone: 'warning',
+        },
+        {
+            name: 'Valentina Soto',
+            type: 'Permiso sin goce',
+            range: '30 jul',
+            status: 'Pendiente',
+            tone: 'warning',
+        },
     ];
 
     return (
@@ -306,7 +378,9 @@ function DocumentTemplatesCard() {
     return (
         <Card className="w-full gap-4 p-5 shadow-lg sm:w-[26rem]">
             <div className="flex items-center justify-between border-b pb-3">
-                <p className="text-sm font-semibold">Plantillas de documentos</p>
+                <p className="text-sm font-semibold">
+                    Plantillas de documentos
+                </p>
                 <Badge variant="outline">{templates.length} disponibles</Badge>
             </div>
             <div className="flex flex-col gap-2">
@@ -442,7 +516,8 @@ function FeatureRow({ title, body, visual, highlight }: Feature) {
         <div
             className={cn(
                 'mx-auto flex max-w-7xl flex-col items-center gap-10 px-6 py-10',
-                highlight && 'rounded-2xl border border-primary/20 bg-primary/5',
+                highlight &&
+                    'rounded-2xl border border-primary/20 bg-primary/5',
             )}
         >
             <div className="flex max-w-md flex-1 flex-col gap-3">
@@ -564,7 +639,15 @@ function FeatureShowcase() {
     );
 }
 
-function Step({ number, title, body }: { number: number; title: string; body: string }) {
+function Step({
+    number,
+    title,
+    body,
+}: {
+    number: number;
+    title: string;
+    body: string;
+}) {
     return (
         <div className="flex flex-col gap-2.5 border-t-2 border-primary pt-5">
             <p className="text-sm font-bold text-primary">Paso {number}</p>
@@ -785,6 +868,15 @@ export default function Landing() {
                             </NavAnchor>
                             <NavAnchor href="#planes">Planes</NavAnchor>
                             <NavAnchor href="#faq">Preguntas</NavAnchor>
+                            <Link
+                                href={blog.index()}
+                                className={cn(
+                                    'transition-colors',
+                                    navAnchorVariantClasses.header,
+                                )}
+                            >
+                                Blog
+                            </Link>
                         </nav>
                         <div className="ml-auto flex items-center gap-4">
                             <Link
@@ -820,8 +912,7 @@ export default function Landing() {
                                             Menú de navegación
                                         </SheetTitle>
                                         <SheetDescription>
-                                            Enlaces a las secciones de la
-                                            página
+                                            Enlaces a las secciones de la página
                                         </SheetDescription>
                                     </SheetHeader>
                                     <nav className="flex flex-col gap-6 p-6">
@@ -861,6 +952,18 @@ export default function Landing() {
                                         >
                                             Preguntas
                                         </NavAnchor>
+                                        <Link
+                                            href={blog.index()}
+                                            onClick={() =>
+                                                setMobileNavOpen(false)
+                                            }
+                                            className={cn(
+                                                'transition-colors',
+                                                navAnchorVariantClasses.mobile,
+                                            )}
+                                        >
+                                            Blog
+                                        </Link>
                                     </nav>
                                 </SheetContent>
                             </Sheet>
@@ -877,11 +980,12 @@ export default function Landing() {
                             <h1 className="text-4xl font-bold tracking-tight text-balance text-white sm:text-5xl">
                                 Marca el tiempo. Cumple la ley. Sin planillas.
                             </h1>
-                            <p className="text-lg leading-relaxed text-white/70 text-pretty">
+                            <p className="text-lg leading-relaxed text-pretty text-white/70">
                                 Kolvi registra la jornada de tu equipo, controla
-                                las horas extra bajo la Ley de 40 horas y entrega
-                                reportes listos para la Dirección del Trabajo —
-                                desde la web, el celular o un asistente de IA.
+                                las horas extra bajo la Ley de 40 horas y
+                                entrega reportes listos para la Dirección del
+                                Trabajo — desde la web, el celular o un
+                                asistente de IA.
                             </p>
                             <div className="flex flex-wrap gap-3">
                                 <Button
@@ -897,7 +1001,9 @@ export default function Landing() {
                                     variant="outline"
                                     className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
                                 >
-                                    <a href="#como-funciona">Ver cómo funciona →</a>
+                                    <a href="#como-funciona">
+                                        Ver cómo funciona →
+                                    </a>
                                 </Button>
                             </div>
                         </div>
@@ -923,7 +1029,10 @@ export default function Landing() {
                                 t: 'para calcular horas extra, turnos o nómina',
                             },
                         ].map((fact) => (
-                            <div key={fact.n} className="flex items-baseline gap-3">
+                            <div
+                                key={fact.n}
+                                className="flex items-baseline gap-3"
+                            >
                                 <span className="text-2xl font-bold text-primary">
                                     {fact.n}
                                 </span>
@@ -997,10 +1106,10 @@ export default function Landing() {
                             Un plan a la medida de tu organización.
                         </h2>
                         <p className="text-base leading-relaxed text-muted-foreground">
-                            Aún no publicamos tarifas fijas — cada
-                            organización tiene sucursales, turnos y un número
-                            de personas distinto. Cuéntanos tu caso y te
-                            armamos una propuesta a medida.
+                            Aún no publicamos tarifas fijas — cada organización
+                            tiene sucursales, turnos y un número de personas
+                            distinto. Cuéntanos tu caso y te armamos una
+                            propuesta a medida.
                         </p>
                         <Button asChild size="lg">
                             <a href="#contacto">Hablar con ventas</a>
@@ -1023,7 +1132,10 @@ export default function Landing() {
                     </div>
                 </section>
 
-                <section id="contacto" className="bg-primary py-20 text-primary-foreground">
+                <section
+                    id="contacto"
+                    className="bg-primary py-20 text-primary-foreground"
+                >
                     <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 lg:grid-cols-[1fr_1.4fr] lg:items-stretch">
                         <div className="relative flex flex-col justify-between gap-8 overflow-hidden rounded-2xl bg-primary-foreground/5 p-8 ring-1 ring-primary-foreground/15">
                             <div
@@ -1058,16 +1170,7 @@ export default function Landing() {
                     </div>
                 </section>
 
-                <footer className="border-t py-8">
-                    <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
-                        <Link href={home()} className="flex items-center">
-                            <AppLogo />
-                        </Link>
-                        <p className="text-sm text-muted-foreground">
-                            © 2026 Kolvi · Santiago, Chile
-                        </p>
-                    </div>
-                </footer>
+                <SiteFooter />
             </div>
         </>
     );

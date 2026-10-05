@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommuneController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CostCenterController;
@@ -65,6 +66,12 @@ Route::post('leads', [LeadController::class, 'store'])
 
 // Switch the active UI locale (persisted in the session, applied by SetLocale)
 Route::put('locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
+
+// Public, no-auth marketing blog (KOL-145).
+Route::prefix('blog')->name('blog.')->group(function () {
+    Route::get('/', [BlogController::class, 'index'])->name('index');
+    Route::get('{slug}', [BlogController::class, 'show'])->name('show');
+});
 
 // Public, no-auth mark-modification review. Employees reach these through the
 // ULID link emailed to them and approve or decline the correction without
