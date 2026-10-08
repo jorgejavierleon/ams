@@ -113,19 +113,19 @@ export function DataTable<TData>({
             )}
 
             {hasToolbar && (
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                     {searchPlaceholder ? (
                         <Input
                             type="search"
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder={searchPlaceholder}
-                            className="max-w-sm"
+                            className="w-full sm:w-64"
                         />
                     ) : (
                         <div />
                     )}
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {toolbar}
                         <DataTableViewOptions table={table} />
                     </div>
