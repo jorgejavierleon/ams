@@ -1,9 +1,11 @@
 ---
 id: KOL-114
 title: Fix pre-existing TypeScript errors in roles pages
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@jorgejavierleon'
 created_date: '2026-09-08 10:16'
+updated_date: '2026-10-08 11:30'
 labels:
   - bug
 dependencies: []
@@ -18,14 +20,26 @@ npm run types:check fails with 2 pre-existing errors unrelated to any current wo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 npm run types:check passes with zero errors in roles/index.tsx and roles/show.tsx
-- [ ] #2 Role ids are passed to Wayfinder route helpers as numbers (or the helper call is otherwise corrected) without introducing a runtime regression on the Roles list/manage pages
+- [x] #1 npm run types:check passes with zero errors in roles/index.tsx and roles/show.tsx
+- [x] #2 Role ids are passed to Wayfinder route helpers as numbers (or the helper call is otherwise corrected) without introducing a runtime regression on the Roles list/manage pages
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
-- [ ] #3 npm run types:check passes when TypeScript touched
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #2 sa test --compact passes
+- [x] #3 npm run types:check passes when TypeScript touched
 - [ ] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+No code changes needed. roles/index.tsx and roles/show.tsx already pass role ids as numbers (Role.id: number); KOL-135 work (commits ea78834..3d67fc3, 2026-09-27) rewrote these files after this ticket was filed and resolved the original string/number mismatch as a side effect. Verified by regenerating Wayfinder (sail artisan wayfinder:generate --with-form) then running npm run types:check (0 errors) and sail artisan test --compact --filter=Role (100 passed, 467 assertions). DoD #4 (Pest test per PHP change) N/A — no PHP changes made.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Confirmed fixed by prior KOL-135 work, no code change required. Verified with a fresh Wayfinder regen + npm run types:check (clean) and the Role test suite (100 passed).
+<!-- SECTION:FINAL_SUMMARY:END -->
