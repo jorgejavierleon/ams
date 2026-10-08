@@ -3291,4 +3291,32 @@ return [
         ],
     ],
 
+    'auth' => [
+        'password' => 'Contraseña',
+        'password_placeholder' => 'Contraseña',
+        'confirm_password' => 'Confirmar contraseña',
+        'confirm_password_placeholder' => 'Confirmar contraseña',
+
+        'reset_password' => [
+            'submit' => 'Restablecer contraseña',
+        ],
+
+        'confirm_password_page' => [
+            'submit' => 'Confirmar contraseña',
+        ],
+
+        'forgot_password' => [
+            'email' => 'Correo electrónico',
+            'email_placeholder' => 'correo@ejemplo.com',
+            'submit' => 'Enviar enlace de restablecimiento',
+            'return_to' => 'O bien, vuelve a',
+            'log_in' => 'iniciar sesión',
+        ],
+
+        'verify_email' => [
+            'link_sent' => 'Se ha enviado un nuevo enlace de verificación a la dirección de correo que indicaste al registrarte.',
+            'resend' => 'Reenviar correo de verificación',
+        ],
+    ],
+
 ];

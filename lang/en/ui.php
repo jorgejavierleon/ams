@@ -3288,4 +3288,32 @@ return [
         ],
     ],
 
+    'auth' => [
+        'password' => 'Password',
+        'password_placeholder' => 'Password',
+        'confirm_password' => 'Confirm password',
+        'confirm_password_placeholder' => 'Confirm password',
+
+        'reset_password' => [
+            'submit' => 'Reset password',
+        ],
+
+        'confirm_password_page' => [
+            'submit' => 'Confirm password',
+        ],
+
+        'forgot_password' => [
+            'email' => 'Email address',
+            'email_placeholder' => 'email@example.com',
+            'submit' => 'Email password reset link',
+            'return_to' => 'Or, return to',
+            'log_in' => 'log in',
+        ],
+
+        'verify_email' => [
+            'link_sent' => 'A new verification link has been sent to the email address you provided during registration.',
+            'resend' => 'Resend verification email',
+        ],
+    ],
+
 ];

@@ -1,5 +1,10 @@
 # Manual QA checklist
 
+### KOL-1.1 — Translate the password reset page an employee reaches from the mobile app
+
+- [ ] Open a real reset-password link from the mobile forgot-password email on a phone-sized viewport; confirm title, labels, placeholders, and the submit button are all in Spanish (Email label intentionally stays "Email").
+- [ ] Submit the form and confirm the password actually resets and redirects to login.
+
 ### KOL-123 — Settings forms in a white card
 
 - [ ] On /settings/notifications, /settings/documents, /settings/overtime, /settings/profile and /settings/appearance, confirm the content sits inside a single white card on the gray page background, matching Empresa/Sucursales/Cargos forms.
