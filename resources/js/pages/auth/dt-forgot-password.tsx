@@ -49,7 +49,7 @@ export default function DtForgotPassword({ status }: { status?: string }) {
                 )}
             </Form>
 
-            <div className="space-x-1 text-center text-sm text-muted-foreground">
+            <div className="mt-4 space-x-1 text-center text-sm text-muted-foreground">
                 <span>Volver a</span>
                 <TextLink href="/dt/login">ingresar</TextLink>
             </div>
