@@ -4,10 +4,12 @@ import {
     FileBarChart,
     Fingerprint,
     FileText,
+    KeyRound,
     LayoutGrid,
     LogOut,
 } from 'lucide-react';
 import MarkValidationController from '@/actions/App/Http/Controllers/Dt/MarkValidationController';
+import PasswordChangeController from '@/actions/App/Http/Controllers/Dt/PasswordChangeController';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { NotificationBell } from '@/components/notification-bell';
@@ -148,6 +150,16 @@ export default function DtLayout({ children }: AppLayoutProps) {
                                             />
                                         </div>
                                     </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            className="block w-full cursor-pointer"
+                                            href={PasswordChangeController.create()}
+                                        >
+                                            <KeyRound className="mr-2" />
+                                            Cambiar clave
+                                        </Link>
+                                    </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
                                         <Link

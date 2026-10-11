@@ -1,9 +1,11 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { dashboard } from '@/routes/dt';
 
 export default function DtPasswordChange() {
     return (
@@ -77,12 +79,16 @@ export default function DtPasswordChange() {
                     </div>
                 )}
             </Form>
+
+            <div className="mt-4 space-x-1 text-center text-sm text-muted-foreground">
+                <span>Volver al</span>
+                <TextLink href={dashboard()}>panel</TextLink>
+            </div>
         </>
     );
 }
 
 DtPasswordChange.layout = {
     title: 'Cambiar clave – Portal DT',
-    description:
-        'Su clave ha expirado. Por favor establezca una nueva clave para continuar.',
+    description: 'Ingrese su clave actual y defina una nueva clave de acceso.',
 };

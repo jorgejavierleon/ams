@@ -23,6 +23,7 @@ createInertiaApp({
                 return LoginLayout;
             case name === 'auth/dt-login':
             case name === 'auth/dt-forgot-password':
+            case name === 'auth/dt-password-change':
                 return DtLoginLayout;
             case name.startsWith('auth/'):
             case name.startsWith('mark-modifications/'):
