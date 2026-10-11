@@ -3303,6 +3303,8 @@ return [
     ],
 
     'auth' => [
+        'dt_login_link' => 'Labor Directorate access',
+
         'password' => 'Password',
         'password_placeholder' => 'Password',
         'confirm_password' => 'Confirm password',

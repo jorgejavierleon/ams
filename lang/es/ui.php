@@ -3306,6 +3306,8 @@ return [
     ],
 
     'auth' => [
+        'dt_login_link' => 'Acceso Dirección del Trabajo',
+
         'password' => 'Contraseña',
         'password_placeholder' => 'Contraseña',
         'confirm_password' => 'Confirmar contraseña',
