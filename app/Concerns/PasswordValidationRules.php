@@ -22,8 +22,8 @@ trait PasswordValidationRules
      *
      * @return array<int, Password|ValidationRule|array<mixed>|string>
      */
-    protected function currentPasswordRules(): array
+    protected function currentPasswordRules(?string $guard = null): array
     {
-        return ['required', 'string', 'current_password'];
+        return ['required', 'string', $guard ? "current_password:{$guard}" : 'current_password'];
     }
 }

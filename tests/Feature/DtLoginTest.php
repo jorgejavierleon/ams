@@ -106,12 +106,30 @@ test('dt user can change their expired password', function () {
 
     $this->actingAs($user, 'dt')
         ->post('/dt/password/change', [
+            'current_password' => 'password',
             'password' => 'NewSecure123!',
             'password_confirmation' => 'NewSecure123!',
         ])
         ->assertRedirect('/dt/dashboard');
 
     expect($user->fresh()->password_changed_at->diffInDays(now()))->toBeLessThanOrEqual(1);
+});
+
+test('dt password change rejects a wrong current password and leaves the password unchanged', function () {
+    $user = User::factory()->dtUser()->create([
+        'password' => Hash::make('password'),
+        'password_changed_at' => now()->subDays(10),
+    ]);
+
+    $this->actingAs($user, 'dt')
+        ->post('/dt/password/change', [
+            'current_password' => 'wrong-password',
+            'password' => 'NewSecure123!',
+            'password_confirmation' => 'NewSecure123!',
+        ])
+        ->assertInvalid(['current_password']);
+
+    expect(Hash::check('password', $user->fresh()->password))->toBeTrue();
 });
 
 // --- Guard separation ---

@@ -13,18 +13,36 @@ export default function DtPasswordChange() {
             <Form
                 action="/dt/password/change"
                 method="post"
-                resetOnSuccess={['password', 'password_confirmation']}
+                resetOnSuccess={[
+                    'current_password',
+                    'password',
+                    'password_confirmation',
+                ]}
                 className="flex flex-col gap-6"
             >
                 {({ processing, errors }) => (
                     <div className="grid gap-6">
+                        <div className="grid gap-2">
+                            <Label htmlFor="current_password">
+                                Clave actual
+                            </Label>
+                            <PasswordInput
+                                id="current_password"
+                                name="current_password"
+                                required
+                                autoFocus
+                                autoComplete="current-password"
+                                placeholder="Clave actual"
+                            />
+                            <InputError message={errors.current_password} />
+                        </div>
+
                         <div className="grid gap-2">
                             <Label htmlFor="password">Nueva clave</Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
                                 required
-                                autoFocus
                                 autoComplete="new-password"
                                 placeholder="Nueva clave"
                             />

@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\Dt;
 
+use App\Concerns\PasswordValidationRules;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PasswordChangeController extends Controller
 {
+    use PasswordValidationRules;
+
     public function create(): Response
     {
         return Inertia::render('auth/dt-password-change');
@@ -21,7 +23,8 @@ class PasswordChangeController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'current_password' => $this->currentPasswordRules('dt'),
+            'password' => $this->passwordRules(),
         ]);
 
         /** @var User $user */
