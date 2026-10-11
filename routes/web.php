@@ -30,6 +30,7 @@ use App\Http\Controllers\My\MarkController as MyMarkController;
 use App\Http\Controllers\My\OvertimeRequestController as MyOvertimeRequestController;
 use App\Http\Controllers\My\OvertimeRestDayBalanceController as MyOvertimeRestDayBalanceController;
 use App\Http\Controllers\My\WorkdayController as MyWorkdayController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OvertimeExcessReportController;
 use App\Http\Controllers\OvertimePactController;
@@ -84,6 +85,16 @@ Route::prefix('mark-modifications/{modification:ulid}')->name('mark-modification
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+});
+
+// In-app notification bell (KOL-87). Shared between the main app (`web`
+// guard) and the DT panel (`dt` guard) — both resolve the same User model,
+// so one controller serves either session. Polled as plain JSON rather than
+// through Inertia, so it never piggybacks on (and re-runs) whatever page
+// controller is currently rendered.
+Route::middleware(['auth:web,dt'])->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::post('{notification}/read', [NotificationController::class, 'read'])->name('read');
 });
 
 // Admin/owner settings screens and reference-data CRUD, each gated by its

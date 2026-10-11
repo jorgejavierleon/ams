@@ -52,6 +52,20 @@ return [
         'logout' => 'Log out',
     ],
 
+    'notifications' => [
+        'open' => 'Notifications',
+        'title' => 'Notifications',
+        'empty' => 'You have no notifications.',
+        'report_export_ready' => [
+            'title' => 'Your report is ready',
+            'description' => 'Click to go download it.',
+        ],
+        'report_export_failed' => [
+            'title' => 'Your report could not be generated',
+            'description' => 'Try generating it again from the reports section.',
+        ],
+    ],
+
     'common' => [
         'save' => 'Save',
         'cancel' => 'Cancel',
