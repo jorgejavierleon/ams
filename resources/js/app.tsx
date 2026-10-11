@@ -3,9 +3,10 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AdminLayout from '@/layouts/AdminLayout';
+import DtLoginLayout from '@/layouts/auth/dt-login-layout';
+import LoginLayout from '@/layouts/auth/login-layout';
 import DtLayout from '@/layouts/DtLayout';
 import GuestLayout from '@/layouts/GuestLayout';
-import LoginLayout from '@/layouts/auth/login-layout';
 import SaasLayout from '@/layouts/SaasLayout';
 import SettingsLayout from '@/layouts/settings/layout';
 
@@ -20,6 +21,8 @@ createInertiaApp({
                 return null;
             case name === 'auth/login':
                 return LoginLayout;
+            case name === 'auth/dt-login':
+                return DtLoginLayout;
             case name.startsWith('auth/'):
             case name.startsWith('mark-modifications/'):
                 return GuestLayout;
