@@ -75,7 +75,7 @@ export default function DtLogin() {
 }
 
 DtLogin.layout = {
-    title: 'AMS – Portal DT',
+    title: 'Portal DT',
     description:
         'Acceso exclusivo para inspectores de la Dirección del Trabajo',
 };
