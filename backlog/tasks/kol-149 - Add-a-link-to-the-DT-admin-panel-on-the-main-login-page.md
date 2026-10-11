@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jorgejavierleon'
 created_date: '2026-10-11 09:33'
-updated_date: '2026-10-11 10:14'
+updated_date: '2026-10-11 11:03'
 labels: []
 dependencies: []
 references:
@@ -51,10 +51,12 @@ The main employee/admin login page (resources/js/pages/auth/login.tsx) has no wa
 
 <!-- SECTION:NOTES:BEGIN -->
 Verified in browser via Chrome DevTools MCP: desktop (login page renders outline pill button 'Acceso Dirección del Trabajo' below the Iniciar sesión button) and 375x667 mobile viewport (button remains visible/usable). A11y snapshot confirmed the link resolves to http://localhost/dt/login and clicking it navigates there. npm run types:check, eslint, and vendor/bin/pint --dirty --format agent all pass clean. sail artisan test --compact --filter=AuthenticationTest (5 passed, 1 skipped) and --filter=DtLoginTest (16 passed) both green. DoD #4 (Pest test per PHP change) does not apply: no PHP logic changed, only translation string arrays in lang/*/ui.php; the dt.login route is already covered by DtLoginTest. code-review skill (medium) ran clean with zero findings.
+
+Follow-up UX revision after user feedback: the pill-shaped outline Button rendered inside the Card, right under the primary submit button — too prominent, too close, and used a rounded-full shape the app's design system doesn't use. Moved the link to LoginLayout (resources/js/layouts/auth/login-layout.tsx), rendered below the Card entirely as a plain muted-foreground text link (no border/background), matching secondary-link conventions elsewhere. Re-verified in browser (desktop + mobile) and via types:check/eslint/pint/AuthenticationTest.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Added a bordered outline pill-style Button below the main login form in resources/js/pages/auth/login.tsx that links to the dt.login named route via the Wayfinder @/routes/dt export, wrapped in Inertia's Link. Added the 'auth.dt_login_link' translation key to lang/en/ui.php ('Labor Directorate access') and lang/es/ui.php ('Acceso Dirección del Trabajo'), consumed through useTranslations(). Verified with types:check, eslint, pint, the Authentication/DtLogin Pest suites, and a live browser check (desktop + mobile viewport, link navigates to /dt/login).
+Added a link to the DT panel login below the main login card. It renders in LoginLayout (resources/js/layouts/auth/login-layout.tsx) as a plain, muted-foreground text link outside the Card — not a bordered button — so it stays de-emphasized relative to the primary 'Iniciar sesión' action while remaining discoverable. Links to the dt.login route via the Wayfinder @/routes/dt export. Added 'auth.dt_login_link' to lang/en/ui.php and lang/es/ui.php, consumed via useTranslations(). Verified with types:check, eslint, pint, the Authentication/DtLogin Pest suites, and a live browser check (desktop + 375px mobile viewport; link resolves to and navigates to /dt/login).
 <!-- SECTION:FINAL_SUMMARY:END -->

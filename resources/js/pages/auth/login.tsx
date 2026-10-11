@@ -1,4 +1,4 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -7,8 +7,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { useTranslations } from '@/hooks/use-translations';
-import { login as dtLogin } from '@/routes/dt';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
@@ -18,8 +16,6 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
-    const { t } = useTranslations();
-
     return (
         <>
             <Head title="Iniciar sesión" />
@@ -102,12 +98,6 @@ export default function Login({ status, canResetPassword }: Props) {
                     </>
                 )}
             </Form>
-
-            <div className="flex justify-center">
-                <Button variant="outline" size="sm" className="rounded-full" asChild>
-                    <Link href={dtLogin()}>{t('ui.auth.dt_login_link')}</Link>
-                </Button>
-            </div>
         </>
     );
 }
