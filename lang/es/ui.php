@@ -52,6 +52,20 @@ return [
         'logout' => 'Cerrar sesión',
     ],
 
+    'notifications' => [
+        'open' => 'Notificaciones',
+        'title' => 'Notificaciones',
+        'empty' => 'No tienes notificaciones.',
+        'report_export_ready' => [
+            'title' => 'Tu reporte está listo',
+            'description' => 'Haz clic para ir a descargarlo.',
+        ],
+        'report_export_failed' => [
+            'title' => 'No se pudo generar tu reporte',
+            'description' => 'Intenta generarlo nuevamente desde la sección de reportes.',
+        ],
+    ],
+
     'common' => [
         'save' => 'Guardar',
         'cancel' => 'Cancelar',

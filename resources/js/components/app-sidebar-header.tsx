@@ -1,5 +1,6 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { NavUser } from '@/components/nav-user';
+import { NotificationBell } from '@/components/notification-bell';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 
@@ -13,6 +14,7 @@ export function AppSidebarHeader() {
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             <div className="flex shrink-0 items-center gap-2">
+                <NotificationBell />
                 <NavUser />
             </div>
         </header>
