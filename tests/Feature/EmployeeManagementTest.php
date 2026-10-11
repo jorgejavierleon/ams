@@ -376,7 +376,17 @@ test('employees can be searched by first name', function () {
         'first_name' => 'Ana',
         'name' => 'Ana Pérez',
     ]);
-    User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    // Fixed, non-colliding fields: the es_CL Faker names/surnames used by
+    // the default employee factory can themselves contain "Ana" (e.g.
+    // "Mariana", "Anabalón"), making this assertion flaky (#263).
+    User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'first_name' => 'Pedro',
+        'last_name' => 'Gómez',
+        'second_last_name' => 'Rojas',
+        'name' => 'Pedro Gómez',
+        'email' => 'noise-employee@example.com',
+    ]);
 
     $this->actingAs($admin)
         ->get(route('employees.index', ['search' => 'Ana']))
@@ -393,7 +403,15 @@ test('employees can be searched by last name', function () {
         'last_name' => 'Pérez',
         'name' => 'Ana Pérez',
     ]);
-    User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    // Fixed, non-colliding fields — see the "first name" test above (#263).
+    User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'first_name' => 'Pedro',
+        'last_name' => 'Gómez',
+        'second_last_name' => 'Rojas',
+        'name' => 'Pedro Gómez',
+        'email' => 'noise-employee@example.com',
+    ]);
 
     $this->actingAs($admin)
         ->get(route('employees.index', ['search' => 'Perez']))
@@ -410,7 +428,15 @@ test('employees can be searched by second last name', function () {
         'second_last_name' => 'Soto',
         'name' => 'Ana Pérez Soto',
     ]);
-    User::factory()->employee()->create(['organization_id' => $admin->organization_id]);
+    // Fixed, non-colliding fields — see the "first name" test above (#263).
+    User::factory()->employee()->create([
+        'organization_id' => $admin->organization_id,
+        'first_name' => 'Pedro',
+        'last_name' => 'Gómez',
+        'second_last_name' => 'Rojas',
+        'name' => 'Pedro Gómez',
+        'email' => 'noise-employee@example.com',
+    ]);
 
     $this->actingAs($admin)
         ->get(route('employees.index', ['search' => 'Soto']))
