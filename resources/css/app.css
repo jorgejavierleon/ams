@@ -214,13 +214,13 @@
     --fc-page-bg-color: transparent;
     --fc-neutral-bg-color: var(--muted);
     --fc-today-bg-color: var(--accent);
-    --fc-button-bg-color: var(--primary);
-    --fc-button-border-color: var(--primary);
-    --fc-button-text-color: var(--primary-foreground);
-    --fc-button-hover-bg-color: var(--primary);
-    --fc-button-hover-border-color: var(--primary);
-    --fc-button-active-bg-color: var(--primary);
-    --fc-button-active-border-color: var(--primary);
+    --fc-button-bg-color: transparent;
+    --fc-button-border-color: var(--border);
+    --fc-button-text-color: var(--foreground);
+    --fc-button-hover-bg-color: var(--muted);
+    --fc-button-hover-border-color: var(--border);
+    --fc-button-active-bg-color: var(--accent);
+    --fc-button-active-border-color: var(--accent);
 }
 
 .leaves-calendar .fc .fc-button {
@@ -228,8 +228,22 @@
     box-shadow: none;
 }
 
+/* --accent and --muted resolve to the same dark-mode color, which would
+   otherwise make the active view-switcher button (dayGridMonth/timeGridWeek/
+   timeGridDay) indistinguishable from a merely-hovered one. Give the active
+   button its own solid, theme-safe treatment instead. */
+.leaves-calendar .fc .fc-button-primary:not(:disabled).fc-button-active {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+}
+
 .leaves-calendar .fc .fc-event {
     cursor: pointer;
+    border: none;
+    border-radius: 9999px;
+    padding: 0.0625rem 0.625rem;
+    font-weight: 500;
 }
 
 /* Tiptap rich-editor content. The editor is headless, so the document body's

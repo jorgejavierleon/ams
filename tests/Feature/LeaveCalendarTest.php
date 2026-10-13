@@ -66,10 +66,16 @@ test('employees without team review access are denied', function () {
         ->assertForbidden();
 });
 
-test('the calendar page renders', function () {
+test('the calendar page renders with the legend colors', function () {
     $this->actingAs(calendarAdmin())
         ->get(route('leaves.calendar'))
-        ->assertOk();
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+                ->component('leaves/calendar')
+                ->where('leaveTypes.0.color', LeaveType::Vacation->color())
+                ->where('leaveTypes.0.textColor', LeaveType::Vacation->textColor()),
+        );
 });
 
 // --- Events endpoint ---
@@ -102,6 +108,7 @@ test('the endpoint returns approved leaves in the range as fullcalendar events',
         'end' => '2026-07-13',
         'allDay' => true,
         'color' => LeaveType::Vacation->color(),
+        'textColor' => LeaveType::Vacation->textColor(),
     ]);
 
     $response->assertJsonPath('0.extendedProps.employee', 'Ada Lovelace');

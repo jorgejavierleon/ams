@@ -19,16 +19,38 @@ enum LeaveType: string
     }
 
     /**
-     * Hex color used to render this type on the leaves calendar and its legend.
+     * Pastel background hex used to render this type on the leaves calendar
+     * and its legend. Drawn from the same violet/blue/amber/rose/teal hue
+     * family as the dashboard's icon tones (see dashboard.tsx iconTones), so
+     * the calendar matches the rest of the app's palette rather than
+     * inventing its own. Unlike the dashboard's Tailwind classes, this is a
+     * single fixed hex used in both light and dark mode — the same approach
+     * already taken for the attendance chart's colors (see app.css's
+     * --attendance-* tokens) — rather than a per-theme pair.
      */
     public function color(): string
     {
         return match ($this) {
-            self::Vacation => '#059669',
-            self::Medical => '#dc2626',
-            self::Unpaid => '#d97706',
-            self::Paid => '#2563eb',
-            self::Other => '#6b7280',
+            self::Vacation => '#ccfbf1', // teal-100
+            self::Medical => '#ffe4e6', // rose-100
+            self::Unpaid => '#fef3c7', // amber-100
+            self::Paid => '#dbeafe', // blue-100
+            self::Other => '#ede9fe', // violet-100
+        };
+    }
+
+    /**
+     * Readable foreground hex paired with {@see color()}'s pastel background,
+     * from the same hue at a darker shade.
+     */
+    public function textColor(): string
+    {
+        return match ($this) {
+            self::Vacation => '#0f766e', // teal-700
+            self::Medical => '#be123c', // rose-700
+            self::Unpaid => '#b45309', // amber-700
+            self::Paid => '#1d4ed8', // blue-700
+            self::Other => '#6d28d9', // violet-700
         };
     }
 
@@ -46,9 +68,9 @@ enum LeaveType: string
     }
 
     /**
-     * All types as value/label/color triples for the calendar legend.
+     * All types as value/label/color/textColor quadruples for the calendar legend.
      *
-     * @return array<int, array{value: string, label: string, color: string}>
+     * @return array<int, array{value: string, label: string, color: string, textColor: string}>
      */
     public static function legendOptions(): array
     {
@@ -57,6 +79,7 @@ enum LeaveType: string
                 'value' => $type->value,
                 'label' => $type->label(),
                 'color' => $type->color(),
+                'textColor' => $type->textColor(),
             ],
             self::cases(),
         );

@@ -34,6 +34,7 @@ type LeaveType = {
     value: string;
     label: string;
     color: string;
+    textColor: string;
 };
 
 type LeaveEventProps = {
@@ -114,8 +115,11 @@ export default function LeavesCalendar({ leaveTypes }: Props) {
                         >
                             <span
                                 aria-hidden
-                                className="size-3 rounded-full"
-                                style={{ backgroundColor: type.color }}
+                                className="size-3 rounded-full border"
+                                style={{
+                                    backgroundColor: type.color,
+                                    borderColor: type.textColor,
+                                }}
                             />
                             {type.label}
                         </span>

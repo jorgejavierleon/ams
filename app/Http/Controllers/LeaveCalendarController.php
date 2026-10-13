@@ -65,6 +65,7 @@ class LeaveCalendarController extends Controller
                 'end' => $leave->end_date->copy()->addDay()->toDateString(),
                 'allDay' => true,
                 'color' => $leave->type->color(),
+                'textColor' => $leave->type->textColor(),
                 'extendedProps' => [
                     'type' => $leave->type->value,
                     'type_label' => $leave->type->label(),
