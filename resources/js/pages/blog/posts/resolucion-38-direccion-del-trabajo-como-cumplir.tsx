@@ -19,11 +19,11 @@ export default function Resolucion38DireccionDelTrabajoComoCumplir({
                 entrada, salida o los descansos de tus trabajadores,
                 probablemente te aplica la Resolución 38 exenta de la
                 Dirección del Trabajo. Entró en vigencia el 26 de abril de
-                2024, junto con la reducción de la jornada laboral a 40
-                horas (Ley Nº21.561), y fija los requisitos obligatorios
-                para cualquier sistema electrónico de registro y control de
-                asistencia. Esto es lo que exige en la práctica y qué
-                deberías tener resuelto como empleador.
+                2024, junto con el primer paso de la reducción gradual de la
+                jornada laboral que trajo la Ley Nº21.561, y fija los
+                requisitos obligatorios para cualquier sistema electrónico
+                de registro y control de asistencia. Esto es lo que exige en
+                la práctica y qué deberías tener resuelto como empleador.
             </p>
 
             <h2>¿A qué sistemas aplica?</h2>
@@ -112,6 +112,11 @@ export default function Resolucion38DireccionDelTrabajoComoCumplir({
                     Un registro de incidentes técnicos que hayan dejado el
                     sistema total o parcialmente fuera de servicio.
                 </li>
+                <li>
+                    Un reporte diario de marcaciones de cada trabajador,
+                    enviado automáticamente al empleador para tenerlo a mano
+                    si el sistema falla justo durante una fiscalización.
+                </li>
             </ul>
 
             <h2>Horas extra y descansos: compensación y vencimiento</h2>
@@ -143,10 +148,10 @@ export default function Resolucion38DireccionDelTrabajoComoCumplir({
                 marca genera un comprobante firmado con un número de folio
                 (Resolución 38, Art. 13º), las alertas de horas extra siguen
                 el límite legal vigente, y el panel de Dirección del Trabajo
-                exporta el reporte de asistencia, el de jornada diaria, el de
-                domingos y festivos, el de modificaciones de turno y el
-                registro de incidentes técnicos con la misma estructura que
-                exige el Art. 27º — sin armar una sola planilla a mano. Si
+                exporta, con la misma estructura que exige el Art. 27º, el
+                reporte de asistencia, el de jornada diaria, el de domingos y
+                festivos, el de modificaciones de turno y el registro de
+                incidentes técnicos — sin armar una sola planilla a mano. Si
                 quieres ver el resto de las funciones de cumplimiento que
                 Kolvi automatiza, puedes revisar{' '}
                 <Link href={`${home.url()}#funciones`}>

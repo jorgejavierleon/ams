@@ -30,6 +30,13 @@ final class BlogPosts
                 metaDescription: 'Guía de cumplimiento de la Resolución 38 de la Dirección del Trabajo: a qué sistemas aplica, qué exige en cada marcación, qué reportes puede pedir la DT y cómo evitar sanciones.',
                 publishedAt: Carbon::parse('2026-10-15'),
             ),
+            new BlogPost(
+                slug: 'como-calcular-horas-extras-en-chile-sin-infringir-los-limites-legales',
+                title: 'Cómo calcular las horas extras en Chile sin infringir los límites legales',
+                excerpt: 'El tope diario y semanal de horas extraordinarias, qué es el pacto de horas extras y por qué caduca a los tres meses, y cómo evitar que un error de cálculo se convierta en una multa.',
+                metaDescription: 'Guía práctica para calcular las horas extras en Chile: tope legal de 2 horas diarias, el pacto de horas extraordinarias y su vigencia de 3 meses, el recargo del 50% y los riesgos de calcularlas mal.',
+                publishedAt: Carbon::parse('2026-10-15'),
+            ),
         ])->sortByDesc(fn (BlogPost $post) => $post->publishedAt)->values();
     }
 
