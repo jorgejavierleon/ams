@@ -23,6 +23,13 @@ final class BlogPosts
                 metaDescription: 'Descubre los beneficios de conectar un servidor MCP a tu sistema de RRHH: consulta licencias, horas extra y nómina desde un asistente de IA, sin planillas ni exportaciones manuales.',
                 publishedAt: Carbon::parse('2026-10-05'),
             ),
+            new BlogPost(
+                slug: 'resolucion-38-direccion-del-trabajo-como-cumplir',
+                title: 'Resolución 38 de la Dirección del Trabajo: qué exige y cómo cumplirla',
+                excerpt: 'Qué obliga la Resolución 38 a los sistemas electrónicos de control de asistencia —hash en cada marca, reportes para la DT, vencimiento de días de descanso— y cómo cumplirla en la práctica.',
+                metaDescription: 'Guía de cumplimiento de la Resolución 38 de la Dirección del Trabajo: a qué sistemas aplica, qué exige en cada marcación, qué reportes puede pedir la DT y cómo evitar sanciones.',
+                publishedAt: Carbon::parse('2026-10-15'),
+            ),
         ])->sortByDesc(fn (BlogPost $post) => $post->publishedAt)->values();
     }
 
