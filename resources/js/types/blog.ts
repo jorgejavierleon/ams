@@ -4,6 +4,7 @@ export type BlogPostSummary = {
     excerpt: string;
     publishedAt: string;
     publishedAtLabel: string;
+    heroImage: string | null;
 };
 
 export type BlogPostMeta = {
@@ -12,5 +13,6 @@ export type BlogPostMeta = {
     metaDescription: string;
     publishedAt: string;
     publishedAtLabel: string;
+    heroImage: string | null;
     url: string;
 };

@@ -39,19 +39,29 @@ export default function BlogIndex({ posts }: Props) {
                     <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 sm:grid-cols-2">
                         {posts.map((post) => (
                             <Link key={post.slug} href={blog.show(post.slug)}>
-                                <Card className="h-full gap-3 p-6 transition-shadow hover:shadow-lg">
-                                    <time
-                                        dateTime={post.publishedAt}
-                                        className="text-xs font-semibold tracking-wider text-brand-coral uppercase"
-                                    >
-                                        {post.publishedAtLabel}
-                                    </time>
-                                    <h2 className="text-xl font-semibold tracking-tight text-balance">
-                                        {post.title}
-                                    </h2>
-                                    <p className="text-sm leading-relaxed text-muted-foreground">
-                                        {post.excerpt}
-                                    </p>
+                                <Card className="h-full gap-3 overflow-hidden p-0 transition-shadow hover:shadow-lg">
+                                    {post.heroImage && (
+                                        <img
+                                            src={post.heroImage}
+                                            alt={post.title}
+                                            loading="lazy"
+                                            className="h-40 w-full object-cover"
+                                        />
+                                    )}
+                                    <div className="flex flex-col gap-3 p-6">
+                                        <time
+                                            dateTime={post.publishedAt}
+                                            className="text-xs font-semibold tracking-wider text-brand-coral uppercase"
+                                        >
+                                            {post.publishedAtLabel}
+                                        </time>
+                                        <h2 className="text-xl font-semibold tracking-tight text-balance">
+                                            {post.title}
+                                        </h2>
+                                        <p className="text-sm leading-relaxed text-muted-foreground">
+                                            {post.excerpt}
+                                        </p>
+                                    </div>
                                 </Card>
                             </Link>
                         ))}

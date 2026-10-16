@@ -37,6 +37,14 @@ final class BlogPosts
                 metaDescription: 'Guía práctica para calcular las horas extras en Chile: tope legal de 2 horas diarias, el pacto de horas extraordinarias y su vigencia de 3 meses, el recargo del 50% y los riesgos de calcularlas mal.',
                 publishedAt: Carbon::parse('2026-10-15'),
             ),
+            new BlogPost(
+                slug: 'que-exige-la-ley-40-horas-sobre-el-control-de-asistencia',
+                title: 'Qué exige la Ley 40 horas sobre el control de asistencia: libro, reloj control o sistema electrónico',
+                excerpt: 'El Código del Trabajo obliga a controlar la asistencia con uno de tres mecanismos. Qué exige cada uno, por qué el libro de papel es el más débil en la práctica y qué pasó con esa obligación el 26 de abril de 2026.',
+                metaDescription: 'Control de asistencia obligatorio en Chile: qué exige la Ley 40 horas, las diferencias entre libro de asistencia, reloj control y sistema electrónico de registro, y por qué el papel es el más riesgoso de los tres.',
+                publishedAt: Carbon::parse('2026-10-16'),
+                heroImage: '/images/blog/ley-40-horas-reloj-control.webp',
+            ),
         ])->sortByDesc(fn (BlogPost $post) => $post->publishedAt)->values();
     }
 

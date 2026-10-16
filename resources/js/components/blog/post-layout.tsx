@@ -31,6 +31,12 @@ export default function BlogPostLayout({ post, children }: Props) {
                     property="article:published_time"
                     content={post.publishedAt}
                 />
+                {post.heroImage && (
+                    <meta
+                        property="og:image"
+                        content={new URL(post.heroImage, post.url).toString()}
+                    />
+                )}
             </Head>
 
             <div className="min-h-screen bg-background text-foreground">
@@ -47,6 +53,14 @@ export default function BlogPostLayout({ post, children }: Props) {
                         <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
                             {post.title}
                         </h1>
+                        {post.heroImage && (
+                            <img
+                                src={post.heroImage}
+                                alt={post.title}
+                                loading="lazy"
+                                className="h-64 w-full rounded-2xl object-cover shadow-lg sm:h-96"
+                            />
+                        )}
                         <div className="flex flex-col gap-5 text-base leading-relaxed text-pretty [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-4 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-foreground [&_li]:text-muted-foreground [&_p]:text-muted-foreground [&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-2 [&_ul]:pl-6">
                             {children}
                         </div>

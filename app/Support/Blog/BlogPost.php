@@ -19,9 +19,10 @@ final readonly class BlogPost
         public string $excerpt,
         public string $metaDescription,
         public Carbon $publishedAt,
+        public ?string $heroImage = null,
     ) {}
 
-    /** @return array{slug: string, title: string, excerpt: string, publishedAt: string, publishedAtLabel: string} */
+    /** @return array{slug: string, title: string, excerpt: string, publishedAt: string, publishedAtLabel: string, heroImage: ?string} */
     public function toSummaryArray(): array
     {
         return [
@@ -30,10 +31,11 @@ final readonly class BlogPost
             'excerpt' => $this->excerpt,
             'publishedAt' => $this->publishedAt->toIso8601String(),
             'publishedAtLabel' => $this->publishedAtLabel(),
+            'heroImage' => $this->heroImage,
         ];
     }
 
-    /** @return array{slug: string, title: string, metaDescription: string, publishedAt: string, publishedAtLabel: string} */
+    /** @return array{slug: string, title: string, metaDescription: string, publishedAt: string, publishedAtLabel: string, heroImage: ?string} */
     public function toMetaArray(): array
     {
         return [
@@ -42,6 +44,7 @@ final readonly class BlogPost
             'metaDescription' => $this->metaDescription,
             'publishedAt' => $this->publishedAt->toIso8601String(),
             'publishedAtLabel' => $this->publishedAtLabel(),
+            'heroImage' => $this->heroImage,
         ];
     }
 
