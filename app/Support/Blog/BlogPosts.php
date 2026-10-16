@@ -22,6 +22,7 @@ final class BlogPosts
                 excerpt: 'Qué cambia cuando un asistente de IA puede consultar licencias, horas extra y nómina directamente en tu sistema de RRHH, sin planillas intermedias.',
                 metaDescription: 'Descubre los beneficios de conectar un servidor MCP a tu sistema de RRHH: consulta licencias, horas extra y nómina desde un asistente de IA, sin planillas ni exportaciones manuales.',
                 publishedAt: Carbon::parse('2026-10-05'),
+                heroImage: '/images/blog/beneficios-mcp-rrhh.webp',
             ),
             new BlogPost(
                 slug: 'resolucion-38-direccion-del-trabajo-como-cumplir',
@@ -29,6 +30,7 @@ final class BlogPosts
                 excerpt: 'Qué obliga la Resolución 38 a los sistemas electrónicos de control de asistencia —hash en cada marca, reportes para la DT, vencimiento de días de descanso— y cómo cumplirla en la práctica.',
                 metaDescription: 'Guía de cumplimiento de la Resolución 38 de la Dirección del Trabajo: a qué sistemas aplica, qué exige en cada marcación, qué reportes puede pedir la DT y cómo evitar sanciones.',
                 publishedAt: Carbon::parse('2026-10-15'),
+                heroImage: '/images/blog/resolucion-38-control-asistencia.webp',
             ),
             new BlogPost(
                 slug: 'como-calcular-horas-extras-en-chile-sin-infringir-los-limites-legales',
@@ -36,6 +38,7 @@ final class BlogPosts
                 excerpt: 'El tope diario y semanal de horas extraordinarias, qué es el pacto de horas extras y por qué caduca a los tres meses, y cómo evitar que un error de cálculo se convierta en una multa.',
                 metaDescription: 'Guía práctica para calcular las horas extras en Chile: tope legal de 2 horas diarias, el pacto de horas extraordinarias y su vigencia de 3 meses, el recargo del 50% y los riesgos de calcularlas mal.',
                 publishedAt: Carbon::parse('2026-10-15'),
+                heroImage: '/images/blog/horas-extras-chile.webp',
             ),
             new BlogPost(
                 slug: 'que-exige-la-ley-40-horas-sobre-el-control-de-asistencia',
