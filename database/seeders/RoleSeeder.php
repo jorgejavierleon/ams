@@ -70,8 +70,9 @@ class RoleSeeder extends Seeder
      * `DocumentPolicy`, the same ability the web document-creation form uses.
      *
      * `Manage:Role`, `Manage:Position`, `Manage:CostCenter`, `Manage:Company`,
-     * `Manage:Premise`, `Manage:Shift`, `Manage:Holiday`, and
-     * `Manage:Document` each gate one settings screen's routes in
+     * `Manage:Premise`, `Manage:TotemDevice`, `Manage:Shift`, `Manage:Holiday`, and
+     * `Manage:Document`, and `Manage:OrganizationSettings` (the notifications,
+     * documents and overtime settings sections) each gate one settings screen's routes in
      * `routes/web.php`. Granting them here rather than checking the `admin`
      * role by name means an organization that edits what its admin role can
      * do actually changes who reaches these screens.
@@ -108,9 +109,11 @@ class RoleSeeder extends Seeder
         'Manage:CostCenter',
         'Manage:Company',
         'Manage:Premise',
+        'Manage:TotemDevice',
         'Manage:Shift',
         'Manage:Holiday',
         'Manage:Document',
+        'Manage:OrganizationSettings',
     ];
 
     /**

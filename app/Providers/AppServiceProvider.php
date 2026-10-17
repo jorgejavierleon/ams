@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Inertia\ExceptionResponse;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -39,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureMiddleware();
         $this->configureAuthorization();
         $this->configureRateLimiting();
+        $this->configureErrorPages();
 
         // No event listeners are registered here on purpose. Laravel scans
         // app/Listeners and binds every handle()/__invoke() method to the event
@@ -62,6 +65,28 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
+     * Render 403/404/419/429/500/503 as a translated in-app page (with a way
+     * back) for signed-in web users, instead of the framework's bare English
+     * error screen. Guests, JSON/API requests and requests that never reached the session
+     * middleware (e.g. an unmatched route) keep the default response.
+     */
+    protected function configureErrorPages(): void
+    {
+        Inertia::handleExceptionsUsing(function (ExceptionResponse $response) {
+            $status = $response->statusCode();
+
+            if (! in_array($status, [403, 404, 419, 429, 500, 503], true)
+                || $response->request->expectsJson()
+                || ! $response->request->hasSession()
+                || ! Auth::guard('web')->check()) {
+                return null;
+            }
+
+            return $response->render('errors/error', ['status' => $status])->withSharedData();
+        });
+    }
+
+    /**
      * The baseline every route in routes/api.php runs under: `throttleApi()` in
      * bootstrap/app.php points the api middleware group at this limiter, so no
      * mobile endpoint is unlimited. The strict per-endpoint limits (token
@@ -81,7 +106,7 @@ class AppServiceProvider extends ServiceProvider
             $user = $request->user('sanctum');
 
             if ($user !== null) {
-                return Limit::perMinute(60)->by('user:'.$user->getAuthIdentifier());
+                return Limit::perMinute(60)->by('user:'.$user::class.':'.$user->getAuthIdentifier());
             }
 
             // Unauthenticated traffic can only be token issuance (or a request

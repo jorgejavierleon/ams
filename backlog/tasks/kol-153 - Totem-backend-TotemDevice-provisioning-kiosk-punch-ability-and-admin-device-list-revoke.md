@@ -3,10 +3,10 @@ id: KOL-153
 title: >-
   Totem backend: TotemDevice provisioning, kiosk:punch ability, and admin device
   list/revoke
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-17 09:18'
-updated_date: '2026-10-17 09:19'
+updated_date: '2026-10-17 20:00'
 labels:
   - ready-for-agent
 dependencies: []
@@ -63,18 +63,36 @@ Add a new device-level principal `TotemDevice`, distinct from `User`, scoped to 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Admin can provision a TotemDevice for a Premise they administer and receives a Sanctum token scoped to kiosk:punch
-- [ ] #2 Provisioning is rejected (403) for a non-admin user
-- [ ] #3 A kiosk:punch-scoped token cannot access unrelated authenticated API surface reserved for full user tokens
-- [ ] #4 Admin web screen lists all TotemDevices for their Organization with Premise, created_at, and last-used
-- [ ] #5 Admin can revoke a TotemDevice token from the web screen; the token is immediately rejected on subsequent API use (401)
-- [ ] #6 Multiple TotemDevices can be provisioned for the same Premise and for different Premises within an Organization
+- [x] #1 Admin can provision a TotemDevice for a Premise they administer and receives a Sanctum token scoped to kiosk:punch
+- [x] #2 Provisioning is rejected (403) for a non-admin user
+- [x] #3 A kiosk:punch-scoped token cannot access unrelated authenticated API surface reserved for full user tokens
+- [x] #4 Admin web screen lists all TotemDevices for their Organization with Premise, created_at, and last-used
+- [x] #5 Admin can revoke a TotemDevice token from the web screen; the token is immediately rejected on subsequent API use (401)
+- [x] #6 Multiple TotemDevices can be provisioned for the same Premise and for different Premises within an Organization
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
-- [ ] #3 npm run types:check passes when TypeScript touched
-- [ ] #4 Every PHP change has a Pest test
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #2 sa test --compact passes
+- [x] #3 npm run types:check passes when TypeScript touched
+- [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. TotemDevice model/migration/factory (soft-deleted on revoke). 2. POST /api/v1/totem-devices: admin creds + premise_id -> kiosk:punch token (Manage:TotemDevice). 3. EnsureUserToken on existing sanctum group; EnsureTotemDevice + GET /api/v1/totem/device for kiosk. 4. Web list/revoke screen (Inertia) + permission, nav, i18n. 5. Pest tests.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+TotemDevice deliberately has no BelongsToOrganization global scope: Sanctum loads it as tokenable while resolving the guard and the scope's Auth::user() recurses (segfault). Org scoping is explicit (scopeInCurrentOrganization, resolveRouteBinding). New permission Manage:TotemDevice (admin). Endpoints: POST /api/v1/totem-devices, GET /api/v1/totem/device. Web: /totem-devices.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added TotemDevice (own Sanctum principal, kiosk:punch token), admin provisioning endpoint, token-surface separation middleware, and a web list/revoke screen under Configuración with a Manage:TotemDevice permission.
+<!-- SECTION:FINAL_SUMMARY:END -->

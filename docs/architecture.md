@@ -71,6 +71,14 @@ $user->can('create_mark')       // MarkPolicy::create
 - **List envelopes are bare arrays by default, not `{data: [...]}`.** `AppServiceProvider` calls `JsonResource::withoutWrapping()` globally, so `SomeResource::collection(...)` returned directly serializes as a bare JSON array (`WorkdaysController`, `PendingMarkModificationsController`) — the one exception is when `->additional([...])` is chained (`LeavesController::index`), which forces a `data` wrap as a side effect. A client that expects the wrapped shape needs it forced explicitly: `response()->json(['data' => SomeResource::collection(...)])` (`DocumentsController::index`, KOL-86). Check what the mobile client actually parses before assuming either shape.
 - **Never rate limit this surface by IP alone.** Employees at one premise punch in over the same wifi or mobile NAT, so an IP-keyed limit lets one person's bad attempts lock out everyone at exactly the moment they all need to clock in. The `api` limiter (`AppServiceProvider::configureRateLimiting()`) keys authenticated traffic per employee — it resolves `$request->user('sanctum')` itself because the group throttle runs before `auth:sanctum` — and public token issuance is keyed on email + IP by `ThrottleTokenIssuance`, which also clears the counter on a successful sign-in so a mistype never eats into the next shift's attempts.
 
+### Totem kiosk devices (KOL-153)
+
+`TotemDevice` is a second Sanctum principal, distinct from `User`, bound to one premise and issued a token with the single ability `kiosk:punch`. Both principals authenticate through `auth:sanctum`, so the separation is enforced by middleware, not by the guard:
+
+- **Two disjoint surfaces.** Employee routes sit behind `EnsureUserToken` (403 for a device token); `GET /api/v1/totem/*` sits behind `EnsureTotemDevice` (403 unless the principal is a `TotemDevice` holding `kiosk:punch`). New employee routes must go inside the `EnsureUserToken` group, or a device token will reach code that assumes `$request->user()` is a `User`.
+- **`TotemDevice` must not use `BelongsToOrganization`.** Sanctum loads it as a token's `tokenable` while resolving the `sanctum` guard, and `OrganizationScope` asks `Auth::user()` for the tenant, which re-enters that same guard — unbounded recursion that segfaults PHP once the default guard is `sanctum` (a second request in the same process). Scope explicitly with `inCurrentOrganization()`; `resolveRouteBinding()` already does.
+- **Provisioning is `POST /api/v1/totem-devices`**, public and throttled like token issuance: the admin's own credentials plus a `premise_id`, gated by `Manage:TotemDevice`. The admin's credentials are never stored. Revoking (web `/totem-devices`) deletes the tokens and soft-deletes the device.
+
 ---
 
 ## Multi-tenancy

@@ -14,6 +14,35 @@ return [
     |
     */
 
+    'errors' => [
+        'back' => 'Volver',
+        'home' => 'Ir al panel',
+        '403' => [
+            'title' => 'Acceso denegado',
+            'description' => 'No tienes permisos para ver esta página. Si crees que es un error, contacta a un administrador de tu organización.',
+        ],
+        '404' => [
+            'title' => 'Página no encontrada',
+            'description' => 'La página que buscas no existe o fue movida.',
+        ],
+        '419' => [
+            'title' => 'Sesión expirada',
+            'description' => 'Tu sesión expiró. Recarga la página e inténtalo de nuevo.',
+        ],
+        '429' => [
+            'title' => 'Demasiadas solicitudes',
+            'description' => 'Realizaste demasiadas solicitudes. Espera un momento e inténtalo de nuevo.',
+        ],
+        '500' => [
+            'title' => 'Algo salió mal',
+            'description' => 'Ocurrió un error inesperado. Inténtalo de nuevo en unos minutos.',
+        ],
+        '503' => [
+            'title' => 'Servicio en mantenimiento',
+            'description' => 'Estamos realizando tareas de mantenimiento. Vuelve a intentarlo en unos minutos.',
+        ],
+    ],
+
     'nav' => [
         'organization' => 'Organización',
         'workdays' => 'Jornadas',
@@ -29,6 +58,7 @@ return [
         'company' => 'Empresa',
         'cost_centers' => 'Centros de costo',
         'premises' => 'Sucursales',
+        'totem_devices' => 'Dispositivos Totem',
         'shifts' => 'Turnos',
         'workdays_list' => 'Jornadas',
         'employees' => 'Empleados',
@@ -647,6 +677,7 @@ return [
             'CostCenter' => 'Centros de costo',
             'Company' => 'Empresa',
             'Premise' => 'Sucursales',
+            'TotemDevice' => 'Dispositivos Totem',
             'Shift' => 'Turnos',
             'Holiday' => 'Feriados',
         ],
@@ -687,8 +718,39 @@ return [
             'Manage:CostCenter' => 'Administrar centros de costo',
             'Manage:Company' => 'Administrar datos de la empresa',
             'Manage:Premise' => 'Administrar sucursales',
+            'Manage:TotemDevice' => 'Administrar dispositivos Totem',
             'Manage:Shift' => 'Administrar turnos',
             'Manage:Holiday' => 'Administrar feriados',
+            'Manage:OrganizationSettings' => 'Administrar configuración general',
+        ],
+    ],
+
+    'totem_devices' => [
+        'title' => 'Dispositivos Totem',
+        'description' => 'Tablets y teléfonos autorizados para registrar asistencia en tus sucursales',
+        'empty' => 'Aún no hay dispositivos Totem. Se agregan desde la app Totem, iniciando sesión como administrador.',
+
+        'columns' => [
+            'name' => 'Dispositivo',
+            'premise' => 'Sucursal',
+            'created_at' => 'Registrado',
+            'last_used_at' => 'Último uso',
+        ],
+
+        'never_used' => 'Sin uso',
+
+        'actions' => [
+            'revoke' => 'Revocar',
+        ],
+
+        'revoke_dialog' => [
+            'title' => 'Revocar dispositivo',
+            'description' => 'El dispositivo «:name» dejará de poder registrar asistencia de inmediato. Esta acción no se puede deshacer.',
+            'confirm' => 'Revocar',
+        ],
+
+        'flash' => [
+            'revoked' => 'Dispositivo revocado.',
         ],
     ],
 

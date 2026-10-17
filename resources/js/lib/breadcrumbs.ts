@@ -27,6 +27,7 @@ import { edit as settingsDocumentsEdit } from '@/routes/settings-documents';
 import { edit as settingsNotificationsEdit } from '@/routes/settings-notifications';
 import { edit as settingsOvertimeEdit } from '@/routes/settings-overtime';
 import { index as shiftsIndex } from '@/routes/shifts';
+import { index as totemDevicesIndex } from '@/routes/totem-devices';
 import { index as workdaysIndex } from '@/routes/workdays';
 
 /**
@@ -231,6 +232,10 @@ export const breadcrumbRegistry: Record<string, BreadcrumbRegistryEntry> = {
         title: propTitle('premise', 'name'),
         href: '#',
         parent: 'premises/index',
+    },
+    'totem-devices/index': {
+        title: 'ui.nav.totem_devices',
+        href: totemDevicesIndex(),
     },
     'shifts/index': {
         title: 'ui.nav.shifts',
