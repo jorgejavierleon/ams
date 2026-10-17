@@ -95,8 +95,8 @@ test('the page lists the employee own workdays and pending corrections', functio
             ->component('my/workdays/index')
             ->has('pendingModifications', 1)
             ->where('pendingModifications.0.id', $correction->id)
-            ->has('workdays', 1)
-            ->where('workdays.0.id', $correction->workday_id));
+            ->has('workdays.data', 1)
+            ->where('workdays.data.0.id', $correction->workday_id));
 });
 
 test('the pending corrections count is shared for the nav badge', function () {
@@ -256,4 +256,37 @@ test('an expired correction cannot be reviewed from the page', function () {
 
     expect($correction->refresh()->status)->toBe(MarkModificationStatus::Pending)
         ->and(Mark::count())->toBe(0);
+});
+
+test('the workdays list is paginated and sortable by an allow-listed column', function () {
+    $employee = reviewingEmployee();
+
+    foreach (range(1, 16) as $day) {
+        Workday::factory()->create([
+            'organization_id' => $employee->organization_id,
+            'user_id' => $employee->id,
+            'date' => now()->startOfMonth()->addDays($day - 1)->toDateString(),
+        ]);
+    }
+
+    $this->actingAs($employee)
+        ->get(route('my.workdays.index', ['from' => now()->startOfMonth()->toDateString(), 'to' => now()->startOfMonth()->addDays(20)->toDateString(), 'sort' => 'date', 'direction' => 'asc']))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('workdays.data', 10)
+            ->where('workdays.total', 16)
+            ->where('workdays.data.0.date', now()->startOfMonth()->toDateString())
+            ->where('filters.sort', 'date')
+            ->where('filters.direction', 'asc'));
+
+    $this->actingAs($employee)
+        ->get(route('my.workdays.index', ['from' => now()->startOfMonth()->toDateString(), 'to' => now()->startOfMonth()->addDays(20)->toDateString(), 'per_page' => 25]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('workdays.data', 16)
+            ->where('workdays.per_page', 25));
+
+    $this->actingAs($employee)
+        ->get(route('my.workdays.index', ['sort' => 'user_id; drop']))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.sort', 'date')
+            ->where('filters.direction', 'desc'));
 });

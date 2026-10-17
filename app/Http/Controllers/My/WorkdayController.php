@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\My;
 
+use App\Concerns\ResolvesTablePerPage;
+use App\Concerns\ResolvesTableSort;
 use App\Enums\MarkModificationStatus;
 use App\Http\Controllers\Controller;
 use App\Managers\MarkModificationManager;
@@ -25,6 +27,9 @@ use Inertia\Response;
  */
 class WorkdayController extends Controller
 {
+    use ResolvesTablePerPage;
+    use ResolvesTableSort;
+
     public function index(Request $request): Response
     {
         $user = $request->user();
@@ -38,13 +43,21 @@ class WorkdayController extends Controller
             [$from, $to] = [$to, $from];
         }
 
+        ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
+            $request,
+            ['date', 'mark_in_at', 'mark_out_at', 'worked_time'],
+            'date',
+            'desc',
+        );
+
         $workdays = Workday::query()
             ->where('user_id', $user->id)
             ->with(['shift:id,name', 'leave:id,type'])
             ->withCount('pendingMarkModifications')
             ->betweenDates($from, $to)
-            ->orderByDesc('date')
-            ->get();
+            ->orderBy($sort, $direction)
+            ->paginate($this->resolveTablePerPage($request))
+            ->withQueryString();
 
         // Pending corrections are the priority action and are time-sensitive, so
         // they are surfaced across every workday rather than limited to the
@@ -57,7 +70,7 @@ class WorkdayController extends Controller
             ->get();
 
         return Inertia::render('my/workdays/index', [
-            'workdays' => $workdays->map(fn (Workday $workday) => [
+            'workdays' => $workdays->through(fn (Workday $workday) => [
                 'id' => $workday->id,
                 'date' => $workday->date->format('Y-m-d'),
                 'date_label' => $workday->date->isoFormat('ddd D [de] MMM'),
@@ -71,13 +84,15 @@ class WorkdayController extends Controller
                 'shift' => $workday->shift?->name,
                 'leave_type' => $workday->leave?->type->label(),
                 'pending_modifications' => $workday->pending_mark_modifications_count,
-            ])->all(),
+            ]),
             'pendingModifications' => $pending
                 ->map(fn (MarkModification $modification) => $this->presentModification($modification))
                 ->all(),
             'filters' => [
                 'from' => $from->format('Y-m-d'),
                 'to' => $to->format('Y-m-d'),
+                'sort' => $sort,
+                'direction' => $direction,
             ],
         ]);
     }

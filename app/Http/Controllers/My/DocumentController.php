@@ -5,6 +5,8 @@ namespace App\Http\Controllers\My;
 use App\Actions\Documents\RejectDocument;
 use App\Actions\Documents\SendVerificationCode;
 use App\Actions\Documents\SignDocument;
+use App\Concerns\ResolvesTablePerPage;
+use App\Concerns\ResolvesTableSort;
 use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Document;
@@ -23,9 +25,19 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
  */
 class DocumentController extends Controller
 {
+    use ResolvesTablePerPage;
+    use ResolvesTableSort;
+
     public function index(Request $request): Response
     {
         $user = $request->user();
+
+        ['sort' => $sort, 'direction' => $direction] = $this->resolveTableSort(
+            $request,
+            ['title', 'published_at'],
+            'published_at',
+            'desc',
+        );
 
         $documents = Document::query()
             ->where('status', '!=', DocumentStatus::Draft)
@@ -33,12 +45,13 @@ class DocumentController extends Controller
                 ->where('user_id', $user->id)
                 ->orWhereHas('signatures', fn ($signatures) => $signatures->where('user_id', $user->id)))
             ->with(['signatures' => fn ($query) => $query->where('user_id', $user->id)])
-            ->latest('published_at')
-            ->latest('id')
-            ->get();
+            ->orderBy($sort, $direction)
+            ->orderByDesc('id')
+            ->paginate($this->resolveTablePerPage($request))
+            ->withQueryString();
 
         return Inertia::render('my/documents/index', [
-            'documents' => $documents->map(function (Document $document) use ($user): array {
+            'documents' => $documents->through(function (Document $document) use ($user): array {
                 $mySignature = $document->signatures->first();
 
                 return [
@@ -58,7 +71,11 @@ class DocumentController extends Controller
                     ] : null,
                     'awaiting_me' => $document->actionableSignatureFor($user) !== null,
                 ];
-            })->all(),
+            }),
+            'filters' => [
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
         ]);
     }
 
