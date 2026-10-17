@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\My;
 
+use App\Concerns\ResolvesTablePerPage;
 use App\Concerns\ResolvesTableSort;
 use App\Enums\LeaveHalfDayType;
 use App\Enums\LeaveStatus;
@@ -30,6 +31,7 @@ use Throwable;
  */
 class LeaveController extends Controller
 {
+    use ResolvesTablePerPage;
     use ResolvesTableSort;
 
     public function index(Request $request): Response
@@ -55,7 +57,7 @@ class LeaveController extends Controller
             ->when($from, fn ($query) => $query->whereDate('end_date', '>=', $from))
             ->when($to, fn ($query) => $query->whereDate('start_date', '<=', $to))
             ->orderBy($sort, $direction)
-            ->paginate(15)
+            ->paginate($this->resolveTablePerPage($request))
             ->withQueryString();
 
         return Inertia::render('my/leaves/index', [

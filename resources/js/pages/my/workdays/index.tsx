@@ -1,4 +1,5 @@
 import { Head, router } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
     ArrowRight,
     Check,
@@ -8,24 +9,19 @@ import {
     LogOut,
     X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     approveModification,
     declineModification,
 } from '@/actions/App/Http/Controllers/My/WorkdayController';
+import { DataTable } from '@/components/data-table';
+import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { index, show } from '@/routes/my/workdays';
+import type { Paginated } from '@/types/ui';
 
 type PendingModification = {
     id: number;
@@ -59,11 +55,13 @@ type Workday = {
 };
 
 type Props = {
-    workdays: Workday[];
+    workdays: Paginated<Workday>;
     pendingModifications: PendingModification[];
     filters: {
         from: string;
         to: string;
+        sort: string | null;
+        direction: 'asc' | 'desc' | null;
     };
 };
 
@@ -92,6 +90,115 @@ export default function MyWorkdaysIndex({
 
     const [from, setFrom] = useState(filters.from);
     const [to, setTo] = useState(filters.to);
+
+    const extraParams = useMemo(() => ({ from, to }), [from, to]);
+
+    const columns = useMemo<ColumnDef<Workday>[]>(
+        () => [
+            {
+                accessorKey: 'date',
+                meta: { title: t('ui.workdays.my.columns.date') },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.workdays.my.columns.date')}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-2">
+                        {row.original.pending_modifications > 0 && (
+                            <span
+                                className="size-1.5 shrink-0 rounded-full bg-amber-500"
+                                title={t('ui.workdays.my.list.pending_flag')}
+                            />
+                        )}
+                        <div>
+                            <div className="font-medium capitalize">
+                                {row.original.weekday}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                                {row.original.date}
+                            </div>
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                id: 'status',
+                enableSorting: false,
+                meta: { title: t('ui.workdays.my.columns.status') },
+                header: () => t('ui.workdays.my.columns.status'),
+                cell: ({ row }) =>
+                    row.original.status_label && (
+                        <span
+                            className={cn(
+                                'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
+                                toneChip(row.original.status_badge),
+                            )}
+                        >
+                            {row.original.status_label}
+                        </span>
+                    ),
+            },
+            {
+                accessorKey: 'mark_in_at',
+                meta: {
+                    title: t('ui.workdays.my.columns.mark_in'),
+                    headClassName: 'text-center',
+                    cellClassName: 'text-center tabular-nums',
+                },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.workdays.my.columns.mark_in')}
+                    />
+                ),
+                cell: ({ row }) => row.original.mark_in_at ?? '—',
+            },
+            {
+                accessorKey: 'mark_out_at',
+                meta: {
+                    title: t('ui.workdays.my.columns.mark_out'),
+                    headClassName: 'text-center',
+                    cellClassName: 'text-center tabular-nums',
+                },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.workdays.my.columns.mark_out')}
+                    />
+                ),
+                cell: ({ row }) => row.original.mark_out_at ?? '—',
+            },
+            {
+                accessorKey: 'worked_time',
+                meta: {
+                    title: t('ui.workdays.my.columns.worked'),
+                    headClassName: 'text-right',
+                    cellClassName: 'text-right font-medium tabular-nums',
+                },
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title={t('ui.workdays.my.columns.worked')}
+                    />
+                ),
+                cell: ({ row }) => row.original.worked_time ?? '—',
+            },
+            {
+                id: 'shift',
+                enableSorting: false,
+                meta: {
+                    title: t('ui.workdays.my.columns.shift'),
+                    cellClassName: 'text-muted-foreground',
+                },
+                header: () => t('ui.workdays.my.columns.shift'),
+                cell: ({ row }) =>
+                    row.original.leave_type ?? row.original.shift ?? '—',
+            },
+        ],
+        [t],
+    );
 
     function applyRange(nextFrom: string, nextTo: string) {
         router.get(
@@ -209,111 +316,23 @@ export default function MyWorkdaysIndex({
                         </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-lg border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>
-                                        {t('ui.workdays.my.columns.date')}
-                                    </TableHead>
-                                    <TableHead>
-                                        {t('ui.workdays.my.columns.status')}
-                                    </TableHead>
-                                    <TableHead className="text-center">
-                                        {t('ui.workdays.my.columns.mark_in')}
-                                    </TableHead>
-                                    <TableHead className="text-center">
-                                        {t('ui.workdays.my.columns.mark_out')}
-                                    </TableHead>
-                                    <TableHead className="text-right">
-                                        {t('ui.workdays.my.columns.worked')}
-                                    </TableHead>
-                                    <TableHead>
-                                        {t('ui.workdays.my.columns.shift')}
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {workdays.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={6}
-                                            className="h-24 text-center text-muted-foreground"
-                                        >
-                                            {t('ui.workdays.my.empty')}
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    workdays.map((workday) => (
-                                        <TableRow
-                                            key={workday.id}
-                                            onClick={() =>
-                                                router.visit(
-                                                    show(workday.id).url,
-                                                )
-                                            }
-                                            className={cn(
-                                                'cursor-pointer',
-                                                workday.pending_modifications >
-                                                    0 &&
-                                                    'bg-amber-50/40 dark:bg-amber-950/10',
-                                            )}
-                                        >
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    {workday.pending_modifications >
-                                                        0 && (
-                                                        <span
-                                                            className="size-1.5 shrink-0 rounded-full bg-amber-500"
-                                                            title={t(
-                                                                'ui.workdays.my.list.pending_flag',
-                                                            )}
-                                                        />
-                                                    )}
-                                                    <div>
-                                                        <div className="font-medium capitalize">
-                                                            {workday.weekday}
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            {workday.date}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                {workday.status_label && (
-                                                    <span
-                                                        className={cn(
-                                                            'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
-                                                            toneChip(
-                                                                workday.status_badge,
-                                                            ),
-                                                        )}
-                                                    >
-                                                        {workday.status_label}
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-center tabular-nums">
-                                                {workday.mark_in_at ?? '—'}
-                                            </TableCell>
-                                            <TableCell className="text-center tabular-nums">
-                                                {workday.mark_out_at ?? '—'}
-                                            </TableCell>
-                                            <TableCell className="text-right font-medium tabular-nums">
-                                                {workday.worked_time ?? '—'}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground">
-                                                {workday.leave_type ??
-                                                    workday.shift ??
-                                                    '—'}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <DataTable
+                        data={workdays}
+                        columns={columns}
+                        routeUrl={index().url}
+                        filters={filters}
+                        extraParams={extraParams}
+                        only={['workdays', 'filters']}
+                        emptyLabel={t('ui.workdays.my.empty')}
+                        onRowClick={(workday) =>
+                            router.visit(show(workday.id).url)
+                        }
+                        rowClassName={(workday) =>
+                            workday.pending_modifications > 0
+                                ? 'bg-amber-50/40 dark:bg-amber-950/10'
+                                : undefined
+                        }
+                    />
                 </section>
             </div>
         </>

@@ -15,6 +15,7 @@ import {
 import { useServerTable } from '@/hooks/use-server-table';
 import type { ServerTableFilters } from '@/hooks/use-server-table';
 import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types/ui';
 
 type DataTableProps<TData> = {
@@ -44,6 +45,10 @@ type DataTableProps<TData> = {
     initialColumnVisibility?: VisibilityState;
     /** Extra controls rendered on the left of the toolbar row. */
     toolbar?: ReactNode;
+    /** Extra classes for a row, e.g. to highlight rows needing attention. */
+    rowClassName?: (row: TData) => string | undefined;
+    /** Makes rows clickable; fired when the row (not an inner control) is clicked. */
+    onRowClick?: (row: TData) => void;
     /**
      * Bulk actions rendered in a bar above the table while one or more rows are
      * selected. Receives the selected rows and a callback to clear the
@@ -77,6 +82,8 @@ export function DataTable<TData>({
     getRowId,
     initialColumnVisibility,
     toolbar,
+    rowClassName,
+    onRowClick,
     renderSelectionActions,
 }: DataTableProps<TData>) {
     // TanStack Table's instance has a stable identity the compiler cannot
@@ -166,6 +173,27 @@ export function DataTable<TData>({
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}
+                                    className={cn(
+                                        onRowClick && 'cursor-pointer',
+                                        rowClassName?.(row.original),
+                                    )}
+                                    onClick={
+                                        onRowClick
+                                            ? (event) => {
+                                                  if (
+                                                      (
+                                                          event.target as HTMLElement
+                                                      ).closest(
+                                                          'a, button, input',
+                                                      )
+                                                  ) {
+                                                      return;
+                                                  }
+
+                                                  onRowClick(row.original);
+                                              }
+                                            : undefined
+                                    }
                                     data-state={
                                         row.getIsSelected()
                                             ? 'selected'

@@ -368,3 +368,31 @@ test('ordered signing blocks a later signatory until it is their turn', function
     $this->actingAs($legalRep)->post(route('my.documents.send-code', $document));
     expect($legalRepSignature->refresh()->verification_code)->toBeNull();
 });
+
+test('the my documents list is paginated, sortable and scoped to the employee', function () {
+    $employee = signingEmployee();
+    $other = signingEmployee($employee->organization);
+
+    foreach (['Beta', 'Alfa'] as $title) {
+        Document::factory()->pendingSignature()->create([
+            'organization_id' => $employee->organization_id,
+            'user_id' => $employee->id,
+            'title' => $title,
+        ]);
+    }
+
+    Document::factory()->pendingSignature()->create([
+        'organization_id' => $other->organization_id,
+        'user_id' => $other->id,
+        'title' => 'Ajeno',
+    ]);
+
+    $this->actingAs($employee)
+        ->get(route('my.documents.index', ['sort' => 'title', 'direction' => 'asc']))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('my/documents/index')
+            ->has('documents.data', 2)
+            ->where('documents.data.0.title', 'Alfa')
+            ->where('filters.sort', 'title')
+            ->where('filters.direction', 'asc'));
+});
