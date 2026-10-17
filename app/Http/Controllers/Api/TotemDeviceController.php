@@ -50,7 +50,7 @@ class TotemDeviceController extends Controller
         // lookup to the admin's own organization explicitly.
         $premise = Premise::withoutGlobalScopes()
             ->where('organization_id', $admin->organization_id)
-            ->find($validated['premise_id']);
+            ->find($request->integer('premise_id'));
 
         if ($premise === null) {
             throw ValidationException::withMessages([

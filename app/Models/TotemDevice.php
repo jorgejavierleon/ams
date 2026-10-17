@@ -30,6 +30,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ * @property-read string|null $last_used_at Latest token use, present when loaded with withMax().
  */
 #[Fillable(['premise_id', 'name'])]
 class TotemDevice extends Authenticatable

@@ -15,7 +15,7 @@ class EnsureTotemDevice
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $device = $request->user();
+        $device = auth('sanctum')->user();
 
         abort_unless(
             $device instanceof TotemDevice && $device->tokenCan(TotemDevice::PUNCH_ABILITY),

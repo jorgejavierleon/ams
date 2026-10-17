@@ -18,7 +18,8 @@ class TotemDeviceFactory extends Factory
     {
         return [
             'organization_id' => fn (array $attributes) => Premise::withoutGlobalScopes()
-                ->find($attributes['premise_id'])->organization_id,
+                ->whereKey($attributes['premise_id'])
+                ->value('organization_id'),
             'premise_id' => Premise::factory(),
             'name' => 'Totem '.fake()->word(),
         ];
