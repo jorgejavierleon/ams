@@ -72,7 +72,20 @@ class MarkController extends Controller
      */
     public function store(Request $request, MarkManager $marks): JsonResponse
     {
-        $validated = $request->validate([
+        /** @var User $user */
+        $user = $request->user();
+
+        return $this->recordPunch($user, $marks, $request->validate(self::punchRules()));
+    }
+
+    /**
+     * The validation rules every punch channel shares.
+     *
+     * @return array<string, mixed>
+     */
+    public static function punchRules(): array
+    {
+        return [
             'type' => ['required', Rule::in(['in', 'out', 'IN', 'OUT'])],
             // Prohibited rather than ignored, on both paths: a client still
             // sending one should find out immediately instead of believing it
@@ -92,11 +105,19 @@ class MarkController extends Controller
             // is a punch claiming to be queued without saying when it happened.
             'device_datetime' => ['nullable', 'required_with:idempotency_key', 'date_format:Y-m-d H:i:s'],
             'idempotency_key' => ['nullable', 'required_with:device_datetime', 'uuid:4'],
-        ]);
+        ];
+    }
 
+    /**
+     * Record a validated punch for an already-identified employee. Shared by the
+     * employee's own token and the Totem kiosk, which identifies the employee by
+     * RUT and password instead.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    public function recordPunch(User $user, MarkManager $marks, array $validated): JsonResponse
+    {
         $type = MarkType::from(strtolower($validated['type']));
-        /** @var User $user */
-        $user = $request->user();
         $idempotencyKey = $validated['idempotency_key'] ?? null;
 
         // A retry whose answer was lost is not a second punch, and the register
