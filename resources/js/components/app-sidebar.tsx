@@ -13,6 +13,7 @@ import {
     LayoutTemplate,
     ListChecks,
     MapPin,
+    Tablet,
     ShieldCheck,
     SlidersHorizontal,
     Sun,
@@ -59,6 +60,7 @@ import { index as premisesIndex } from '@/routes/premises';
 import { index as rolesIndex } from '@/routes/roles';
 import { edit as settingsNotificationsEdit } from '@/routes/settings-notifications';
 import { index as shiftsIndex } from '@/routes/shifts';
+import { index as totemDevicesIndex } from '@/routes/totem-devices';
 import { index as workdaysIndex } from '@/routes/workdays';
 import type { NavItem } from '@/types';
 
@@ -312,6 +314,11 @@ export function AppSidebar() {
                     title: t('ui.nav.organization_settings'),
                     href: settingsNotificationsEdit(),
                     icon: SlidersHorizontal,
+                },
+                {
+                    title: t('ui.nav.totem_devices'),
+                    href: totemDevicesIndex(),
+                    icon: Tablet,
                 },
             ],
         },

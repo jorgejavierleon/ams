@@ -14,6 +14,35 @@ return [
     |
     */
 
+    'errors' => [
+        'back' => 'Go back',
+        'home' => 'Go to dashboard',
+        '403' => [
+            'title' => 'Access denied',
+            'description' => 'You don\'t have permission to view this page. If you think this is a mistake, contact an administrator of your organization.',
+        ],
+        '404' => [
+            'title' => 'Page not found',
+            'description' => 'The page you\'re looking for doesn\'t exist or has moved.',
+        ],
+        '419' => [
+            'title' => 'Session expired',
+            'description' => 'Your session expired. Reload the page and try again.',
+        ],
+        '429' => [
+            'title' => 'Too many requests',
+            'description' => 'You made too many requests. Wait a moment and try again.',
+        ],
+        '500' => [
+            'title' => 'Something went wrong',
+            'description' => 'An unexpected error occurred. Please try again in a few minutes.',
+        ],
+        '503' => [
+            'title' => 'Down for maintenance',
+            'description' => 'We\'re performing maintenance. Please try again in a few minutes.',
+        ],
+    ],
+
     'nav' => [
         'organization' => 'Organization',
         'workdays' => 'Workdays',
@@ -29,6 +58,7 @@ return [
         'company' => 'Company',
         'cost_centers' => 'Cost centres',
         'premises' => 'Premises',
+        'totem_devices' => 'Totem devices',
         'shifts' => 'Shifts',
         'workdays_list' => 'Workdays',
         'employees' => 'Employees',
@@ -644,6 +674,7 @@ return [
             'CostCenter' => 'Cost centers',
             'Company' => 'Company',
             'Premise' => 'Premises',
+            'TotemDevice' => 'Totem devices',
             'Shift' => 'Shifts',
             'Holiday' => 'Holidays',
         ],
@@ -684,8 +715,39 @@ return [
             'Manage:CostCenter' => 'Manage cost centers',
             'Manage:Company' => 'Manage company data',
             'Manage:Premise' => 'Manage premises',
+            'Manage:TotemDevice' => 'Manage Totem devices',
             'Manage:Shift' => 'Manage shifts',
             'Manage:Holiday' => 'Manage holidays',
+            'Manage:OrganizationSettings' => 'Manage organization settings',
+        ],
+    ],
+
+    'totem_devices' => [
+        'title' => 'Totem devices',
+        'description' => 'Tablets and phones authorized to record attendance at your premises',
+        'empty' => 'No Totem devices yet. They are added from the Totem app by signing in as an administrator.',
+
+        'columns' => [
+            'name' => 'Device',
+            'premise' => 'Premise',
+            'created_at' => 'Registered',
+            'last_used_at' => 'Last used',
+        ],
+
+        'never_used' => 'Never used',
+
+        'actions' => [
+            'revoke' => 'Revoke',
+        ],
+
+        'revoke_dialog' => [
+            'title' => 'Revoke device',
+            'description' => 'The device ":name" will immediately stop being able to record attendance. This cannot be undone.',
+            'confirm' => 'Revoke',
+        ],
+
+        'flash' => [
+            'revoked' => 'Device revoked.',
         ],
     ],
 

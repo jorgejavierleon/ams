@@ -52,6 +52,7 @@ use App\Http\Controllers\Saas\LoginController as SaasLoginController;
 use App\Http\Controllers\Saas\OrganizationController;
 use App\Http\Controllers\ShiftAssignmentController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\TotemDeviceController;
 use App\Http\Controllers\WeeklyDetailReportController;
 use App\Http\Controllers\WorkdayController;
 use App\Models\ImportRun;
@@ -138,6 +139,11 @@ Route::middleware(['auth', 'permission:Manage:Company'])->group(function () {
 Route::middleware(['auth', 'permission:Manage:Premise'])->group(function () {
     Route::resource('premises', PremiseController::class)
         ->except(['show']);
+});
+
+Route::middleware(['auth', 'permission:Manage:TotemDevice'])->group(function () {
+    Route::resource('totem-devices', TotemDeviceController::class)
+        ->only(['index', 'destroy']);
 });
 
 Route::middleware(['auth', 'permission:Manage:Shift'])->group(function () {

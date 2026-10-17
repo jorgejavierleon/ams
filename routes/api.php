@@ -8,8 +8,11 @@ use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\PendingMarkModificationsController;
 use App\Http\Controllers\Api\TodayController;
 use App\Http\Controllers\Api\TokenController;
+use App\Http\Controllers\Api\TotemDeviceController;
 use App\Http\Controllers\Api\UpcomingShiftsController;
 use App\Http\Controllers\Api\WorkdaysController;
+use App\Http\Middleware\EnsureTotemDevice;
+use App\Http\Middleware\EnsureUserToken;
 use App\Http\Middleware\ThrottleTokenIssuance;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -50,7 +53,22 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         ->middleware('signed')
         ->name('me.documents.pdf');
 
-    Route::middleware('auth:sanctum')->group(function (): void {
+    // Public: an admin exchanges their own credentials plus a premise for a
+    // TotemDevice token limited to kiosk:punch. Same email + IP throttle as
+    // token issuance since it is the same credential-stuffing target.
+    Route::post('totem-devices', [TotemDeviceController::class, 'store'])
+        ->middleware(ThrottleTokenIssuance::class)
+        ->name('totem-devices.store');
+
+    // The Totem kiosk app's surface. Device tokens only: employee tokens are
+    // refused here, and device tokens are refused everywhere else (see
+    // EnsureUserToken below).
+    Route::middleware(['auth:sanctum', EnsureTotemDevice::class])->group(function (): void {
+        Route::get('totem/device', [TotemDeviceController::class, 'show'])
+            ->name('totem.device.show');
+    });
+
+    Route::middleware(['auth:sanctum', EnsureUserToken::class])->group(function (): void {
         // Sign out on this device only: revokes the bearer token that
         // authenticated the request and leaves the user's other tokens alone.
         Route::delete('tokens/current', [TokenController::class, 'revokeCurrent'])
