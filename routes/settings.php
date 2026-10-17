@@ -42,8 +42,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // The organization-wide Settings sections (KOL-123): everyone reaches
-// /settings/*, but only an admin sees or edits these.
-Route::middleware(['auth', 'role:admin'])->group(function () {
+// /settings/*, but only whoever holds Manage:OrganizationSettings (admin by
+// default, and the Owner via the Gate::before bypass) sees or edits these. A
+// bare role:admin check would lock out an Owner who holds no admin role.
+Route::middleware(['auth', 'permission:Manage:OrganizationSettings'])->group(function () {
     Route::get('settings/notifications', [NotificationController::class, 'edit'])->name('settings-notifications.edit');
     Route::patch('settings/notifications', [NotificationController::class, 'update'])->name('settings-notifications.update');
 

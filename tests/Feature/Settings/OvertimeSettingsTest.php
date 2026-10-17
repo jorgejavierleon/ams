@@ -5,18 +5,17 @@ use App\Models\Organization;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\OrganizationSettings;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    $this->seed(RoleSeeder::class);
 });
 
 /**

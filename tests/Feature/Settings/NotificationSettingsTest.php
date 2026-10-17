@@ -4,16 +4,15 @@ use App\Models\Organization;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\OrganizationSettings;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-    Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+    $this->seed(RoleSeeder::class);
 });
 
 /**
@@ -182,4 +181,24 @@ test('every notification field has a Spanish label', function () {
         // A missing key makes Laravel echo the key itself back.
         expect(__($key, locale: 'es'))->not->toBe($key);
     }
+});
+
+test('an owner holding no admin role can still open the settings', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->ownedBy($owner)->create();
+    $owner->update(['organization_id' => $organization->id]);
+
+    $this->actingAs($owner)->get(route('settings-notifications.edit'))->assertOk();
+});
+
+test('a forbidden settings page renders the translated in-app error page', function () {
+    $user = User::factory()->create();
+    $user->assignRole('employee');
+
+    $this->actingAs($user)
+        ->get(route('settings-notifications.edit'))
+        ->assertForbidden()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('errors/error')
+            ->where('status', 403));
 });
