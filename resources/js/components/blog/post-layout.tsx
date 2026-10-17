@@ -44,12 +44,6 @@ export default function BlogPostLayout({ post, children }: Props) {
 
                 <article className="py-16">
                     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-6">
-                        <time
-                            dateTime={post.publishedAt}
-                            className="text-xs font-semibold tracking-wider text-brand-coral uppercase"
-                        >
-                            {post.publishedAtLabel}
-                        </time>
                         <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
                             {post.title}
                         </h1>

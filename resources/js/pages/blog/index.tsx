@@ -49,12 +49,6 @@ export default function BlogIndex({ posts }: Props) {
                                         />
                                     )}
                                     <div className="flex flex-col gap-3 p-6">
-                                        <time
-                                            dateTime={post.publishedAt}
-                                            className="text-xs font-semibold tracking-wider text-brand-coral uppercase"
-                                        >
-                                            {post.publishedAtLabel}
-                                        </time>
                                         <h2 className="text-xl font-semibold tracking-tight text-balance">
                                             {post.title}
                                         </h2>
