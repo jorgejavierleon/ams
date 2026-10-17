@@ -1,9 +1,10 @@
 ---
 id: KOL-154
 title: 'Totem backend: RUT+password punch identification endpoint for TotemDevice'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-17 09:18'
+updated_date: '2026-10-17 20:58'
 labels:
   - ready-for-agent
 dependencies:
@@ -65,19 +66,37 @@ A new endpoint (or extended `/api/v1/marks`), guarded by the `kiosk:punch` Sanct
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Punch succeeds with valid RUT+password for a User at the device's bound Premise, creating a Mark via MarkManager::createMark
-- [ ] #2 Punch is rejected with a clear error for wrong password
-- [ ] #3 Punch is rejected when the RUT belongs to a User at a different Premise than the device
-- [ ] #4 Duplicate in/out same-day rule returns 409 identically to the existing authenticated mark flow
-- [ ] #5 A revoked TotemDevice token can no longer punch (401)
-- [ ] #6 Queued/offline punch with device_datetime + idempotency_key behaves identically to the mobile app's existing queued-punch handling, including queued_punch_too_old/queued_punch_in_future codes
-- [ ] #7 Geofence evaluation runs for Totem-originated marks using the Premise's fixed coordinates
+- [x] #1 Punch succeeds with valid RUT+password for a User at the device's bound Premise, creating a Mark via MarkManager::createMark
+- [x] #2 Punch is rejected with a clear error for wrong password
+- [x] #3 Punch is rejected when the RUT belongs to a User at a different Premise than the device
+- [x] #4 Duplicate in/out same-day rule returns 409 identically to the existing authenticated mark flow
+- [x] #5 A revoked TotemDevice token can no longer punch (401)
+- [x] #6 Queued/offline punch with device_datetime + idempotency_key behaves identically to the mobile app's existing queued-punch handling, including queued_punch_too_old/queued_punch_in_future codes
+- [x] #7 Geofence evaluation runs for Totem-originated marks using the Premise's fixed coordinates
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 vendor/bin/pint --dirty --format agent reports clean
-- [ ] #2 sa test --compact passes
-- [ ] #3 npm run types:check passes when TypeScript touched
-- [ ] #4 Every PHP change has a Pest test
+- [x] #1 vendor/bin/pint --dirty --format agent reports clean
+- [x] #2 sa test --compact passes
+- [x] #3 npm run types:check passes when TypeScript touched
+- [x] #4 Every PHP change has a Pest test
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Extract shared punch logic from MarkController (punchRules + recordPunch). 2. Add POST /api/v1/totem/marks (TotemMarkController) behind EnsureTotemDevice: identify by RUT+password scoped to device premise, then recordPunch. 3. Premise coords used for geofence when kiosk sends none. 4. Pest tests.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Endpoint: POST /api/v1/totem/marks. Auth::setUser(employee) during the punch so created_by on over-age additions names the employee (device is not a users row); restored in finally.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added POST /api/v1/totem/marks: RUT+password identification scoped to the device premise, reusing MarkController::recordPunch (409 rule, offline queue codes, geofence at premise coords).
+<!-- SECTION:FINAL_SUMMARY:END -->

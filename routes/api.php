@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PendingMarkModificationsController;
 use App\Http\Controllers\Api\TodayController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\TotemDeviceController;
+use App\Http\Controllers\Api\TotemMarkController;
 use App\Http\Controllers\Api\UpcomingShiftsController;
 use App\Http\Controllers\Api\WorkdaysController;
 use App\Http\Middleware\EnsureTotemDevice;
@@ -66,6 +67,9 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
     Route::middleware(['auth:sanctum', EnsureTotemDevice::class])->group(function (): void {
         Route::get('totem/device', [TotemDeviceController::class, 'show'])
             ->name('totem.device.show');
+
+        Route::post('totem/marks', [TotemMarkController::class, 'store'])
+            ->name('totem.marks.store');
     });
 
     Route::middleware(['auth:sanctum', EnsureUserToken::class])->group(function (): void {
